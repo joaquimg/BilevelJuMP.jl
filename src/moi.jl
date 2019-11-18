@@ -91,7 +91,7 @@ function build_bilivel(
 
     # complete KKT
     # 1 - primal dual equality (quadratic equality constraint)
-    #     use quadratic or log expansion
+    #     use quadratic or log expansion (requires bounds on variables get from outside or from prob)
     # 1a - no slacks
     # 1b - use slack
     # 2 - complementarity
@@ -114,8 +114,10 @@ function build_bilivel(
         elseif mode == ComplementWithSlack
             add_complement_constraint_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
         elseif mode == ComplementProduct
+            add_complement_constraint_product(m, comp, lower_idxmap, lower_dual_idxmap)
+        elseif mode == ComplementProductWithSlack
+            add_complement_constraint_product_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
         end
-
     end
 
     return m, upper_idxmap, lower_idxmap#, lower_primal_dual_map, lower_dual_idxmap
