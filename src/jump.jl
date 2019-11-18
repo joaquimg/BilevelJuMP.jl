@@ -476,7 +476,11 @@ end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel, optimizer)
+function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode = SOS1Mode)
+
+    if !MOI.is_empty(optimizer)
+        error("An empty optimizer must be provided")
+    end
 
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
@@ -491,8 +495,6 @@ function JuMP.optimize!(model::BilevelModel, optimizer)
     single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(upper, lower, moi_link, moi_upper)
 
     solver = MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
-    # MOI.empty!(solver)
-    # MOI.is_empty(solver)
     sblm_to_solver = MOI.copy_to(solver, single_blm)
 
     MOI.optimize!(solver)
