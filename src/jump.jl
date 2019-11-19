@@ -492,7 +492,8 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode 
         collect(values(model.upper_to_lower_link)))
     moi_link = JuMP.index(model.link)
 
-    single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(upper, lower, moi_link, moi_upper)
+    single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(
+        upper, lower, moi_link, moi_upper, SOS1Mode)
 
     solver = MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
     sblm_to_solver = MOI.copy_to(solver, single_blm)

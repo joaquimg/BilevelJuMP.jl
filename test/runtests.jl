@@ -146,7 +146,7 @@ end
 
     parametric = [X2[1]] 
 
-    blp, _, _ = BilevelJuMP.build_bilivel(bridged, bridged2, links, parametric)
+    blp, _, _ = BilevelJuMP.build_bilivel(bridged, bridged2, links, parametric, BilevelJuMP.SOS1Mode)
 
 
     # MOI.optimize!(bridged)
@@ -251,7 +251,7 @@ end
 
     parametric = [x2] 
 
-    blp, _, _ = BilevelJuMP.build_bilivel(bridged, bridged2, links, parametric)
+    blp, _, _ = BilevelJuMP.build_bilivel(bridged, bridged2, links, parametric, BilevelJuMP.SOS1Mode)
 
 
     # MOI.optimize!(bridged)

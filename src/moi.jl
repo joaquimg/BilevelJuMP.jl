@@ -6,7 +6,7 @@ const VAF{T} = MOI.VectorAffineFunction{T}
 const VI = MOI.VariableIndex
 const CI = MOI.ConstraintIndex
 
-@enum BilevelSolverMode SOS1Mode
+@enum BilevelSolverMode SOS1Mode ComplementMode ComplementWithSlackMode ProductMode ProductWithSlackMode
 
 # abstract type AsbtractBilevelOptimizer end
 # struct SOS1Optimizer{O} <: AsbtractBilevelOptimizer
@@ -111,11 +111,11 @@ function build_bilivel(
             # (will require set change - loses dual mapping)
         elseif mode == ComplementMode
             add_complement_constraint(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ComplementWithSlack
+        elseif mode == ComplementWithSlackMode
             add_complement_constraint_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ComplementProduct
+        elseif mode == ProductMode
             add_complement_constraint_product(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ComplementProductWithSlack
+        elseif mode == ProductWithSlackMode
             add_complement_constraint_product_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
         end
     end
