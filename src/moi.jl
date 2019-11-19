@@ -55,8 +55,8 @@ function build_bilivel(
     mode)
 
     # Start with an empty problem
-    mode = MOIU.AUTOMATIC
-    m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), mode)
+    moi_mode = MOIU.AUTOMATIC
+    m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), moi_mode)
 
     # add the first level
     copy_names = false

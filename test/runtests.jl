@@ -32,7 +32,7 @@ const MOIT = MathOptInterface.Test
 # obj_lower =  0
 
 @testset "Simple LP" begin
-    optimizer = Gurobi.Optimizer()
+    optimizer = Gurobi.Optimizer(OutputFlag=0)
     bridged = MOIB.full_bridge_optimizer(optimizer, Float64)
     MOI.empty!(bridged)
     @test MOI.is_empty(bridged)
@@ -80,7 +80,7 @@ const MOIT = MathOptInterface.Test
 end
 
 @testset "Simple BLP" begin
-    optimizer = Gurobi.Optimizer()
+    optimizer = Gurobi.Optimizer(OutputFlag=0)
     bridged = MOIB.full_bridge_optimizer(optimizer, Float64)
     MOI.empty!(bridged)
     @test MOI.is_empty(bridged)
@@ -97,7 +97,7 @@ end
         )
     MOI.set(bridged, MOI.ObjectiveSense(), MOI.MIN_SENSE)
 
-    optimizer2 = Gurobi.Optimizer()
+    optimizer2 = Gurobi.Optimizer(OutputFlag=0)
     bridged2 = MOIB.full_bridge_optimizer(optimizer2, Float64)
     MOI.empty!(bridged2)
     @test MOI.is_empty(bridged2)
@@ -164,7 +164,7 @@ end
     # MOI.write_to_file(lp_model, "my_model.LP")
     # @show pwd()
 
-    optimizer = Gurobi.Optimizer()
+    optimizer = Gurobi.Optimizer(OutputFlag=0)
     bridged3 = MOIB.full_bridge_optimizer(optimizer, Float64)
     MOI.empty!(bridged3)
     @test MOI.is_empty(bridged3)
@@ -175,7 +175,7 @@ end
 end
 
 @testset "Simple BLP2" begin
-    optimizer = Gurobi.Optimizer()
+    optimizer = Gurobi.Optimizer(OutputFlag=0)
     bridged = MOIB.full_bridge_optimizer(optimizer, Float64)
     MOI.empty!(bridged)
     @test MOI.is_empty(bridged)
@@ -193,7 +193,7 @@ end
         )
     MOI.set(bridged, MOI.ObjectiveSense(), MOI.MIN_SENSE)
 
-    optimizer2 = Gurobi.Optimizer()
+    optimizer2 = Gurobi.Optimizer(OutputFlag=0)
     bridged2 = MOIB.full_bridge_optimizer(optimizer2, Float64)
     MOI.empty!(bridged2)
     @test MOI.is_empty(bridged2)
@@ -269,7 +269,7 @@ end
     # MOI.write_to_file(lp_model, "my_model.LP")
     # @show pwd()
 
-    optimizer = Gurobi.Optimizer()
+    optimizer = Gurobi.Optimizer(OutputFlag=0)
     bridged3 = MOIB.full_bridge_optimizer(optimizer, Float64)
     MOI.empty!(bridged3)
     @test MOI.is_empty(bridged3)
@@ -295,7 +295,7 @@ end
     @constraint(Lower(model), x >= 0)
     @constraint(Lower(model), y >= 0)
 
-    optimize!(model, Gurobi.Optimizer())
+    optimize!(model, Gurobi.Optimizer(OutputFlag=0))
 
     primal_status(model)
 
@@ -326,7 +326,7 @@ end
     @constraint(Lower(model), x <= 6)
     @constraint(Lower(model), y >= 0)
 
-    optimize!(model, Gurobi.Optimizer())
+    optimize!(model, Gurobi.Optimizer(OutputFlag=0))
 
     primal_status(model)
 
