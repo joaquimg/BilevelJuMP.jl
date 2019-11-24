@@ -156,6 +156,8 @@ function solver_ref(v::BilevelVariableRef)
 end
 Base.broadcastable(v::BilevelVariableRef) = Ref(v)
 Base.copy(v::BilevelVariableRef) = v
+# TODO
+# Base.copy(v::BilevelVariableRef, new_model::BilevelModel) = BilevelVariableRef(new_model, v.idx, v.level) # also requires a map
 Base.:(==)(v::BilevelVariableRef, w::BilevelVariableRef) =
     v.model === w.model && v.idx == w.idx && v.level == w.level
 JuMP.owner_model(v::BilevelVariableRef) = v.model
@@ -334,6 +336,7 @@ end
 struct BilevelConstraintRef
     model::BilevelModel # `model` owning the constraint
     idx::Int       # Index in `model.constraints`
+    # level
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 function JuMP.add_constraint(m::BilevelModel, c::JuMP.AbstractConstraint, name::String="")
@@ -407,6 +410,8 @@ JuMP.show_backend_summary(::Any, ::AbstractBilevelModel) = "no summary"
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
 JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel_model(m))
 JuMP.show_objective_function_summary(::IO, ::AbstractBilevelModel) = "no summary"
+# TODO
+# function JuMP.constraints_string(print_mode, model::MyModel)
 
 bileve_obj_error() = error("There is no objective for BilevelModel use Upper(.) and Lower(.)")
 
@@ -430,6 +435,10 @@ JuMP.name(cref::BilevelConstraintRef) = cref.model.connames[cref.idx]
 function JuMP.set_name(cref::BilevelConstraintRef, name::String)
     cref.model.connames[cref.idx] = name
 end
+# TODO
+# function JuMP.variable_by_name(model::MyModel, name::String)
+# see jump extensions
+# function JuMP.constraint_by_name(model::MyModel, name::String)
 
 
 # replace variables
