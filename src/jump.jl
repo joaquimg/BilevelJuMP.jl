@@ -5,6 +5,8 @@
 
 abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
+Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
+
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     upper::JuMP.AbstractModel
