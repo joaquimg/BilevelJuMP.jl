@@ -122,3 +122,27 @@ end
         jump_14(solver.opt, solver.mode)
     end
 end
+
+@testset "Princeton Handbook 01" begin
+    for solver in solvers
+        jump_HTP_lin01(solver.opt, solver.mode)
+    end
+end
+
+@testset "Princeton Handbook 02" begin
+    for solver in solvers
+        jump_HTP_lin02(solver.opt, solver.mode)
+    end
+end
+
+@testset "Princeton Handbook 03" begin
+    for solver in solvers
+        jump_HTP_lin03(solver.opt, solver.mode)
+    end
+end
+
+@testset "Princeton Handbook 04" begin
+    for solver in solvers
+        jump_HTP_lin04(solver.opt, solver.mode)
+    end
+end

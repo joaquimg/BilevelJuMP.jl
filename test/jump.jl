@@ -882,6 +882,156 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 #=
-    Princeton Handbook of NLP test problems
+    Princeton Handbook of Test Problems in Local and Global Optimization
+    Floudas c., Pardalos P., et al.
+    HTP
 =#
+
+# 9.2.2
+function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y[i=1:2])
+
+    @objective(Upper(model), Min, -x - 3y[1] + 2y[2])
+    @constraint(Upper(model), x <= 8)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), [i=1:2], y[i] <= 4)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min, - y[1])
+    @constraint(Lower(model), -y[1] <= 0)
+    @constraint(Lower(model),  y[1] <= 4)
+    @constraint(Lower(model), -2x + 2y[1] + 4y[2] <= 16)
+    @constraint(Lower(model),  8x + 3y[1] - 2y[2] <= 48)
+    @constraint(Lower(model), -2x +  y[1] - 3y[2] <= -12)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 5
+    @test value.(y) ≈ [4, 2]
+end
+
+# 9.2.3
+function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, -x - 3y)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0)
+
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), -y <= 0)
+    @constraint(Lower(model), -x + y <= 3)
+    @constraint(Lower(model),   x + 2y <= 12)
+    @constraint(Lower(model),  4x -  y <= 12)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 4
+    @test value(y) ≈ 4
+end
+
+# 9.2.4 - parg 211
+function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:2])
+    @variable(LowerToUpper(model), y[i=1:6])
+
+    @objective(Upper(model), Min,
+        4y[1] - 40y[2] -4y[3] -8x[1] -4x[2])
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:6], y[i] >= 0)
+
+    H1 = [ -1  1  1   1  0  0;
+           -1  2 -1/2 0  1  0;
+            2 -1 -1/2 0  0  1
+    ]
+    H2 = [0 0;
+          2 0;
+          0 2
+    ]
+
+    b = [1 1 1]
+
+    @objective(Lower(model), Min,
+        y[1] + y[2] + 2y[3] +x[1] +2x[2])
+
+    # TODO fix broadcast
+    # @constraint(Lower(model), H1*y + H2*x .== b)
+    @constraint(Lower(model), [i=1:6], y[i] >= 0)
+
+    @constraint(Lower(model), -y[1] +  y[2] +       y[3]         +y[4] == 1)
+    @constraint(Lower(model), -y[1] + 2y[2] - (1/2)*y[3] + 2x[1] +y[5] == 1)
+    @constraint(Lower(model), 2y[1] -  y[2] - (1/2)*y[3] + 2x[2] +y[6] == 1)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @show primal_status(model)
+
+    @show termination_status(model)
+
+    @test value.(x) ≈ [0, 0.9]
+    @test value.(y) ≈ [0, 0.6, 0.4, 0, 0, 0]
+end
+
+# 9.2.5
+function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, x - 4y)
+    # @constraint(Upper(model), x >= 0)
+    # @constraint(Upper(model), y >= 0)
+
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), -2x +  y <= 0)
+    @constraint(Lower(model),  2x + 5y <= 108)
+    @constraint(Lower(model),  2x - 3y <= -4)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 19
+    @test value(y) ≈ 14
+end
+
 
