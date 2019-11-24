@@ -9,10 +9,13 @@ const MOIU = MathOptInterface.Utilities
 const MOIB = MathOptInterface.Bridges
 const MOIT = MathOptInterface.Test
 
+# TODO
+# add JUMPExtension test
+
 solvers = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 solvers_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 
-include("solvers/cbc.jl")
+# include("solvers/cbc.jl")
 include("solvers/gurobi.jl")
 
 include("moi.jl")
@@ -123,26 +126,30 @@ end
     end
 end
 
-@testset "Princeton Handbook 01" begin
+@testset "Princeton Handbook of Test Problems" begin
     for solver in solvers
         jump_HTP_lin01(solver.opt, solver.mode)
-    end
-end
-
-@testset "Princeton Handbook 02" begin
-    for solver in solvers
         jump_HTP_lin02(solver.opt, solver.mode)
-    end
-end
-
-@testset "Princeton Handbook 03" begin
-    for solver in solvers
         jump_HTP_lin03(solver.opt, solver.mode)
+        jump_HTP_lin04(solver.opt, solver.mode)
+        jump_HTP_lin05(solver.opt, solver.mode)
+        jump_HTP_lin06(solver.opt, solver.mode)
+        jump_HTP_lin07(solver.opt, solver.mode)
+        jump_HTP_lin08(solver.opt, solver.mode)
+        jump_HTP_lin09(solver.opt, solver.mode)
+        jump_HTP_lin10(solver.opt, solver.mode)
     end
 end
 
-@testset "Princeton Handbook 04" begin
+@testset "Ferris educational" begin
     for solver in solvers
-        jump_HTP_lin04(solver.opt, solver.mode)
+        jump_jointc1(solver.opt, solver.mode)
+        jump_jointc2(solver.opt, solver.mode)
+    end
+end
+
+@testset "Bard Efficient Point Example" begin
+    for solver in solvers
+        jump_EffPointAlgo(solver.opt, solver.mode)
     end
 end

@@ -995,9 +995,9 @@ function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     optimize!(model, optimizer, mode)
 
-    @show primal_status(model)
+    primal_status(model)
 
-    @show termination_status(model)
+    termination_status(model)
 
     @test value.(x) ≈ [0, 0.9]
     @test value.(y) ≈ [0, 0.6, 0.4, 0, 0, 0]
@@ -1034,4 +1034,397 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value(y) ≈ 14
 end
 
+# 9.2.6
+function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
 
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y[i=1:2])
+
+    @objective(Upper(model), Min, -x + 10y[1] - y[2])
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min, -y[1] - y[2])
+    @constraint(Lower(model),    x -  y[1] <= 1)
+    @constraint(Lower(model),    x +  y[2] <= 1)
+    @constraint(Lower(model), y[1] +  y[2] <= 1)
+    @constraint(Lower(model),  -y[1] <= 0)
+    @constraint(Lower(model),  -y[2] <= 0)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    # book solution looks incorrect
+    # the actual solutions seems to be
+    @test value(x) ≈ 0
+    @test value.(y) ≈ [0, 1]
+end
+
+# 9.2.7
+function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, -x - 3y)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0)
+
+    @objective(Lower(model), Min, -x + 3y)
+    @constraint(Lower(model),   - x - 2y <= -10)
+    @constraint(Lower(model),     x - 2y <= 6) # sign of 2y was wrong on book
+    @constraint(Lower(model),    2x -  y <= 21)
+    @constraint(Lower(model),     x + 2y <= 38)
+    @constraint(Lower(model),    -x + 2y <= 18)
+    @constraint(Lower(model),         -y <= 0)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    # book solution looks incorrect
+    # the actual solutions seems to be
+    @test value(x) ≈ 16
+    @test value(y) ≈ 11
+end
+
+# 9.2.8 - parg 216
+function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:2])
+    @variable(LowerToUpper(model), y[i=1:3])
+
+    @objective(Upper(model), Min,
+        -8x[1] -4x[2] + 4y[1] - 40y[2] + 4y[3])
+        # the sign of 4y[3] seems off, but slutionis the same
+        # model from the book left as is
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:3], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        x[1] + 2x[2] + y[1] + y[2] + 2y[3])
+
+    @constraint(Lower(model), [i=1:3], y[i] >= 0)
+
+    @constraint(Lower(model),         -  y[1] +  y[2] +       y[3] <= 1)
+    @constraint(Lower(model), + 2x[1] -  y[1] + 2y[2] - (1/2)*y[3] <= 1)
+    @constraint(Lower(model), + 2x[2] + 2y[1] -  y[2] - (1/2)*y[3] <= 1)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value.(x) ≈ [0, 0.9]
+    @test value.(y) ≈ [0, 0.6, 0.4]
+end
+
+# 9.2.9 - parg 217
+function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:2])
+    @variable(LowerToUpper(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        -2x[1] + x[2] + 0.5*y[1])
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        x[1] + x[2] - 4y[1] + y[2])
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+    @constraint(Lower(model), - 2x[1]         +  y[1] -  y[2] <= -2.5)
+    @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
+    @constraint(Lower(model), +  x[1] +  x[2]                 <= 2)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    # solution frm the book is incorrect
+    # using solution from: https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds918.html
+    @test value.(x) ≈ [2, 0]
+    @test value.(y) ≈ [1.5, 0]
+end
+
+# 9.2.10
+function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0)
+
+    @objective(Lower(model), Min, -5x - y)
+    @constraint(Lower(model),   - x - 0.5*y <= -2)
+    @constraint(Lower(model), -0.25*x + y <= 2) # sign of 2y was wrong on book
+    @constraint(Lower(model),     x + 0.5*y <= 8)
+    @constraint(Lower(model),     x - 2y <= 2)
+    @constraint(Lower(model),         -y <= 0)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 8/9#0.888_888_888_888
+    @test value(y) ≈ 20/9# 2.222_222_222_222
+end
+
+# 9.2.11 - parg 219
+function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:2])
+    @variable(LowerToUpper(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        -2x[1] + x[2] + 0.5*y[1])
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    # this upper constraint is missing in the book but is correct in the GAMS file
+    @constraint(Upper(model), +  x[1] +  x[2]  <= 2)
+
+    @objective(Lower(model), Min,
+        x[1] + x[2] - 4y[1] + y[2])
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+    @constraint(Lower(model), - 2x[1]         +  y[1] -  y[2] <= -2.5)
+    @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    # solution frm the book is incorrect
+    # using solution from: https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds918.html
+    @test value.(x) ≈ [2, 0]
+    @test value.(y) ≈ [1.5, 0]
+end
+
+# TODO - add quadratic problems
+
+#=
+    GAMS educational examples by Michael Ferris
+=#
+
+# from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc1.html
+function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode)
+
+    ###
+    ### PART 1
+    ###
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, x)
+    @constraint(Upper(model), x >= 1)
+    @constraint(Upper(model), y >= +x)
+    @constraint(Upper(model), y >= -x)
+
+    # this lower problem leads to x == -x (infeasible because x >= 1)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), y >= -x)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test termination_status(model) in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED]
+
+    ###
+    ### PART 2
+    ###
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, x)
+    @constraint(Upper(model), x >= 1)
+    @constraint(Upper(model), y >= +x)
+    @constraint(Upper(model), y >= -x)
+
+    # this lower problem leads to x == -x (infeasible because x >= 1)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), y >= -x)
+    @constraint(Lower(model), y >= +x)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test termination_status(model) in [MOI.OPTIMAL]
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 1
+end
+
+# from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc2.html
+function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode)
+
+    ###
+    ### PART 1
+    ###
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Max, x)
+
+    @constraint(Upper(model), x >= 1)
+    @constraint(Upper(model), x <= 2)
+    @constraint(Upper(model), y <= 100)
+
+    @constraint(Upper(model), y >= x - 2)
+    @constraint(Upper(model), y >= -x)
+
+    # this lower problem leads to x == -x (infeasible because x >= 1)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), y >= -x)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test termination_status(model) in [MOI.OPTIMAL]
+
+    @test value(x) ≈ +1
+    @test value(y) ≈ -1
+
+    ###
+    ### PART 2
+    ###
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Max, x)
+
+    @constraint(Upper(model), x >= 1)
+    @constraint(Upper(model), x <= 2)
+    @constraint(Upper(model), y <= 100)
+
+    @constraint(Upper(model), y >= x - 2)
+    @constraint(Upper(model), y >= -x)
+
+    # this lower problem leads to x == -x (infeasible because x >= 1)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), y >= -x)
+    @constraint(Lower(model), y >= x - 2)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test termination_status(model) in [MOI.OPTIMAL]
+
+    @test value(x) ≈ 2
+    @test value(y) ≈ 0
+end
+
+#=
+    An Efficient Point Algorithm for Two-Stage Optimization Problem
+    J.F. Bard
+    Operations Research, 1983
+=#
+function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:6])
+    @variable(LowerToUpper(model), y[i=1:3])
+
+    @objective(Upper(model), Max,
+        2x[1] - x[2] - x[3] + 2x[4] + x[5] -3.5x[6]
+        - y[1] -1.5y[2] + 3y[3])
+    @constraint(Upper(model), [i=1:6], x[i] >= 0)
+    
+    @objective(Lower(model), Max,
+        2x[2] - x[5] + 3y[1] -y[2] -4y[3])
+    @constraint(Lower(model), [i=1:3], y[i] >= 0)
+    @constraint(Lower(model), -  x[1] +0.2x[2]                + x[5] +  2x[6] - 4y[1] + 2y[2] + y[3] <= 12)
+    @constraint(Lower(model),    x[1]          + x[3] - 2x[4]                         - 4y[2] + y[3] <= 10)
+    @constraint(Lower(model),   5x[1]                 +  x[4]        +3.2x[6] + 2y[1] + 2y[2]        <= 15)
+    @constraint(Lower(model),         -  3x[2]        -  x[4] + x[5]          - 2y[1]                <= 12)
+    @constraint(Lower(model), - 2x[1] -   x[2]                                        -  y[2] + y[3] <= -2)
+    @constraint(Lower(model),                                                 -  y[1] - 2y[2] - y[3] <= -2)
+    @constraint(Lower(model),         -  2x[2] - 3x[3]        - x[5]                                 <= -3)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value.(x) ≈ [0, 4, 0, 15, 9.2, 0]
+    @test value.(y) ≈ [0, 0, 2]
+end
