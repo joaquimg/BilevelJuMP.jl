@@ -454,6 +454,7 @@ function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
     end
     return result
 end
+# TODO allow quadratic obj
 # function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
 #     model::BilevelModel,
 #     inner::JuMP.AbstractModel,
@@ -467,12 +468,13 @@ function replace_variables(quad::C,
     error("A BilevelModel cannot have $(C) function")
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
-using MathOptFormat
-function print_lp(m, name)
-    lp_model = MathOptFormat.MOF.Model()
-    MOI.copy_to(lp_model, m)
-    MOI.write_to_file(lp_model, name)
-end
+
+# using MathOptFormat
+# function print_lp(m, name)
+#     lp_model = MathOptFormat.MOF.Model()
+#     MOI.copy_to(lp_model, m)
+#     MOI.write_to_file(lp_model, name)
+# end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")
@@ -493,9 +495,9 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode 
     moi_link = JuMP.index(model.link)
 
     single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(
-        upper, lower, moi_link, moi_upper, SOS1Mode)
+        upper, lower, moi_link, moi_upper, mode)
 
-    solver = MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
+    solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
     sblm_to_solver = MOI.copy_to(solver, single_blm)
 
     MOI.optimize!(solver)
