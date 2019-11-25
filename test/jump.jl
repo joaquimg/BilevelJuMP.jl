@@ -1428,3 +1428,48 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value.(x) ≈ [0, 4, 0, 15, 9.2, 0]
     @test value.(y) ≈ [0, 0, 2]
 end
+
+#=
+    Test Problem Construction for Linear Bilevel Programming Problems 
+    K. Moshirvaziri et al.
+    Journal of Global Optimization, 1996
+=#
+function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode)
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x[i=1:4])
+    @variable(LowerToUpper(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        -4x[1] +8x[2] +x[3] -x[4] + 9y[1] -9y[2])
+    @constraint(Upper(model), [i=1:4], x[i] >= 0)
+    @constraint(Upper(model), -9x[1] + 3x[2] -8x[3] + 3x[4] +3y[1]        <= -1)
+    @constraint(Upper(model), +4x[1] -10x[2] +3x[3] + 5x[4] +8y[1] +8y[2] <= 25)
+    @constraint(Upper(model), +4x[1] - 2x[2] -2x[3] +10x[4] -5y[1] +8y[2] <= 21)
+    @constraint(Upper(model), +9x[1] - 9x[2] +4x[3] - 3x[4] - y[1] -9y[2] <= -1)
+    @constraint(Upper(model), -2x[1] - 2x[2] +8x[3] - 5x[4] +5y[1] +8y[2] <= 20)
+    @constraint(Upper(model), +7x[1] + 2x[2] -5x[3] + 4x[4] -5y[1]        <= 11)
+
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+    
+    @objective(Lower(model), Min,
+        -9y[1] + 9y[2])
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+    @constraint(Lower(model), -6x[1] + x[2] + x[3] - 3x[4] -9y[1] -7y[2] <= -15)
+    @constraint(Lower(model),        +4x[2] +5x[3] +10x[4]               <= 26)
+    @constraint(Lower(model), -9x[1] +9x[2] -9x[3] + 5x[4] -5y[1] -4y[2] <= -5)
+    @constraint(Lower(model), +5x[1] +3x[2] + x[3] + 9x[4] + y[1] +5y[2] <= 32)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value.(x) ≈ [1.57504, 0.83668, 0.188807, 2.17092] atol=1e-4
+    @test value.(y) ≈ [1.88765, 0.0] atol=1e-4
+end

@@ -153,3 +153,9 @@ end
         jump_EffPointAlgo(solver.opt, solver.mode)
     end
 end
+
+@testset "SemiRandom" begin
+    for solver in solvers
+        jump_SemiRand(solver.opt, solver.mode)
+    end
+end
