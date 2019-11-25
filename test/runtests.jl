@@ -159,3 +159,9 @@ end
         jump_SemiRand(solver.opt, solver.mode)
     end
 end
+
+@testset "DNE" begin
+    for solver in solvers
+        jump_DTMP_01(solver.opt, solver.mode)
+    end
+end

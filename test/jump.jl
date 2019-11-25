@@ -1473,3 +1473,40 @@ function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value.(x) ≈ [1.57504, 0.83668, 0.188807, 2.17092] atol=1e-4
     @test value.(y) ≈ [1.88765, 0.0] atol=1e-4
 end
+
+#=
+    Decomposition Techniques in Mathematical Programming
+    A. Conejo et al.
+    Springer
+=#
+
+# Chapter 7.2, pag 281
+function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode)
+    # send y to upper level
+
+    model = BilevelModel()
+
+    @variable(UpperToLower(model), x)
+    @variable(LowerToUpper(model), y)
+
+    @objective(Upper(model), Min, -x + 4y)
+    @constraint(Upper(model), y + 2x <= 8)
+
+    @objective(Lower(model), Min, -x - y)
+    @constraint(Lower(model), -y <= 0)
+    @constraint(Lower(model), x + y <= 7)
+    @constraint(Lower(model), -x <= 0)
+    @constraint(Lower(model),  x <= 4)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 6
+end
