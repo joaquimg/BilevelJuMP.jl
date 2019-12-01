@@ -36,10 +36,10 @@ function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == -8
+    @test objective_value(model) ≈ -8
 
-    @test value(x) ==  2
-    @test value(y) ==  0
+    @test value(x) ≈  2
+    @test value(y) ≈  0
 
 end
 
@@ -70,10 +70,10 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == 12
+    @test objective_value(model) ≈ 12
 
-    @test value(x) == 6
-    @test value(y) == 2
+    @test value(x) ≈ 6
+    @test value(y) ≈ 2
 
 end
 
@@ -116,10 +116,10 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == 3* (3.5*8/15) + (8/15)
+    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15)
 
-    @test value(x) == 3.5*8/15
-    @test value(y) == 8/15
+    @test value(x) ≈ 3.5*8/15
+    @test value(y) ≈ 8/15
 
 end
 # change the bound on x to lower level
@@ -240,7 +240,7 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == -1
+    @test objective_value(model) ≈ -1
 
     # 3SAT is yese IFF obj = -1
 
@@ -271,9 +271,9 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == 0
-    @test value(x) == 0
-    @test value(y) == 0
+    @test objective_value(model) ≈ 0
+    @test value(x) ≈ 0
+    @test value(y) ≈ 0
 
 end
 function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode)
@@ -298,9 +298,9 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    @test objective_value(model) == 0.5^2 - 0.5
-    @test value(x) == 0.5
-    @test value(y) == -0.5
+    @test objective_value(model) ≈ 0.5^2 - 0.5
+    @test value(x) ≈ 0.5
+    @test value(y) ≈ -0.5
 
 end
 function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode)
@@ -645,8 +645,8 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode)
 
     termination_status(model)
 
-    # @test value(x) == 0
-    # @test value(y) == [1, 0]
+    # @test value(x) ≈ 0
+    # @test value(y) ≈ [1, 0]
 
 end
 
