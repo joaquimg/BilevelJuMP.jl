@@ -1,7 +1,6 @@
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
 # using MathOptFormat
-using Gurobi
 
 
 const MOI  = MathOptInterface
@@ -15,8 +14,8 @@ const MOIT = MathOptInterface.Test
 solvers = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 solvers_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 
-# include("solvers/cbc.jl")
-include("solvers/gurobi.jl")
+include("solvers/cbc.jl")
+# include("solvers/gurobi.jl")
 
 include("moi.jl")
 include("jump.jl")
