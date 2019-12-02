@@ -1,0 +1,27 @@
+language: julia
+os:
+    - linux
+julia:
+    - 1.0
+    - 1.1
+    - 1.2
+matrix:
+    allow_failures:
+        - julia: nightly
+notifications:
+    email: false
+sudo: false
+addons:
+    apt_packages:
+        - gfortran
+        - liblapack-dev
+        - libgmp-dev
+        - libglpk-dev
+# jobs:
+#   include:
+#     - stage: "Documentation"
+#       julia: 1.0
+#       os: linux
+#       script:
+#         - julia --project=docs -e 'using Pkg; Pkg.add(PackageSpec(path=pwd()))'
+#         - julia --project=docs --color=yes docs/make.jl

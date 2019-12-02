@@ -5,6 +5,8 @@
 
 abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
+Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
+
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     upper::JuMP.AbstractModel
@@ -154,6 +156,8 @@ function solver_ref(v::BilevelVariableRef)
 end
 Base.broadcastable(v::BilevelVariableRef) = Ref(v)
 Base.copy(v::BilevelVariableRef) = v
+# TODO
+# Base.copy(v::BilevelVariableRef, new_model::BilevelModel) = BilevelVariableRef(new_model, v.idx, v.level) # also requires a map
 Base.:(==)(v::BilevelVariableRef, w::BilevelVariableRef) =
     v.model === w.model && v.idx == w.idx && v.level == w.level
 JuMP.owner_model(v::BilevelVariableRef) = v.model
@@ -332,6 +336,7 @@ end
 struct BilevelConstraintRef
     model::BilevelModel # `model` owning the constraint
     idx::Int       # Index in `model.constraints`
+    # level
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 function JuMP.add_constraint(m::BilevelModel, c::JuMP.AbstractConstraint, name::String="")
@@ -405,6 +410,8 @@ JuMP.show_backend_summary(::Any, ::AbstractBilevelModel) = "no summary"
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
 JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel_model(m))
 JuMP.show_objective_function_summary(::IO, ::AbstractBilevelModel) = "no summary"
+# TODO
+# function JuMP.constraints_string(print_mode, model::MyModel)
 
 bileve_obj_error() = error("There is no objective for BilevelModel use Upper(.) and Lower(.)")
 
@@ -428,6 +435,10 @@ JuMP.name(cref::BilevelConstraintRef) = cref.model.connames[cref.idx]
 function JuMP.set_name(cref::BilevelConstraintRef, name::String)
     cref.model.connames[cref.idx] = name
 end
+# TODO
+# function JuMP.variable_by_name(model::MyModel, name::String)
+# see jump extensions
+# function JuMP.constraint_by_name(model::MyModel, name::String)
 
 
 # replace variables
@@ -454,6 +465,7 @@ function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
     end
     return result
 end
+# TODO allow quadratic obj
 # function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
 #     model::BilevelModel,
 #     inner::JuMP.AbstractModel,
@@ -467,16 +479,21 @@ function replace_variables(quad::C,
     error("A BilevelModel cannot have $(C) function")
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
-using MathOptFormat
-function print_lp(m, name)
-    lp_model = MathOptFormat.MOF.Model()
-    MOI.copy_to(lp_model, m)
-    MOI.write_to_file(lp_model, name)
-end
+
+# using MathOptFormat
+# function print_lp(m, name)
+#     lp_model = MathOptFormat.MOF.Model()
+#     MOI.copy_to(lp_model, m)
+#     MOI.write_to_file(lp_model, name)
+# end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel, optimizer)
+function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode = SOS1Mode)
+
+    if !MOI.is_empty(optimizer)
+        error("An empty optimizer must be provided")
+    end
 
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
@@ -488,11 +505,10 @@ function JuMP.optimize!(model::BilevelModel, optimizer)
         collect(values(model.upper_to_lower_link)))
     moi_link = JuMP.index(model.link)
 
-    single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(upper, lower, moi_link, moi_upper)
+    single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(
+        upper, lower, moi_link, moi_upper, mode)
 
-    solver = MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
-    # MOI.empty!(solver)
-    # MOI.is_empty(solver)
+    solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
     sblm_to_solver = MOI.copy_to(solver, single_blm)
 
     MOI.optimize!(solver)

@@ -12,13 +12,14 @@ Dualization = "191a621a-6537-11e9-281d-650236a99e60"
 julia = "1"
 MathOptInterface = "~0.9.0"
 JuMP = "~0.20.0"
-Dualization = "~0.2.0"
+Dualization = "~0.2.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b"
+Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 MathOptFormat = "f4570300-c277-12e8-125c-4912f86ce65d"
 
 [targets]
-test = ["Test", "Gurobi", "GLPK", "MathOptFormat"]
+test = ["Test", "Gurobi", "Cbc", "GLPK", "MathOptFormat"]
