@@ -27,22 +27,37 @@ abstract type BilevelSolverMode{T} end
 
 mutable struct SOS1Mode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function SOS1Mode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 mutable struct ComplementMode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function ComplementMode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 mutable struct ComplementWithSlackMode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function ComplementWithSlackMode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 mutable struct ProductMode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function ProductMode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function ProductWithSlackMode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 function get_canonical_complements(primal_model, primal_dual_map)
