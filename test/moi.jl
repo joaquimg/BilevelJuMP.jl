@@ -57,7 +57,7 @@ function moi_01(optimizer)
 
 end
 
-function moi_02(optimizer, mode = BilevelJuMP.SOS1Mode)
+function moi_02(optimizer, mode = BilevelJuMP.SOS1Mode{Float64})
 
     # min -4x -3y
     # s.t.
@@ -162,7 +162,7 @@ function moi_02(optimizer, mode = BilevelJuMP.SOS1Mode)
 
 end
 
-function moi_03(optimizer, mode = BilevelJuMP.SOS1Mode)
+function moi_03(optimizer, mode = BilevelJuMP.SOS1Mode{Float64})
 
     upper = MOIU.Model{Float64}()
     @test MOI.is_empty(upper)
