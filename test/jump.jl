@@ -1,5 +1,5 @@
 
-function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # min -4x -3y
     # s.t.
@@ -43,7 +43,7 @@ function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode)
 
 end
 
-function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -88,7 +88,7 @@ end
 # obs: example 2 is from the book
 
 # Cap 3.2, Pag 25
-function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -123,7 +123,7 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode)
 
 end
 # change the bound on x to lower level
-function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -161,7 +161,7 @@ end
 # Sec 3.3 , pag 30 -> product of x and y in lower level objective
 
 # Sec 3.4.1 , pag 32
-function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -199,7 +199,7 @@ end
 # sec 3.5.2.2 pag 44 -> product
 
 # sec 3.7 pag 59
-function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -249,7 +249,7 @@ end
 # sec 5.1 pag 121 -> product
 
 # sec 5.1 pag 127
-function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -276,7 +276,7 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value(y) ≈ 0
 
 end
-function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -303,7 +303,7 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value(y) ≈ -0.5
 
 end
-function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -342,7 +342,7 @@ end
 
 # sec 8.1 pag 255 example from [279]
 # only the second level is described
-function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -375,7 +375,7 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # sec 8.1 pag 257
-function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -421,7 +421,7 @@ end
 
 
 # pag 197 ex 5.1.1
-function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -456,7 +456,7 @@ function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 208 ex 5.3.1
-function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -490,7 +490,7 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 208 ex 5.3.1
-function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -527,7 +527,7 @@ end
 # pag 302 ex 8.1.1 -> quadratic terms
 
 # pag 304 ex 8.1.2
-function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # degenerate second level
     # its case that show that the KKT approach is OPTIMISTIC
@@ -561,7 +561,7 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value.(y) ≈ [0, 1]
 
 end
-function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -608,7 +608,7 @@ end
 # pag 4 ex 1.2 -> product
 
 # pag 9 ex 1.4 TODO obtain solution
-function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     n = 10
     f = 100
@@ -651,7 +651,7 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 21 ex 2.1
-function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -679,7 +679,7 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value(y) ≈ 6
 
 end
-function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -709,7 +709,7 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 45 ex 3.3
-function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     for a in [0 0.1 0.2]
         model = BilevelModel()
@@ -742,7 +742,7 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 45 ex 3.3
-function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -772,7 +772,7 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 290 ex 8.2
-function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -809,7 +809,7 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # pag 300 ex 8.5.2
-function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -844,7 +844,7 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode)
     @test value(y) ≈ 75
     @test value(Z) ≈ 21+2/3
 end
-function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -888,7 +888,7 @@ end
 =#
 
 # 9.2.2
-function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -923,7 +923,7 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.3
-function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -955,7 +955,7 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.4 - parg 211
-function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1004,7 +1004,7 @@ function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.5
-function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1035,7 +1035,7 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.6
-function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1070,7 +1070,7 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.7
-function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1106,7 +1106,7 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.8 - parg 216
-function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1144,7 +1144,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.9 - parg 217
-function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1182,7 +1182,7 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.10
-function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1215,7 +1215,7 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # 9.2.11 - parg 219
-function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1261,7 +1261,7 @@ end
 =#
 
 # from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc1.html
-function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     ###
     ### PART 1
@@ -1319,7 +1319,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode)
 end
 
 # from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc2.html
-function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     ###
     ### PART 1
@@ -1392,7 +1392,7 @@ end
     J.F. Bard
     Operations Research, 1983
 =#
-function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()
@@ -1434,7 +1434,7 @@ end
     K. Moshirvaziri et al.
     Journal of Global Optimization, 1996
 =#
-function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
@@ -1481,7 +1481,7 @@ end
 =#
 
 # Chapter 7.2, pag 281
-function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode)
+function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
 
     model = BilevelModel()

@@ -6,8 +6,6 @@ const VAF{T} = MOI.VectorAffineFunction{T}
 const VI = MOI.VariableIndex
 const CI = MOI.ConstraintIndex
 
-@enum BilevelSolverMode SOS1Mode ComplementMode ComplementWithSlackMode ProductMode ProductWithSlackMode
-
 # abstract type AsbtractBilevelOptimizer end
 # struct SOS1Optimizer{O} <: AsbtractBilevelOptimizer
 #     solver::O
@@ -23,6 +21,43 @@ struct Complement#{M1 <: MOI.ModelLike, M2 <: MOI.ModelLike, F, S}
     set_w_zero#::S
     # dual::M2
     variable#::VI
+end
+
+abstract type BilevelSolverMode{T} end
+
+mutable struct SOS1Mode{T} <: BilevelSolverMode{T}
+    epsilon::T
+    function SOS1Mode()
+        return new{Float64}(zero(Float64))
+    end
+end
+
+mutable struct ComplementMode{T} <: BilevelSolverMode{T}
+    epsilon::T
+    function ComplementMode()
+        return new{Float64}(zero(Float64))
+    end
+end
+
+mutable struct ComplementWithSlackMode{T} <: BilevelSolverMode{T}
+    epsilon::T
+    function ComplementWithSlackMode()
+        return new{Float64}(zero(Float64))
+    end
+end
+
+mutable struct ProductMode{T} <: BilevelSolverMode{T}
+    epsilon::T
+    function ProductMode()
+        return new{Float64}(zero(Float64))
+    end
+end
+
+mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
+    epsilon::T
+    function ProductWithSlackMode()
+        return new{Float64}(zero(Float64))
+    end
 end
 
 function get_canonical_complements(primal_model, primal_dual_map)
@@ -104,30 +139,16 @@ function build_bilivel(
     # futurely add slacks to primal model
     comps = get_canonical_complements(lower, lower_primal_dual_map)
     for comp in comps
-        if mode == SOS1Mode # SOS1
-            # create a constrained slack - depends on set
-            add_complement_constraint_sos1(m, comp, lower_idxmap, lower_dual_idxmap)
-            # TODO add directly to the primal equality
-            # (will require set change - loses dual mapping)
-        elseif mode == ComplementMode
-            add_complement_constraint(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ComplementWithSlackMode
-            add_complement_constraint_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ProductMode
-            add_complement_constraint_product(m, comp, lower_idxmap, lower_dual_idxmap)
-        elseif mode == ProductWithSlackMode
-            add_complement_constraint_product_with_slack(m, comp, lower_idxmap, lower_dual_idxmap)
-        end
+        add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
     end
 
     return m, upper_idxmap, lower_idxmap#, lower_primal_dual_map, lower_dual_idxmap
 end
 
-function add_complement_constraint(m, comp::Complement, idxmap_primal, idxmap_dual)
+function add_complement(mode::ComplementMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
-    T = Float64
 
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
@@ -145,11 +166,11 @@ function add_complement_constraint(m, comp::Complement, idxmap_primal, idxmap_du
     return c1
 end
 
-function add_complement_constraint_with_slack(m, comp::Complement, idxmap_primal, idxmap_dual)
+function add_complement(mode::ComplementWithSlackMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
-    T = Float64
+
     slack, slack_in_set = MOI.add_constrained_variable(m, s)
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
@@ -169,11 +190,11 @@ function add_complement_constraint_with_slack(m, comp::Complement, idxmap_primal
     return slack, slack_in_set, equality, c1
 end
 
-function add_complement_constraint_sos1(m, comp::Complement, idxmap_primal, idxmap_dual)
+function add_complement(mode::SOS1Mode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
-    T = Float64
+
     slack, slack_in_set = MOI.add_constrained_variable(m, s)
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
@@ -193,11 +214,10 @@ function add_complement_constraint_sos1(m, comp::Complement, idxmap_primal, idxm
     return slack, slack_in_set, equality, c1
 end
 
-function add_complement_constraint_product(m, comp::Complement, idxmap_primal, idxmap_dual)
+function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
-    T = Float64
 
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
@@ -215,11 +235,10 @@ function add_complement_constraint_product(m, comp::Complement, idxmap_primal, i
     return c1
 end
 
-function add_complement_constraint_product_with_slack(m, comp::Complement, idxmap_primal, idxmap_dual)
+function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
-    T = Float64
 
     slack, slack_in_set = MOI.add_constrained_variable(m, s)
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)

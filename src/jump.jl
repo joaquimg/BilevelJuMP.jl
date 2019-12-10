@@ -489,7 +489,7 @@ replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args..
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode = SOS1Mode)
+function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{T} = SOS1Mode()) where T
 
     if !MOI.is_empty(optimizer)
         error("An empty optimizer must be provided")
