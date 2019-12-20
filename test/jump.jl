@@ -15,8 +15,8 @@ function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -4x -3y)
 
@@ -47,8 +47,8 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x + 3y)
 
@@ -92,8 +92,8 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, 3x + y)
     @constraint(Upper(model), x <= 5)
@@ -127,8 +127,8 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, 3x + y)
     @constraint(Upper(model), y <= 8)
@@ -165,8 +165,8 @@ function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x[i=1:2])
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x[i=1:2])
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, 2x[2] - y)
     @constraint(Upper(model), y <= 3)
@@ -206,10 +206,10 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode())
     n = 7 # maximum literals
     clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
 
-    @variable(LowerToUpper(model), x[i=1:n])
-    @variable(UpperToLower(model), ya[i=1:n])
-    @variable(UpperToLower(model), yb[i=1:n])
-    @variable(UpperToLower(model), z)
+    @variable(Lower(model), x[i=1:n])
+    @variable(Upper(model), ya[i=1:n])
+    @variable(Upper(model), yb[i=1:n])
+    @variable(Upper(model), z)
     # @variable(Upper(model), z)
 
     @objective(Upper(model), Min, sum(x[i] for i in 1:n) - z)
@@ -253,8 +253,8 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, x^2 + y)
     @constraint(Upper(model), -x -y <= 0)
@@ -280,8 +280,8 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, x^2 + y)
     
@@ -307,8 +307,8 @@ function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, x^2 + y)
     @constraint(Upper(model), -x -y <= 0)
@@ -346,8 +346,8 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, 0)
     # @constraint(Upper(model), -x -y <= 0)
@@ -379,8 +379,8 @@ function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(LowerToUpper(model), x)
-    @variable(UpperToLower(model), y)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
 
     @objective(Upper(model), Min, -10x - y)
 
@@ -425,8 +425,8 @@ function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x - 4y)
     @constraint(Upper(model), x >= 0)
@@ -460,8 +460,8 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:2])
-    @variable(LowerToUpper(model), y[i=1:3])
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:3])
 
     @objective(Upper(model), Min,
         -8x[1] -4x[2] + 4y[1] - 40y[2] - 4y[3])
@@ -494,8 +494,8 @@ function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x + y)
     @constraint(Upper(model), x >= 0)
@@ -534,8 +534,8 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, -10.1x + 10y[1] - y[2])
     @constraint(Upper(model), x >= 0)
@@ -565,8 +565,8 @@ function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, -x + 10y[1] - 2y[2])
     @constraint(Upper(model), x >= 0)
@@ -624,8 +624,8 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), b)
-    @variable(LowerToUpper(model), x[i=1:n])
+    @variable(Upper(model), b)
+    @variable(Lower(model), x[i=1:n])
 
     @objective(Upper(model), Min, sum(c_up[i]*x[i] for i in 1:n) + f*b)
     @constraint(Upper(model), b >= b_l)
@@ -655,8 +655,8 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -x - 2y)
     @constraint(Upper(model), 2x - 3y >= -12)
@@ -683,8 +683,8 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -x - 2y)
     
@@ -714,9 +714,9 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode())
     for a in [0 0.1 0.2]
         model = BilevelModel()
 
-        @variable(UpperToLower(model), x)
-        @variable(LowerToUpper(model), y)
-        @variable(LowerToUpper(model), z)
+        @variable(Upper(model), x)
+        @variable(Lower(model), y)
+        @variable(Lower(model), z)
 
         @objective(Upper(model), Min, 0.5x - y + 3z)
         
@@ -746,8 +746,8 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, (x -1 )^2 + y^2)
     @constraint(Upper(model), x >= -2)
@@ -776,9 +776,9 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(UpperToLower(model), y)
-    @variable(LowerToUpper(model), z)
+    @variable(Upper(model), x)
+    @variable(Upper(model), y)
+    @variable(Lower(model), z)
 
     @objective(Upper(model), Min, x - 2y + z)
     @constraint(Upper(model), x + y +z >= 15)
@@ -813,9 +813,9 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
-    @variable(LowerToUpper(model), z)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+    @variable(Lower(model), z)
 
     @objective(Upper(model), Min, x - 2y + z)
     @constraint(Upper(model), x <= 1)
@@ -849,9 +849,9 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(UpperToLower(model), y)
-    @variable(LowerToUpper(model), z)
+    @variable(Upper(model), x)
+    @variable(Upper(model), y)
+    @variable(Lower(model), z)
 
     @objective(Upper(model), Min, x - 2y + z)
     @constraint(Upper(model), x <= 1)
@@ -893,8 +893,8 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, -x - 3y[1] + 2y[2])
     @constraint(Upper(model), x <= 8)
@@ -928,8 +928,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -x - 3y)
     @constraint(Upper(model), x >= 0)
@@ -960,8 +960,8 @@ function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:2])
-    @variable(LowerToUpper(model), y[i=1:6])
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:6])
 
     @objective(Upper(model), Min,
         4y[1] - 40y[2] -4y[3] -8x[1] -4x[2])
@@ -1009,8 +1009,8 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x - 4y)
     # @constraint(Upper(model), x >= 0)
@@ -1040,8 +1040,8 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, -x + 10y[1] - y[2])
     @constraint(Upper(model), x >= 0)
@@ -1075,8 +1075,8 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -x - 3y)
     @constraint(Upper(model), x >= 0)
@@ -1111,8 +1111,8 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:2])
-    @variable(LowerToUpper(model), y[i=1:3])
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:3])
 
     @objective(Upper(model), Min,
         -8x[1] -4x[2] + 4y[1] - 40y[2] + 4y[3])
@@ -1149,8 +1149,8 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:2])
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min,
         -2x[1] + x[2] + 0.5*y[1])
@@ -1187,8 +1187,8 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x + y)
     @constraint(Upper(model), x >= 0)
@@ -1220,8 +1220,8 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:2])
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min,
         -2x[1] + x[2] + 0.5*y[1])
@@ -1269,8 +1269,8 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x)
     @constraint(Upper(model), x >= 1)
@@ -1294,8 +1294,8 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, x)
     @constraint(Upper(model), x >= 1)
@@ -1327,8 +1327,8 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Max, x)
 
@@ -1359,8 +1359,8 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Max, x)
 
@@ -1397,8 +1397,8 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:6])
-    @variable(LowerToUpper(model), y[i=1:3])
+    @variable(Upper(model), x[i=1:6])
+    @variable(Lower(model), y[i=1:3])
 
     @objective(Upper(model), Max,
         2x[1] - x[2] - x[3] + 2x[4] + x[5] -3.5x[6]
@@ -1438,8 +1438,8 @@ function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x[i=1:4])
-    @variable(LowerToUpper(model), y[i=1:2])
+    @variable(Upper(model), x[i=1:4])
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min,
         -4x[1] +8x[2] +x[3] -x[4] + 9y[1] -9y[2])
@@ -1486,8 +1486,8 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     model = BilevelModel()
 
-    @variable(UpperToLower(model), x)
-    @variable(LowerToUpper(model), y)
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
 
     @objective(Upper(model), Min, -x + 4y)
     @constraint(Upper(model), y + 2x <= 8)
