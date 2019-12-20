@@ -85,10 +85,12 @@ struct UpperModel <: InnerBilevelModel
     m::BilevelModel
 end
 Upper(m::BilevelModel) = UpperModel(m)
+UpperToLower(m::BilevelModel) = UpperModel(m)
 struct LowerModel <: InnerBilevelModel
     m::BilevelModel
 end
 Lower(m::BilevelModel) = LowerModel(m)
+LowerToUpper(m::BilevelModel) = LowerModel(m)
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
@@ -111,29 +113,28 @@ set_mylevel_obj_function(m::LowerModel, val) = bilevel_model(m).lower_objective_
 set_mylevel_obj_sense(m::UpperModel, val) = bilevel_model(m).upper_objective_sense = val
 set_mylevel_obj_function(m::UpperModel, val) = bilevel_model(m).upper_objective_function = val
 
-# UpperToLower / LowerParameter / ParamterInLower
-# LowerToUpper / ArgMin
-abstract type BridgeBilevelModel <: AbstractBilevelModel end
-struct UpperToLowerModel <: BridgeBilevelModel
-    m::BilevelModel
-end
-UpperToLower(m::BilevelModel) = UpperToLowerModel(m)
-struct LowerToUpperModel <: BridgeBilevelModel
-    m::BilevelModel
-end
-LowerToUpper(m::BilevelModel) = LowerToUpperModel(m)
-bilevel_model(m::BridgeBilevelModel) = m.m
-
-function set_link!(m::UpperToLowerModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(m::UpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
     bilevel_model(m).upper_to_lower_link[upper] = lower
     bilevel_model(m).link[upper] = lower
     nothing
 end
-function set_link!(m::LowerToUpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(m::LowerModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
     bilevel_model(m).lower_to_upper_link[lower] = upper
     bilevel_model(m).link[upper] = lower
     nothing
 end
+
+# Models to deal with variables that are not exchanged between models
+abstract type SingleBilevelModel <: AbstractBilevelModel end
+struct UpperOnlyModel <: SingleBilevelModel
+    m::BilevelModel
+end
+UpperOnly(m::BilevelModel) = UpperOnlyModel(m)
+struct LowerOnlyModel <: SingleBilevelModel
+    m::BilevelModel
+end
+LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
+bilevel_model(m::SingleBilevelModel) = m.m
 
 #### Model ####
 
@@ -164,8 +165,8 @@ JuMP.owner_model(v::BilevelVariableRef) = v.model
 JuMP.isequal_canonical(v::BilevelVariableRef, w::BilevelVariableRef) = v == w
 JuMP.variable_type(::AbstractBilevelModel) = BilevelVariableRef
 # add in BOTH levels
-function JuMP.add_variable(bb::BridgeBilevelModel, v::JuMP.AbstractVariable, name::String="")
-    m = bilevel_model(bb)
+function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, name::String="")
+    m = bilevel_model(inner)
     m.nextvaridx += 1
     vref = BilevelVariableRef(m, m.nextvaridx, BOTH)
     v_upper = JuMP.add_variable(m.upper, v, name)
@@ -173,18 +174,18 @@ function JuMP.add_variable(bb::BridgeBilevelModel, v::JuMP.AbstractVariable, nam
     v_lower = JuMP.add_variable(m.lower, v, name)
     m.var_lower[vref.idx] = v_lower
     m.var_level[vref.idx] = BOTH
-    set_link!(bb, v_upper, v_lower)
+    set_link!(inner, v_upper, v_lower)
     m.variables[vref.idx] = v
     JuMP.set_name(vref, name)
     vref
 end
-function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, name::String="")
-    m = bilevel_model(inner)
+function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable, name::String="")
+    m = bilevel_model(single)
     m.nextvaridx += 1
-    vref = BilevelVariableRef(m, m.nextvaridx, level(inner))
-    v_level = JuMP.add_variable(mylevel_model(inner), v, name)
-    mylevel_var_list(inner)[vref.idx] = v_level
-    m.var_level[vref.idx] = level(inner)
+    vref = BilevelVariableRef(m, m.nextvaridx, level(single))
+    v_level = JuMP.add_variable(mylevel_model(single), v, name)
+    mylevel_var_list(single)[vref.idx] = v_level
+    m.var_level[vref.idx] = level(single)
     m.variables[vref.idx] = v
     JuMP.set_name(vref, name)
     vref
