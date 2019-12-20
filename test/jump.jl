@@ -1482,7 +1482,6 @@ end
 
 # Chapter 7.2, pag 281
 function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode())
-    # send y to upper level
 
     model = BilevelModel()
 
@@ -1509,4 +1508,55 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @test value(x) ≈ 1
     @test value(y) ≈ 6
+end
+
+#=
+    modification to test variables used in a single level
+=#
+
+function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(UpperOnly(model), z)
+    @variable(Lower(model), y)
+    @variable(LowerOnly(model), w)
+
+    @objective(Upper(model), Min, -x + 4y + z)
+    @constraint(Upper(model), y + 2x + z <= 9)
+    @constraint(Upper(model), z == 1)
+
+    @objective(Lower(model), Min, -x - y + w)
+    @constraint(Lower(model),  y >= 0)
+    @constraint(Lower(model), x + y + w <= 8)
+    @constraint(Lower(model),  x >= 0)
+    @constraint(Lower(model),  x <= 4)
+    @constraint(Lower(model),  w == 1)
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 6
+    @test value(z) ≈ 1
+    @test value(w) ≈ 1
+end
+
+function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(UpperOnly(model), z)
+    @variable(Lower(model), y)
+    @variable(LowerOnly(model), w)
+
+    @test_throws ErrorException @objective(Upper(model), Min, -x + 4y + z + w)
+    @constraint(Upper(model), y + 2x + z <= 9)
+    @constraint(Upper(model), z == 1)
+
+    @test_throws ErrorException @objective(Lower(model), Min, -x - y + z)
 end

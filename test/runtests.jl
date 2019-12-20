@@ -166,4 +166,9 @@ end
     end
 end
 
-@show "the end"
+@testset "DNE - modifications" begin
+    for solver in solvers
+        jump_DTMP_01_mod1(solver.opt, solver.mode)
+        jump_DTMP_01_mod2_error(solver.opt, solver.mode)
+    end
+end
