@@ -134,7 +134,14 @@ struct LowerOnlyModel <: SingleBilevelModel
     m::BilevelModel
 end
 LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
+
 bilevel_model(m::SingleBilevelModel) = m.m
+mylevel_model(m::UpperOnlyModel) = bilevel_model(m).upper
+mylevel_model(m::LowerOnlyModel) = bilevel_model(m).lower
+level(m::LowerOnlyModel) = LOWER
+level(m::UpperOnlyModel) = UPPER
+mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
+mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
 #### Model ####
 
@@ -360,7 +367,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::JuMP.ScalarConstraint{F,S}
     blm.nextconidx += 1
     cref = BilevelConstraintRef(blm, blm.nextconidx)
     func = JuMP.jump_function(c)
-    level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m))
+    level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
     blm.ctr_level[cref.idx] = level(m)
@@ -391,7 +398,7 @@ function JuMP.set_objective(m::InnerBilevelModel, sense::MOI.OptimizationSense,
                             f::JuMP.AbstractJuMPScalar)
     set_mylevel_obj_sense(m, sense)
     set_mylevel_obj_function(m, f)
-    level_f = replace_variables(f, bilevel_model(m), mylevel_model(m), mylevel_var_list(m))
+    level_f = replace_variables(f, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     JuMP.set_objective(mylevel_model(m), sense, level_f)
 end
 JuMP.objective_sense(m::InnerBilevelModel) = mylevel_obj_sense(m)
@@ -446,9 +453,12 @@ end
 function replace_variables(var::BilevelVariableRef,
     model::BilevelModel, 
     inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V}) where {V<:JuMP.AbstractVariableRef}
-    if var.model === model
+    variable_map::Dict{Int, V},
+    level::Level) where {V<:JuMP.AbstractVariableRef}
+    if var.model === model && (var.level == BOTH || var.level == level)
         return variable_map[var.idx]
+    elseif var.model === model
+        error("Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.")
     else
         error("A BilevelModel cannot have expression using variables of a BilevelModel different from itself")
     end
@@ -456,13 +466,14 @@ end
 function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
     model::BilevelModel,
     inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V}) where {C,V<:JuMP.AbstractVariableRef}
+    variable_map::Dict{Int, V},
+    level::Level) where {C,V<:JuMP.AbstractVariableRef}
     result = JuMP.GenericAffExpr{C, JuMP.VariableRef}(0.0)#zero(aff)
     result.constant = aff.constant
     for (coef, var) in JuMP.linear_terms(aff)
         JuMP.add_to_expression!(result,
         coef,
-        replace_variables(var, model, model, variable_map))
+        replace_variables(var, model, model, variable_map, level))
     end
     return result
 end
@@ -470,13 +481,15 @@ end
 # function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
 #     model::BilevelModel,
 #     inner::JuMP.AbstractModel,
-#     variable_map::Dict{Int, V}) where {C,V<:JuMP.AbstractVariableRef}
+#     variable_map::Dict{Int, V},
+#     level::Level) where {C,V<:JuMP.AbstractVariableRef}
 #     error("A BilevelModel cannot have quadratic function")
 # end
 function replace_variables(quad::C,
     model::BilevelModel,
     inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V}) where {C,V<:JuMP.AbstractVariableRef}
+    variable_map::Dict{Int, V},
+    level::Level) where {C,V<:JuMP.AbstractVariableRef}
     error("A BilevelModel cannot have $(C) function")
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
@@ -506,7 +519,7 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
         collect(values(model.upper_to_lower_link)))
     moi_link = JuMP.index(model.link)
 
-    single_blm, upper_to_sblm, lower_to_sblm = build_bilivel(
+    single_blm, upper_to_sblm, lower_to_sblm = build_bilevel(
         upper, lower, moi_link, moi_upper, mode)
 
     solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)

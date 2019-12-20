@@ -84,7 +84,7 @@ function set_with_zero(set)
     return copy(set)
 end
 
-function build_bilivel(
+function build_bilevel(
     upper::MOI.ModelLike, lower::MOI.ModelLike,
     link::Dict{VI,VI}, upper_variables::Vector{VI},
     mode)
@@ -102,8 +102,8 @@ function build_bilivel(
     # append the second level primal
     lower_idxmap = MOIU.IndexMap() #
 
-    for i in keys(upper_idxmap.varmap)
-        lower_idxmap[link[i]] = upper_idxmap[i]
+    for (upper_key, lower_val) in link
+        lower_idxmap[lower_val] = upper_idxmap[upper_key]
     end
 
     append_to(m, lower, lower_idxmap, copy_names)
