@@ -118,7 +118,7 @@ function build_bilevel(
     lower_dual = dual_problem.dual_model
     lower_primal_dual_map = dual_problem.primal_dual_map
 
-    # appende the second level dual
+    # append the second level dual
     lower_dual_idxmap = MOIU.IndexMap()
 
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)
