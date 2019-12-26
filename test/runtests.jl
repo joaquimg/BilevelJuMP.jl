@@ -74,11 +74,14 @@ end
     end
 end
 
-# @testset "JuMP quad" begin
-#     for solver in solvers_quad
-#         jump_quad_01_a(solver.opt, solver.mode)
-#     end
-# end
+@testset "JuMP quad" begin
+    for solver in solvers_quad
+        jump_quad_01_a(solver.opt, solver.mode)
+        jump_quad_01_b(solver.opt, solver.mode)
+        jump_quad_01_c(solver.opt, solver.mode)
+        jump_13_quad(solver.opt, solver.mode)
+    end
+end
 
 @testset "Simple 6 JuMP" begin
     for solver in solvers

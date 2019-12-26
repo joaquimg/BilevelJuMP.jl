@@ -152,6 +152,7 @@ struct BilevelVariableRef <: JuMP.AbstractVariableRef
     level::Level
 end
 mylevel(v::BilevelVariableRef) = v.level
+in_level(v::BilevelVariableRef, level::Level) = (v.level === BOTH || v.level === level)
 function solver_ref(v::BilevelVariableRef)
     m = v.model
     if mylevel(v) == LOWER
@@ -455,7 +456,7 @@ function replace_variables(var::BilevelVariableRef,
     inner::JuMP.AbstractModel,
     variable_map::Dict{Int, V},
     level::Level) where {V<:JuMP.AbstractVariableRef}
-    if var.model === model && (var.level == BOTH || var.level == level)
+    if var.model === model && in_level(var, level)
         return variable_map[var.idx]
     elseif var.model === model
         error("Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.")
@@ -478,13 +479,21 @@ function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
     return result
 end
 # TODO allow quadratic obj
-# function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
-#     model::BilevelModel,
-#     inner::JuMP.AbstractModel,
-#     variable_map::Dict{Int, V},
-#     level::Level) where {C,V<:JuMP.AbstractVariableRef}
-#     error("A BilevelModel cannot have quadratic function")
-# end
+function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
+    model::BilevelModel,
+    inner::JuMP.AbstractModel,
+    variable_map::Dict{Int, V},
+    level::Level) where {C,V<:JuMP.AbstractVariableRef}
+    aff = replace_variables(quad.aff, model, model, variable_map, level)
+    quadv = JuMP.GenericQuadExpr{C, JuMP.VariableRef}(aff)
+    for (coef, var1, var2) in JuMP.quad_terms(quad)
+        JuMP.add_to_expression!(quadv,
+        coef,
+        replace_variables(var1, model, model, variable_map, level),
+        replace_variables(var1, model, model, variable_map, level))
+    end
+    return quadv
+end
 function replace_variables(quad::C,
     model::BilevelModel,
     inner::JuMP.AbstractModel,
