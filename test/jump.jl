@@ -1116,7 +1116,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @objective(Upper(model), Min,
         -8x[1] -4x[2] + 4y[1] - 40y[2] + 4y[3])
-        # the sign of 4y[3] seems off, but slutionis the same
+        # the sign of 4y[3] seems off, but solution is the same
         # model from the book left as is
     @constraint(Upper(model), [i=1:2], x[i] >= 0)
     @constraint(Upper(model), [i=1:3], y[i] >= 0)
@@ -1255,6 +1255,358 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode())
 end
 
 # TODO - add quadratic problems
+
+# 9.3.2 - parg 221
+function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-5)^2 + (2y+1)^2)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
+
+    @objective(Lower(model), Min,
+        (y-1)^2 -1.5*x*y)
+
+    @constraint(Lower(model), -3x +    y <= -3)
+    @constraint(Lower(model),   x - 0.5y <= 4)
+    @constraint(Lower(model),   x +    y <= 7)
+    # @constraint(Lower(model), y >= 0) # GAMS file has this constraint
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 0
+end
+
+# 9.3.3- parg 222
+function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        x^2 + (y-10)^2)
+    @constraint(Upper(model), - x + y <= 0)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 15)
+    @constraint(Upper(model), y >= 0)
+    @constraint(Upper(model), y <= 20)
+
+    @objective(Lower(model), Min,
+        (x + 2y - 30)^2)
+
+    @constraint(Lower(model),   x +    y <= 20)
+    @constraint(Lower(model),     -    y <= 0)
+    @constraint(Lower(model),          y <= 20)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 10
+    @test value(y) ≈ 10
+end
+
+# 9.3.4- parg 223
+function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        2x[1] + 2x[2] -3y[1] - 3y[2] -60)
+    @constraint(Upper(model), x[1] + x[2] + y[1] -2y[2] -40 <= 0)
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:2], x[i] <= 50)
+    @constraint(Upper(model), [i=1:2], y[i] >= -10)
+    @constraint(Upper(model), [i=1:2], y[i] <= 20)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
+        # the boo does not contain the 40, it is a 20 there
+        # however the solution does not match
+        # the file https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds923.html
+        # has a 40
+
+    @constraint(Lower(model),  [i=1:2],- x[i] + 2y[i] <= -10)
+    @constraint(Lower(model), [i=1:2], y[i] >= -10)
+    @constraint(Lower(model), [i=1:2], y[i] <= 20)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 0
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0 ; 0 ; -10; -10] || sol ≈ [0 ; 30; -10; 10]
+    # gurobi found the second solution  which is actually feasible and
+    # has the same objective value
+end
+
+# 9.3.5- parg 225
+function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        0.5*((y[1]-2)^2+(y[2]-2)^2) )
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        0.5*(y[1]^2) + y[2])
+
+    @constraint(Lower(model), y[1] + y[2] == x)
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 0.5
+
+    @test value(x) ≈ 3
+    @test value.(y) ≈ [1 ; 2]
+end
+
+# 9.3.6- parg 226
+function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-3)^2+(y-2)^2 )
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 8)
+
+    @objective(Lower(model), Min,
+        (y-5)^2 )
+
+    @constraint(Lower(model), -2x+y <= 1)
+    @constraint(Lower(model),  x-2y <= 2)
+    @constraint(Lower(model),  x+2y <= 14)
+    @constraint(Lower(model), y >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 5
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 3
+end
+
+# 9.3.7- parg 227
+function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x[1]^2 -2x[1] +x[2]^2 - 2x[2] +y[1]^2 +y[2]^2)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
+    @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ -1
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0.5 ; 0.5; 0.5; 0.5]
+
+end
+function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode())
+    # TODO reviews the behaviour comment
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x[1]^2 +x[2]^2 +y[1]^2 - 3y[1] +y[2]^2 - 3y[2])
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
+    @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    # @test objective_value(model) ≈ -1
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0.5 ; 0.5; 0.5; 0.5]*sqrt(3)
+
+end
+
+# 9.3.8- parg 228
+function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-5)^2 + (2y+1)^2)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
+
+    @objective(Lower(model), Min,
+        (y-1)^2 -1.5*x*y)
+
+    @constraint(Lower(model), -3x +    y <= -3)
+    @constraint(Lower(model),   x - 0.5y <= 4)
+    @constraint(Lower(model),   x +    y <= 7)
+    @constraint(Lower(model), y >= 0) # only difference from problem 1
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 1
+    @test value(y) ≈ 0
+end
+
+# 9.3.9 - parg 229
+function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode())
+    # Q objective is not PSD
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        -(4x-3)*y+(2x+1) )
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 1)
+    @constraint(Upper(model), y >= 0)
+    @constraint(Upper(model), y <= 1)
+
+    @objective(Lower(model), Min,
+        -(1-4x)*y -(2x+2) )
+
+    @constraint(Lower(model), y >= 0)
+    @constraint(Lower(model), y <= 1)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 1.5
+
+    @test value(x) ≈ 0.25
+    @test value(y) ≈ 0
+end
+
+# 9.3.10- parg 230
+function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x+y[2] )
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+    @constraint(Upper(model), x >= 0)
+
+    @objective(Lower(model), Min,
+        2y[1]+x*y[2])
+
+    @constraint(Lower(model), x + 4 <= y[1] + y[2])
+    # this 4 is missing from the book
+    # see https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds929.html
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 2
+
+    @test value(x) ≈ 2
+    @test value.(y) ≈ [6 ; 0]
+end
 
 #=
     GAMS educational examples by Michael Ferris

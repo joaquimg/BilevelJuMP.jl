@@ -144,6 +144,23 @@ end
     end
 end
 
+@testset "Princeton Handbook of Test Problems" begin
+    for solver in solvers_quad
+        jump_HTP_quad01(solver.opt, solver.mode)
+        jump_HTP_quad02(solver.opt, solver.mode)
+        jump_HTP_quad04(solver.opt, solver.mode)
+        jump_HTP_quad05(solver.opt, solver.mode)
+        jump_HTP_quad06(solver.opt, solver.mode)
+        # jump_HTP_quad06b(solver.opt, solver.mode)
+        jump_HTP_quad07(solver.opt, solver.mode)
+        # jump_HTP_quad08(solver.opt, solver.mode) # not PSD
+    end
+    for solver in solvers
+        jump_HTP_quad03(solver.opt, solver.mode)
+        jump_HTP_quad09(solver.opt, solver.mode)
+    end
+end
+
 @testset "Ferris educational" begin
     for solver in solvers
         jump_jointc1(solver.opt, solver.mode)

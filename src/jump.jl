@@ -490,7 +490,7 @@ function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
         JuMP.add_to_expression!(quadv,
         coef,
         replace_variables(var1, model, model, variable_map, level),
-        replace_variables(var1, model, model, variable_map, level))
+        replace_variables(var2, model, model, variable_map, level))
     end
     return quadv
 end
@@ -503,12 +503,12 @@ function replace_variables(quad::C,
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
 
-# using MathOptFormat
-# function print_lp(m, name)
-#     lp_model = MathOptFormat.MOF.Model()
-#     MOI.copy_to(lp_model, m)
-#     MOI.write_to_file(lp_model, name)
-# end
+using MathOptFormat
+function print_lp(m, name)
+    lp_model = MathOptFormat.MOF.Model()
+    MOI.copy_to(lp_model, m)
+    MOI.write_to_file(lp_model, name)
+end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")

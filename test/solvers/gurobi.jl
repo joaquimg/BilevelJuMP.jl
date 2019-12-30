@@ -1,6 +1,6 @@
 using Gurobi
 
-const GRB_OPTIMIZER = Gurobi.Optimizer(OutputFlag=0)
+const GRB_OPTIMIZER = Gurobi.Optimizer()
 MOI.set(GRB_OPTIMIZER, MOI.Silent(), true)
 const GRB_CACHE = MOIU.UniversalFallback(MOIU.Model{Float64}())
 const GRB_CACHED = MOIU.CachingOptimizer(GRB_CACHE, GRB_OPTIMIZER)

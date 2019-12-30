@@ -121,6 +121,16 @@ function build_bilevel(
     # append the second level dual
     lower_dual_idxmap = MOIU.IndexMap()
 
+    # for QP's there are dual variable that are tied to:
+    # primal variables
+    for (lower_primal_var_key, lower_dual_quad_slack_val) in lower_primal_dual_map.primal_var_dual_quad_slack
+        lower_dual_idxmap[lower_dual_quad_slack_val] = lower_idxmap[lower_primal_var_key]
+    end
+    # and to upper level variable which are lower level parameters
+    for (lower_primal_param_key, lower_dual_param_val) in lower_primal_dual_map.primal_parameter
+        lower_dual_idxmap[lower_dual_param_val] = lower_idxmap[lower_primal_param_key]
+    end
+
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     pass_names(m, lower_dual, lower_dual_idxmap)
 
@@ -265,12 +275,16 @@ end
 function pass_names(dest, src, map)
     for vi in MOI.get(src, MOI.ListOfVariableIndices())
         name = MOI.get(src, MOI.VariableName(), vi)
-        MOI.set(dest, MOI.VariableName(), map[vi], name)
+        if name != ""
+            MOI.set(dest, MOI.VariableName(), map[vi], name)
+        end
     end
     for (F,S) in MOI.get(src, MOI.ListOfConstraints())
         for con in MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
             name = MOI.get(src, MOI.ConstraintName(), con)
-            MOI.set(dest, MOI.ConstraintName(), map[con], name)
+            if name != ""
+                MOI.set(dest, MOI.ConstraintName(), map[con], name)
+            end
         end
     end
 end
