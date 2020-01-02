@@ -1912,3 +1912,34 @@ function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @test_throws ErrorException @objective(Lower(model), Min, -x - y + z)
 end
+
+function jump_bylling(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:3])
+    # 2 and 3 are lower only
+
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 250)
+
+    @objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
+    @constraint(Lower(model), b, y[1] + y[2] +y[3] == 200)
+    @constraint(Lower(model), y[1] <= x)
+    @constraint(Lower(model), y[2] <= 150)
+    @constraint(Lower(model), y[3] <= 100)
+    @constraint(Lower(model), [i=1:3], y[i] >= 0)
+
+    @variable(Upper(model), lambda, DualOf(b))
+    # TODO allow hint on bounds
+
+    @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    # optimize!(model, optimizer, mode)
+
+    # @test value(x) ≈ 50
+end

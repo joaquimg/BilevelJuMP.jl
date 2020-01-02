@@ -87,7 +87,9 @@ end
 function build_bilevel(
     upper::MOI.ModelLike, lower::MOI.ModelLike,
     link::Dict{VI,VI}, upper_variables::Vector{VI},
-    mode)
+    mode,
+    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}()
+    )
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
@@ -129,6 +131,11 @@ function build_bilevel(
     # and to upper level variable which are lower level parameters
     for (lower_primal_param_key, lower_dual_param_val) in lower_primal_dual_map.primal_parameter
         lower_dual_idxmap[lower_dual_param_val] = lower_idxmap[lower_primal_param_key]
+    end
+    # Dual variables might appear in the upper level
+    for (upper_var, lower_con) in upper_var_lower_ctr
+        var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
+        lower_dual_idxmap[var] = upper_idxmap[upper_var]
     end
 
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)

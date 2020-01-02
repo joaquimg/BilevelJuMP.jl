@@ -15,7 +15,7 @@ solvers = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 solvers_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 
 include("solvers/cbc.jl")
-# include("solvers/gurobi.jl")
+include("solvers/gurobi.jl")
 
 include("moi.jl")
 include("jump.jl")
@@ -190,5 +190,11 @@ end
     for solver in solvers
         jump_DTMP_01_mod1(solver.opt, solver.mode)
         jump_DTMP_01_mod2_error(solver.opt, solver.mode)
+    end
+end
+
+@testset "bylling" begin
+    for solver in solvers_quad
+        jump_bylling(solver.opt, solver.mode)
     end
 end
