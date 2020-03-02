@@ -539,6 +539,9 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @objective(Upper(model), Min, -10.1x + 10y[1] - y[2])
     @constraint(Upper(model), x >= 0)
+
+    @constraint(Upper(model), y[1] >= 0)
+    @constraint(Upper(model), y[2] >= 0)
     
     @objective(Lower(model), Min, -y[1] - y[2])
     @constraint(Lower(model), y[1] >= 0)
@@ -553,9 +556,9 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    primal_status(model)
+    @show primal_status(model)
 
-    termination_status(model)
+    @show termination_status(model)
 
     @test value(x) ≈ 0 atol=1e-6
     @test value.(y) ≈ [0, 1] atol=1e-6
@@ -1432,10 +1435,10 @@ function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     primal_status(model)
     termination_status(model)
-    @test objective_value(model) ≈ 5 atol=1e-6
+    @test objective_value(model) ≈ 5 atol=1e-5
 
-    @test value(x) ≈ 1 atol=1e-6
-    @test value(y) ≈ 3 atol=1e-6
+    @test value(x) ≈ 1 atol=1e-5
+    @test value(y) ≈ 3 atol=1e-5
 end
 
 # 9.3.7- parg 227
