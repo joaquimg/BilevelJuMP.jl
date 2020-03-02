@@ -151,10 +151,10 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=1e-6
+    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=1e-4
 
-    @test value(x) ≈ 3.5*8/15 atol=1e-6
-    @test value(y) ≈ 8/15 atol=1e-6
+    @test value(x) ≈ 3.5*8/15 atol=1e-4
+    @test value(y) ≈ 8/15 atol=1e-4
 
 end
 
