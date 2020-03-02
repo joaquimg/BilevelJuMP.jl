@@ -8,7 +8,9 @@ using Dualization
 
 
 export
-BilevelModel, UpperToLower, LowerToUpper, Upper, Lower, UpperOnly, LowerOnly
+BilevelModel, UpperToLower, LowerToUpper,
+Upper, Lower, UpperOnly, LowerOnly,
+DualOf
 
 include("moi.jl")
 include("jump.jl")

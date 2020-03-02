@@ -36,10 +36,10 @@ function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ -8
+    @test objective_value(model) ≈ -8 atol=1e-4
 
-    @test value(x) ≈  2
-    @test value(y) ≈  0
+    @test value(x) ≈  2 atol=1e-5
+    @test value(y) ≈  0 atol=1e-5
 
 end
 
@@ -70,10 +70,10 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 12
+    @test objective_value(model) ≈ 12 atol=1e-6
 
-    @test value(x) ≈ 6
-    @test value(y) ≈ 2
+    @test value(x) ≈ 6 atol=1e-6
+    @test value(y) ≈ 2 atol=1e-6
 
 end
 
@@ -116,10 +116,10 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15)
+    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=1e-6
 
-    @test value(x) ≈ 3.5*8/15
-    @test value(y) ≈ 8/15
+    @test value(x) ≈ 3.5*8/15 atol=1e-6
+    @test value(y) ≈ 8/15 atol=1e-6
 
 end
 # change the bound on x to lower level
@@ -151,10 +151,10 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15)
+    @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=1e-4
 
-    @test value(x) ≈ 3.5*8/15
-    @test value(y) ≈ 8/15
+    @test value(x) ≈ 3.5*8/15 atol=1e-4
+    @test value(y) ≈ 8/15 atol=1e-4
 
 end
 
@@ -188,11 +188,11 @@ function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 0
+    @test objective_value(model) ≈ 0 atol=1e-5
 
-    @test value(x[1]) ≈ 1/100
-    @test value(x[2]) ≈ 0
-    @test value(y) ≈ 0
+    @test value(x[1]) ≈ 1/100 atol=1e-6
+    @test value(x[2]) ≈ 0 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-5
 
 end
 
@@ -240,7 +240,7 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ -1
+    @test objective_value(model) ≈ -1 atol=1e-6
 
     # 3SAT is yese IFF obj = -1
 
@@ -271,9 +271,9 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 0
-    @test value(x) ≈ 0
-    @test value(y) ≈ 0
+    @test objective_value(model) ≈ 0 atol=1e-6
+    @test value(x) ≈ 0 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-6
 
 end
 function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -298,9 +298,9 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ 0.5^2 - 0.5
-    @test value(x) ≈ 0.5
-    @test value(y) ≈ -0.5
+    @test objective_value(model) ≈ 0.5^2 - 0.5 atol=1e-6
+    @test value(x) ≈ 0.5 atol=1e-6
+    @test value(y) ≈ -0.5 atol=1e-6
 
 end
 function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -448,10 +448,10 @@ function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test objective_value(model) ≈ -12
+    @test objective_value(model) ≈ -12 atol=1e-6
 
-    @test value(x) ≈ 4
-    @test value(y) ≈ 4
+    @test value(x) ≈ 4 atol=1e-6
+    @test value(y) ≈ 4 atol=1e-6
 
 end
 
@@ -484,8 +484,8 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value.(x) ≈ [0, 0.9]
-    @test value.(y) ≈ [0, 0.6, 0.4]
+    @test value.(x) ≈ [0, 0.9] atol=1e-6
+    @test value.(y) ≈ [0, 0.6, 0.4] atol=1e-6
 
 end
 
@@ -517,8 +517,8 @@ function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 8/9
-    @test value(y) ≈ 20/9
+    @test value(x) ≈ 8/9 atol=1e-6
+    @test value(y) ≈ 20/9 atol=1e-6
 
 end
 
@@ -557,8 +557,8 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 0
-    @test value.(y) ≈ [0, 1]
+    @test value(x) ≈ 0 atol=1e-6
+    @test value.(y) ≈ [0, 1] atol=1e-6
 
 end
 function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -588,8 +588,8 @@ function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 0
-    @test value.(y) ≈ [0, 1]
+    @test value(x) ≈ 0 atol=1e-6
+    @test value.(y) ≈ [0, 1] atol=1e-6
 
 end
 
@@ -675,8 +675,8 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 8
-    @test value(y) ≈ 6
+    @test value(x) ≈ 8 atol=1e-6
+    @test value(y) ≈ 6 atol=1e-6
 
 end
 function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -703,8 +703,8 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 6
-    @test value(y) ≈ 8
+    @test value(x) ≈ 6 atol=1e-6
+    @test value(y) ≈ 8 atol=1e-6
 
 end
 
@@ -735,9 +735,9 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode())
 
         termination_status(model)
 
-        @test value(x) ≈ a/2
-        @test value(y) ≈ 1 + a/2
-        @test value(z) ≈ 1
+        @test value(x) ≈ a/2 atol=1e-6
+        @test value(y) ≈ 1 + a/2 atol=1e-6
+        @test value(z) ≈ 1 atol=1e-6
     end
 end
 
@@ -767,8 +767,8 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 3/2
-    @test value(y) ≈ 1/2
+    @test value(x) ≈ 3/2 atol=1e-6
+    @test value(y) ≈ 1/2 atol=1e-6
 end
 
 # pag 290 ex 8.2
@@ -803,9 +803,9 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 0
-    @test value(y) ≈ 10
-    @test value(z) ≈ 5
+    @test value(x) ≈ 0 atol=1e-6
+    @test value(y) ≈ 10 atol=1e-6
+    @test value(z) ≈ 5 atol=1e-6
 end
 
 # pag 300 ex 8.5.2
@@ -840,9 +840,9 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 1
-    @test value(y) ≈ 75
-    @test value(Z) ≈ 21+2/3
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 75 atol=1e-6
+    @test value(Z) ≈ 21+2/3 atol=1e-6
 end
 function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
     # send y to upper level
@@ -876,9 +876,9 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 1
-    @test value(y) ≈ 75
-    @test value(Z) ≈ 21+2/3
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 75 atol=1e-6
+    @test value(Z) ≈ 21+2/3 atol=1e-6
 end
 
 #=
@@ -918,8 +918,8 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 5
-    @test value.(y) ≈ [4, 2]
+    @test value(x) ≈ 5 atol=1e-6
+    @test value.(y) ≈ [4, 2] atol=1e-6
 end
 
 # 9.2.3
@@ -950,8 +950,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 4
-    @test value(y) ≈ 4
+    @test value(x) ≈ 4 atol=1e-6
+    @test value(y) ≈ 4 atol=1e-6
 end
 
 # 9.2.4 - parg 211
@@ -999,8 +999,8 @@ function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value.(x) ≈ [0, 0.9]
-    @test value.(y) ≈ [0, 0.6, 0.4, 0, 0, 0]
+    @test value.(x) ≈ [0, 0.9] atol=1e-6
+    @test value.(y) ≈ [0, 0.6, 0.4, 0, 0, 0] atol=1e-6
 end
 
 # 9.2.5
@@ -1030,8 +1030,8 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 19
-    @test value(y) ≈ 14
+    @test value(x) ≈ 19 atol=1e-6
+    @test value(y) ≈ 14 atol=1e-6
 end
 
 # 9.2.6
@@ -1065,8 +1065,8 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # book solution looks incorrect
     # the actual solutions seems to be
-    @test value(x) ≈ 0
-    @test value.(y) ≈ [0, 1]
+    @test value(x) ≈ 0 atol=1e-6
+    @test value.(y) ≈ [0, 1] atol=1e-6
 end
 
 # 9.2.7
@@ -1101,8 +1101,8 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # book solution looks incorrect
     # the actual solutions seems to be
-    @test value(x) ≈ 16
-    @test value(y) ≈ 11
+    @test value(x) ≈ 16 atol=1e-6
+    @test value(y) ≈ 11 atol=1e-6
 end
 
 # 9.2.8 - parg 216
@@ -1116,7 +1116,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @objective(Upper(model), Min,
         -8x[1] -4x[2] + 4y[1] - 40y[2] + 4y[3])
-        # the sign of 4y[3] seems off, but slutionis the same
+        # the sign of 4y[3] seems off, but solution is the same
         # model from the book left as is
     @constraint(Upper(model), [i=1:2], x[i] >= 0)
     @constraint(Upper(model), [i=1:3], y[i] >= 0)
@@ -1139,8 +1139,8 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value.(x) ≈ [0, 0.9]
-    @test value.(y) ≈ [0, 0.6, 0.4]
+    @test value.(x) ≈ [0, 0.9] atol=1e-6
+    @test value.(y) ≈ [0, 0.6, 0.4] atol=1e-6
 end
 
 # 9.2.9 - parg 217
@@ -1177,8 +1177,8 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # solution frm the book is incorrect
     # using solution from: https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds918.html
-    @test value.(x) ≈ [2, 0]
-    @test value.(y) ≈ [1.5, 0]
+    @test value.(x) ≈ [2, 0] atol=1e-6
+    @test value.(y) ≈ [1.5, 0] atol=1e-6
 end
 
 # 9.2.10
@@ -1210,8 +1210,8 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 8/9#0.888_888_888_888
-    @test value(y) ≈ 20/9# 2.222_222_222_222
+    @test value(x) ≈ 8/9 atol=1e-6#0.888_888_888_888
+    @test value(y) ≈ 20/9 atol=1e-6# 2.222_222_222_222
 end
 
 # 9.2.11 - parg 219
@@ -1250,11 +1250,363 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # solution frm the book is incorrect
     # using solution from: https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds918.html
-    @test value.(x) ≈ [2, 0]
-    @test value.(y) ≈ [1.5, 0]
+    @test value.(x) ≈ [2, 0] atol=1e-6
+    @test value.(y) ≈ [1.5, 0] atol=1e-6
 end
 
 # TODO - add quadratic problems
+
+# 9.3.2 - parg 221
+function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-5)^2 + (2y+1)^2)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
+
+    @objective(Lower(model), Min,
+        (y-1)^2 -1.5*x*y)
+
+    @constraint(Lower(model), -3x +    y <= -3)
+    @constraint(Lower(model),   x - 0.5y <= 4)
+    @constraint(Lower(model),   x +    y <= 7)
+    # @constraint(Lower(model), y >= 0) # GAMS file has this constraint
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-6
+end
+
+# 9.3.3- parg 222
+function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        x^2 + (y-10)^2)
+    @constraint(Upper(model), - x + y <= 0)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 15)
+    @constraint(Upper(model), y >= 0)
+    @constraint(Upper(model), y <= 20)
+
+    @objective(Lower(model), Min,
+        (x + 2y - 30)^2)
+
+    @constraint(Lower(model),   x +    y <= 20)
+    @constraint(Lower(model),     -    y <= 0)
+    @constraint(Lower(model),          y <= 20)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 10 atol=1e-4
+    @test value(y) ≈ 10 atol=1e-4
+end
+
+# 9.3.4- parg 223
+function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        2x[1] + 2x[2] -3y[1] - 3y[2] -60)
+    @constraint(Upper(model), x[1] + x[2] + y[1] -2y[2] -40 <= 0)
+    @constraint(Upper(model), [i=1:2], x[i] >= 0)
+    @constraint(Upper(model), [i=1:2], x[i] <= 50)
+    @constraint(Upper(model), [i=1:2], y[i] >= -10)
+    @constraint(Upper(model), [i=1:2], y[i] <= 20)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
+        # the boo does not contain the 40, it is a 20 there
+        # however the solution does not match
+        # the file https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds923.html
+        # has a 40
+
+    @constraint(Lower(model),  [i=1:2],- x[i] + 2y[i] <= -10)
+    @constraint(Lower(model), [i=1:2], y[i] >= -10)
+    @constraint(Lower(model), [i=1:2], y[i] <= 20)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 0 atol=1e-6
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0 ; 0 ; -10; -10] || sol ≈ [0 ; 30; -10; 10] #atol=1e-6
+    # gurobi found the second solution  which is actually feasible and
+    # has the same objective value
+end
+
+# 9.3.5- parg 225
+function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        0.5*((y[1]-2)^2+(y[2]-2)^2) )
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        0.5*(y[1]^2) + y[2])
+
+    @constraint(Lower(model), y[1] + y[2] == x)
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 0.5
+
+    @test value(x) ≈ 3 atol=1e-6
+    @test value.(y) ≈ [1 ; 2] atol=1e-6
+end
+
+# 9.3.6- parg 226
+function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-3)^2+(y-2)^2 )
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 8)
+
+    @objective(Lower(model), Min,
+        (y-5)^2 )
+
+    @constraint(Lower(model), -2x+y <= 1)
+    @constraint(Lower(model),  x-2y <= 2)
+    @constraint(Lower(model),  x+2y <= 14)
+    @constraint(Lower(model), y >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 5 atol=1e-6
+
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 3 atol=1e-6
+end
+
+# 9.3.7- parg 227
+function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x[1]^2 -2x[1] +x[2]^2 - 2x[2] +y[1]^2 +y[2]^2)
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
+    @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ -1 atol=1e-6
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0.5 ; 0.5; 0.5; 0.5] atol=1e-6
+
+end
+function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode())
+    # TODO reviews the behaviour comment
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:2])
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x[1]^2 +x[2]^2 +y[1]^2 - 3y[1] +y[2]^2 - 3y[2])
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+
+    @objective(Lower(model), Min,
+        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+
+    @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
+    @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    # @test objective_value(model) ≈ -1 atol=1e-6
+
+    sol = vcat(value.(x), value.(y))
+    @test sol ≈ [0.5 ; 0.5; 0.5; 0.5]*sqrt(3) atol=1e-6
+
+end
+
+# 9.3.8- parg 228
+function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        (x-5)^2 + (2y+1)^2)
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
+
+    @objective(Lower(model), Min,
+        (y-1)^2 -1.5*x*y)
+
+    @constraint(Lower(model), -3x +    y <= -3)
+    @constraint(Lower(model),   x - 0.5y <= 4)
+    @constraint(Lower(model),   x +    y <= 7)
+    @constraint(Lower(model), y >= 0) # only difference from problem 1
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+
+    termination_status(model)
+
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-6
+end
+
+# 9.3.9 - parg 229
+function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode())
+    # Q objective is not PSD
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min,
+        -(4x-3)*y+(2x+1) )
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 1)
+    @constraint(Upper(model), y >= 0)
+    @constraint(Upper(model), y <= 1)
+
+    @objective(Lower(model), Min,
+        -(1-4x)*y -(2x+2) )
+
+    @constraint(Lower(model), y >= 0)
+    @constraint(Lower(model), y <= 1)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 1.5 atol=1e-6
+
+    @test value(x) ≈ 0.25 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-6
+end
+
+# 9.3.10- parg 230
+function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min,
+        x+y[2] )
+    @constraint(Upper(model), [i=1:2], y[i] >= 0)
+    @constraint(Upper(model), x >= 0)
+
+    @objective(Lower(model), Min,
+        2y[1]+x*y[2])
+
+    @constraint(Lower(model), x + 4 <= y[1] + y[2])
+    # this 4 is missing from the book
+    # see https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds929.html
+    @constraint(Lower(model), [i=1:2], y[i] >= 0)
+
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    @test objective_value(model) ≈ 2 atol=1e-6
+
+    @test value(x) ≈ 2 atol=1e-6
+    @test value.(y) ≈ [6 ; 0] atol=1e-6
+end
 
 #=
     GAMS educational examples by Michael Ferris
@@ -1286,7 +1638,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @test termination_status(model) in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED]
+    @test termination_status(model) in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED, MOI.LOCALLY_INFEASIBLE]
 
     ###
     ### PART 2
@@ -1312,10 +1664,10 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @test termination_status(model) in [MOI.OPTIMAL]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
-    @test value(x) ≈ 1
-    @test value(y) ≈ 1
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 1 atol=1e-6
 end
 
 # from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc2.html
@@ -1348,10 +1700,10 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @test termination_status(model) in [MOI.OPTIMAL]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
-    @test value(x) ≈ +1
-    @test value(y) ≈ -1
+    @test value(x) ≈ +1 atol=1e-6
+    @test value(y) ≈ -1 atol=1e-6
 
     ###
     ### PART 2
@@ -1381,10 +1733,10 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @test termination_status(model) in [MOI.OPTIMAL]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
-    @test value(x) ≈ 2
-    @test value(y) ≈ 0
+    @test value(x) ≈ 2 atol=1e-6
+    @test value(y) ≈ 0 atol=1e-6
 end
 
 #=
@@ -1425,8 +1777,8 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value.(x) ≈ [0, 4, 0, 15, 9.2, 0]
-    @test value.(y) ≈ [0, 0, 2]
+    @test value.(x) ≈ [0, 4, 0, 15, 9.2, 0] atol=1e-6
+    @test value.(y) ≈ [0, 0, 2] atol=1e-6
 end
 
 #=
@@ -1506,8 +1858,8 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     termination_status(model)
 
-    @test value(x) ≈ 1
-    @test value(y) ≈ 6
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 6 atol=1e-6
 end
 
 #=
@@ -1539,10 +1891,10 @@ function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @test value(x) ≈ 1
-    @test value(y) ≈ 6
-    @test value(z) ≈ 1
-    @test value(w) ≈ 1
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 6 atol=1e-6
+    @test value(z) ≈ 1 atol=1e-6
+    @test value(w) ≈ 1 atol=1e-6
 end
 
 function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -1559,4 +1911,47 @@ function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode())
     @constraint(Upper(model), z == 1)
 
     @test_throws ErrorException @objective(Lower(model), Min, -x - y + z)
+end
+
+#=
+    Conejo, A. J., Baringo, L., Kazempour, S. J., and Siddiqui, A. S. (2016).
+    Investment in Electricity Generation and Transmission. Springer.
+=#
+function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:3])
+    # 2 and 3 are lower only
+
+    @constraint(Upper(model), lb0, x >= 0)
+    @constraint(Upper(model), ub0, x <= 250)
+
+    @objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
+    @constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
+    @constraint(Lower(model), ub1, y[1] <= x)
+    @constraint(Lower(model), ub2, y[2] <= 150)
+    @constraint(Lower(model), ub3, y[3] <= 100)
+    @constraint(Lower(model), lb[i=1:3], y[i] >= 0)
+
+    @variable(Upper(model), lambda, DualOf(b))
+    # TODO allow hint on bounds
+    # @constraint(Upper(model), lambda <= 30)
+
+
+    @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+
+    @test objective_value(model) ≈ -190_000  atol=1e-1
+    @test value(x) ≈ 50 atol=1e-3
+    @test value.(y) ≈ [50, 150, 0] atol=1e-3
+    @test value(lambda) ≈ 15 atol=1e-3
 end

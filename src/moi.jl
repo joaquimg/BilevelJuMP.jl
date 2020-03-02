@@ -21,6 +21,7 @@ struct Complement#{M1 <: MOI.ModelLike, M2 <: MOI.ModelLike, F, S}
     set_w_zero#::S
     # dual::M2
     variable#::VI
+    # var_set#::S2
 end
 
 abstract type BilevelSolverMode{T} end
@@ -51,12 +52,18 @@ mutable struct ProductMode{T} <: BilevelSolverMode{T}
     function ProductMode()
         return new{Float64}(zero(Float64))
     end
+    function ProductMode{T}(eps::T) where T
+        return new{Float64}(eps)
+    end
 end
 
 mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     epsilon::T
     function ProductWithSlackMode()
         return new{Float64}(zero(Float64))
+    end
+    function ProductWithSlackMode{T}(eps::T) where T
+        return new{Float64}(eps)
     end
 end
 
@@ -76,9 +83,9 @@ function get_canonical_complements(primal_model, primal_dual_map)
     return out
 end
 
-function set_with_zero(set::Union{MOI.LessThan{T},
-    MOI.GreaterThan{T}, MOI.EqualTo{T}}) where T
-    return typeof(set)(0.0)
+function set_with_zero(set::S) where {S<:Union{MOI.LessThan{T},
+    MOI.GreaterThan{T}, MOI.EqualTo{T}}} where T
+    return S(0.0)
 end
 function set_with_zero(set)
     return copy(set)
@@ -87,7 +94,9 @@ end
 function build_bilevel(
     upper::MOI.ModelLike, lower::MOI.ModelLike,
     link::Dict{VI,VI}, upper_variables::Vector{VI},
-    mode)
+    mode,
+    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}()
+    )
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
@@ -121,6 +130,21 @@ function build_bilevel(
     # append the second level dual
     lower_dual_idxmap = MOIU.IndexMap()
 
+    # for QP's there are dual variable that are tied to:
+    # primal variables
+    for (lower_primal_var_key, lower_dual_quad_slack_val) in lower_primal_dual_map.primal_var_dual_quad_slack
+        lower_dual_idxmap[lower_dual_quad_slack_val] = lower_idxmap[lower_primal_var_key]
+    end
+    # and to upper level variable which are lower level parameters
+    for (lower_primal_param_key, lower_dual_param_val) in lower_primal_dual_map.primal_parameter
+        lower_dual_idxmap[lower_dual_param_val] = lower_idxmap[lower_primal_param_key]
+    end
+    # Dual variables might appear in the upper level
+    for (upper_var, lower_con) in upper_var_lower_ctr
+        var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
+        lower_dual_idxmap[var] = upper_idxmap[upper_var]
+    end
+
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     pass_names(m, lower_dual, lower_dual_idxmap)
 
@@ -139,8 +163,14 @@ function build_bilevel(
     # futurely add slacks to primal model
     comps = get_canonical_complements(lower, lower_primal_dual_map)
     for comp in comps
-        add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
+        if !is_equality(comp.set_w_zero)
+            add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
+        else
+            # println("eq in complement")
+        end
     end
+
+    print_lp(m, "bilevel.lp")
 
     return m, upper_idxmap, lower_idxmap#, lower_primal_dual_map, lower_dual_idxmap
 end
@@ -214,20 +244,43 @@ function add_complement(mode::SOS1Mode{T}, m, comp::Complement, idxmap_primal, i
     return slack, slack_in_set, equality, c1
 end
 
+function flip_set(set::MOI.LessThan{T}) where T
+    return MOI.GreaterThan{T}(0.0)
+end
+function flip_set(set::MOI.GreaterThan{T}) where T
+    return MOI.LessThan{T}(0.0)
+end
+is_equality(set::S) where {S<:MOI.AbstractSet} = false
+is_equality(set::MOI.EqualTo{T}) where T = true
+is_equality(set::MOI.Zeros) = true
+
 function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
+
+    eps = mode.epsilon
 
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
     dual = idxmap_dual[v]
 
     new_f = MOIU.operate(*, T, f_dest, MOI.SingleVariable(dual))
-
+    new_f1 = MOIU.operate(-, T, new_f, eps)
     c1 = MOI.add_constraint(m, 
-        new_f,
-        MOI.EqualTo(zero(T)))
+        new_f1,
+        MOI.LessThan{T}(0.0))
+    if false
+        new_f2 = MOIU.operate(+, T, new_f, eps)
+        c2 = MOI.add_constraint(m, 
+            new_f2,
+            MOI.GreaterThan{T}(0.0))
+        MOI.set(m, MOI.ConstraintName(), c2, "compl_prod2_($(nm))")
+    end
+
+    # c1 = MOI.add_constraint(m, 
+    #     new_f,
+    #     MOI.EqualTo(zero(T)))
 
     nm = MOI.get(m, MOI.VariableName(), dual)
     MOI.set(m, MOI.ConstraintName(), c1, "compl_prod_($(nm))")
@@ -240,6 +293,8 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
     s = comp.set_w_zero
     v = comp.variable
 
+    eps = mode.epsilon
+
     slack, slack_in_set = MOI.add_constrained_variable(m, s)
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
@@ -249,9 +304,24 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
 
     prod_f = MOIU.operate(*, T, MOI.SingleVariable(slack), MOI.SingleVariable(dual))
 
+    prod_f1 = MOIU.operate(-, T, prod_f, eps)
     c1 = MOI.add_constraint(m, 
-        prod_f,
-        MOI.EqualTo(zero(T)))
+        prod_f1,
+        MOI.LessThan{Float64}(0.0))
+    if false
+        prod_f2 = MOIU.operate(+, T, prod_f, eps)
+        c2 = MOI.add_constraint(m, 
+            prod_f2,
+            MOI.GreaterThan{Float64}(0.0))
+        MOI.set(m, MOI.ConstraintName(), c1, "compl_prodWslk2_($(nm))")
+    end
+
+    # c1 = MOI.add_constraint(m, 
+    #     prod_f1,
+    #     MOI.EqualTo(zero(T)))
+
+    # TODO dont add slack if single variable
+    # TODO use dot product
 
     nm = MOI.get(m, MOI.VariableName(), dual)
     MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
@@ -265,12 +335,16 @@ end
 function pass_names(dest, src, map)
     for vi in MOI.get(src, MOI.ListOfVariableIndices())
         name = MOI.get(src, MOI.VariableName(), vi)
-        MOI.set(dest, MOI.VariableName(), map[vi], name)
+        if name != ""
+            MOI.set(dest, MOI.VariableName(), map[vi], name)
+        end
     end
     for (F,S) in MOI.get(src, MOI.ListOfConstraints())
         for con in MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
             name = MOI.get(src, MOI.ConstraintName(), con)
-            MOI.set(dest, MOI.ConstraintName(), map[con], name)
+            if name != ""
+                MOI.set(dest, MOI.ConstraintName(), map[con], name)
+            end
         end
     end
 end

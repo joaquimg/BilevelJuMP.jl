@@ -1,7 +1,7 @@
 
 # The following is largely inspired from JuMP/test/JuMPExtension.jl
 
-@enum Level BOTH LOWER UPPER
+@enum Level BOTH LOWER UPPER DUAL_OF_LOWER
 
 abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
@@ -24,6 +24,8 @@ mutable struct BilevelModel <: AbstractBilevelModel
     upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     lower_to_upper_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    # lower level decisions that are input to upper
+    upper_var_to_lower_ctr_link::Dict{JuMP.AbstractVariableRef, JuMP.ConstraintRef}
     # joint link
     link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
 
@@ -58,8 +60,9 @@ mutable struct BilevelModel <: AbstractBilevelModel
             0, Dict{Int, JuMP.AbstractVariable}(),   Dict{Int, String}(),    # Model Variables
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractVariable}(), Dict{Int, JuMP.AbstractVariable}(),
             # links
-            Dict{Int, JuMP.AbstractVariable}(), Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(), Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable, JuMP.ConstraintRef}(),
+            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
             #ctr
             0, Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, String}(),    # Model Constraints
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, JuMP.AbstractConstraint}(),
@@ -152,7 +155,10 @@ struct BilevelVariableRef <: JuMP.AbstractVariableRef
     level::Level
 end
 mylevel(v::BilevelVariableRef) = v.level
-in_level(v::BilevelVariableRef, level::Level) = (v.level === BOTH || v.level === level)
+in_level(v::BilevelVariableRef, level::Level) = (
+    v.level === BOTH ||
+    v.level === level ||
+    (v.level === DUAL_OF_LOWER && level === UPPER))
 function solver_ref(v::BilevelVariableRef)
     m = v.model
     if mylevel(v) == LOWER
@@ -345,7 +351,7 @@ end
 struct BilevelConstraintRef
     model::BilevelModel # `model` owning the constraint
     idx::Int       # Index in `model.constraints`
-    # level
+    level::Level
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 function JuMP.add_constraint(m::BilevelModel, c::JuMP.AbstractConstraint, name::String="")
@@ -362,11 +368,11 @@ end
 #     return ScalarConstraint(jump_function(model, f), s)
 # end
 JuMP.add_constraint(m::UpperModel, c::JuMP.VectorConstraint, name::String="") = 
-error("no vec ctr")
+    error("no vec ctr")
 function JuMP.add_constraint(m::InnerBilevelModel, c::JuMP.ScalarConstraint{F,S}, name::String="") where {F,S}
     blm = bilevel_model(m)
     blm.nextconidx += 1
-    cref = BilevelConstraintRef(blm, blm.nextconidx)
+    cref = BilevelConstraintRef(blm, blm.nextconidx, level(m))
     func = JuMP.jump_function(c)
     level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
@@ -392,6 +398,57 @@ function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
     c.func::F
     c.set::S
     c
+end
+
+# variables again (duals)
+# code for using dual variables associated with lower level constraints
+# in the upper level
+
+struct DualOf
+    ci::BilevelConstraintRef
+end
+struct DualVariableInfo
+    info::JuMP.VariableInfo
+    ci::BilevelConstraintRef
+end
+function JuMP.build_variable(
+    _error::Function,
+    info::JuMP.VariableInfo,
+    dual_of::DualOf;
+    extra_kw_args...,
+)
+    for (kwarg, _) in extra_kw_args
+        _error("Unrecognized keyword argument $kwarg")
+    end
+
+    info.has_lb    && _error("Dual variable does not support setting bounds")
+    info.has_ub    && _error("Dual variable does not support setting bounds")
+    info.has_fix   && _error("Dual variable does not support fixing")
+    info.has_start && _error("Dual variable does not support start values")
+    info.binary    && _error("Dual variable cannot be binary")
+    info.integer   && _error("Dual variable cannot be integer")
+
+    if dual_of.ci.level != LOWER
+        error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
+    end
+
+    return DualVariableInfo(
+        info,
+        dual_of.ci
+    )
+end
+function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name::String="")
+    # TODO vector version
+    m = bilevel_model(inner)
+    m.nextvaridx += 1
+    vref = BilevelVariableRef(m, m.nextvaridx, DUAL_OF_LOWER)
+    v_upper = JuMP.add_variable(m.upper, JuMP.ScalarVariable(dual_info.info), name)
+    m.var_upper[vref.idx] = v_upper
+    m.var_level[vref.idx] = DUAL_OF_LOWER
+    m.upper_var_to_lower_ctr_link[v_upper] = m.ctr_lower[dual_info.ci.idx] # TODO improve this
+    m.variables[vref.idx] = JuMP.ScalarVariable(dual_info.info)
+    JuMP.set_name(vref, name)
+    vref
 end
 
 # Objective
@@ -478,7 +535,6 @@ function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
     end
     return result
 end
-# TODO allow quadratic obj
 function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
     model::BilevelModel,
     inner::JuMP.AbstractModel,
@@ -490,7 +546,7 @@ function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
         JuMP.add_to_expression!(quadv,
         coef,
         replace_variables(var1, model, model, variable_map, level),
-        replace_variables(var1, model, model, variable_map, level))
+        replace_variables(var2, model, model, variable_map, level))
     end
     return quadv
 end
@@ -503,12 +559,12 @@ function replace_variables(quad::C,
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
 
-# using MathOptFormat
-# function print_lp(m, name)
-#     lp_model = MathOptFormat.MOF.Model()
-#     MOI.copy_to(lp_model, m)
-#     MOI.write_to_file(lp_model, name)
-# end
+using MathOptFormat
+function print_lp(m, name)
+    lp_model = MathOptFormat.MOF.Model()
+    MOI.copy_to(lp_model, m)
+    MOI.write_to_file(lp_model, name)
+end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
     error("cant solve a model of type: $T ")
@@ -527,9 +583,10 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
     moi_upper = JuMP.index.(
         collect(values(model.upper_to_lower_link)))
     moi_link = JuMP.index(model.link)
+    moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
     single_blm, upper_to_sblm, lower_to_sblm = build_bilevel(
-        upper, lower, moi_link, moi_upper, mode)
+        upper, lower, moi_link, moi_upper, mode, moi_link2)
 
     solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
     sblm_to_solver = MOI.copy_to(solver, single_blm)
@@ -556,6 +613,14 @@ end
 
 function JuMP.index(d::Dict)
     ret = Dict{VI,VI}()
+    # sizehint!(ret, length(d))
+    for (k,v) in d
+        ret[JuMP.index(k)] = JuMP.index(v)
+    end
+    return ret
+end
+function index2(d::Dict)
+    ret = Dict{VI,CI}()
     # sizehint!(ret, length(d))
     for (k,v) in d
         ret[JuMP.index(k)] = JuMP.index(v)
