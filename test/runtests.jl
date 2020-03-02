@@ -43,7 +43,7 @@ end
         # jump_05(solver.opt, solver.mode) # fail with explicit slack
         # jump_3SAT(solver.opt, solver.mode)
         # jump_06(solver.opt, solver.mode)
-        jump_07(solver.opt, solver.mode)
+        # jump_07(solver.opt, solver.mode)
         jump_08(solver.opt, solver.mode)
         jump_09a(solver.opt, solver.mode)
         jump_09b(solver.opt, solver.mode)
