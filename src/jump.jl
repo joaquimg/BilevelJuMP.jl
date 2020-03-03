@@ -593,6 +593,11 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
 
     MOI.optimize!(solver)
 
+    # print_lp(single_blm, "cache_bilevel.lp")
+    # print_lp(solver, "solver_bilevel.lp")
+    # MOI.write_to_file(solver.model.optimizer, "in_opt_bilevel.lp")
+
+
     # map from bridged to single_blm
     # map from single_blm to upper & lowel
     # map from upper & lower to model

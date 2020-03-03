@@ -18,8 +18,9 @@ solvers_sos_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 solvers_nlp = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 
 include("solvers/cbc.jl")
-# include("solvers/gurobi.jl")
 include("solvers/ipopt.jl")
+# include("solvers/gurobi.jl")
+# include("solvers/xpress.jl")
 # include("solvers/path.jl")
 
 include("moi.jl")
@@ -62,7 +63,7 @@ end
         jump_06(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode)
         jump_08(solver.opt, solver.mode)
-        jump_09a(solver.opt, solver.mode)
+        jump_09a(solver.opt, solver.mode) # fail on cbc positive SOS
         jump_09b(solver.opt, solver.mode)
         jump_11a(solver.opt, solver.mode)
         jump_11b(solver.opt, solver.mode)
