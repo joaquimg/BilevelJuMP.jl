@@ -1,5 +1,7 @@
 
-function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode())
+jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode()) = _jump_01(optimizer, true, mode)
+jump_01(optimizer, mode = BilevelJuMP.SOS1Mode()) = _jump_01(optimizer, false, mode)
+function _jump_01(optimizer, vectorized::Bool, mode = BilevelJuMP.SOS1Mode())
 
     # min -4x -3y
     # s.t.
@@ -22,10 +24,19 @@ function jump_01(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     @objective(Lower(model), Min, y)
 
-    @constraint(Lower(model), 2x+y <= 4)
-    @constraint(Lower(model), x+2y <= 4)
-    @constraint(Lower(model), x >= 0)
-    @constraint(Lower(model), y >= 0)
+    if vectorized
+        @constraints(Lower(model), begin
+            2x+y <= 4
+            x+2y <= 4
+            x >= 0
+            y >= 0
+        end)
+    else
+        @constraint(Lower(model), 2x+y <= 4)
+        @constraint(Lower(model), x+2y <= 4)
+        @constraint(Lower(model), x >= 0)
+        @constraint(Lower(model), y >= 0)
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
@@ -1914,6 +1925,70 @@ function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode())
     @constraint(Upper(model), z == 1)
 
     @test_throws ErrorException @objective(Lower(model), Min, -x - y + z)
+end
+
+jump_DTMP_01_mod3vec(optimizer, mode = BilevelJuMP.SOS1Mode()) = _jump_DTMP_01_mod3(optimizer, true, mode)
+jump_DTMP_01_mod3(optimizer, mode = BilevelJuMP.SOS1Mode()) = _jump_DTMP_01_mod3(optimizer, false, mode)
+function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode)
+
+    model = BilevelModel()
+
+    if vectorized
+        @variables(Upper(model), begin
+            x
+            z
+        end)
+    else
+        @variable(Upper(model), x)
+        @variable(Upper(model), z)
+    end
+    if vectorized
+        @variables(Lower(model), begin
+            y
+            w
+        end)
+    else
+        @variable(Lower(model), y)
+        @variable(Lower(model), w)
+    end
+
+    @objective(Upper(model), Min, -x + 4y + z)
+    if vectorized
+        @constraints(Upper(model), begin
+            y + 2x + z <= 9
+            z == 1
+        end)
+    else
+        @constraint(Upper(model), y + 2x + z <= 9)
+        @constraint(Upper(model), z == 1)
+    end
+
+    @objective(Lower(model), Min, -x - y + w)
+    if vectorized
+        @constraints(Lower(model), begin
+            y >= 0
+            x + y + w <= 8
+            x >= 0
+            x <= 4
+            w == 1
+        end)
+    else
+        @constraint(Lower(model),  y >= 0)
+        @constraint(Lower(model), x + y + w <= 8)
+        @constraint(Lower(model),  x >= 0)
+        @constraint(Lower(model),  x <= 4)
+        @constraint(Lower(model),  w == 1)
+    end
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    @test value(x) ≈ 1 atol=1e-6
+    @test value(y) ≈ 6 atol=1e-6
+    @test value(z) ≈ 1 atol=1e-6
+    @test value(w) ≈ 1 atol=1e-6
 end
 
 #=
