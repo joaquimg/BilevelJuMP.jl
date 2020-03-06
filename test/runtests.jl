@@ -26,6 +26,7 @@ include("solvers/ipopt.jl")
 include("moi.jl")
 include("jump.jl")
 
+
 @testset "Simple LP" begin
     for solver in solvers
         moi_01(solver.opt)
@@ -38,6 +39,7 @@ end
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
         jump_01(solver.opt, solver.mode)
+        jump_01vec(solver.opt, solver.mode)
         jump_02(solver.opt, solver.mode)
         jump_03(solver.opt, solver.mode)
         jump_04(solver.opt, solver.mode)
@@ -167,6 +169,8 @@ end
     for solver in solvers
         jump_DTMP_01_mod1(solver.opt, solver.mode)
         jump_DTMP_01_mod2_error(solver.opt, solver.mode)
+        jump_DTMP_01_mod3vec(solver.opt, solver.mode)
+        jump_DTMP_01_mod3(solver.opt, solver.mode)
     end
 end
 
