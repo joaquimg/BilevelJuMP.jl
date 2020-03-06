@@ -5,6 +5,7 @@ const MOI = MathOptInterface
 const MOIU = MathOptInterface.Utilities
 using JuMP
 using Dualization
+using LinearAlgebra
 
 
 export

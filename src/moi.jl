@@ -6,6 +6,17 @@ const VAF{T} = MOI.VectorAffineFunction{T}
 const VI = MOI.VariableIndex
 const CI = MOI.ConstraintIndex
 
+const SCALAR_SETS = Union{
+    MOI.GreaterThan{Float64},
+    MOI.LessThan{Float64},
+    MOI.EqualTo{Float64},
+}
+
+const VECTOR_SETS = Union{
+    MOI.SecondOrderCone,
+    MOI.RotatedSecondOrderCone,
+}
+
 # abstract type AsbtractBilevelOptimizer end
 # struct SOS1Optimizer{O} <: AsbtractBilevelOptimizer
 #     solver::O
@@ -16,6 +27,7 @@ const CI = MOI.ConstraintIndex
 # end
 
 struct Complement#{M1 <: MOI.ModelLike, M2 <: MOI.ModelLike, F, S}
+    is_vec
     # primal::M1
     func_w_cte#::F
     set_w_zero#::S
@@ -77,21 +89,39 @@ end
 function get_canonical_complements(primal_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
     out = Complement[]
-    T = Float64
     for ci in keys(map)
-        func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)
-        set = MOI.get(primal_model, MOI.ConstraintSet(), ci)
-        i = 1
-        func.constant = Dualization.set_dot(i, set, T)*Dualization.get_scalar_term(primal_model, i, ci)
-        # todo - set dot on function
-        con = Complement(func, set_with_zero(set), map[ci][1])
+        con = get_canonical_complement(primal_model, map, ci)
         push!(out, con)
     end
     return out
 end
+function get_canonical_complement(primal_model, map,
+    ci::CI{F,S}) where {F, S<:VECTOR_SETS}
+    T = Float64
+    func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
+    set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
+    dim = MOI.dimension(set) 
+    for i in 1:dim
+        func.constant[i] = Dualization.set_dot(i, set, T) *
+            Dualization.get_scalar_term(primal_model, i, ci)
+    end
+    # todo - set dot on function
+    con = Complement(true, func, set_with_zero(set), map[ci])
+    return con
+end
+function get_canonical_complement(primal_model, map,
+    ci::CI{F,S}) where {F, S<:SCALAR_SETS}
+    T = Float64
+    func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
+    set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
+    func.constant = Dualization.set_dot(1, set, T) *
+        Dualization.get_scalar_term(primal_model, 1, ci)
+    # todo - set dot on function
+    con = Complement(false, func, set_with_zero(set), map[ci][1])
+    return con
+end
 
-function set_with_zero(set::S) where {S<:Union{MOI.LessThan{T},
-    MOI.GreaterThan{T}, MOI.EqualTo{T}}} where T
+function set_with_zero(set::S) where {S<:SCALAR_SETS} where T
     return S(0.0)
 end
 function set_with_zero(set)
@@ -320,7 +350,7 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal
 
     dual = idxmap_dual[v]
 
-    new_f = MOIU.operate(*, T, f_dest, MOI.SingleVariable(dual))
+    new_f = MOIU.operate(dot, T, f_dest, MOI.SingleVariable(dual))
     new_f1 = MOIU.operate(-, T, new_f, eps)
     c1 = MOI.add_constraint(m, 
         new_f1,
@@ -453,3 +483,159 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
 
     return idxmap
 end
+
+using LinearAlgebra
+
+# scalar
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}},
+    ::Type{T}
+    ) where T
+    MOI.ScalarAffineFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{T},
+    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}}
+    ) where T
+    MOI.ScalarAffineFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}},
+    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}}
+    ) where T
+    MOI.ScalarQuadraticFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{MOI.ScalarQuadraticFunction{T}},
+    ::Type{T}
+    ) where T
+    MOI.ScalarQuadraticFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{T},
+    ::Type{MOI.ScalarQuadraticFunction{T}}
+    ) where T
+    MOI.ScalarQuadraticFunction{T}
+end
+# flip
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    f::Union{
+        MOI.SingleVariable,
+        MOI.ScalarAffineFunction{T},
+        MOI.ScalarQuadraticFunction{T}
+        },
+    α::T) where T
+    return MOIU.operate(LinearAlgebra.dot, T, α, f)
+end
+# pass to *
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    f::Union{
+        T,
+        MOI.SingleVariable,
+        MOI.ScalarAffineFunction{T}
+        },
+    g::Union{
+        MOI.SingleVariable,
+        MOI.ScalarAffineFunction{T}
+        }
+    ) where T
+    return MOIU.operate(*, T, f, g)
+end
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    α::T,
+    f::MOI.ScalarQuadraticFunction{T}
+    ) where T
+    return MOIU.operate(*, T, f, α)
+end
+
+# vector
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
+    ::Type{Vector{T}}
+    ) where T
+    MOI.VectorAffineFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{Vector{T}},
+    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
+    ) where T
+    MOI.VectorAffineFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
+    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
+    ) where T
+    MOI.VectorQuadraticFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{MOI.VectorQuadraticFunction{T}},
+    ::Type{Vector{T}}
+    ) where T
+    MOI.VectorQuadraticFunction{T}
+end
+function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+    ::Type{Vector{T}},
+    ::Type{MOI.VectorQuadraticFunction{T}}
+    ) where T
+    MOI.VectorQuadraticFunction{T}
+end
+# flip
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    f::Union{
+        MOI.VectorOfVariables,
+        MOI.VectorAffineFunction{T},
+        MOI.VectorQuadraticFunction{T}
+        },
+    α::Vector{T}) where T
+    return MOIU.operate(LinearAlgebra.dot, T, α, f)
+end
+# pass to _operate(LinearAlgebra.dot, ...)
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    f::Union{
+        Vector{T},
+        MOI.VectorOfVariables,
+        MOI.VectorAffineFunction{T}
+        },
+    g::Union{
+        MOI.VectorOfVariables,
+        MOI.VectorAffineFunction{T}
+        }
+    ) where T
+    return _operate(LinearAlgebra.dot, T, f, g)
+end
+function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    α::T,
+    f::MOI.VectorQuadraticFunction{T}
+    ) where T
+    return _operate(LinearAlgebra.dot, T, f, α)
+end
+function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
+    f::Union{
+        Vector{T},
+        MOI.VectorOfVariables,
+        MOI.VectorAffineFunction{T},
+        MOI.VectorQuadraticFunction{T}
+        },
+    g::Union{
+        MOI.VectorOfVariables,
+        MOI.VectorAffineFunction{T},
+        MOI.VectorQuadraticFunction{T}
+    }) where T
+
+    dim = MOI.output_dimension(g)
+    if MOI.output_dimension(f) != dim
+        throw(DimensionMismatch("f and g are of different MOI.output_dimension's!"))
+    end
+
+    fs = MOIU.scalarize(f)
+    gs = MOIU.scalarize(g)
+
+    out = MOIU.operate(*, T, fs[1], gs[1])
+    for i in 2:dim
+        MOIU.operate!(+, T, out, MOIU.operate(*, T, fs[i], gs[i]))
+    end
+
+    return out
+end
+MOIU.scalarize(v::Vector{T}) where T<:Number = v
+MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)
