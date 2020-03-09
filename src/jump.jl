@@ -367,13 +367,15 @@ end
 #     s = MOI.get(model, MOI.ConstraintSet(), con_ref)::SetType
 #     return ScalarConstraint(jump_function(model, f), s)
 # end
-JuMP.add_constraint(m::UpperModel, c::JuMP.VectorConstraint, name::String="") = 
-    error("no vec ctr")
-function JuMP.add_constraint(m::InnerBilevelModel, c::JuMP.ScalarConstraint{F,S}, name::String="") where {F,S}
+# JuMP.add_constraint(m::UpperModel, c::JuMP.VectorConstraint, name::String="") = 
+#     error("no vec ctr")
+function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstraint{F,S},JuMP.VectorConstraint{F,S}}, name::String="") where {F,S}
     blm = bilevel_model(m)
     blm.nextconidx += 1
     cref = BilevelConstraintRef(blm, blm.nextconidx, level(m))
     func = JuMP.jump_function(c)
+    # @show c
+    # @show func
     level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
@@ -550,13 +552,13 @@ function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
     end
     return quadv
 end
-function replace_variables(quad::C,
-    model::BilevelModel,
-    inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V},
-    level::Level) where {C,V<:JuMP.AbstractVariableRef}
-    error("A BilevelModel cannot have $(C) function")
-end
+# function replace_variables(quad::C,
+#     model::BilevelModel,
+#     inner::JuMP.AbstractModel,
+#     variable_map::Dict{Int, V},
+#     level::Level) where {C,V<:JuMP.AbstractVariableRef}
+#     error("A BilevelModel cannot have $(C) function")
+# end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
 
 using MathOptFormat
@@ -593,8 +595,9 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
 
     MOI.optimize!(solver)
 
-    # print_lp(single_blm, "cache_bilevel.lp")
-    # print_lp(solver, "solver_bilevel.lp")
+    # print_lp(single_blm, "cache_bilevel")
+    # print_lp(solver, "solver_bilevel")
+    # print_lp(solver.model, "in_opt_bilevel")
     # MOI.write_to_file(solver.model.optimizer, "in_opt_bilevel.lp")
 
 
@@ -651,6 +654,9 @@ end
 JuMP.dual_status(model::BilevelModel) = error("dual status cant be queried for BilevelModel")
 function JuMP.termination_status(model::BilevelModel)
     return MOI.get(model.solver, MOI.TerminationStatus())
+end
+function JuMP.raw_status(model::BilevelModel)
+    return MOI.get(model.solver, MOI.RawStatusString())
 end
 function JuMP.objective_value(model::BilevelModel)
     return MOI.get(model.solver, MOI.ObjectiveValue())

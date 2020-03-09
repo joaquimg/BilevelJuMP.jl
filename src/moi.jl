@@ -86,6 +86,15 @@ mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     end
 end
 
+function accept_vector_set(mode::BilevelSolverMode{T}, con::Complement) where T
+    if con.is_vec
+        error("Set $(typeof(con.set_w_zero)) is not accepted when solution method is $(typeof(mode))")
+    end
+    return nothing
+end
+accept_vector_set(::ProductMode{T}, ::Complement) where T = nothing
+accept_vector_set(::ProductWithSlackMode{T}, ::Complement) where T = nothing
+
 function get_canonical_complements(primal_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
     out = Complement[]
@@ -100,11 +109,12 @@ function get_canonical_complement(primal_model, map,
     T = Float64
     func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
     set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
-    dim = MOI.dimension(set) 
-    for i in 1:dim
-        func.constant[i] = Dualization.set_dot(i, set, T) *
-            Dualization.get_scalar_term(primal_model, i, ci)
-    end
+    dim = MOI.dimension(set)
+    # vector sets have no constant
+    # for i in 1:dim
+    #     func.constant[i] = Dualization.set_dot(i, set, T) *
+    #         Dualization.get_scalar_term(primal_model, i, ci)
+    # end
     # todo - set dot on function
     con = Complement(true, func, set_with_zero(set), map[ci])
     return con
@@ -201,6 +211,7 @@ function build_bilevel(
     comps = get_canonical_complements(lower, lower_primal_dual_map)
     for comp in comps
         if !is_equality(comp.set_w_zero)
+            accept_vector_set(mode, comp)
             add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
         else
             # println("eq in complement")
@@ -339,6 +350,9 @@ is_equality(set::S) where {S<:MOI.AbstractSet} = false
 is_equality(set::MOI.EqualTo{T}) where T = true
 is_equality(set::MOI.Zeros) = true
 
+only_variable_functions(v::MOI.VariableIndex) = MOI.SingleVariable(v)
+only_variable_functions(v::Vector{MOI.VariableIndex}) = MOI.VectorOfVariables(v)
+
 function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
@@ -346,29 +360,32 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal
 
     eps = mode.epsilon
 
-    f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
+    f_dest = MOIU.map_indices(x->idxmap_primal[x], f)
 
-    dual = idxmap_dual[v]
+    dual = comp.is_vec ? map(x->idxmap_dual[x], v) : idxmap_dual[v]
 
-    new_f = MOIU.operate(dot, T, f_dest, MOI.SingleVariable(dual))
+    new_f = MOIU.operate(dot, T, f_dest, only_variable_functions(dual))
     new_f1 = MOIU.operate(-, T, new_f, eps)
     c1 = MOI.add_constraint(m, 
         new_f1,
         MOI.LessThan{T}(0.0))
-    if false
+    if comp.is_vec # conic
         new_f2 = MOIU.operate(+, T, new_f, eps)
         c2 = MOI.add_constraint(m, 
             new_f2,
             MOI.GreaterThan{T}(0.0))
-        MOI.set(m, MOI.ConstraintName(), c2, "compl_prod2_($(nm))")
     end
 
     # c1 = MOI.add_constraint(m, 
     #     new_f,
     #     MOI.EqualTo(zero(T)))
 
-    nm = MOI.get(m, MOI.VariableName(), dual)
+    nm = comp.is_vec ? MOI.get.(m, MOI.VariableName(), dual) : MOI.get(m, MOI.VariableName(), dual)
+
     MOI.set(m, MOI.ConstraintName(), c1, "compl_prod_($(nm))")
+    if comp.is_vec
+        MOI.set(m, MOI.ConstraintName(), c2, "compl_prod2_($(nm))")
+    end
 
     return c1
 end
@@ -393,7 +410,7 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
     c1 = MOI.add_constraint(m, 
         prod_f1,
         MOI.LessThan{Float64}(0.0))
-    if false
+    if comp.is_vec # conic
         prod_f2 = MOIU.operate(+, T, prod_f, eps)
         c2 = MOI.add_constraint(m, 
             prod_f2,

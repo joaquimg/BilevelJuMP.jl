@@ -567,9 +567,8 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     optimize!(model, optimizer, mode)
 
-    @show primal_status(model)
-
-    @show termination_status(model)
+    primal_status(model)
+    termination_status(model)
 
     @test value(x) ≈ 0 atol=1e-6
     @test value.(y) ≈ [0, 1] atol=1e-6
@@ -2032,4 +2031,139 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test value(x) ≈ 50 atol=1e-3
     @test value.(y) ≈ [50, 150, 0] atol=1e-3
     @test value(lambda) ≈ 15 atol=1e-3
+end
+
+function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x[i=1:3])
+    @variable(Lower(model), y[i=1:3])
+
+    @constraint(Upper(model), soc_up, x in SecondOrderCone())
+    @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    @objective(Upper(model), Min, x[1])
+    @objective(Lower(model), Min, y[1])
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+
+    @test objective_value(model) ≈ 0  atol=1e-1
+    @test value.(x) ≈ [0, 0, 0] atol=1e-3
+    @test value.(y) ≈ [0, 0, 0] atol=1e-3
+end
+
+#=
+    The models of bilevel programming with lower level second-order cone programs
+    Chi et al. Journal of Inequalities and Applications 2014, 2014:168
+    https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168
+    https://core.ac.uk/download/pdf/81261904.pdf
+=#
+
+function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min, x + 3(y[1] -y[2]))
+    @constraint(Upper(model), x >= 2)
+    @constraint(Upper(model), x <= 6)
+    
+    @objective(Lower(model), Min, - (y[1] - y[2]))
+    @constraint(Lower(model), y[1] >= 0)
+    @constraint(Lower(model), y[2] >= 0)
+    @constraint(Lower(model), x +  (y[1] - y[2]) <=  8)
+    @constraint(Lower(model), x + 4(y[1] - y[2]) >=  8)
+    @constraint(Lower(model), x + 2(y[1] - y[2]) <= 12)
+    @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    primal_status(model)
+    termination_status(model)
+    value.(y)
+
+    @test objective_value(model) ≈ 12  atol=1e-1
+    @test value(x) ≈ 6 atol=1e-3
+    @test value(y[2]) >= 0 - 1e-3
+    @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
+end
+function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:2])
+
+    @objective(Upper(model), Min, x + 2(y[1] + y[2]))
+    @constraint(Upper(model), x >= 0)
+    @constraint(Upper(model), x <= 6)
+    @constraint(Upper(model), y[1] + y[2] <= 3) # creates disconnected region
+
+    @objective(Lower(model), Min, - y[1] - y[2])
+    @constraint(Lower(model), y[1] >= 0)
+    @constraint(Lower(model), y[2] <= 0)
+    @constraint(Lower(model), x +  (y[1] + y[2]) <= 8)
+    @constraint(Lower(model), x + 3(y[1] + y[2]) >= 8)
+    @constraint(Lower(model),-x +  (y[1] + y[2]) <= 0)
+    @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    JuMP.raw_status(model)
+    primal_status(model)
+    termination_status(model)
+    value.(y)
+
+    @test objective_value(model) ≈ 6  atol=1e-1
+    @test value(x) ≈ 2 atol=1e-3
+    @test value(y[2]) <= 0 + 1e-3
+    @test value(y[1]) + value(y[2]) ≈ 2 atol=1e-3
+end
+function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode())
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y[i=1:3])
+
+    @objective(Upper(model), Min, x + 3y[1])
+    @constraint(Upper(model), e, x >= 2)
+    @constraint(Upper(model), f, x <= 6)
+
+    @objective(Lower(model), Min, - y[1])
+    @constraint(Lower(model), a, x +  y[1] <=  8)
+    @constraint(Lower(model), b, x + 4y[1] >=  8)
+    @constraint(Lower(model), c, x + 2y[1] <= 12)
+    # @constraint(Lower(model), d, y[1] >= 0)
+    @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    MOI.empty!(optimizer)
+    @test MOI.is_empty(optimizer)
+
+    optimize!(model, optimizer, mode)
+
+    JuMP.raw_status(model)
+    primal_status(model)
+    termination_status(model)
+    value.(y)
+
+    @test objective_value(model) ≈ 12 atol=1e-1
+    @test value(x) ≈ 6 atol=1e-3
+    @test value(y[1]) ≈ 2 atol=1e-3
+    @test sqrt(value(y[2])^2 + value(y[3])^2) <= 2 + 1e-3
 end

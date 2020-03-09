@@ -11,11 +11,14 @@ const MOIT = MathOptInterface.Test
 # TODO
 # add JUMPExtension test
 
-solvers = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
-solvers_sos = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
-solvers_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
-solvers_sos_quad = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
-solvers_nlp = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
+OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
+
+solvers = OptModeType[]
+solvers_sos = OptModeType[]
+solvers_quad = OptModeType[]
+solvers_sos_quad = OptModeType[]
+solvers_nlp = OptModeType[]
+solvers_nlp_lowtol = OptModeType[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
@@ -26,7 +29,6 @@ include("solvers/ipopt.jl")
 include("moi.jl")
 include("jump.jl")
 
-
 @testset "Simple LP" begin
     for solver in solvers
         moi_01(solver.opt)
@@ -34,7 +36,6 @@ include("jump.jl")
         moi_03(solver.opt, solver.mode)
     end
 end
-
 
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
@@ -177,5 +178,15 @@ end
 @testset "conejo2016" begin
     for solver in solvers_nlp
         jump_conejo2016(solver.opt, solver.mode)
+    end
+end
+
+# require SOCtoNonConvexQuad bridge to work with Ipopt
+@testset "Bilevel Conic JuMP" begin
+    for solver in solvers_nlp_lowtol
+        jump_conic01(solver.opt, solver.mode)
+        jump_conic02(solver.opt, solver.mode)
+        jump_conic03(solver.opt, solver.mode)
+        jump_conic04(solver.opt, solver.mode)
     end
 end
