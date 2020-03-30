@@ -20,7 +20,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     var_upper::Dict{Int, JuMP.AbstractVariableRef}
     var_lower::Dict{Int, JuMP.AbstractVariableRef}
 
-    # upper level decisions that are "paramters" of the second level
+    # upper level decisions that are "parameters" of the second level
     upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     lower_to_upper_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
@@ -146,7 +146,12 @@ level(m::UpperOnlyModel) = UPPER
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
+in_upper(l::Level) = l == BOTH || l == UPPER || l == DUAL_OF_LOWER
+in_lower(l::Level) = l == BOTH || l == LOWER
+
 #### Model ####
+
+
 
 # Variables
 struct BilevelVariableRef <: JuMP.AbstractVariableRef
@@ -159,16 +164,42 @@ in_level(v::BilevelVariableRef, level::Level) = (
     v.level === BOTH ||
     v.level === level ||
     (v.level === DUAL_OF_LOWER && level === UPPER))
+
+in_upper(v::BilevelVariableRef) = in_upper(mylevel(v))
+in_lower(v::BilevelVariableRef) = in_lower(mylevel(v))
+upper_ref(v::BilevelVariableRef) = v.model.var_upper[v.idx]
+lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
+
+function bound_ref(v::BilevelVariableRef)
+    if mylevel(v) == LOWER
+        return lower_ref(v)
+    elseif mylevel(v) == UPPER || mylevel(v) == DUAL_OF_LOWER
+        return upper_ref(v)
+    elseif mylevel(v) == BOTH
+        m = v.model
+        i = v.idx
+        upper_ref = m.var_upper[i]
+        if haskey(m.upper_to_lower_link, upper_ref)
+            return upper_ref
+        else
+            return m.var_lower[i]
+        end
+    else
+        error("Unknown level")
+    end
+end
+
 function solver_ref(v::BilevelVariableRef)
     m = v.model
     if mylevel(v) == LOWER
         return m.sblm_to_solver[
-            m.lower_to_sblm[JuMP.index(m.var_lower[v.idx])]]
+            m.lower_to_sblm[JuMP.index(lower_ref(v))]]
     else
         return m.sblm_to_solver[
-            m.upper_to_sblm[JuMP.index(m.var_upper[v.idx])]]
+            m.upper_to_sblm[JuMP.index(upper_ref(v))]]
     end
 end
+
 Base.broadcastable(v::BilevelVariableRef) = Ref(v)
 Base.copy(v::BilevelVariableRef) = v
 # TODO
@@ -231,6 +262,7 @@ function JuMP.lower_bound(vref::BilevelVariableRef)
 end
 function JuMP.set_lower_bound(vref::BilevelVariableRef, lower)
     info = variable_info(vref)
+    JuMP.set_lower_bound(bound_ref(vref), lower)
     update_variable_info(vref,
                          JuMP.VariableInfo(true, lower,
                                            info.has_ub, info.upper_bound,
@@ -240,6 +272,7 @@ function JuMP.set_lower_bound(vref::BilevelVariableRef, lower)
 end
 function JuMP.delete_lower_bound(vref::BilevelVariableRef)
     info = variable_info(vref)
+    JuMP.delete_lower_bound(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(false, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -254,6 +287,7 @@ function JuMP.upper_bound(vref::BilevelVariableRef)
 end
 function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
     info = variable_info(vref)
+    JuMP.set_upper_bound(bound_ref(vref), upper)
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            true, upper,
@@ -263,6 +297,7 @@ function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
 end
 function JuMP.delete_upper_bound(vref::BilevelVariableRef)
     info = variable_info(vref)
+    JuMP.delete_upper_bound(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            false, info.upper_bound,
@@ -274,6 +309,7 @@ JuMP.is_fixed(vref::BilevelVariableRef) = variable_info(vref).has_fix
 JuMP.fix_value(vref::BilevelVariableRef) = variable_info(vref).fixed_value
 function JuMP.fix(vref::BilevelVariableRef, value)
     info = variable_info(vref)
+    JuMP.fix(bound_ref(vref), value)
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -283,6 +319,7 @@ function JuMP.fix(vref::BilevelVariableRef, value)
 end
 function JuMP.unfix(vref::BilevelVariableRef)
     info = variable_info(vref)
+    JuMP.unfix(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -293,6 +330,8 @@ end
 JuMP.start_value(vref::BilevelVariableRef) = variable_info(vref).start
 function JuMP.set_start_value(vref::BilevelVariableRef, start)
     info = variable_info(vref)
+    in_upper(vref) && JuMP.set_start_value(upper_ref(vref), start)
+    in_lower(vref) && JuMP.set_start_value(lower_ref(vref), start)
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -304,6 +343,7 @@ JuMP.is_binary(vref::BilevelVariableRef) = variable_info(vref).binary
 function JuMP.set_binary(vref::BilevelVariableRef)
     @assert !JuMP.is_integer(vref)
     info = variable_info(vref)
+    JuMP.set_binary(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -313,6 +353,7 @@ function JuMP.set_binary(vref::BilevelVariableRef)
 end
 function JuMP.unset_binary(vref::BilevelVariableRef)
     info = variable_info(vref)
+    JuMP.unset_binary(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -324,6 +365,7 @@ JuMP.is_integer(vref::BilevelVariableRef) = variable_info(vref).integer
 function JuMP.set_integer(vref::BilevelVariableRef)
     @assert !JuMP.is_binary(vref)
     info = variable_info(vref)
+    JuMP.set_integer(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -333,6 +375,7 @@ function JuMP.set_integer(vref::BilevelVariableRef)
 end
 function JuMP.unset_integer(vref::BilevelVariableRef)
     info = variable_info(vref)
+    JuMP.unset_integer(bound_ref(vref))
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
@@ -424,7 +467,7 @@ function JuMP.build_variable(
     info.has_lb    && _error("Dual variable does not support setting bounds")
     info.has_ub    && _error("Dual variable does not support setting bounds")
     info.has_fix   && _error("Dual variable does not support fixing")
-    info.has_start && _error("Dual variable does not support start values")
+    # info.has_start && _error("Dual variable does not support start values")
     info.binary    && _error("Dual variable cannot be binary")
     info.integer   && _error("Dual variable cannot be integer")
 
@@ -589,7 +632,7 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
         upper, lower, moi_link, moi_upper, mode, moi_link2)
 
     solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
-    sblm_to_solver = MOI.copy_to(solver, single_blm)
+    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = false)
 
     MOI.optimize!(solver)
 
