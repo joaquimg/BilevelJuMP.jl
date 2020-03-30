@@ -22,6 +22,7 @@ end
 config = Config()
 config_low_tol = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
+CONFIG_4 = Config(atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(atol = 1e-5, rtol = 1e-5)
 
 solvers = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
@@ -49,8 +50,8 @@ end
 
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
-        jump_01(solver.opt, solver.mode)
-        jump_01vec(solver.opt, solver.mode)
+        jump_01(solver.opt, solver.mode, CONFIG_4)
+        jump_01vec(solver.opt, solver.mode, CONFIG_4)
         jump_02(solver.opt, solver.mode)
         jump_03(solver.opt, solver.mode)
         jump_04(solver.opt, solver.mode)
