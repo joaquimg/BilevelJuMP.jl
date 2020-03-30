@@ -32,8 +32,8 @@ solvers_nlp = NamedTuple{(:opt, :mode),Tuple{Any,Any}}[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
-include("solvers/gurobi.jl")
-include("solvers/xpress.jl")
+# include("solvers/gurobi.jl")
+# include("solvers/xpress.jl")
 # include("solvers/path.jl")
 
 include("moi.jl")
