@@ -147,7 +147,8 @@ function build_bilevel(
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
-    m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), moi_mode)
+    # m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), moi_mode)
+    m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), moi_mode)
 
     # add the first level
     copy_names = false
@@ -251,6 +252,13 @@ function add_complement(mode::ComplementWithSlackMode{T}, m, comp::Complement, i
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+
+    # add start value to slack
+    val = MOIU.eval_variables(
+        x-> nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), x)), f_dest)
+    if !isnan(val)
+        MOI.set(m, MOI.VariablePrimalStart(), slack, val)
+    end
 
     dual = idxmap_dual[v]
     c1 = MOI.add_constraint(m, 
@@ -390,6 +398,8 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal
     return c1
 end
 
+nothing_to_nan(val) = ifelse(val === nothing, NaN, val)
+
 function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
@@ -401,6 +411,13 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+
+    # add start value to slack
+    val = MOIU.eval_variables(
+        x-> nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), x)), f_dest)
+    if !isnan(val)
+        MOI.set(m, MOI.VariablePrimalStart(), slack, val)
+    end
 
     dual = idxmap_dual[v]
 
@@ -488,7 +505,7 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
     MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
 
     # Copy variable attributes
-    # MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
+    MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
 
     # Copy model attributes
     # pass_attributes(dest, src, copy_names, idxmap)
