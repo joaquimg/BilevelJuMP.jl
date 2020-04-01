@@ -194,9 +194,9 @@ end
     end
 end
 
-@testset "fanzeres2019" begin
+@testset "fanzeres2017" begin
     for solver in solvers_nlp
-        jump_fanzeres2019(solver.opt, solver.mode)
+        jump_fanzeres2017(solver.opt, solver.mode)
     end
 end
 

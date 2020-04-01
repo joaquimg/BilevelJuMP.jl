@@ -2144,13 +2144,9 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 #=
-    Bruno Fanzeres, Shabbir Ahmed, Alexandre Street,
-    Robust strategic bidding in auction-based markets,
-    European Journal of Operational Research,
-    Volume 272, Issue 3,
-    2019.
+    Bruno Fanzeres PhD thesis Robust Strategic Bidding in Auction-Based Markets.
 =#
-function jump_fanzeres2019(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
