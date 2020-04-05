@@ -1,4 +1,5 @@
 using Gurobi
+using QuadraticToBinary
 
 const GRB_OPTIMIZER = Gurobi.Optimizer()
 MOI.set(GRB_OPTIMIZER, MOI.Silent(), true)
@@ -10,6 +11,10 @@ push!(solvers, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_sos, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_sos_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
+
+push!(solvers_sos_quad_bin, (
+    opt = QuadraticToBinary.Optimizer{Float64}(GRB_BRIDGED),
+    mode = BilevelJuMP.SOS1Mode()))
 
 push!(solvers, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))
 push!(solvers_sos, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))
