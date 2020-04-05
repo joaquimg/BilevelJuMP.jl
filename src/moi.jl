@@ -124,13 +124,8 @@ function get_canonical_complement(primal_model, map,
     T = Float64
     func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
     set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
-    constant = Dualization.set_dot(1, set, T) *
+    func.constant = Dualization.set_dot(1, set, T) *
         Dualization.get_scalar_term(primal_model, 1, ci)
-    if F == MOI.SingleVariable
-        func = MOIU.operate(+, T, func, constant)
-    else
-        func.constant = constant
-    end
     # todo - set dot on function
     con = Complement(false, func, set_with_zero(set), map[ci][1])
     return con
@@ -168,7 +163,7 @@ function build_bilevel(
         lower_idxmap[lower_val] = upper_idxmap[upper_key]
     end
 
-    append_to(m, lower, lower_idxmap, copy_names, allow_single_bounds = true)
+    append_to(m, lower, lower_idxmap, copy_names)
     pass_names(m, lower, lower_idxmap)
 
 
@@ -473,7 +468,7 @@ function pass_names(dest, src, map)
     end
 end
 
-function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool; allow_single_bounds::Bool = true)
+function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool)
     # MOI.empty!(dest)
 
     # idxmap = MOIU.IndexMap()
@@ -481,7 +476,7 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
     constraint_types = MOI.get(src, MOI.ListOfConstraints())
     single_variable_types = [S for (F, S) in constraint_types
-                             if F == MOI.SingleVariable && allow_single_bounds]
+                             if F == MOI.SingleVariable]
     vector_of_variables_types = [S for (F, S) in constraint_types
                                  if F == MOI.VectorOfVariables]
 

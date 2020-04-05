@@ -1,7 +1,7 @@
 
 # The following is largely inspired from JuMP/test/JuMPExtension.jl
 
-@enum Level BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
+@enum Level BOTH LOWER UPPER DUAL_OF_LOWER
 
 abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
@@ -97,8 +97,8 @@ LowerToUpper(m::BilevelModel) = LowerModel(m)
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
-level(m::LowerModel) = LOWER_ONLY
-level(m::UpperModel) = UPPER_ONLY
+level(m::LowerModel) = LOWER
+level(m::UpperModel) = UPPER
 mylevel_ctr_list(m::LowerModel) = bilevel_model(m).ctr_lower
 mylevel_ctr_list(m::UpperModel) = bilevel_model(m).ctr_upper
 mylevel_var_list(m::LowerModel) = bilevel_model(m).var_lower
@@ -141,13 +141,13 @@ LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
 bilevel_model(m::SingleBilevelModel) = m.m
 mylevel_model(m::UpperOnlyModel) = bilevel_model(m).upper
 mylevel_model(m::LowerOnlyModel) = bilevel_model(m).lower
-level(m::LowerOnlyModel) = LOWER_ONLY
-level(m::UpperOnlyModel) = UPPER_ONLY
+level(m::LowerOnlyModel) = LOWER
+level(m::UpperOnlyModel) = UPPER
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
-in_upper(l::Level) = l == BOTH || l == UPPER_ONLY || l == DUAL_OF_LOWER
-in_lower(l::Level) = l == BOTH || l == LOWER_ONLY
+in_upper(l::Level) = l == BOTH || l == UPPER || l == DUAL_OF_LOWER
+in_lower(l::Level) = l == BOTH || l == LOWER
 
 #### Model ####
 
@@ -163,7 +163,7 @@ mylevel(v::BilevelVariableRef) = v.level
 in_level(v::BilevelVariableRef, level::Level) = (
     v.level === BOTH ||
     v.level === level ||
-    (v.level === DUAL_OF_LOWER && level === UPPER_ONLY))
+    (v.level === DUAL_OF_LOWER && level === UPPER))
 
 in_upper(v::BilevelVariableRef) = in_upper(mylevel(v))
 in_lower(v::BilevelVariableRef) = in_lower(mylevel(v))
@@ -171,15 +171,14 @@ upper_ref(v::BilevelVariableRef) = v.model.var_upper[v.idx]
 lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
 
 function bound_ref(v::BilevelVariableRef)
-    if mylevel(v) == LOWER_ONLY
+    if mylevel(v) == LOWER
         return lower_ref(v)
-    elseif mylevel(v) == UPPER_ONLY || mylevel(v) == DUAL_OF_LOWER
+    elseif mylevel(v) == UPPER || mylevel(v) == DUAL_OF_LOWER
         return upper_ref(v)
     elseif mylevel(v) == BOTH
         m = v.model
         i = v.idx
         upper_ref = m.var_upper[i]
-        # this checks actual owner:
         if haskey(m.upper_to_lower_link, upper_ref)
             return upper_ref
         else
@@ -192,7 +191,7 @@ end
 
 function solver_ref(v::BilevelVariableRef)
     m = v.model
-    if mylevel(v) == LOWER_ONLY
+    if mylevel(v) == LOWER
         return m.sblm_to_solver[
             m.lower_to_sblm[JuMP.index(lower_ref(v))]]
     else
@@ -215,15 +214,13 @@ function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, n
     m = bilevel_model(inner)
     m.nextvaridx += 1
     vref = BilevelVariableRef(m, m.nextvaridx, BOTH)
-    # break info so that bounds go to correct level
-    var_upper, var_lower = split_variable(inner, v)
-    v_upper = JuMP.add_variable(m.upper, var_upper, name)
+    v_upper = JuMP.add_variable(m.upper, v, name)
     m.var_upper[vref.idx] = v_upper
-    v_lower = JuMP.add_variable(m.lower, var_lower, name)
+    v_lower = JuMP.add_variable(m.lower, v, name)
     m.var_lower[vref.idx] = v_lower
     m.var_level[vref.idx] = BOTH
     set_link!(inner, v_upper, v_lower)
-    m.variables[vref.idx] = v # save complete data
+    m.variables[vref.idx] = v
     JuMP.set_name(vref, name)
     vref
 end
@@ -247,29 +244,6 @@ MOI.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.var
 JuMP.num_variables(m::BilevelModel) = length(m.variables)
 JuMP.num_variables(m::InnerBilevelModel) = JuMP.num_variables(bilevel_model(m))
 
-"""
-Split variable because actual owner of the variable should be the one holding the bounds.
-"""
-function split_variable(::UpperModel, v::JuMP.AbstractVariable)
-    var_upper = v
-    var_lower = JuMP.ScalarVariable(JuMP.VariableInfo(
-        false, NaN,
-        false, NaN,
-        false, NaN,
-        v.info.has_start, v.info.start,
-        false, false))
-    return var_upper, var_lower
-end
-function split_variable(::LowerModel, v::JuMP.AbstractVariable)
-    var_lower = v
-    var_upper = JuMP.ScalarVariable(JuMP.VariableInfo(
-        false, NaN,
-        false, NaN,
-        false, NaN,
-        v.info.has_start, v.info.start,
-        false, false))
-    return var_upper, var_lower
-end
 # -------------------------
 # begin
 # Unchanged from StructJuMP
@@ -492,14 +466,14 @@ function JuMP.build_variable(
         _error("Unrecognized keyword argument $kwarg")
     end
 
-    # info.has_lb    && _error("Dual variable does not support setting bounds")
-    # info.has_ub    && _error("Dual variable does not support setting bounds")
+    info.has_lb    && _error("Dual variable does not support setting bounds")
+    info.has_ub    && _error("Dual variable does not support setting bounds")
     info.has_fix   && _error("Dual variable does not support fixing")
     # info.has_start && _error("Dual variable does not support start values")
     info.binary    && _error("Dual variable cannot be binary")
     info.integer   && _error("Dual variable cannot be integer")
 
-    if dual_of.ci.level != LOWER_ONLY
+    if dual_of.ci.level != LOWER
         error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
     end
 

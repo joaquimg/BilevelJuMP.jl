@@ -33,7 +33,6 @@ solvers_quad = OptModeType[]
 solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
-solvers_sos_quad_bin = OptModeType[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
@@ -193,27 +192,14 @@ end
     for solver in solvers_nlp
         jump_conejo2016(solver.opt, solver.mode)
     end
-    for solver in solvers_sos_quad_bin
-        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    end
 end
 
 # require SOCtoNonConvexQuad bridge to work with Ipopt
-@testset "Bilevel Conic JuMP NLP" begin
+@testset "Bilevel Conic JuMP" begin
     for solver in solvers_nlp_lowtol
         #jump_conic01(solver.opt, solver.mode)
         #jump_conic02(solver.opt, solver.mode)
         #jump_conic03(solver.opt, solver.mode)
         #jump_conic04(solver.opt, solver.mode)
-    end
-end
-
-@testset "Bilevel Conic JuMP SOC + MIP" begin
-    for solver in solvers_sos_quad_bin
-        # TODO require setting bounds os duals
-        # jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
 end
