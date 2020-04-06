@@ -107,7 +107,7 @@ end
         jump_HTP_lin04(solver.opt, solver.mode)
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
-        jump_HTP_lin07(solver.opt, solver.mode)
+        jump_HTP_lin07(solver.opt, solver.mode, CONFIG_3)
         jump_HTP_lin08(solver.opt, solver.mode)
         jump_HTP_lin09(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)
@@ -195,6 +195,12 @@ end
     end
     for solver in solvers_sos_quad_bin
         jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+    end
+end
+
+@testset "fanzeres2017" begin
+    for solver in solvers_nlp
+        jump_fanzeres2017(solver.opt, solver.mode)
     end
 end
 
