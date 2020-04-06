@@ -1184,6 +1184,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     # send y to upper level
 
     atol = config.atol
+    rtol = config.rtol
 
     model = BilevelModel()
 
@@ -1215,8 +1216,8 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     termination_status(model)
 
-    @test value.(x) ≈ [0, 0.9] atol=atol
-    @test value.(y) ≈ [0, 0.6, 0.4] atol=atol
+    @test value.(x) ≈ [0, 0.9] atol=atol rtol=rtol
+    @test value.(y) ≈ [0, 0.6, 0.4] atol=atol rtol=rtol
 end
 
 # 9.2.9 - parg 217
@@ -2102,14 +2103,18 @@ end
     Conejo, A. J., Baringo, L., Kazempour, S. J., and Siddiqui, A. S. (2016).
     Investment in Electricity Generation and Transmission. Springer.
 =#
-function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     atol = config.atol
 
     model = BilevelModel()
 
     @variable(Upper(model), x, start = 50)
-    @variable(Lower(model), y[i=1:3], start = [50, 150, 0][i])
+    if bounds
+        @variable(Lower(model), -1 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
+    else
+        @variable(Lower(model), y[i=1:3], start = [50, 150, 0][i])
+    end
     # 2 and 3 are lower only
 
     @constraint(Upper(model), lb0, x >= 0)
@@ -2121,11 +2126,11 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), ub2, y[2] <= 150)
     @constraint(Lower(model), ub3, y[3] <= 100)
     @constraint(Lower(model), lb[i=1:3], y[i] >= 0)
-
-    @variable(Upper(model), lambda, DualOf(b), start = 15)
-    # TODO allow hint on bounds
-    # @constraint(Upper(model), lambda <= 30)
-
+    if bounds
+        @variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
+    else
+        @variable(Upper(model), lambda, DualOf(b), start = 15)
+    end
 
     @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
@@ -2137,10 +2142,10 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     primal_status(model)
     termination_status(model)
 
-    @test objective_value(model) ≈ -190_000  atol=1e-1
-    @test value(x) ≈ 50 atol=1e-3
-    @test value.(y) ≈ [50, 150, 0] atol=1e-3
-    @test value(lambda) ≈ 15 atol=1e-3
+    @test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
+    @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
+    @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
+    @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
 end
 
 #=
@@ -2184,12 +2189,16 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @test value(lambda) ≈ 1_000 atol=1e-3
 end
 
-function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode())
+function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     model = BilevelModel()
 
     @variable(Upper(model), x[i=1:3])
-    @variable(Lower(model), y[i=1:3])
+    if bounds
+        @variable(Lower(model), -5 <= y[i=1:3] <= 5)
+    else
+        @variable(Lower(model), y[i=1:3])
+    end
 
     @constraint(Upper(model), soc_up, x in SecondOrderCone())
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
@@ -2217,12 +2226,16 @@ end
     https://core.ac.uk/download/pdf/81261904.pdf
 =#
 
-function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode())
+function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    @variable(Lower(model), y[i=1:2])
+    if bounds
+        @variable(Lower(model), y[i=1:2] <= 5)
+    else
+        @variable(Lower(model), y[i=1:2])
+    end
 
     @objective(Upper(model), Min, x + 3(y[1] -y[2]))
     @constraint(Upper(model), x >= 2)
@@ -2250,12 +2263,16 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test value(y[2]) >= 0 - 1e-3
     @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
 end
-function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode())
+function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    @variable(Lower(model), y[i=1:2])
+    if bounds
+        @variable(Lower(model), -5 <= y[i=1:2] <= 5)
+    else
+        @variable(Lower(model), y[i=1:2])
+    end
 
     @objective(Upper(model), Min, x + 2(y[1] + y[2]))
     @constraint(Upper(model), x >= 0)
@@ -2285,12 +2302,16 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test value(y[2]) <= 0 + 1e-3
     @test value(y[1]) + value(y[2]) ≈ 2 atol=1e-3
 end
-function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode())
+function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    @variable(Lower(model), y[i=1:3])
+    if bounds
+        @variable(Lower(model), -5 <= y[i=1:3] <= 5)
+    else
+        @variable(Lower(model), y[i=1:3])
+    end
 
     @objective(Upper(model), Min, x + 3y[1])
     @constraint(Upper(model), e, x >= 2)
