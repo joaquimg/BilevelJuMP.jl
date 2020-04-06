@@ -194,6 +194,12 @@ end
     end
 end
 
+@testset "fanzeres2017" begin
+    for solver in solvers_nlp
+        jump_fanzeres2017(solver.opt, solver.mode)
+    end
+end
+
 # require SOCtoNonConvexQuad bridge to work with Ipopt
 @testset "Bilevel Conic JuMP" begin
     for solver in solvers_nlp_lowtol
