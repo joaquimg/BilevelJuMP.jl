@@ -2152,8 +2152,8 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
 
     model = BilevelModel()
 
-    @variable(Upper(model), q1)
-    @variable(Lower(model), g[i=1:4])
+    @variable(Upper(model), q1, start = 20)
+    @variable(Lower(model), g[i=1:4], start = [20, 40, 40, 0][i])
 
     @constraint(Upper(model), q1 >= 0)
     @constraint(Upper(model), q1 <= 100)
@@ -2166,7 +2166,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model), g[4] <= 100)
     @constraint(Lower(model), lb[i=1:4], g[i] >= 0)
 
-    @variable(Upper(model), lambda, DualOf(b))
+    @variable(Upper(model), lambda, DualOf(b), start = 1_000)
 
     @objective(Upper(model), Max, lambda*g[1])
 
