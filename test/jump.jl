@@ -3,6 +3,8 @@ jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_
 jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
 function _jump_01(optimizer, vectorized::Bool, mode, config)
 
+    atol = config.atol
+
     # min -4x -3y
     # s.t.
     # y = argmin_y y
@@ -49,10 +51,10 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
     termination_status(model)
 
-    @test objective_value(model) ≈ -8 atol=1e-4
+    @test objective_value(model) ≈ -8 atol=atol
 
-    @test value(x) ≈  2 atol=1e-5
-    @test value(y) ≈  0 atol=1e-5
+    @test value(x) ≈  2 atol=atol
+    @test value(y) ≈  0 atol=atol
 
 end
 

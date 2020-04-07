@@ -224,7 +224,7 @@ function build_bilevel(
         end
     end
 
-    return m, upper_idxmap, lower_idxmap#, lower_primal_dual_map, lower_dual_idxmap
+    return m, upper_idxmap, lower_idxmap, lower_primal_dual_map, lower_dual_idxmap
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T

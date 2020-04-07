@@ -136,7 +136,7 @@ function moi_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     parametric = [X2[1]]
 
-    blp, _, _ = BilevelJuMP.build_bilevel(upper, lower, links, parametric, mode)
+    blp, _, _ , _, _ = BilevelJuMP.build_bilevel(upper, lower, links, parametric, mode)
 
 
     # MOI.optimize!(bridged)
@@ -236,7 +236,7 @@ function moi_03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     parametric = [x2] 
 
-    blp, _, _ = BilevelJuMP.build_bilevel(upper, lower, links, parametric, mode)
+    blp, _, _, _, _  = BilevelJuMP.build_bilevel(upper, lower, links, parametric, mode)
 
 
     # MOI.optimize!(bridged)
