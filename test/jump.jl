@@ -86,7 +86,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     termination_status(model)
 
     @test objective_value(model) ≈ 12 atol=atol
-    @test BilevelJuMP.lower_objective_value(model) == -2
+    @test BilevelJuMP.lower_objective_value(model) ≈ -2 atol=atol
 
     @test value(x) ≈ 6 atol=atol
     @test value(y) ≈ 2 atol=atol
@@ -135,7 +135,7 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     termination_status(model)
 
     @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=atol
-    @test BilevelJuMP.lower_objective_value(model) == -3.5*8/15
+    @test BilevelJuMP.lower_objective_value(model) ≈ -3.5*8/15 atol=atol
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
