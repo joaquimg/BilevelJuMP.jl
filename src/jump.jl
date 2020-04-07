@@ -730,3 +730,13 @@ end
 function JuMP.objective_value(model::BilevelModel)
     return MOI.get(model.solver, MOI.ObjectiveValue())
 end
+function lower_objective_value(model::BilevelModel)
+    # Create a dict with lower variables in the lower objective
+    vals = Dict()
+    for v in model.lower_objective_function.terms.keys
+        vals[MOI.VariableIndex(v.idx)] = JuMP.value(v)
+    end
+    # Evaluate the lower objective expression
+    return MOIU.eval_variables(vi -> vals[vi], 
+        model.lower.moi_backend.model_cache.model.objective)
+end
