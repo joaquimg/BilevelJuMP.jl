@@ -7,6 +7,18 @@ abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
 Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
 
+mutable struct ConstraintInfo{T<:Union{Float64, Vector{Float64}}}
+    start::T
+    upper::T
+    lower::T
+    function ConstraintInfo{Float64}()
+        new(NaN, NaN, NaN)
+    end
+    function ConstraintInfo{Vector{Float64}}(N::Integer)
+        new(fill(NaN, N), fill(NaN, N), fill(NaN, N))
+    end
+end
+
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     upper::JuMP.AbstractModel
@@ -35,6 +47,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     ctr_level::Dict{Int, Level}
     ctr_upper::Dict{Int, JuMP.ConstraintRef}
     ctr_lower::Dict{Int, JuMP.ConstraintRef}
+    ctr_info::Dict{Int, ConstraintInfo}
 
     upper_objective_sense::MOI.OptimizationSense
     upper_objective_function::JuMP.AbstractJuMPScalar
@@ -46,9 +59,11 @@ mutable struct BilevelModel <: AbstractBilevelModel
     solver#::MOI.ModelLike
     upper_to_sblm
     lower_to_sblm
+    lower_dual_to_sblm
     sblm_to_solver
+    lower_primal_dual_map
 
-    objdict::Dict{Symbol, Any}                      # Same that JuMP.Model's field `objdict`
+    objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
 
@@ -66,12 +81,15 @@ mutable struct BilevelModel <: AbstractBilevelModel
             #ctr
             0, Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, String}(),    # Model Constraints
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, JuMP.AbstractConstraint}(),
+            Dict{Int, ConstraintInfo}(),
             #obj
             MOI.FEASIBILITY_SENSE,
             zero(JuMP.GenericAffExpr{Float64, BilevelVariableRef}), # Model objective
             MOI.FEASIBILITY_SENSE,
             zero(JuMP.GenericAffExpr{Float64, BilevelVariableRef}), # Model objective
 
+            nothing,
+            nothing,
             nothing,
             nothing,
             nothing,
@@ -270,10 +288,6 @@ function split_variable(::LowerModel, v::JuMP.AbstractVariable)
         false, false))
     return var_upper, var_lower
 end
-# -------------------------
-# begin
-# Unchanged from StructJuMP
-# -------------------------
 
 # Internal function
 variable_info(vref::BilevelVariableRef) = vref.model.variables[vref.idx].info
@@ -281,12 +295,24 @@ function update_variable_info(vref::BilevelVariableRef, info::JuMP.VariableInfo)
     vref.model.variables[vref.idx] = JuMP.ScalarVariable(info)
 end
 
-JuMP.has_lower_bound(vref::BilevelVariableRef) = variable_info(vref).has_lb
+function JuMP.has_lower_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        return !isnan(get_dual_lower_bound(get_constrain_ref(vref)))
+    end
+    return variable_info(vref).has_lb
+end
 function JuMP.lower_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        return get_dual_lower_bound(get_constrain_ref(vref))
+    end
     @assert !JuMP.is_fixed(vref)
     variable_info(vref).lower_bound
 end
 function JuMP.set_lower_bound(vref::BilevelVariableRef, lower)
+    if mylevel(vref) == DUAL_OF_LOWER
+        set_dual_lower_bound(get_constrain_ref(vref), lower)
+        return vref.model.variables[vref.idx]
+    end
     info = variable_info(vref)
     JuMP.set_lower_bound(bound_ref(vref), lower)
     update_variable_info(vref,
@@ -297,6 +323,10 @@ function JuMP.set_lower_bound(vref::BilevelVariableRef, lower)
                                            info.binary, info.integer))
 end
 function JuMP.delete_lower_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        set_dual_lower_bound(get_constrain_ref(vref), NaN)
+        return vref.model.variables[vref.idx]
+    end
     info = variable_info(vref)
     JuMP.delete_lower_bound(bound_ref(vref))
     update_variable_info(vref,
@@ -306,12 +336,24 @@ function JuMP.delete_lower_bound(vref::BilevelVariableRef)
                                            info.has_start, info.start,
                                            info.binary, info.integer))
 end
-JuMP.has_upper_bound(vref::BilevelVariableRef) = variable_info(vref).has_ub
+function JuMP.has_upper_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        return !isnan(get_dual_upper_bound(get_constrain_ref(vref)))
+    end
+    return variable_info(vref).has_ub
+end
 function JuMP.upper_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        return get_dual_upper_bound(get_constrain_ref(vref))
+    end
     @assert !JuMP.is_fixed(vref)
     variable_info(vref).upper_bound
 end
 function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
+    if mylevel(vref) == DUAL_OF_LOWER
+        set_dual_upper_bound(get_constrain_ref(vref), upper)
+        return vref.model.variables[vref.idx]
+    end
     info = variable_info(vref)
     JuMP.set_upper_bound(bound_ref(vref), upper)
     update_variable_info(vref,
@@ -322,6 +364,10 @@ function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
                                            info.binary, info.integer))
 end
 function JuMP.delete_upper_bound(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        set_dual_upper_bound(get_constrain_ref(vref), NaN)
+        return vref.model.variables[vref.idx]
+    end
     info = variable_info(vref)
     JuMP.delete_upper_bound(bound_ref(vref))
     update_variable_info(vref,
@@ -334,6 +380,9 @@ end
 JuMP.is_fixed(vref::BilevelVariableRef) = variable_info(vref).has_fix
 JuMP.fix_value(vref::BilevelVariableRef) = variable_info(vref).fixed_value
 function JuMP.fix(vref::BilevelVariableRef, value)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be fixed.")
+    end
     info = variable_info(vref)
     JuMP.fix(bound_ref(vref), value)
     update_variable_info(vref,
@@ -344,6 +393,9 @@ function JuMP.fix(vref::BilevelVariableRef, value)
                                            info.binary, info.integer))
 end
 function JuMP.unfix(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be fixed.")
+    end
     info = variable_info(vref)
     JuMP.unfix(bound_ref(vref))
     update_variable_info(vref,
@@ -353,8 +405,17 @@ function JuMP.unfix(vref::BilevelVariableRef)
                                            info.has_start, info.start,
                                            info.binary, info.integer))
 end
-JuMP.start_value(vref::BilevelVariableRef) = variable_info(vref).start
+function JuMP.start_value(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        return get_dual_start(get_constrain_ref(vref))
+    end
+    variable_info(vref).start
+end
 function JuMP.set_start_value(vref::BilevelVariableRef, start)
+    if mylevel(vref) == DUAL_OF_LOWER
+        set_dual_start(get_constrain_ref(vref), start)
+        return vref.model.variables[vref.idx]
+    end
     info = variable_info(vref)
     in_upper(vref) && JuMP.set_start_value(upper_ref(vref), start)
     in_lower(vref) && JuMP.set_start_value(lower_ref(vref), start)
@@ -367,6 +428,9 @@ function JuMP.set_start_value(vref::BilevelVariableRef, start)
 end
 JuMP.is_binary(vref::BilevelVariableRef) = variable_info(vref).binary
 function JuMP.set_binary(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be binary.")
+    end
     @assert !JuMP.is_integer(vref)
     info = variable_info(vref)
     JuMP.set_binary(bound_ref(vref))
@@ -378,6 +442,9 @@ function JuMP.set_binary(vref::BilevelVariableRef)
                                            true, info.integer))
 end
 function JuMP.unset_binary(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be binary.")
+    end
     info = variable_info(vref)
     JuMP.unset_binary(bound_ref(vref))
     update_variable_info(vref,
@@ -389,6 +456,9 @@ function JuMP.unset_binary(vref::BilevelVariableRef)
 end
 JuMP.is_integer(vref::BilevelVariableRef) = variable_info(vref).integer
 function JuMP.set_integer(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be integer.")
+    end
     @assert !JuMP.is_binary(vref)
     info = variable_info(vref)
     JuMP.set_integer(bound_ref(vref))
@@ -400,6 +470,9 @@ function JuMP.set_integer(vref::BilevelVariableRef)
                                            info.binary, true))
 end
 function JuMP.unset_integer(vref::BilevelVariableRef)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error("Dual variable cannot be integer.")
+    end
     info = variable_info(vref)
     JuMP.unset_integer(bound_ref(vref))
     update_variable_info(vref,
@@ -409,12 +482,6 @@ function JuMP.unset_integer(vref::BilevelVariableRef)
                                            info.has_start, info.start,
                                            info.binary, false))
 end
-
-# -------------------------
-# end
-# Unchanged from StructJuMP
-# -------------------------
-
 
 # Constraints
 struct BilevelConstraintRef
@@ -451,6 +518,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     blm.ctr_level[cref.idx] = level(m)
     mylevel_ctr_list(m)[cref.idx] = level_cref
     blm.constraints[cref.idx] = c
+    blm.ctr_info[cref.idx] = empty_constraint_info(c)
     JuMP.set_name(cref, name)
     cref
 end
@@ -469,6 +537,46 @@ function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
     c.func::F
     c.set::S
     c
+end
+function empty_constraint_info(c::JuMP.ScalarConstraint{F,S}) where {F,S}
+    return ConstraintInfo{Float64}()
+end
+function empty_constraint_info(c::JuMP.VectorConstraint{F,S}) where {F,S}
+    return ConstraintInfo{Vector{Float64}}(MOI.dimension(c.set))
+end
+
+function set_dual_start(cref::BilevelConstraintRef, value::T) where T<:Number
+    cref.model.ctr_info[cref.idx].start = value
+end
+function set_dual_start(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+    array = cref.model.ctr_info[cref.idx].start
+    @assert length(array) == length(value)
+    copyto!(array, value)
+end
+function get_dual_start(cref::BilevelConstraintRef)
+    cref.model.ctr_info[cref.idx].start
+end
+function set_dual_upper_bound(cref::BilevelConstraintRef, value::T) where T<:Number
+    cref.model.ctr_info[cref.idx].upper = value
+end
+function set_dual_upper_bound(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+    array = cref.model.ctr_info[cref.idx].upper
+    @assert length(array) == length(value)
+    copyto!(array, value)
+end
+function get_dual_upper_bound(cref::BilevelConstraintRef)
+    cref.model.ctr_info[cref.idx].upper
+end
+function set_dual_lower_bound(cref::BilevelConstraintRef, value::T) where T<:Number
+    cref.model.ctr_info[cref.idx].lower = value
+end
+function set_dual_lower_bound(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+    array = cref.model.ctr_info[cref.idx].lower
+    @assert length(array) == length(value)
+    copyto!(array, value)
+end
+function get_dual_lower_bound(cref::BilevelConstraintRef)
+    cref.model.ctr_info[cref.idx].lower
 end
 
 # variables again (duals)
@@ -492,12 +600,28 @@ function JuMP.build_variable(
         _error("Unrecognized keyword argument $kwarg")
     end
 
-    # info.has_lb    && _error("Dual variable does not support setting bounds")
-    # info.has_ub    && _error("Dual variable does not support setting bounds")
+    if info.has_lb
+        set_dual_lower_bound(dual_of.ci, info.lower_bound)
+        # info.has_lb = false
+        # info.lower_bound = NaN
+    end
+    if info.has_ub
+        set_dual_upper_bound(dual_of.ci, info.upper_bound)
+        # info.has_ub = false
+        # info.upper_bound = NaN
+    end
     info.has_fix   && _error("Dual variable does not support fixing")
-    # info.has_start && _error("Dual variable does not support start values")
+    if info.has_start
+        set_dual_start(dual_of.ci, info.start)
+        # info.has_start = false
+        # info.start = NaN
+    end
     info.binary    && _error("Dual variable cannot be binary")
     info.integer   && _error("Dual variable cannot be integer")
+
+    info = JuMP.VariableInfo(false, NaN, false, NaN,
+                             false, NaN, false, NaN,
+                             false, false)
 
     if dual_of.ci.level != LOWER_ONLY
         error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
@@ -520,6 +644,19 @@ function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name:
     m.variables[vref.idx] = JuMP.ScalarVariable(dual_info.info)
     JuMP.set_name(vref, name)
     vref
+end
+
+function get_constrain_ref(vref::BilevelVariableRef)
+    model = vref.model
+    ctr_ref = model.upper_var_to_lower_ctr_link[model.var_upper[vref.idx]]
+    idx = -1
+    for (ind, ref) in model.ctr_lower
+        if ref == ctr_ref
+            idx = ind
+        end
+    end
+    @assert idx != -1
+    return BilevelConstraintRef(model, idx, DUAL_OF_LOWER)
 end
 
 # Objective
@@ -621,13 +758,6 @@ function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
     end
     return quadv
 end
-# function replace_variables(quad::C,
-#     model::BilevelModel,
-#     inner::JuMP.AbstractModel,
-#     variable_map::Dict{Int, V},
-#     level::Level) where {C,V<:JuMP.AbstractVariableRef}
-#     error("A BilevelModel cannot have $(C) function")
-# end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
 
 using MathOptFormat
@@ -656,36 +786,67 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
     moi_link = JuMP.index(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
-    single_blm, upper_to_sblm, lower_to_sblm = build_bilevel(
-        upper, lower, moi_link, moi_upper, mode, moi_link2)
+    single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
+    build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2)
+
+    # pass lower level dual variables info (start, upper, lower)
+    for (idx, info) in model.ctr_info
+        if haskey(model.ctr_lower, idx)
+            ctr = model.ctr_lower[idx]
+            pre_duals = lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
+            duals = map(x->lower_dual_to_sblm[x], pre_duals)
+            pass_dual_info(single_blm, duals, info)
+        end
+    end
 
     solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
     sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = false)
 
-    MOI.optimize!(solver)
-
     # print_lp(single_blm, "cache_bilevel")
     # print_lp(solver, "solver_bilevel")
+
+    MOI.optimize!(solver)
     # print_lp(solver.model, "in_opt_bilevel")
     # MOI.write_to_file(solver.model.optimizer, "in_opt_bilevel.lp")
 
-
-    # map from bridged to single_blm
-    # map from single_blm to upper & lowel
-    # map from upper & lower to model
     model.solver  = solver#::MOI.ModelLike
     model.upper_to_sblm = upper_to_sblm
     model.lower_to_sblm = lower_to_sblm
+    model.lower_dual_to_sblm = lower_dual_to_sblm
+    model.lower_primal_dual_map = lower_primal_dual_map
     model.sblm_to_solver = sblm_to_solver
 
-    # feasible = JuMP.primal_status(single_blm)# == MOI.FEASIBLE_POINT
-    # termination = JuMP.termination_status(single_blm)# == MOI.OPTIMAL
-    # objective_value = NaN
-    # if feasible == MOI.FEASIBLE_POINT
-    #     objective_value = JuMP.objective_value(single_blm)
-    # end
-    # variable_value = Dict{JuMP.VariableRef, Float64}()
     return nothing
+end
+function pass_dual_info(single_blm, dual, info::ConstraintInfo{Float64})
+    if !isnan(info.start)
+        MOI.set(single_blm, MOI.VariablePrimalStart(), dual[], info.start)
+    end
+    if !isnan(info.upper)
+        MOI.add_constraint(single_blm,
+            MOI.SingleVariable(dual[]), MOI.LessThan{Float64}(info.upper))
+    end
+    if !isnan(info.lower)
+        MOI.add_constraint(single_blm,
+            MOI.SingleVariable(dual[]), MOI.GreaterThan{Float64}(info.lower))
+    end
+    return 
+end
+function pass_dual_info(single_blm, dual, info::ConstraintInfo{Vector{Float64}})
+    for i in eachindex(dual)
+        if !isnan(info.start[i])
+            MOI.set(single_blm, MOI.VariablePrimalStart(), dual[i], info.start[i])
+        end
+        if !isnan(info.upper[i])
+            MOI.add_constraint(single_blm,
+                MOI.SingleVariable(dual[i]), MOI.LessThan{Float64}(info.upper[i]))
+        end
+        if !isnan(info.lower[i])
+            MOI.add_constraint(single_blm,
+                MOI.SingleVariable(dual[i]), MOI.GreaterThan{Float64}(info.lower[i]))
+        end
+    end
+    return
 end
 
 function JuMP.index(d::Dict)

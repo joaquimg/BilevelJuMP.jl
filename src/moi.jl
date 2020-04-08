@@ -224,7 +224,7 @@ function build_bilevel(
         end
     end
 
-    return m, upper_idxmap, lower_idxmap#, lower_primal_dual_map, lower_dual_idxmap
+    return m, upper_idxmap, lower_idxmap, lower_primal_dual_map, lower_dual_idxmap
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
@@ -507,7 +507,13 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
         ]
     end
 
-    MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
+    # MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
+    for vi in vis_src
+        if !haskey(idxmap.varmap, vi)
+            var = MOI.add_variable(dest)
+            idxmap.varmap[vi] = var
+        end
+    end
 
     # Copy variable attributes
     MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)

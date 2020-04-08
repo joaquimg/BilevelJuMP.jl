@@ -54,8 +54,8 @@ end
 
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
-        jump_01(solver.opt, solver.mode, CONFIG_4)
-        jump_01vec(solver.opt, solver.mode, CONFIG_4)
+        jump_01(solver.opt, solver.mode, CONFIG_3)
+        jump_01vec(solver.opt, solver.mode, CONFIG_3)
         jump_02(solver.opt, solver.mode)
         jump_03(solver.opt, solver.mode)
         jump_04(solver.opt, solver.mode)
@@ -216,10 +216,9 @@ end
 
 @testset "Bilevel Conic JuMP SOC + MIP" begin
     for solver in solvers_sos_quad_bin
-        # TODO require setting bounds os duals
-        # jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
 end
