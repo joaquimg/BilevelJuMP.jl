@@ -2196,14 +2196,21 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     model = BilevelModel()
 
     @variable(Upper(model), x[i=1:3])
-    if bounds
-        @variable(Lower(model), -5 <= y[i=1:3] <= 5)
-    else
-        @variable(Lower(model), y[i=1:3])
-    end
+    @variable(Lower(model), y[i=1:3])
+
+    MOI.set(optimizer, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
 
     @constraint(Upper(model), soc_up, x in SecondOrderCone())
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+    if bounds
+        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5., 5.])
+        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5., 5.])
+        # bounds defined in the upper level are not dualized
+        for i in 1:3
+            @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
+            @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
+        end
+    end
 
     @objective(Upper(model), Min, x[1])
     @objective(Lower(model), Min, y[1])
@@ -2233,23 +2240,42 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    if bounds
-        @variable(Lower(model), y[i=1:2] <= 5)
-    else
-        @variable(Lower(model), y[i=1:2])
-    end
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, x + 3(y[1] -y[2]))
-    @constraint(Upper(model), x >= 2)
-    @constraint(Upper(model), x <= 6)
+    if bounds
+        @constraint(Upper(model), x in MOI.LessThan(+6.0))
+        @constraint(Upper(model), x in MOI.GreaterThan(+2.0))
+    else
+        @constraint(Upper(model), x >= 2)
+        @constraint(Upper(model), x <= 6)
+    end
     
     @objective(Lower(model), Min, - (y[1] - y[2]))
-    @constraint(Lower(model), y[1] >= 0)
-    @constraint(Lower(model), y[2] >= 0)
-    @constraint(Lower(model), x +  (y[1] - y[2]) <=  8)
-    @constraint(Lower(model), x + 4(y[1] - y[2]) >=  8)
-    @constraint(Lower(model), x + 2(y[1] - y[2]) <= 12)
+    @constraint(Lower(model), lb_y_1, y[1] >= 0)
+    @constraint(Lower(model), lb_y_2, y[2] >= 0)
+    @constraint(Lower(model), con1, x +  (y[1] - y[2]) <=  8)
+    @constraint(Lower(model), con2, x + 4(y[1] - y[2]) >=  8)
+    @constraint(Lower(model), con3, x + 2(y[1] - y[2]) <= 12)
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    if bounds
+        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
+        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])
+        # require lower bounds
+        for con in [con1, con3]
+            BilevelJuMP.set_dual_lower_bound(con, -15)
+        end
+        # require upper bounds
+        for con in [lb_y_1, lb_y_2, con2]
+            BilevelJuMP.set_dual_upper_bound(con, +15)
+        end
+        # bounds defined in the upper level are not dualized
+        for i in 1:2
+            @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
+            @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
+        end
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
@@ -2270,24 +2296,43 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    if bounds
-        @variable(Lower(model), -5 <= y[i=1:2] <= 5)
-    else
-        @variable(Lower(model), y[i=1:2])
-    end
+    @variable(Lower(model), y[i=1:2])
 
     @objective(Upper(model), Min, x + 2(y[1] + y[2]))
-    @constraint(Upper(model), x >= 0)
-    @constraint(Upper(model), x <= 6)
     @constraint(Upper(model), y[1] + y[2] <= 3) # creates disconnected region
+    if bounds
+        @constraint(Upper(model), x in MOI.LessThan(+6.0))
+        @constraint(Upper(model), x in MOI.GreaterThan(+0.0))
+    else
+        @constraint(Upper(model), x >= 0)
+        @constraint(Upper(model), x <= 6)
+    end
 
     @objective(Lower(model), Min, - y[1] - y[2])
-    @constraint(Lower(model), y[1] >= 0)
-    @constraint(Lower(model), y[2] <= 0)
-    @constraint(Lower(model), x +  (y[1] + y[2]) <= 8)
-    @constraint(Lower(model), x + 3(y[1] + y[2]) >= 8)
-    @constraint(Lower(model),-x +  (y[1] + y[2]) <= 0)
+    @constraint(Lower(model), con1, y[1] >= 0)
+    @constraint(Lower(model), con2, y[2] <= 0)
+    @constraint(Lower(model), con3, x +  (y[1] + y[2]) <= 8)
+    @constraint(Lower(model), con4, x + 3(y[1] + y[2]) >= 8)
+    @constraint(Lower(model), con5,-x +  (y[1] + y[2]) <= 0)
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    if bounds
+        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
+        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])
+        # require lower bounds
+        for con in [con2, con3, con5]
+            BilevelJuMP.set_dual_lower_bound(con, -15)
+        end
+        # require upper bounds
+        for con in [con1, con4]
+            BilevelJuMP.set_dual_upper_bound(con, +15)
+        end
+        # bounds defined in the upper level are not dualized
+        for i in 1:2
+            @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
+            @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
+        end
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
@@ -2309,15 +2354,16 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     model = BilevelModel()
 
     @variable(Upper(model), x)
-    if bounds
-        @variable(Lower(model), -5 <= y[i=1:3] <= 5)
-    else
-        @variable(Lower(model), y[i=1:3])
-    end
+    @variable(Lower(model), y[i=1:3])
 
     @objective(Upper(model), Min, x + 3y[1])
-    @constraint(Upper(model), e, x >= 2)
-    @constraint(Upper(model), f, x <= 6)
+    if bounds
+        @constraint(Upper(model), x in MOI.GreaterThan(+2.0))
+        @constraint(Upper(model), x in MOI.LessThan(+6.0))
+    else
+        @constraint(Upper(model), x >= 2)
+        @constraint(Upper(model), x <= 6)
+    end
 
     @objective(Lower(model), Min, - y[1])
     @constraint(Lower(model), a, x +  y[1] <=  8)
@@ -2325,6 +2371,24 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), c, x + 2y[1] <= 12)
     # @constraint(Lower(model), d, y[1] >= 0)
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
+
+    if bounds
+        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5., 5.])
+        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5., 5.])
+        # require lower bounds
+        for con in [a, c]
+            BilevelJuMP.set_dual_lower_bound(con, -15)
+        end
+        # require upper bounds
+        for con in [b]
+            BilevelJuMP.set_dual_upper_bound(con, +15)
+        end
+        # bounds defined in the upper level are not dualized
+        for i in 1:3
+            @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
+            @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
+        end
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)

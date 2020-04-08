@@ -216,10 +216,9 @@ end
 
 @testset "Bilevel Conic JuMP SOC + MIP" begin
     for solver in solvers_sos_quad_bin
-        # TODO require setting bounds os duals
-        # jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        # jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+        jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
 end

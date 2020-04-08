@@ -507,7 +507,13 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
         ]
     end
 
-    MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
+    # MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
+    for vi in vis_src
+        if !haskey(idxmap.varmap, vi)
+            var = MOI.add_variable(dest)
+            idxmap.varmap[vi] = var
+        end
+    end
 
     # Copy variable attributes
     MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
