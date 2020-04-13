@@ -875,8 +875,21 @@ end
 function JuMP.value(v::BilevelConstraintRef)::Float64
     error("value of BilevelConstraintRef not enabled")
 end
-function JuMP.dual(v::BilevelConstraintRef)::Float64
-    error("dual of BilevelConstraintRef not enabled")
+function JuMP.dual(con::BilevelJuMP.BilevelConstraintRef)::Float64
+    # Right now this code assumes there is no possibility for vectorized constraints
+    if con.level == BilevelJuMP.LOWER_ONLY
+        # Constraint index on the lower model
+        con_lower_idx = con.model.ctr_lower[con.idx].index
+        # Dual variable associated with constraint index
+        model_var_idx = con.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
+        # Single bilevel model variable associated with the dual variable
+        sblm_var_idx = con.model.lower_dual_to_sblm[model_var_idx[1]]
+        # Solver variable associated withe the sblm model
+        solver_var_idx = con.model.sblm_to_solver[sblm_var_idx]
+        return MOI.get(con.model.solver.model.optimizer, MOI.VariablePrimal(), solver_var_idx)
+    else
+        error("dual of upper level BilevelConstraintRef not enabled")
+    end
 end
 function JuMP.primal_status(model::BilevelModel)
     return MOI.get(model.solver, MOI.PrimalStatus())
