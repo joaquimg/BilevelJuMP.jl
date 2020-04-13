@@ -88,6 +88,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     termination_status(model)
 
     @test objective_value(model) ≈ 12 atol=atol
+    @test BilevelJuMP.lower_objective_value(model) ≈ -2 atol=atol
 
     @test value(x) ≈ 6 atol=atol
     @test value(y) ≈ 2 atol=atol
@@ -136,6 +137,7 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     termination_status(model)
 
     @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=atol
+    @test BilevelJuMP.lower_objective_value(model) ≈ -3.5*8/15 atol=atol
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
@@ -2186,6 +2188,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     termination_status(model)
 
     @test objective_value(model) ≈ 20_000  atol=1e-1
+    @test lower_objective_value(model) ≈ 6_000  atol=1e-1
     @test value(q1) ≈ 20 atol=1e-3
     @test value.(g) ≈ [20, 40, 40, 0] atol=1e-3
     @test value(lambda) ≈ 1_000 atol=1e-3
