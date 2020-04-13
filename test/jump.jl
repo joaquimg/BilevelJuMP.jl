@@ -2196,7 +2196,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     termination_status(model)
 
     @test objective_value(model) ≈ 20_000  atol=1e-1
-    @test lower_objective_value(model) ≈ 6_000  atol=1e-1
+    @test BilevelJuMP.lower_objective_value(model) ≈ 6_000  atol=1e-1
     @test value(q1) ≈ 20 atol=1e-3
     @test value.(g) ≈ [20, 40, 40, 0] atol=1e-3
     @test value(lambda) ≈ 1_000 atol=1e-3
