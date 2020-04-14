@@ -876,18 +876,24 @@ end
 function JuMP.value(v::BilevelConstraintRef)::Float64
     error("value of BilevelConstraintRef not enabled")
 end
-function JuMP.dual(cref::BilevelConstraintRef)::Float64
+function JuMP.dual(cref::BilevelConstraintRef)
     # Right now this code assumes there is no possibility for vectorized constraints
     if my_level(cref) == BilevelJuMP.LOWER_ONLY
         # Constraint index on the lower model
         con_lower_idx = cref.model.ctr_lower[cref.idx].index
         # Dual variable associated with constraint index
-        model_var_idx = cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
+        model_var_idxs = cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
         # Single bilevel model variable associated with the dual variable
-        sblm_var_idx = cref.model.lower_dual_to_sblm[model_var_idx[1]]
+        sblm_var_idxs = MOI.VariableIndex[]
+        for vi in model_var_idxs
+            push!(sblm_var_idxs, cref.model.lower_dual_to_sblm[vi])
+        end
         # Solver variable associated withe the sblm model
-        solver_var_idx = cref.model.sblm_to_solver[sblm_var_idx]
-        return MOI.get(cref.model.solver.model.optimizer, MOI.VariablePrimal(), solver_var_idx)
+        solver_var_idxs = MOI.VariableIndex[]
+        for vi in sblm_var_idxs
+            push!(solver_var_idxs, cref.model.sblm_to_solver[vi])
+        end
+        return MOI.get(cref.model.solver.model.optimizer, MOI.VariablePrimal(), solver_var_idxs)
     else
         error("dual of upper level BilevelConstraintRef not enabled")
     end

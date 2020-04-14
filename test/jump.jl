@@ -92,12 +92,10 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @test value(x) ≈ 6 atol=atol
     @test value(y) ≈ 2 atol=atol
-    @test dual(c1) ≈ -1 atol=atol
-    @test dual(c2) ≈ 0 atol=atol
-    @test dual(c3) ≈ 0 atol=atol
-    @test dual(c4) ≈ 0 atol=atol
-    @test dual(c5) ≈ 0 atol=atol
-    @test dual(c6) ≈ 0 atol=atol
+    @test dual(c1) ≈ [-1] atol=atol
+    @test dual(c2) ≈ [0] atol=atol
+    @test dual(c3) ≈ [0] atol=atol
+    @test dual(c6) ≈ [0] atol=atol
 
 end
 
@@ -1028,8 +1026,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     @test value(x) ≈ 4 atol=atol
     @test value(y) ≈ 4 atol=atol
-    @test dual(c1) ≈ 0 atol=atol
-    @test dual(c2) ≈ 0 atol=atol
+    @test dual(c1) ≈ [0] atol=atol
+    @test dual(c2) ≈ [0] atol=atol
 end
 
 # 9.2.4 - parg 211
