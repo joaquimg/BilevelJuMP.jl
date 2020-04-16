@@ -71,12 +71,12 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @objective(Lower(model), Min, -y)
 
-    @constraint(Lower(model), x+y <= 8)
-    @constraint(Lower(model), x+4y >= 8)
-    @constraint(Lower(model), x+2y <= 13)
-    @constraint(Lower(model), x >= 1)
-    @constraint(Lower(model), x <= 6)
-    @constraint(Lower(model), y >= 0)
+    @constraint(Lower(model), c1, x+y <= 8)
+    @constraint(Lower(model), c2, x+4y >= 8)
+    @constraint(Lower(model), c3, x+2y <= 13)
+    @constraint(Lower(model), c4, x >= 1)
+    @constraint(Lower(model), c5, x <= 6)
+    @constraint(Lower(model), c6, y >= 0)
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
@@ -92,6 +92,10 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @test value(x) ≈ 6 atol=atol
     @test value(y) ≈ 2 atol=atol
+    @test dual(c1) ≈ [-1] atol=atol
+    @test dual(c2) ≈ [0] atol=atol
+    @test dual(c3) ≈ [0] atol=atol
+    @test dual(c6) ≈ [0] atol=atol
 
 end
 
@@ -1006,8 +1010,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Upper(model), y >= 0)
 
     @objective(Lower(model), Min, y)
-    @constraint(Lower(model), -y <= 0)
-    @constraint(Lower(model), -x + y <= 3)
+    @constraint(Lower(model), c1, -y <= 0)
+    @constraint(Lower(model), c2, -x + y <= 3)
     @constraint(Lower(model),   x + 2y <= 12)
     @constraint(Lower(model),  4x -  y <= 12)
 
@@ -1022,6 +1026,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     @test value(x) ≈ 4 atol=atol
     @test value(y) ≈ 4 atol=atol
+    @test dual(c1) ≈ [0] atol=atol
+    @test dual(c2) ≈ [0] atol=atol
 end
 
 # 9.2.4 - parg 211
@@ -2188,7 +2194,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     termination_status(model)
 
     @test objective_value(model) ≈ 20_000  atol=1e-1
-    @test lower_objective_value(model) ≈ 6_000  atol=1e-1
+    @test BilevelJuMP.lower_objective_value(model) ≈ 6_000  atol=1e-1
     @test value(q1) ≈ 20 atol=1e-3
     @test value.(g) ≈ [20, 40, 40, 0] atol=1e-3
     @test value(lambda) ≈ 1_000 atol=1e-3
