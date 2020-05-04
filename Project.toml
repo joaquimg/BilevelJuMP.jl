@@ -1,6 +1,6 @@
 name = "BilevelJuMP"
 uuid = "485130c0-026e-11ea-0f1a-6992cd14145c"
-authors = ["Joaquim Garcia <joaquimgarcia@psr-inc.com>"]
+authors = ["Joaquim Garcia <joaquimgarcia@psr-inc.com>, guilhermebodin <guilherme.b.moraes@gmail.com>"]
 version = "0.1.0"
 
 [deps]
