@@ -144,7 +144,9 @@ end
 # obs: example 2 is from the book
 
 # Cap 3.2, Pag 25
-function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_03(optimizer, false, mode, config)
+jump_03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_03(optimizer, true, mode, config)
+function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
@@ -160,10 +162,23 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @objective(Lower(model), Min, -x)
 
-    @constraint(Lower(model), l1,  x +  y <= 8)
-    @constraint(Lower(model), l2, 4x +  y >= 8)
-    @constraint(Lower(model), l3, 2x +  y <= 13)
-    @constraint(Lower(model), l4, 2x - 7y <= 0)
+    if vec
+        A = [
+             1   1;
+            -4  -1;
+             2   1;
+             2  -7;
+        ]
+        b = [8, -8, 13, 0]
+        @constraint(Lower(model), l,  A*[x, y] .<= b)
+        l1 = l[1]
+        l3 = l[3]
+    else
+        @constraint(Lower(model), l1,  x +  y <= 8)
+        @constraint(Lower(model), l2, 4x +  y >= 8)
+        @constraint(Lower(model), l3, 2x +  y <= 13)
+        @constraint(Lower(model), l4, 2x - 7y <= 0)
+    end
 
     if config.bound_hint
         for c in [l1, l2, l3, l4]
@@ -515,25 +530,36 @@ end
 
 
 # pag 197 ex 5.1.1
-function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+jump_06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, false, mode, config)
+jump_06_sv(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, true, mode, config)
+function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
     model = BilevelModel()
 
-    @variable(Upper(model), x, start = 4)
-    @variable(Lower(model), y, start = 4)
+    if sv
+        @variable(Upper(model), x >= 0, start = 4)
+        @variable(Lower(model), y >= 0, start = 4)
+    else
+        @variable(Upper(model), x, start = 4)
+        @variable(Lower(model), y, start = 4)
+    end
 
     @objective(Upper(model), Min, x - 4y)
-    @constraint(Upper(model), x >= 0)
-    
+    if !sv
+        @constraint(Upper(model), x >= 0)
+    end
+
     @objective(Lower(model), Min, y)
 
     @constraint(Lower(model), -x  - y <= -3)
     @constraint(Lower(model), -2x + y <= 0)
     @constraint(Lower(model), 2x  + y <= 12)
     @constraint(Lower(model), 3x + -2y <= 4) # signs are wrong in some versions of the book
-    @constraint(Lower(model), y >= 0)
+    if !sv
+        @constraint(Lower(model), y >= 0)
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
@@ -1084,7 +1110,9 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.4 - parg 211
-function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_HTP_lin03(optimizer, false, mode, config)
+jump_HTP_lin03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_HTP_lin03(optimizer, true, mode, config)
+function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
     # send y to upper level
 
     atol = config.atol
@@ -1099,27 +1127,27 @@ function jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Upper(model), [i=1:2], x[i] >= 0)
     @constraint(Upper(model), [i=1:6], y[i] >= 0)
 
-    H1 = [ -1  1  1   1  0  0;
-           -1  2 -1/2 0  1  0;
-            2 -1 -1/2 0  0  1
-    ]
-    H2 = [0 0;
-          2 0;
-          0 2
-    ]
-
-    b = [1 1 1]
-
     @objective(Lower(model), Min,
         y[1] + y[2] + 2y[3] +x[1] +2x[2])
 
-    # TODO fix broadcast
-    # @constraint(Lower(model), H1*y + H2*x .== b)
     @constraint(Lower(model), [i=1:6], y[i] >= 0)
-
-    @constraint(Lower(model), -y[1] +  y[2] +       y[3]         +y[4] == 1)
-    @constraint(Lower(model), -y[1] + 2y[2] - (1/2)*y[3] + 2x[1] +y[5] == 1)
-    @constraint(Lower(model), 2y[1] -  y[2] - (1/2)*y[3] + 2x[2] +y[6] == 1)
+    # TODO fix broadcast
+    if vec
+        H1 = [ -1  1  1   1  0  0;
+               -1  2 -1/2 0  1  0;
+                2 -1 -1/2 0  0  1
+            ]
+        H2 = [0 0;
+              2 0;
+              0 2
+            ]
+        b = [1 1 1]
+        @constraint(Lower(model), H1*y + H2*x .== b)
+    else
+        @constraint(Lower(model), -y[1] +  y[2] +       y[3] + y[4]         == 1)
+        @constraint(Lower(model), -y[1] + 2y[2] - (1/2)*y[3] + y[5] + 2x[1] == 1)
+        @constraint(Lower(model), 2y[1] -  y[2] - (1/2)*y[3] + y[6] + 2x[2] == 1)
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
