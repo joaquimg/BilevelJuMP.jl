@@ -124,6 +124,12 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test dual(c2) ≈ [0] atol=atol
     @test dual(c3) ≈ [0] atol=atol
     @test dual(c6) ≈ [0] atol=atol
+    @test value(c1) ≈ 8 atol=atol
+    @test value(c2) ≈ 14 atol=atol
+    @test value(c3) ≈ 10 atol=atol
+    @test value(c4) ≈ 6 atol=atol
+    @test value(c5) ≈ 6 atol=atol
+    @test value(c6) ≈ 2 atol=atol
 
 end
 
@@ -184,6 +190,8 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
+    @test value(u1) ≈ 3.5*8/15 atol=atol
+    @test value(l1) ≈ 4.5*8/15 atol=atol
 
     @test dual(l1) ≈ [0] atol=atol
     # @test dual(l2) #≈ [0] atol=atol

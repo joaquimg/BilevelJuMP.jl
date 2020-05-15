@@ -611,6 +611,22 @@ function get_primal_lower_bound_hint(vref::BilevelVariableRef)
     vref.model.var_info[vref.idx].lower
 end
 
+function JuMP.value(cref::BilevelConstraintRef)
+    if my_level(cref) == BilevelJuMP.LOWER_ONLY
+        # Constraint index on the lower model
+        con_lower_idx = cref.model.ctr_lower[cref.idx].index
+        # Single bilevel model constraint associated with the lower level constraint
+        con_sblm_idx = cref.model.lower_to_sblm[con_lower_idx]
+    else
+        # Constraint index on the lower model
+        con_upper_idx = cref.model.ctr_upper[cref.idx].index
+        # Single bilevel model constraint associated with the lower level constraint
+        con_sblm_idx = cref.model.upper_to_sblm[con_upper_idx]
+    end
+    # Solver constraint associated with the single bilevel model constraint
+    con_solver_idx = cref.model.sblm_to_solver[con_sblm_idx]
+    return MOI.get(cref.model.solver, MOI.ConstraintPrimal(), con_solver_idx)
+end
 # variables again (duals)
 # code for using dual variables associated with lower level constraints
 # in the upper level
@@ -943,9 +959,7 @@ function JuMP.value(v::BilevelVariableRef)::Float64
     ref = solver_ref(v)
     return MOI.get(solver, MOI.VariablePrimal(), ref)
 end
-function JuMP.value(v::BilevelConstraintRef)::Float64
-    error("value of BilevelConstraintRef not enabled")
-end
+
 function JuMP.dual(cref::BilevelConstraintRef)
     # Right now this code assumes there is no possibility for vectorized constraints
     if my_level(cref) == BilevelJuMP.LOWER_ONLY
