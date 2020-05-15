@@ -6,6 +6,10 @@ const VAF{T} = MOI.VectorAffineFunction{T}
 const VI = MOI.VariableIndex
 const CI = MOI.ConstraintIndex
 
+const GT = MOI.GreaterThan
+const LT = MOI.LessThan
+const ET = MOI.EqualTo
+
 const SCALAR_SETS = Union{
     MOI.GreaterThan{Float64},
     MOI.LessThan{Float64},
@@ -86,6 +90,26 @@ mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     end
 end
 
+abstract type StrongDualityMode{T} <: BilevelSolverMode{T} end
+
+mutable struct StrongDualityEqualityMode{T} <: StrongDualityMode{T}
+    function StrongDualityEqualityMode()
+        return new{Float64}()
+    end
+end
+mutable struct StrongDualityInequalityMode{T} <: StrongDualityMode{T}
+    epsilon::T
+    function StrongDualityInequalityMode()
+        return new{Float64}(zero(Float64))
+    end
+    function StrongDualityInequalityMode{T}(eps::T) where T
+        return new{Float64}(eps)
+    end
+end
+
+ignore_dual_objective(::BilevelSolverMode{T}) where T = true
+ignore_dual_objective(::StrongDualityMode{T}) where T = false
+
 function accept_vector_set(mode::BilevelSolverMode{T}, con::Complement) where T
     if con.is_vec
         error("Set $(typeof(con.set_w_zero)) is not accepted when solution method is $(typeof(mode))")
@@ -157,32 +181,66 @@ function build_bilevel(
 
     # add the first level
     copy_names = false
-    # key are from src, value are from dest
-    upper_idxmap = MOIU.default_copy_to(m, upper, copy_names)
-    pass_names(m, upper, upper_idxmap)
 
-    # append the second level primal
-    lower_idxmap = MOIU.IndexMap() #
-
-    for (upper_key, lower_val) in link
-        lower_idxmap[lower_val] = upper_idxmap[upper_key]
-    end
-
-    append_to(m, lower, lower_idxmap, copy_names, allow_single_bounds = true)
-    pass_names(m, lower, lower_idxmap)
-
-
+    #=
+        Initialize Lower DUAL level model
+    =#
     # dualize the second level
     dual_problem = dualize(lower,
         dual_names = DualNames("dual_","dual_"),
         variable_parameters = upper_variables,
-        ignore_objective = true)
+        ignore_objective = ignore_dual_objective(mode))
     lower_dual = dual_problem.dual_model
     lower_primal_dual_map = dual_problem.primal_dual_map
 
-    # append the second level dual
-    lower_dual_idxmap = MOIU.IndexMap()
+    #=
+        Pass Upper level model
+    =#
 
+    # key are from src, value are from dest
+    upper_idxmap = MOIU.default_copy_to(m, upper, copy_names)
+    pass_names(m, upper, upper_idxmap)
+
+    #=
+        Pass Lower level model
+    =#
+
+    # cache and delete lower objective
+    if !ignore_dual_objective(mode)
+        # get primal obj
+        tp_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
+        @assert tp_primal_obj !== nothing
+        lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{tp_primal_obj}())
+        # delete dual obj
+        # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
+    end
+
+    # initialize map to lower level model
+    lower_idxmap = MOIU.IndexMap()
+    for (upper_key, lower_val) in link
+        lower_idxmap[lower_val] = upper_idxmap[upper_key]
+    end
+
+    # append the second level primal
+    append_to(m, lower, lower_idxmap, copy_names, allow_single_bounds = true)
+    pass_names(m, lower, lower_idxmap)
+
+    #=
+        Pass Dual of Lower level model
+    =#
+
+    # initialize map to lower level model
+    if !ignore_dual_objective(mode)
+        # get dual obj
+        tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
+        @assert tp_dual_obj !== nothing
+        lower_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunction{tp_dual_obj}())
+        # delete dual obj
+        # MOI.set(lower_dual, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
+    end
+
+    # initialize map to lower level model
+    lower_dual_idxmap = MOIU.IndexMap()
     # for QP's there are dual variable that are tied to:
     # primal variables
     for (lower_primal_var_key, lower_dual_quad_slack_val) in lower_primal_dual_map.primal_var_dual_quad_slack
@@ -198,33 +256,66 @@ function build_bilevel(
         lower_dual_idxmap[var] = upper_idxmap[upper_var]
     end
 
+    # append the second level dual
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     pass_names(m, lower_dual, lower_dual_idxmap)
 
-    # complete KKT
-    # 1 - primal dual equality (quadratic equality constraint)
-    #     use quadratic or log expansion (requires bounds on variables get from outside or from prob)
-    # 1a - no slacks
-    # 1b - use slack
-    # 2 - complementarity
-    # 2a - actual complementarity constraints w and w/o slack (ok)
-    # 2b - SOS1 (slack * duals) (ok)
-    # 2c - Big-M formulation (Fortuny-Amat and McCarl, 1981)
-    # 2d - Product of variables  w and w/o slack (ok)
-    # 3 - NLP (y = argmin_y problem)
+    #=
+        Additional Optimiality conditions (to complete the KKT)
+    =#
 
-    # futurely add slacks to primal model
-    comps = get_canonical_complements(lower, lower_primal_dual_map)
-    for comp in comps
-        if !is_equality(comp.set_w_zero)
-            accept_vector_set(mode, comp)
-            add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
-        else
-            # println("eq in complement")
+    if ignore_dual_objective(mode)
+        # complementary slackness
+        comps = get_canonical_complements(lower, lower_primal_dual_map)
+        for comp in comps
+            if !is_equality(comp.set_w_zero)
+                accept_vector_set(mode, comp)
+                add_complement(mode, m, comp, lower_idxmap, lower_dual_idxmap)
+            else
+                # println("eq in complement")
+            end
         end
+    else
+        # strong duality
+        lower_dual_obj
+        lower_primal_obj
+        add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
     end
 
     return m, upper_idxmap, lower_idxmap, lower_primal_dual_map, lower_dual_idxmap
+end
+
+function add_strong_duality(mode::StrongDualityEqualityMode{T}, m, primal_obj, dual_obj,
+    idxmap_primal, idxmap_dual) where T
+
+    primal = MOIU.map_indices.(Ref(idxmap_primal), primal_obj)
+    dual   = MOIU.map_indices.(Ref(idxmap_dual), dual_obj)
+
+    func = MOIU.operate(-, T, primal, dual)
+
+    c = MOI.add_constraint(m, func, MOI.EqualTo(zero(T)))
+
+    MOI.set(m, MOI.ConstraintName(), c, "lower_strong_duality")
+
+    return c
+end
+function add_strong_duality(mode::StrongDualityInequalityMode{T}, m, primal_obj, dual_obj,
+    idxmap_primal, idxmap_dual) where T
+
+    primal = MOIU.map_indices.(Ref(idxmap_primal), primal_obj)
+    dual   = MOIU.map_indices.(Ref(idxmap_dual), dual_obj)
+
+    func = MOIU.operate(-, T, primal, dual)
+
+    func_up = MOIU.operate(-, T, func, mode.epsilon)
+    c_up = MOI.add_constraint(m, func_up, MOI.LessThan(zero(T)))
+    MOI.set(m, MOI.ConstraintName(), c_up, "lower_strong_duality_up")
+
+    func_lo = MOIU.operate(+, T, func, mode.epsilon)
+    c_lo = MOI.add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
+    MOI.set(m, MOI.ConstraintName(), c_lo, "lower_strong_duality_lo")
+
+    return c_up, c_lo
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
@@ -519,6 +610,7 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
     MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
 
     # Copy model attributes
+    # attention HERE to no pass objective functions!
     # pass_attributes(dest, src, copy_names, idxmap)
 
     # Copy constraints
