@@ -530,25 +530,36 @@ end
 
 
 # pag 197 ex 5.1.1
-function jump_06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+jump_06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, false, mode, config)
+jump_06_sv(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, true, mode, config)
+function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
     model = BilevelModel()
 
-    @variable(Upper(model), x, start = 4)
-    @variable(Lower(model), y, start = 4)
+    if sv
+        @variable(Upper(model), x >= 0, start = 4)
+        @variable(Lower(model), y >= 0, start = 4)
+    else
+        @variable(Upper(model), x, start = 4)
+        @variable(Lower(model), y, start = 4)
+    end
 
     @objective(Upper(model), Min, x - 4y)
-    @constraint(Upper(model), x >= 0)
-    
+    if !sv
+        @constraint(Upper(model), x >= 0)
+    end
+
     @objective(Lower(model), Min, y)
 
     @constraint(Lower(model), -x  - y <= -3)
     @constraint(Lower(model), -2x + y <= 0)
     @constraint(Lower(model), 2x  + y <= 12)
     @constraint(Lower(model), 3x + -2y <= 4) # signs are wrong in some versions of the book
-    @constraint(Lower(model), y >= 0)
+    if !sv
+        @constraint(Lower(model), y >= 0)
+    end
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)

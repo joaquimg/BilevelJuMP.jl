@@ -72,6 +72,7 @@ end
         jump_05(solver.opt, solver.mode)
         #jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)
+        jump_06_sv(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode, CONFIG_3)
         jump_08(solver.opt, solver.mode)
         jump_09a(solver.opt, solver.mode)
@@ -89,6 +90,7 @@ end
         jump_05(solver.opt, solver.mode)
         jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)
+        jump_06_sv(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode)
         jump_08(solver.opt, solver.mode)
         jump_09a(solver.opt, solver.mode) # fail on cbc positive SOS
