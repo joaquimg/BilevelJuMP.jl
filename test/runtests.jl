@@ -14,14 +14,22 @@ const MOIT = MathOptInterface.Test
 struct Config
     atol::Float64
     rtol::Float64
-    function Config(;atol = 1e-6, rtol = 1e-6)
-        new(atol, rtol)
+    bound_hint::Bool
+    start_value::Bool
+    function Config(;
+        atol = 1e-6,
+        rtol = 1e-6,
+        bound_hint = false,
+        start_value = false,
+        )
+        new(atol, rtol, bound_hint, start_value)
     end
 end
 
 config = Config()
 config_low_tol = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
+CONFIG_3_hint = Config(atol = 1e-3, rtol = 1e-3, bound_hint = true)
 CONFIG_4 = Config(atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(atol = 1e-5, rtol = 1e-5)
 
@@ -30,6 +38,7 @@ OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
 solvers = OptModeType[]
 solvers_sos = OptModeType[]
 solvers_quad = OptModeType[]
+solvers_bin_exp = OptModeType[]
 solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
@@ -87,6 +96,12 @@ end
         jump_11b(solver.opt, solver.mode)
         jump_12(solver.opt, solver.mode)
         jump_14(solver.opt, solver.mode)
+    end
+    for solver in solvers_bin_exp
+        jump_01(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_02(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_03(solver.opt, solver.mode, CONFIG_3_hint)
     end
 end
 

@@ -13,3 +13,9 @@ push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductWithSlackMode{F
 
 push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode{Float64}(1e-9)))
 push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode{Float64}(1e-9)))
+
+#=
+push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode{Float64}(1e-9)))
+push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode{Float64}(1e-9)))
+#push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode{Float64}(1e-9)))
+=#
