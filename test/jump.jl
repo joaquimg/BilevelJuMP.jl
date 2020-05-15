@@ -96,6 +96,12 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test dual(c2) ≈ [0] atol=atol
     @test dual(c3) ≈ [0] atol=atol
     @test dual(c6) ≈ [0] atol=atol
+    @test value(c1) ≈ 8 atol=atol
+    @test value(c2) ≈ 14 atol=atol
+    @test value(c3) ≈ 10 atol=atol
+    @test value(c4) ≈ 6 atol=atol
+    @test value(c5) ≈ 6 atol=atol
+    @test value(c6) ≈ 2 atol=atol
 
 end
 
@@ -120,13 +126,13 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @variable(Upper(model), y)
 
     @objective(Upper(model), Min, 3x + y)
-    @constraint(Upper(model), x <= 5)
+    @constraint(Upper(model), c1, x <= 5)
     @constraint(Upper(model), y <= 8)
     @constraint(Upper(model), y >= 0)
 
     @objective(Lower(model), Min, -x)
 
-    @constraint(Lower(model),  x +  y <= 8)
+    @constraint(Lower(model), c2, x +  y <= 8)
     @constraint(Lower(model), 4x +  y >= 8)
     @constraint(Lower(model), 2x +  y <= 13)
     @constraint(Lower(model), 2x - 7y <= 0)
@@ -145,6 +151,8 @@ function jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
+    @test value(c1) ≈ 3.5*8/15 atol=atol
+    @test value(c2) ≈ 4.5*8/15 atol=atol
 
 end
 # change the bound on x to lower level

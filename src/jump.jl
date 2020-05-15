@@ -579,7 +579,22 @@ end
 function get_dual_lower_bound(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.idx].lower
 end
-
+function JuMP.value(cref::BilevelConstraintRef)
+    if my_level(cref) == BilevelJuMP.LOWER_ONLY
+        # Constraint index on the lower model
+        con_lower_idx = cref.model.ctr_lower[cref.idx].index
+        # Single bilevel model constraint associated with the lower level constraint
+        con_sblm_idx = cref.model.lower_to_sblm[con_lower_idx]
+    else
+        # Constraint index on the lower model
+        con_upper_idx = cref.model.ctr_upper[cref.idx].index
+        # Single bilevel model constraint associated with the lower level constraint
+        con_sblm_idx = cref.model.upper_to_sblm[con_upper_idx]
+    end
+    # Solver constraint associated with the single bilevel model constraint
+    con_solver_idx = cref.model.sblm_to_solver[con_sblm_idx]
+    return MOI.get(cref.model.solver.model, MOI.ConstraintPrimal(), con_solver_idx)
+end
 # variables again (duals)
 # code for using dual variables associated with lower level constraints
 # in the upper level
