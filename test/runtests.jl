@@ -67,6 +67,7 @@ end
         jump_01vec(solver.opt, solver.mode, CONFIG_3)
         jump_02(solver.opt, solver.mode)
         jump_03(solver.opt, solver.mode)
+        jump_03_vec(solver.opt, solver.mode)
         jump_04(solver.opt, solver.mode)
         jump_05(solver.opt, solver.mode)
         #jump_3SAT(solver.opt, solver.mode)
@@ -119,6 +120,7 @@ end
         jump_HTP_lin01(solver.opt, solver.mode)
         jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin03(solver.opt, solver.mode)
+        jump_HTP_lin03_vec(solver.opt, solver.mode)
         jump_HTP_lin04(solver.opt, solver.mode)
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
