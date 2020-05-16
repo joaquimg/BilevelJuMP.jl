@@ -28,6 +28,7 @@ end
 
 config = Config()
 config_low_tol = Config(atol = 1e-3, rtol = 1e-3)
+CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_hint = Config(atol = 1e-3, rtol = 1e-3, bound_hint = true)
 CONFIG_4 = Config(atol = 1e-4, rtol = 1e-4)
@@ -37,6 +38,7 @@ OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
 
 solvers = OptModeType[]
 solvers_sos = OptModeType[]
+solvers_indicator = OptModeType[]
 solvers_quad = OptModeType[]
 solvers_bin_exp = OptModeType[]
 solvers_sos_quad = OptModeType[]
@@ -73,7 +75,7 @@ end
         #jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)
         jump_06_sv(solver.opt, solver.mode)
-        jump_07(solver.opt, solver.mode, CONFIG_3)
+        jump_07(solver.opt, solver.mode, CONFIG_2)
         jump_08(solver.opt, solver.mode)
         jump_09a(solver.opt, solver.mode)
         jump_09b(solver.opt, solver.mode)
@@ -105,6 +107,12 @@ end
         jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
         jump_02(solver.opt, solver.mode, CONFIG_3_hint)
         jump_03(solver.opt, solver.mode, CONFIG_3_hint)
+    end
+    for solver in solvers_indicator
+        jump_01(solver.opt, solver.mode)
+        jump_01vec(solver.opt, solver.mode)
+        # jump_02(solver.opt, solver.mode) # fail cbc - pass xpress 8.9
+        jump_03(solver.opt, solver.mode)
     end
 end
 
