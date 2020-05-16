@@ -868,9 +868,12 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
     if length(bilevel_prob) > 0
         print_lp(single_blm, bilevel_prob)
     end
-
+    # print_lp(single_blm, "bilevel_orig.mof")
+    
     solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
-    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = false)
+    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = true)
+    # print_lp(solver, "bilevel_bridge.mof")
+    # print_lp(solver.model, "bilevel_cache.mof")
 
     if length(solver_prob) > 0
         print_lp(solver, solver_prob)
@@ -979,7 +982,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
         end
         return MOI.get(cref.model.solver, MOI.VariablePrimal(), solver_var_idxs)
     else
-        error("dual of upper level BilevelConstraintRef not enabled")
+        error("Dual solutions of upper level constraints are not available")
     end
 end
 function JuMP.primal_status(model::BilevelModel)

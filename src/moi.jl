@@ -90,6 +90,15 @@ mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     end
 end
 
+@enum IndicatorSetting ZERO_ONE ZERO_ZERO ONE_ONE
+
+mutable struct IndicatorMode{T} <: BilevelSolverMode{T}
+    mode::IndicatorSetting
+    function IndicatorMode()
+        return new{Float64}(ONE_ONE)
+    end
+end
+
 abstract type StrongDualityMode{T} <: BilevelSolverMode{T} end
 
 mutable struct StrongDualityEqualityMode{T} <: StrongDualityMode{T}
@@ -545,6 +554,72 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
     MOI.set(m, MOI.ConstraintName(), c1, "compl_prodWslk_($(nm))")
 
     return slack, slack_in_set, equality, c1
+end
+
+function add_complement(mode::IndicatorMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
+    f = comp.func_w_cte
+    s = comp.set_w_zero
+    v = comp.variable
+
+    method = mode.mode
+
+    f_dest = MOIU.map_indices(x->idxmap_primal[x], f)
+
+    dual = idxmap_dual[v]
+
+    if comp.is_vec
+        @show s
+        error("vector constraint not supported")
+    end
+
+    nm = comp.is_vec ? MOI.get.(m, MOI.VariableName(), dual) : MOI.get(m, MOI.VariableName(), dual)
+
+    vb1 = MOI.add_variable(m)
+    MOI.set(m, MOI.VariableName(), vb1, "compl_bin1_($(nm))")
+
+    cb1 = MOI.add_constraint(m, SVF(vb1), MOI.ZeroOne())
+    if method == ONE_ONE || method == ZERO_ZERO
+        # second binary
+        vb2 = MOI.add_variable(m)
+        cb2 = MOI.add_constraint(m, SVF(vb2), MOI.ZeroOne())
+        MOI.set(m, MOI.VariableName(), vb2, "compl_bin2_($(nm))")
+
+        # z1 + z2 == 1
+        fb = MOIU.operate(+, T, SVF(vb1), SVF(vb2))
+        cb = MOI.add_constraint(m, fb, MOI.EqualTo{T}(one(T)))
+        MOI.set(m, MOI.ConstraintName(), cb, "compl_sum_bin_($(nm))")
+    else
+        vb2 = vb1
+    end
+
+    f1 = MOIU.operate(vcat, T, SVF(vb1), f_dest)
+    f2 = MOIU.operate(vcat, T, SVF(vb2), SVF(dual))
+
+    if method == ONE_ONE
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+    elseif method == ZERO_ZERO
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+    else
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+    end
+
+    c1 = MOI.add_constraint(m, to_vector_affine(f1), s1)
+    c2 = MOI.add_constraint(m, to_vector_affine(f2), s2)
+
+    MOI.set(m, MOI.ConstraintName(), c1, "compl_ind1_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), c2, "compl_ind2_($(nm))")
+
+    return c1
+end
+
+function to_vector_affine(f::MOI.VectorAffineFunction{T}) where T
+    return f
+end
+function to_vector_affine(f::MOI.VectorOfVariables)
+    return MOI.VectorAffineFunction{Float64}(f)
 end
 
 function pass_names(dest, src, map)
