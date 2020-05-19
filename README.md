@@ -38,7 +38,7 @@ model = BilevelModel()
 end)
 
 @objective(Lower(model), Min, -x)
-@constraint(Lower(model), begin
+@constraints(Lower(model), begin
      x +  y <= 8
     4x +  y >= 8
     2x +  y <= 13
