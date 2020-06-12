@@ -7,29 +7,6 @@ abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
 Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
 
-mutable struct ConstraintInfo{T<:Union{Float64, Vector{Float64}}}
-    start::T
-    upper::T
-    lower::T
-    function ConstraintInfo{Float64}()
-        new(NaN, NaN, NaN)
-    end
-    function ConstraintInfo{Vector{Float64}}(N::Integer)
-        new(fill(NaN, N), fill(NaN, N), fill(NaN, N))
-    end
-end
-
-mutable struct VariableInfo{T<:Union{Float64, Vector{Float64}}}
-    upper::T
-    lower::T
-    function VariableInfo{Float64}()
-        new(NaN, NaN)
-    end
-    function VariableInfo{Vector{Float64}}(N::Integer)
-        new(fill(NaN, N), fill(NaN, N))
-    end
-end
-
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     upper::JuMP.AbstractModel
@@ -41,7 +18,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     varnames::Dict{Int, String}                     # Map varidx -> name
     var_level::Dict{Int, Level}
     var_upper::Dict{Int, JuMP.AbstractVariableRef}
-    var_lower::Dict{Int, JuMP.AbstractVariableRef}
+    var_lower::Dict{Int, JuMP.AbstractVariableRef} #
     var_info::Dict{Int, VariableInfo}
 
     # upper level decisions that are "parameters" of the second level
@@ -190,6 +167,10 @@ struct BilevelVariableRef <: JuMP.AbstractVariableRef
     idx::Int       # Index in `model.variables`
     level::Level
 end
+function BilevelVariableRef(model, idx)
+    return BilevelVariableRef(model, idx, model.var_level[idx])
+end
+
 mylevel(v::BilevelVariableRef) = v.level
 in_level(v::BilevelVariableRef, level::Level) = (
     v.level === BOTH ||
@@ -506,6 +487,9 @@ struct BilevelConstraintRef
     model::BilevelModel # `model` owning the constraint
     idx::Int       # Index in `model.constraints`
     level::Level
+end
+function BilevelConstraintRef(model, idx)
+    BilevelConstraintRef(model, idx, model.ctr_level[idx])
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 my_level(cref::BilevelConstraintRef) = cref.level
@@ -842,6 +826,9 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
     moi_link = JuMP.index(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
+    # build bound for FortunyAmatMcCarlMode
+    build_bounds!(model, mode)
+
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
     build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2)
 
@@ -854,6 +841,7 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
             pass_dual_info(single_blm, duals, info)
         end
     end
+    # pass lower & upper level primal variables info (upper, lower)
     for (idx, info) in model.var_info
         if haskey(model.var_lower, idx)
             var = lower_to_sblm[JuMP.index(model.var_lower[idx])]
@@ -862,9 +850,9 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
         else
             continue
         end
+
         pass_primal_info(single_blm, var, info)
     end
-
     if length(bilevel_prob) > 0
         print_lp(single_blm, bilevel_prob)
     end
@@ -1008,3 +996,102 @@ function lower_objective_value(model::BilevelModel)
     return MOIU.eval_variables(vi -> vals[vi], 
         model.lower.moi_backend.model_cache.model.objective)
 end
+
+function build_bounds!(::BilevelModel, ::BilevelSolverMode{T}) where T
+    return nothing
+end
+
+function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
+    # compute variable bounds for FA mode
+    fa_vi_up = mode.upper
+    fa_vi_lo = mode.lower
+    fa_vi_ld = mode.ldual
+    empty!(fa_vi_up)
+    empty!(fa_vi_lo)
+    empty!(fa_vi_ld)
+    for (idx, _info) in model.var_info
+        if haskey(model.var_lower, idx)
+            var = JuMP.index(model.var_lower[idx])
+            is_lower = true
+        elseif haskey(model.var_upper, idx)
+            var = JuMP.index(model.var_upper[idx])
+            is_lower = false
+        else
+            continue
+        end
+        vref = BilevelVariableRef(model, idx)
+
+        info = deepcopy(_info)
+
+        ub = +Inf
+        lb = -Inf
+        if JuMP.has_upper_bound(vref)
+            ub = JuMP.upper_bound(vref)
+        end
+        if JuMP.has_lower_bound(vref)
+            lb = JuMP.lower_bound(vref)
+        end
+        if !isnan(info.upper)
+            info.upper = min(ub, info.upper)
+        else
+            info.upper = ub
+        end
+        if !isnan(info.lower)
+            info.lower = max(lb, info.lower)
+        else
+            info.lower = lb
+        end
+        if info.upper == +Inf && mode.safe
+            error("Problem with UB of variable $vref")
+        end
+        if info.lower == -Inf && mode.safe
+            error("Problem with LB of variable $vref")
+        end
+        if is_lower
+            fa_vi_lo[var] = info
+        else
+            fa_vi_up[var] = info
+        end
+    end
+    for (idx, _info) in model.ctr_info
+        if haskey(model.ctr_lower, idx)
+            ctr = JuMP.index(model.ctr_lower[idx])
+            info = deepcopy(_info)
+            cref = BilevelConstraintRef(model, idx)
+            # scalar
+            ub = dual_upper_bound(ctr)
+            lb = dual_lower_bound(ctr)
+            if !isnan(info.upper)
+                info.upper = min(ub, info.upper)
+            else
+                info.upper = ub
+            end
+            if !isnan(info.lower)
+                info.lower = max(lb, info.lower)
+            else
+                info.lower = lb
+            end
+            if info.upper == +Inf && mode.safe
+                error("Problem with UB of dual of constraint $cref")
+            end
+            if info.lower == -Inf && mode.safe
+                error("Problem with LB of dual of constraint $cref")
+            end
+            # TODO vector
+            fa_vi_ld[ctr] = info
+        end
+    end
+    return nothing
+end
+
+dual_lower_bound(::CI{F,LT{T}}) where {F,T} = -Inf
+dual_upper_bound(::CI{F,LT{T}}) where {F,T} =  0.0
+
+dual_lower_bound(::CI{F,GT{T}}) where {F,T} =  0.0
+dual_upper_bound(::CI{F,GT{T}}) where {F,T} = +Inf
+
+dual_lower_bound(::CI{F,ET{T}}) where {F,T} =  0.0
+dual_upper_bound(::CI{F,ET{T}}) where {F,T} =  0.0
+
+dual_lower_bound(::CI{F,S}) where {F,S} = -Inf
+dual_upper_bound(::CI{F,S}) where {F,S} = +Inf

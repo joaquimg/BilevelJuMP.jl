@@ -5,6 +5,8 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
     atol = config.atol
 
+    # config.bound_hint = true
+
     # min -4x -3y
     # s.t.
     # y = argmin_y y

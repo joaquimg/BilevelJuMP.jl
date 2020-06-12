@@ -21,6 +21,36 @@ const VECTOR_SETS = Union{
     MOI.RotatedSecondOrderCone,
 }
 
+# dual variable info
+mutable struct ConstraintInfo{T<:Union{Float64, Vector{Float64}}}
+    start::T
+    upper::T
+    lower::T
+    function ConstraintInfo{Float64}()
+        new(NaN, NaN, NaN)
+    end
+    function ConstraintInfo{Vector{Float64}}(N::Integer)
+        new(fill(NaN, N), fill(NaN, N), fill(NaN, N))
+    end
+end
+
+mutable struct VariableInfo{T<:Union{Float64, Vector{Float64}}}
+    upper::T
+    lower::T
+    function VariableInfo{Float64}()
+        new(NaN, NaN)
+    end
+    function VariableInfo{Vector{Float64}}(N::Integer)
+        new(fill(NaN, N), fill(NaN, N))
+    end
+end
+function VariableInfo(_info::ConstraintInfo{T}) where T
+    info = VariableInfo{Float64}()
+    info.lower = _info.lower
+    info.upper = _info.upper
+    return info
+end
+
 # abstract type AsbtractBilevelOptimizer end
 # struct SOS1Optimizer{O} <: AsbtractBilevelOptimizer
 #     solver::O
@@ -97,6 +127,48 @@ mutable struct IndicatorMode{T} <: BilevelSolverMode{T}
     function IndicatorMode()
         return new{Float64}(ONE_ONE)
     end
+end
+
+mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
+    safe::Bool # check variables bounds before MOI
+    # internal usage
+    upper::Dict{VI, VariableInfo}
+    lower::Dict{VI, VariableInfo}
+    ldual::Dict{CI, ConstraintInfo}
+    # full map
+    map::Dict{VI, VariableInfo}
+    function FortunyAmatMcCarlMode(safe = true)
+        return new{Float64}(
+            safe,
+            Dict{VI, VariableInfo}(),
+            Dict{VI, VariableInfo}(),
+            Dict{CI, ConstraintInfo}(),
+            Dict{VI, VariableInfo}(),
+        )
+    end
+end
+
+function build_full_map!(mode,
+    upper_idxmap, lower_idxmap, lower_dual_idxmap, lower_primal_dual_map)
+    return nothing
+end
+function build_full_map!(mode::FortunyAmatMcCarlMode,
+    upper_idxmap, lower_idxmap, lower_dual_idxmap, lower_primal_dual_map)
+    empty!(mode.map)
+    for (k,v) in mode.upper
+        mode.map[upper_idxmap[k]] = v
+    end
+    for (k,v) in mode.lower
+        mode.map[lower_idxmap[k]] = v
+    end
+    for (k,v) in mode.ldual
+        vec = lower_primal_dual_map.primal_con_dual_var[k]#[1] # TODO check this scalar
+        # @show typeof(vec)
+        for var in vec
+            mode.map[lower_dual_idxmap[var]] = VariableInfo(v)
+        end
+    end
+    return nothing
 end
 
 abstract type StrongDualityMode{T} <: BilevelSolverMode{T} end
@@ -272,6 +344,10 @@ function build_bilevel(
     #=
         Additional Optimiality conditions (to complete the KKT)
     =#
+
+    # build map bound map for FortunyAmatMcCarlMode
+    build_full_map!(mode,
+    upper_idxmap, lower_idxmap, lower_dual_idxmap, lower_primal_dual_map)
 
     if ignore_dual_objective(mode)
         # complementary slackness
@@ -615,6 +691,77 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement, idxmap_prim
     return c1
 end
 
+function get_bounds(var, map)
+    info = map[var]
+    # TODO deal with precision and performance
+    return IntervalArithmetic.interval(info.lower, info.upper)
+end
+
+function set_bound(inter::IntervalArithmetic.Interval, ::LT{T}) where T
+    return inter.hi
+end
+function set_bound(inter::IntervalArithmetic.Interval, ::GT{T}) where T
+    return inter.lo
+end
+
+function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
+    f = comp.func_w_cte
+    s = comp.set_w_zero
+    v = comp.variable
+
+
+    # TODO, with and without slack
+
+
+    slack, slack_in_set = MOI.add_constrained_variable(m, s)
+    f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
+
+
+    f_bounds = MOIU.eval_variables(vi -> get_bounds(vi, mode.map), f_dest)
+
+
+    new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
+    equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+
+    dual = idxmap_dual[v]
+    v_bounds = get_bounds(dual, mode.map)
+
+    bin = MOI.add_variable(m)
+
+    s2 = flip_set(s)
+
+    Ms = set_bound(f_bounds, s2)
+    Mv = set_bound(v_bounds, s2)
+
+    f1 = MOI.ScalarAffineFunction{T}(
+        MOI.ScalarAffineTerm{T}.(
+            [one(T), -Ms], [slack, bin]
+        ),
+        0.0
+    )
+    f2 = MOI.ScalarAffineFunction{T}(
+        MOI.ScalarAffineTerm{T}.(
+            [one(T), Mv], [dual, bin]
+        ),
+        -Mv
+    )
+
+    c1 = MOI.add_constraint(m, f1, s2)
+    c2 = MOI.add_constraint(m, f2, s2)
+    c3 = MOI.add_constraint(m, MOI.SingleVariable(bin), MOI.ZeroOne())
+
+    nm = MOI.get(m, MOI.VariableName(), dual)
+    MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
+    MOI.set(m, MOI.VariableName(), bin, "bin_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), c1, "compl_fa_sl_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), c2, "compl_fa_dl_($(nm))")
+    MOI.set(m, MOI.ConstraintName(), c2, "compl_fa_bn_($(nm))")
+
+    return slack, slack_in_set, equality, c1
+end
+
 function to_vector_affine(f::MOI.VectorAffineFunction{T}) where T
     return f
 end
@@ -850,4 +997,4 @@ function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
     return out
 end
 MOIU.scalarize(v::Vector{T}) where T<:Number = v
-MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)
+MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)#

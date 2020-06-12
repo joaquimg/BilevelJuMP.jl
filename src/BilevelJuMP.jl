@@ -6,6 +6,7 @@ const MOIU = MathOptInterface.Utilities
 using JuMP
 using Dualization
 using LinearAlgebra
+using IntervalArithmetic
 
 
 export
