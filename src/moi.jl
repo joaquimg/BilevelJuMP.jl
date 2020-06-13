@@ -130,6 +130,7 @@ mutable struct IndicatorMode{T} <: BilevelSolverMode{T}
 end
 
 mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
+    with_slack::Bool
     safe::Bool # check variables bounds before MOI
     # internal usage
     upper::Dict{VI, VariableInfo}
@@ -137,8 +138,9 @@ mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
     ldual::Dict{CI, ConstraintInfo}
     # full map
     map::Dict{VI, VariableInfo}
-    function FortunyAmatMcCarlMode(safe = true)
+    function FortunyAmatMcCarlMode(;with_slack = false, safe = true)
         return new{Float64}(
+            with_slack,
             safe,
             Dict{VI, VariableInfo}(),
             Dict{VI, VariableInfo}(),
@@ -704,24 +706,25 @@ function set_bound(inter::IntervalArithmetic.Interval, ::GT{T}) where T
     return inter.lo
 end
 
-function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement, idxmap_primal, idxmap_dual) where T
+function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
+    idxmap_primal, idxmap_dual) where T
+
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
 
-
-    # TODO, with and without slack
-
-
-    slack, slack_in_set = MOI.add_constrained_variable(m, s)
+    if mode.with_slack
+        slack, slack_in_set = MOI.add_constrained_variable(m, s)
+    end
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
 
     f_bounds = MOIU.eval_variables(vi -> get_bounds(vi, mode.map), f_dest)
 
-
-    new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
-    equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+    if mode.with_slack
+        new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
+        equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+    end
 
     dual = idxmap_dual[v]
     v_bounds = get_bounds(dual, mode.map)
@@ -733,12 +736,18 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement, idx
     Ms = set_bound(f_bounds, s2)
     Mv = set_bound(v_bounds, s2)
 
-    f1 = MOI.ScalarAffineFunction{T}(
-        MOI.ScalarAffineTerm{T}.(
-            [one(T), -Ms], [slack, bin]
-        ),
-        0.0
-    )
+    if mode.with_slack
+        f1 = MOI.ScalarAffineFunction{T}(
+            MOI.ScalarAffineTerm{T}.(
+                [one(T), -Ms], [slack, bin]
+            ),
+            0.0
+        )
+    else
+        push!(f_dest.terms, MOI.ScalarAffineTerm{T}(-Ms, bin))
+        f1 = f_dest
+    end
+
     f2 = MOI.ScalarAffineFunction{T}(
         MOI.ScalarAffineTerm{T}.(
             [one(T), Mv], [dual, bin]
@@ -751,15 +760,21 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement, idx
     c3 = MOI.add_constraint(m, MOI.SingleVariable(bin), MOI.ZeroOne())
 
     nm = MOI.get(m, MOI.VariableName(), dual)
-    MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
+    if mode.with_slack
+        MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
+        MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+        MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
+    end
     MOI.set(m, MOI.VariableName(), bin, "bin_($(nm))")
-    MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
-    MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
     MOI.set(m, MOI.ConstraintName(), c1, "compl_fa_sl_($(nm))")
     MOI.set(m, MOI.ConstraintName(), c2, "compl_fa_dl_($(nm))")
     MOI.set(m, MOI.ConstraintName(), c2, "compl_fa_bn_($(nm))")
 
-    return slack, slack_in_set, equality, c1
+    # if mode.with_slack
+    #     return slack, slack_in_set, equality, c1
+    # else
+    # end
+    return c1
 end
 
 function to_vector_affine(f::MOI.VectorAffineFunction{T}) where T
