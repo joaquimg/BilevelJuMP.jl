@@ -1133,7 +1133,6 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
         y[1] + y[2] + 2y[3] +x[1] +2x[2])
 
     @constraint(Lower(model), [i=1:6], y[i] >= 0)
-    # TODO fix broadcast
     if vec
         H1 = [ -1  1  1   1  0  0;
                -1  2 -1/2 0  1  0;
@@ -1143,12 +1142,12 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
               2 0;
               0 2
             ]
-        b = [1 1 1]
+        b = [1, 1, 1]
         @constraint(Lower(model), H1*y + H2*x .== b)
     else
-        @constraint(Lower(model), -y[1] +  y[2] +       y[3] + y[4]         == 1)
-        @constraint(Lower(model), -y[1] + 2y[2] - (1/2)*y[3] + y[5] + 2x[1] == 1)
-        @constraint(Lower(model), 2y[1] -  y[2] - (1/2)*y[3] + y[6] + 2x[2] == 1)
+        @constraint(Lower(model), c1, -y[1] +  y[2] +       y[3] + y[4]         == 1)
+        @constraint(Lower(model), c2, -y[1] + 2y[2] - (1/2)*y[3] + y[5] + 2x[1] == 1)
+        @constraint(Lower(model), c3, 2y[1] -  y[2] - (1/2)*y[3] + y[6] + 2x[2] == 1)
     end
 
     MOI.empty!(optimizer)
