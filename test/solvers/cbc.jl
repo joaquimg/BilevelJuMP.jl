@@ -11,6 +11,9 @@ push!(solvers, (opt = CBC_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_sos, (opt = CBC_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_indicator, (opt = CBC_BRIDGED, mode = BilevelJuMP.IndicatorMode()))
 
+push!(solvers_fa, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = false)))
+push!(solvers_fa, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = true)))
+
 push!(solvers_bin_exp, (
     opt = QuadraticToBinary.Optimizer{Float64}(CBC_BRIDGED),
     mode = BilevelJuMP.StrongDualityInequalityMode{Float64}(1e-9)))

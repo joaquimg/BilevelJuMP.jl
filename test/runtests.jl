@@ -30,6 +30,7 @@ config = Config()
 config_low_tol = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
+CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
 CONFIG_3_hint = Config(atol = 1e-3, rtol = 1e-3, bound_hint = true)
 CONFIG_4 = Config(atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(atol = 1e-5, rtol = 1e-5)
@@ -45,6 +46,7 @@ solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
+solvers_fa = OptModeType[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
@@ -54,6 +56,8 @@ include("solvers/ipopt.jl")
 
 include("moi.jl")
 include("jump.jl")
+
+@testset "BilevelJuMP tests" begin
 
 @testset "Simple LP" begin
     for solver in solvers
@@ -68,15 +72,15 @@ end
         jump_01(solver.opt, solver.mode, CONFIG_3)
         jump_01vec(solver.opt, solver.mode, CONFIG_3)
         jump_02(solver.opt, solver.mode)
-        jump_03(solver.opt, solver.mode)
-        jump_03_vec(solver.opt, solver.mode)
-        jump_04(solver.opt, solver.mode)
+        jump_03(solver.opt, solver.mode, CONFIG_3_start)
+        jump_03_vec(solver.opt, solver.mode, CONFIG_3_start)
+        jump_04(solver.opt, solver.mode, CONFIG_3_start)
         jump_05(solver.opt, solver.mode)
         #jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)
         jump_06_sv(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode, CONFIG_2)
-        jump_08(solver.opt, solver.mode)
+        jump_08(solver.opt, solver.mode, CONFIG_3_start)
         jump_09a(solver.opt, solver.mode)
         jump_09b(solver.opt, solver.mode)
         jump_11a(solver.opt, solver.mode)
@@ -108,6 +112,12 @@ end
         jump_02(solver.opt, solver.mode, CONFIG_3_hint)
         jump_03(solver.opt, solver.mode, CONFIG_3_hint)
     end
+    for solver in solvers_fa
+        jump_01(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_02(solver.opt, solver.mode, CONFIG_3_hint)
+        jump_03(solver.opt, solver.mode, CONFIG_3_hint)
+    end
     for solver in solvers_indicator
         jump_01(solver.opt, solver.mode)
         jump_01vec(solver.opt, solver.mode)
@@ -127,7 +137,7 @@ end
 
 @testset "Princeton Handbook of Test Problems" begin
     for solver in solvers_nlp
-        jump_HTP_lin01(solver.opt, solver.mode)
+        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
         jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin03(solver.opt, solver.mode)
         jump_HTP_lin03_vec(solver.opt, solver.mode)
@@ -248,4 +258,6 @@ end
         jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
         jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
+end
+
 end
