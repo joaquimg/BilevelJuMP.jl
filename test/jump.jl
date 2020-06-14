@@ -1059,11 +1059,17 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     # send y to upper level
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:2])
+    if start
+        JuMP.set_start_value(x, 5.0)
+        JuMP.set_start_value(y[1], 4.0)
+        JuMP.set_start_value(y[2], 2.0)
+    end
 
     @objective(Upper(model), Min, -x - 3y[1] + 2y[2])
     @constraint(Upper(model), x <= 8)

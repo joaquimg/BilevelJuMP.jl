@@ -57,6 +57,8 @@ include("solvers/ipopt.jl")
 include("moi.jl")
 include("jump.jl")
 
+@testset "BilevelJuMP tests" begin
+
 @testset "Simple LP" begin
     for solver in solvers
         moi_01(solver.opt)
@@ -135,7 +137,7 @@ end
 
 @testset "Princeton Handbook of Test Problems" begin
     for solver in solvers_nlp
-        jump_HTP_lin01(solver.opt, solver.mode)
+        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
         jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin03(solver.opt, solver.mode)
         jump_HTP_lin03_vec(solver.opt, solver.mode)
@@ -256,4 +258,6 @@ end
         jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
         jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
+end
+
 end
