@@ -378,12 +378,12 @@ function JuMP.delete_upper_bound(vref::BilevelVariableRef)
 end
 JuMP.is_fixed(vref::BilevelVariableRef) = variable_info(vref).has_fix
 JuMP.fix_value(vref::BilevelVariableRef) = variable_info(vref).fixed_value
-function JuMP.fix(vref::BilevelVariableRef, value)
+function JuMP.fix(vref::BilevelVariableRef, value; force::Bool=false)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be fixed.")
     end
     info = variable_info(vref)
-    JuMP.fix(bound_ref(vref), value)
+    JuMP.fix(bound_ref(vref), value; force=force)
     update_variable_info(vref,
                          JuMP.VariableInfo(info.has_lb, info.lower_bound,
                                            info.has_ub, info.upper_bound,
