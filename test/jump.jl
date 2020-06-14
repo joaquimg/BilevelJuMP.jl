@@ -79,6 +79,7 @@ end
 function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -151,11 +152,16 @@ jump_03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump
 function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
-    @variable(Lower(model), x, start = 3.5*8/15)
-    @variable(Upper(model), y, start = 8/15)
+    @variable(Lower(model), x)
+    @variable(Upper(model), y)
+    if start
+        JuMP.set_start_value(x, 3.5*8/15)
+        JuMP.set_start_value(y, 8/15)
+    end
 
     @objective(Upper(model), Min, 3x + y)
     @constraint(Upper(model), u1, x <= 5)
@@ -221,6 +227,7 @@ end
 function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -353,6 +360,7 @@ end
 function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -382,6 +390,7 @@ end
 function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -537,6 +546,7 @@ jump_06_sv(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_
 function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -583,6 +593,7 @@ end
 function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -619,6 +630,7 @@ end
 function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -661,6 +673,7 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     # its case that show that the KKT approach is OPTIMISTIC
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -791,6 +804,7 @@ end
 function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -821,6 +835,7 @@ end
 function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -888,6 +903,7 @@ end
 function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1080,6 +1096,7 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     # send y to upper level
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1118,6 +1135,7 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
     # send y to upper level
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1201,6 +1219,7 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     # send y to upper level
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1238,6 +1257,7 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     # send y to upper level
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1277,6 +1297,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
     rtol = config.rtol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1511,6 +1532,7 @@ end
 function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1556,6 +1578,7 @@ end
 function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1589,6 +1612,7 @@ end
 function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1626,6 +1650,7 @@ end
 function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1659,6 +1684,7 @@ end
 function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     # TODO reviews the behaviour comment
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1732,6 +1758,7 @@ function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     # Q objective is not PSD
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1769,6 +1796,7 @@ end
 function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1841,6 +1869,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     ###
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1876,6 +1905,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     ###
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -1910,6 +1940,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     ###
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -2198,6 +2229,7 @@ end
 function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
@@ -2246,6 +2278,7 @@ end
 function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
+    start = config.start_value
 
     model = BilevelModel()
 
