@@ -224,8 +224,8 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     model = BilevelModel()
 
-    @variable(Lower(model), x)
-    @variable(Upper(model), y)
+    @variable(Lower(model), x, start = 3.5*8/15)
+    @variable(Upper(model), y, start = 8/15)
 
     @objective(Upper(model), Min, 3x + y)
     @constraint(Upper(model), y <= 8)
@@ -664,8 +664,8 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     model = BilevelModel()
 
-    @variable(Upper(model), x)
-    @variable(Lower(model), y[i=1:2])
+    @variable(Upper(model), x, start = 0.0)
+    @variable(Lower(model), y[i=1:2], start = [0, 1][i])
 
     @objective(Upper(model), Min, -10.1x + 10y[1] - y[2])
     @constraint(Upper(model), x >= 0)
