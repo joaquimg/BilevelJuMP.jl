@@ -154,8 +154,8 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
 
     model = BilevelModel()
 
-    @variable(Lower(model), x)
-    @variable(Upper(model), y)
+    @variable(Lower(model), x, start = 3.5*8/15)
+    @variable(Upper(model), y, start = 8/15)
 
     @objective(Upper(model), Min, 3x + y)
     @constraint(Upper(model), u1, x <= 5)
