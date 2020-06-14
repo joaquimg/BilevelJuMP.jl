@@ -80,7 +80,7 @@ end
         jump_06(solver.opt, solver.mode)
         jump_06_sv(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode, CONFIG_2)
-        jump_08(solver.opt, solver.mode)
+        jump_08(solver.opt, solver.mode, CONFIG_3_start)
         jump_09a(solver.opt, solver.mode)
         jump_09b(solver.opt, solver.mode)
         jump_11a(solver.opt, solver.mode)
