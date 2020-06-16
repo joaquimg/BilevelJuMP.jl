@@ -204,22 +204,32 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
 
     optimize!(model, optimizer, mode)
 
-    primal_status(model)
+    @test primal_status(model) == MOI.FEASIBLE_POINT
+    @test primal_status(Upper(model)) == MOI.FEASIBLE_POINT
+    @test primal_status(Lower(model)) == MOI.FEASIBLE_POINT
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=atol
     @test BilevelJuMP.lower_objective_value(model) ≈ -3.5*8/15 atol=atol
+    @test objective_value(Lower(model)) ≈ -3.5*8/15 atol=atol
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
     @test value(u1) ≈ 3.5*8/15 atol=atol
     @test value(l1) ≈ 4.5*8/15 atol=atol
 
+    @test JuMP.dual_status(Lower(model)) == MOI.FEASIBLE_POINT
+
     @test dual(l1) ≈ [0] atol=atol
     # @test dual(l2) #≈ [0] atol=atol
     @test dual(l3) ≈ [0] atol=atol
     # @show dual(l4) #≈ [0] atol=atol
+
+    if typeof(mode) <: BilevelJuMP.ProductMode
+        @test JuMP.dual_status(Upper(model)) == MOI.FEASIBLE_POINT
+        @test dual(u1) ≈ 0 atol=atol
+    end
 
 
 end

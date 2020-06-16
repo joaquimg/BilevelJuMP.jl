@@ -46,6 +46,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
     # solution data
     solver#::MOI.ModelLike
+    mode
     upper_to_sblm
     lower_to_sblm
     lower_dual_to_sblm
@@ -78,6 +79,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             MOI.FEASIBILITY_SENSE,
             zero(JuMP.GenericAffExpr{Float64, BilevelVariableRef}), # Model objective
 
+            nothing,
             nothing,
             nothing,
             nothing,
@@ -493,7 +495,7 @@ function BilevelConstraintRef(model, idx)
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 my_level(cref::BilevelConstraintRef) = cref.level
-function JuMP.add_constraint(m::BilevelModel, c::JuMP.AbstractConstraint, name::String="")
+function JuMP.add_constraint(::BilevelModel, ::JuMP.AbstractConstraint, ::String="")
     error(
         "Can't add constraint directly to the bilevel model `m`, "*
         "attach the constraint to the upper or lower model "*
@@ -723,17 +725,17 @@ JuMP.show_objective_function_summary(::IO, ::AbstractBilevelModel) = "no summary
 # TODO
 # function JuMP.constraints_string(print_mode, model::MyModel)
 
-bileve_obj_error() = error("There is no objective for BilevelModel use Upper(.) and Lower(.)")
+bilevel_obj_error() = error("There is no objective for BilevelModel use Upper(.) and Lower(.)")
 
 function JuMP.set_objective(m::BilevelModel, sense::MOI.OptimizationSense,
     f::JuMP.AbstractJuMPScalar)
-    bileve_obj_error()
+    bilevel_obj_error()
 end
-JuMP.objective_sense(m::BilevelModel) = JuMP.objective_sense(m.upper)#bileve_obj_error()
-JuMP.objective_function_type(model::BilevelModel) = bileve_obj_error()
-JuMP.objective_function(model::BilevelModel) = bileve_obj_error()
+JuMP.objective_sense(m::BilevelModel) = JuMP.objective_sense(m.upper)#bilevel_obj_error()
+JuMP.objective_function_type(model::BilevelModel) = bilevel_obj_error()
+JuMP.objective_function(model::BilevelModel) = bilevel_obj_error()
 function JuMP.objective_function(model::BilevelModel, FT::Type)
-    bileve_obj_error()
+    bilevel_obj_error()
 end
 
 # Names
@@ -869,6 +871,7 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
 
     MOI.optimize!(solver)
 
+    model.mode = mode
     model.solver  = solver#::MOI.ModelLike
     model.upper_to_sblm = upper_to_sblm
     model.lower_to_sblm = lower_to_sblm
@@ -955,7 +958,8 @@ function JuMP.dual(cref::BilevelConstraintRef)
     # Right now this code assumes there is no possibility for vectorized constraints
     if my_level(cref) == BilevelJuMP.LOWER_ONLY
         # Constraint index on the lower model
-        con_lower_idx = cref.model.ctr_lower[cref.idx].index
+        con_lower_ref = cref.model.ctr_lower[cref.idx]
+        con_lower_idx = con_lower_ref.index
         # Dual variable associated with constraint index
         model_var_idxs = cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
         # Single bilevel model variable associated with the dual variable
@@ -968,23 +972,57 @@ function JuMP.dual(cref::BilevelConstraintRef)
         for vi in sblm_var_idxs
             push!(solver_var_idxs, cref.model.sblm_to_solver[vi])
         end
-        return MOI.get(cref.model.solver, MOI.VariablePrimal(), solver_var_idxs)
+        pre_duals = MOI.get(cref.model.solver, MOI.VariablePrimal(), solver_var_idxs)
+        return JuMP.reshape_vector(
+            pre_duals,
+            JuMP.dual_shape(con_lower_ref.shape)
+            )
+    elseif my_level(cref) == BilevelJuMP.UPPER_ONLY
+        m = cref.model
+        con_upper_ref = cref.model.ctr_upper[cref.idx]
+        solver_ctr_idx = m.sblm_to_solver[m.upper_to_sblm[JuMP.index(con_upper_ref)]]
+        # todo follow jump and use shapes
+        pre_duals = MOI.get(cref.model.solver, MOI.ConstraintDual(), solver_ctr_idx)
+        return JuMP.reshape_vector(
+            pre_duals,
+            JuMP.dual_shape(con_upper_ref.shape)
+            )
     else
-        error("Dual solutions of upper level constraints are not available")
+        error("Dual solutions of upper level constraints are not available. Either the solution method does nto porvide duals or or the solver failed to get one.")
     end
 end
+
 function JuMP.primal_status(model::BilevelModel)
     return MOI.get(model.solver, MOI.PrimalStatus())
 end
-JuMP.dual_status(model::BilevelModel) = error("dual status cant be queried for BilevelModel")
+function JuMP.primal_status(model::InnerBilevelModel)
+    return JuMP.primal_status(model.m)
+end
+
+JuMP.dual_status(::BilevelModel) = error(
+    "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.")
+function JuMP.dual_status(model::UpperModel)
+    return MOI.get(model.m.solver, MOI.DualStatus())
+end
+function JuMP.dual_status(model::LowerModel)
+    return MOI.get(model.m.solver, MOI.PrimalStatus())
+end
+
 function JuMP.termination_status(model::BilevelModel)
     return MOI.get(model.solver, MOI.TerminationStatus())
 end
 function JuMP.raw_status(model::BilevelModel)
     return MOI.get(model.solver, MOI.RawStatusString())
 end
+
 function JuMP.objective_value(model::BilevelModel)
     return MOI.get(model.solver, MOI.ObjectiveValue())
+end
+function JuMP.objective_value(model::UpperModel)
+    return JuMP.objective_value(model.m)
+end
+function JuMP.objective_value(model::LowerModel)
+    return lower_objective_value(model.m)
 end
 function lower_objective_value(model::BilevelModel)
     # Create a dict with lower variables in the lower objective
