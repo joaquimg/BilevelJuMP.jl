@@ -173,7 +173,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     primal_status(model)
 
-    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ 12 atol=atol
     @test BilevelJuMP.lower_objective_value(model) ≈ -2 atol=atol
