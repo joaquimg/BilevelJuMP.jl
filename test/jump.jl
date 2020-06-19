@@ -1,3 +1,55 @@
+function jump_display()
+    atol = config.atol
+
+    # config.bound_hint = true
+
+    # min -4x -3y
+    # s.t.
+    # y = argmin_y y
+    #      2x + y <= 4
+    #       x +2y <= 4
+    #       x     >= 0
+    #           y >= 0
+    #
+    # sol: x = 2, y = 0
+    # obj_upper = -8
+    # obj_lower =  0
+
+    atol = config.atol
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1, 2x+y <= 4
+        c2, x+2y <= 4
+        c3, x >= 0
+        c4, y >= 0
+    end)
+
+
+    display(x)
+    println()
+    display(c2)
+    println()
+    display(model)
+    println()
+    display(Upper(model))
+    println()
+    display(Lower(model))
+    println()
+
+    xx  = JuMP.variable_by_name(model, "x")
+    cc2 = JuMP.constraint_by_name(model, "c2")
+
+end
+
 
 jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, true, mode, config)
 jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
@@ -74,6 +126,12 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     @test dual(c3) ≈ [0] atol=atol
     # @test dual(c4) ≈ [1] atol=atol #NLP fail
 
+    # display(x)
+    # display(c2)
+    # display(model)
+    # display(Upper(model))
+    # display(Lower(model))
+
 end
 
 function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
@@ -115,7 +173,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     primal_status(model)
 
-    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ 12 atol=atol
     @test BilevelJuMP.lower_objective_value(model) ≈ -2 atol=atol
@@ -204,22 +262,32 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
 
     optimize!(model, optimizer, mode)
 
-    primal_status(model)
+    @test primal_status(model) == MOI.FEASIBLE_POINT
+    @test primal_status(Upper(model)) == MOI.FEASIBLE_POINT
+    @test primal_status(Lower(model)) == MOI.FEASIBLE_POINT
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ 3* (3.5*8/15) + (8/15) atol=atol
     @test BilevelJuMP.lower_objective_value(model) ≈ -3.5*8/15 atol=atol
+    @test objective_value(Lower(model)) ≈ -3.5*8/15 atol=atol
 
     @test value(x) ≈ 3.5*8/15 atol=atol
     @test value(y) ≈ 8/15 atol=atol
     @test value(u1) ≈ 3.5*8/15 atol=atol
     @test value(l1) ≈ 4.5*8/15 atol=atol
 
+    @test JuMP.dual_status(Lower(model)) == MOI.FEASIBLE_POINT
+
     @test dual(l1) ≈ [0] atol=atol
     # @test dual(l2) #≈ [0] atol=atol
     @test dual(l3) ≈ [0] atol=atol
     # @show dual(l4) #≈ [0] atol=atol
+
+    if typeof(mode) <: BilevelJuMP.ProductMode
+        @test JuMP.dual_status(Upper(model)) == MOI.FEASIBLE_POINT
+        @test dual(u1) ≈ 0 atol=atol
+    end
 
 
 end

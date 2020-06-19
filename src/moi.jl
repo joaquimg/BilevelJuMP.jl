@@ -72,6 +72,9 @@ end
 
 abstract type BilevelSolverMode{T} end
 
+mutable struct NoMode{T} <: BilevelSolverMode{T}
+end
+
 mutable struct SOS1Mode{T} <: BilevelSolverMode{T}
     epsilon::T
     function SOS1Mode()
