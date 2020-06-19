@@ -66,7 +66,9 @@ include("jump.jl")
         moi_03(solver.opt, solver.mode)
     end
 end
-
+@testset "Printing" begin
+    jump_display()
+end
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
         jump_01(solver.opt, solver.mode, CONFIG_3)
