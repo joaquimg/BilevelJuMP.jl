@@ -764,7 +764,7 @@ function JuMP.show_backend_summary(io::IO, model::BilevelModel)
     if model.solver === nothing
         print(io, "No solver attached")
     else
-        print(io, "Solver name: ", solver_name(model.solver))
+        print(io, "Solver name: ", solver_name(model.upper))
     end
 end
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
