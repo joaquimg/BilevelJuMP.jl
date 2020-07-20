@@ -139,12 +139,13 @@ mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
     ldual::Dict{CI, ConstraintInfo}
     # full map
     map::Dict{VI, VariableInfo}
-    function FortunyAmatMcCarlMode(;with_slack = false, safe = true)
+    function FortunyAmatMcCarlMode(;with_slack = false, safe = true,
+        primal_big_M = Inf, dual_big_M = Inf)
         return new{Float64}(
             with_slack,
             safe,
-            Inf,
-            Inf,
+            primal_big_M,
+            dual_big_M,
             Dict{VI, VariableInfo}(),
             Dict{VI, VariableInfo}(),
             Dict{CI, ConstraintInfo}(),

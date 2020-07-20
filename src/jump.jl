@@ -178,8 +178,8 @@ LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
 bilevel_model(m::SingleBilevelModel) = m.m
 mylevel_model(m::UpperOnlyModel) = bilevel_model(m).upper
 mylevel_model(m::LowerOnlyModel) = bilevel_model(m).lower
-level(m::LowerOnlyModel) = LOWER_ONLY
-level(m::UpperOnlyModel) = UPPER_ONLY
+level(::LowerOnlyModel) = LOWER_ONLY
+level(::UpperOnlyModel) = UPPER_ONLY
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
@@ -760,6 +760,16 @@ function JuMP.objective_function(m::InnerBilevelModel, FT::Type)
     mylevel_obj_function(m)
 end
 
+function JuMP.relative_gap(bm::BilevelModel)::Float64
+    return MOI.get(bm.solver, MOI.RelativeGap())
+end
+function JuMP.dual_objective_value(bm::BilevelModel; result::Int = 1)::Float64
+    return MOI.get(bm.solver, MOI.DualObjectiveValue(result))
+end
+function JuMP.objective_bound(bm::BilevelModel)::Float64
+    return MOI.get(bm.solver, MOI.ObjectiveBound())
+end
+
 JuMP.num_variables(m::AbstractBilevelModel) = JuMP.num_variables(bilevel_model(m))
 _plural(n) = (isone(n) ? "" : "s")
 function JuMP.show_constraints_summary(io::IO, model::BilevelModel)
@@ -781,18 +791,22 @@ function JuMP.show_backend_summary(io::IO, model::BilevelModel)
     if model.solver === nothing
         print(io, "No solver attached")
     else
-        name = try
-            MOI.get(model.solver, MOI.SolverName())::String
-        catch ex
-            if isa(ex, ArgumentError)
-                return "SolverName() attribute not implemented by the optimizer."
-            else
-                rethrow(ex)
-            end
-        end
+        name = JuMP.solver_name(model::BilevelModel)
         print(io, "Solver name: ", name)
     end
 end
+function JuMP.solver_name(model::BilevelModel)
+    name = try
+        MOI.get(model.solver, MOI.SolverName())::String
+    catch ex
+        if isa(ex, ArgumentError)
+            return "SolverName() attribute not implemented by the optimizer."
+        else
+            rethrow(ex)
+        end
+    end
+end
+
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
 JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel_model(m))
 
@@ -1149,6 +1163,15 @@ function build_bounds!(::BilevelModel, ::BilevelSolverMode{T}) where T
     return nothing
 end
 
+function bigM(is_dual, mode::FortunyAmatMcCarlMode)
+    return ifelse(is_dual, mode.dual_big_M, mode.primal_big_M)
+end
+function inf_if_nan(::typeof(+), val)
+    ifelse(isnan(val), Inf, val)
+end
+function inf_if_nan(::typeof(-), val)
+    ifelse(isnan(val), -Inf, val)
+end
 function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
     # compute variable bounds for FA mode
     fa_vi_up = mode.upper
@@ -1169,25 +1192,19 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
         end
         vref = BilevelVariableRef(model, idx)
 
+        is_dual = vref.level == DUAL_OF_LOWER
+
         info = deepcopy(_info)
 
-        ub = +Inf
-        lb = -Inf
-        if JuMP.has_upper_bound(vref)
-            ub = JuMP.upper_bound(vref)
+        lb = JuMP.has_lower_bound(vref) ? JuMP.lower_bound(vref) : -Inf
+        ub = JuMP.has_upper_bound(vref) ? JuMP.upper_bound(vref) : +Inf
+        info.upper = min(ub, inf_if_nan(+, info.upper))
+        if info.upper == +Inf
+            info.upper = +bigM(is_dual, mode)
         end
-        if JuMP.has_lower_bound(vref)
-            lb = JuMP.lower_bound(vref)
-        end
-        if !isnan(info.upper)
-            info.upper = min(ub, info.upper)
-        else
-            info.upper = ub
-        end
-        if !isnan(info.lower)
-            info.lower = max(lb, info.lower)
-        else
-            info.lower = lb
+        info.lower = max(lb, inf_if_nan(-, info.lower))
+        if info.lower == -Inf
+            info.lower = -bigM(is_dual, mode)
         end
         if info.upper == +Inf && mode.safe
             error("Problem with UB of variable $vref")
@@ -1200,6 +1217,8 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
         else
             fa_vi_up[var] = info
         end
+        @assert info.lower <= info.upper
+
     end
     for (idx, _info) in model.ctr_info
         if haskey(model.ctr_lower, idx)
@@ -1209,15 +1228,13 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
             # scalar
             ub = dual_upper_bound(ctr)
             lb = dual_lower_bound(ctr)
-            if !isnan(info.upper)
-                info.upper = min(ub, info.upper)
-            else
-                info.upper = ub
+            info.upper = min(ub, inf_if_nan(+, info.upper))
+            if info.upper == +Inf
+                info.upper = +bigM(true, mode)
             end
-            if !isnan(info.lower)
-                info.lower = max(lb, info.lower)
-            else
-                info.lower = lb
+            info.lower = max(lb, inf_if_nan(-, info.lower))
+            if info.lower == -Inf
+                info.lower = -bigM(true, mode)
             end
             if info.upper == +Inf && mode.safe
                 error("Problem with UB of dual of constraint $cref")
@@ -1225,6 +1242,7 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
             if info.lower == -Inf && mode.safe
                 error("Problem with LB of dual of constraint $cref")
             end
+            @assert info.lower <= info.upper
             # TODO vector
             fa_vi_ld[ctr] = info
         end
