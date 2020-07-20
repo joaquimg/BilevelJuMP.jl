@@ -15,7 +15,7 @@ julia = "1"
 MathOptInterface = "0.9.10"
 JuMP = "0.21"
 Dualization = "0.3.2"
-IntervalArithmetic = "0.17.5"
+IntervalArithmetic = "0.2.1 - 0.17"
 
 [extras]
 Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
