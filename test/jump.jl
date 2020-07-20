@@ -48,6 +48,10 @@ function jump_display()
     xx  = JuMP.variable_by_name(model, "x")
     cc2 = JuMP.constraint_by_name(model, "c2")
 
+    # set_optimizer(model, MOIU.Model{Float64})
+    # display(model)
+    # println()
+
 end
 
 
@@ -73,7 +77,8 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -107,10 +112,26 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
         BilevelJuMP.set_primal_upper_bound_hint(y, 5)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
+    # solve twice to check robustness
+    optimize!(model)
+    optimize!(model)
 
-    optimize!(model, optimizer, mode)
+    primal_status(model)
+
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+
+    @test objective_value(model) ≈ -8 atol=atol
+
+    @test value(x) ≈  2 atol=atol
+    @test value(y) ≈  0 atol=atol
+
+    # @test dual(c1) ≈ [0] atol=atol #NLP fail
+    @test dual(c2) ≈ [0] atol=atol
+    @test dual(c3) ≈ [0] atol=atol
+    # @test dual(c4) ≈ [1] atol=atol #NLP fail
+
+    # solve again to check robustness
+    optimize!(model)
 
     primal_status(model)
 
@@ -139,7 +160,8 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 6)
     @variable(Lower(model), y, start = 2)
@@ -166,10 +188,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
         BilevelJuMP.set_primal_upper_bound_hint(x, 7)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -212,7 +231,8 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x)
     @variable(Upper(model), y)
@@ -257,10 +277,7 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
         BilevelJuMP.set_primal_upper_bound_hint(y, 9)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test primal_status(Upper(model)) == MOI.FEASIBLE_POINT
@@ -297,7 +314,8 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x, start = 3.5*8/15)
     @variable(Upper(model), y, start = 8/15)
@@ -314,10 +332,7 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), 2x - 7y <= 0)
     @constraint(Lower(model), x <= 5)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -337,7 +352,8 @@ function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x[i=1:2])
     @variable(Upper(model), y)
@@ -353,10 +369,7 @@ function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x[1] >= 0)
     @constraint(Lower(model), x[2] >= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -377,7 +390,8 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     n = 7 # maximum literals
     clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
@@ -407,10 +421,7 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), [i=1:n], x[i] <= ya[i])
     @constraint(Lower(model), [i=1:n], x[i] <= yb[i])
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -430,7 +441,8 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x, start = 0)
     @variable(Upper(model), y, start = 0)
@@ -441,10 +453,7 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @objective(Lower(model), Min, x)
     @constraint(Lower(model), l1, x >= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -460,7 +469,8 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x, start = 0.5)
     @variable(Upper(model), y, start = -0.5)
@@ -471,10 +481,7 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), l1, -x -y <= 0)
     @constraint(Lower(model), l2, x >= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -489,7 +496,8 @@ function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x)
     @variable(Upper(model), y)
@@ -500,10 +508,7 @@ function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     
     @objective(Lower(model), Min, x)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -530,7 +535,8 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x)
     @variable(Upper(model), y)
@@ -548,10 +554,7 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
     @constraint(Lower(model), -4x + 5y <= 10)
     @constraint(Lower(model), -4x - 5y <= 10)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -565,7 +568,8 @@ function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Lower(model), x)
     @variable(Upper(model), y)
@@ -583,10 +587,7 @@ function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 
     # DONT include integrality on X (KKT wont work)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -616,7 +617,8 @@ function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = C
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     if sv
         @variable(Upper(model), x >= 0, start = 4)
@@ -641,10 +643,7 @@ function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = C
         @constraint(Lower(model), y >= 0)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -663,7 +662,8 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = [0, 0.9][i])
     @variable(Lower(model), y[i=1:3], start = [0, 0.6, 0.4][i])
@@ -680,10 +680,7 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), 2x[1] - y[1] + 2y[2] - 0.5y[3] <= 1)
     @constraint(Lower(model), 2x[2] +2y[1] - y[2] - 0.5y[3] <= 1)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -700,7 +697,8 @@ function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 8/9)
     @variable(Lower(model), y, start = 20/9)
@@ -716,10 +714,7 @@ function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y/2 <= 8)
     @constraint(Lower(model), x - 2y <= 4)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -743,7 +738,8 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 0.0)
     @variable(Lower(model), y[i=1:2], start = [0, 1][i])
@@ -762,10 +758,7 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y[2] <= 1)
     @constraint(Lower(model), y[1] + y[2] <= 1)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -779,7 +772,8 @@ function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:2])
@@ -795,10 +789,7 @@ function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y[2] <= 1)
     @constraint(Lower(model), y[1] + y[2] <= 1)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -840,7 +831,8 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), b)
     @variable(Lower(model), x[i=1:n])
@@ -854,10 +846,7 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), [i=1:n], x[i] <= 1)
     @constraint(Lower(model), sum(a_lw[i]*x[i] for i in 1:n) >= b)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -874,7 +863,8 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 8)
     @variable(Lower(model), y, start = 6)
@@ -887,10 +877,7 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), -3x + y <= -3)
     @constraint(Lower(model), 3x + y <= 30)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -905,7 +892,8 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 6)
     @variable(Lower(model), y, start = 8)
@@ -918,10 +906,7 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), -3x + y <= -3)
     @constraint(Lower(model), 3x + y <= 30)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -938,7 +923,8 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     for a in [0 0.1 0.2]
         atol = config.atol
     
-        model = BilevelModel()
+        MOI.empty!(optimizer)
+        model = BilevelModel(()->optimizer, mode = mode)
 
         @variable(Upper(model), x)
         @variable(Lower(model), y)
@@ -955,7 +941,7 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
         MOI.empty!(optimizer)
         @test MOI.is_empty(optimizer)
 
-        optimize!(model, optimizer, mode)
+        optimize!(model)
 
         primal_status(model)
 
@@ -973,7 +959,8 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 3/2)
     @variable(Lower(model), y, start = 1/2)
@@ -987,10 +974,7 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), -x + y <= 2)
     @constraint(Lower(model), y >= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1005,7 +989,8 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Upper(model), y)
@@ -1025,10 +1010,7 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), z >= 0)
     @constraint(Lower(model), z <= 10)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1044,7 +1026,8 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1064,10 +1047,7 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model),  5x + 3y + 0z <= 230)
     @constraint(Lower(model),  5x + 0y + 1z <= 85)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1082,7 +1062,8 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Upper(model), y)
@@ -1102,10 +1083,7 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model),  5x + 3y + 0z <= 230)
     @constraint(Lower(model),  5x + 0y + 1z <= 85)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1129,7 +1107,8 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:2])
@@ -1152,10 +1131,7 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  8x + 3y[1] - 2y[2] <= 48)
     @constraint(Lower(model), -2x +  y[1] - 3y[2] <= -12)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1172,7 +1148,8 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 4)
     @variable(Lower(model), y, start = 4)
@@ -1187,10 +1164,7 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),   x + 2y <= 12)
     @constraint(Lower(model),  4x -  y <= 12)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1211,7 +1185,8 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = [0, 0.9][i])
     @variable(Lower(model), y[i=1:6], start = [0, 0.6, 0.4, 0, 0, 0][i])
@@ -1242,10 +1217,7 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
         @constraint(Lower(model), c3, 2y[1] -  y[2] - (1/2)*y[3] + y[6] + 2x[2] == 1)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1261,7 +1233,8 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1275,10 +1248,7 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  2x + 5y <= 108)
     @constraint(Lower(model),  2x - 3y <= -4)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1295,7 +1265,8 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 0)
     @variable(Lower(model), y[i=1:2], start = [0, 1][i])
@@ -1311,10 +1282,7 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  -y[1] <= 0)
     @constraint(Lower(model),  -y[2] <= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1333,7 +1301,8 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 16)
     @variable(Lower(model), y, start = 11)
@@ -1350,10 +1319,7 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),    -x + 2y <= 18)
     @constraint(Lower(model),         -y <= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1373,7 +1339,8 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     rtol = config.rtol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = [0, 0.9][i])
     @variable(Lower(model), y[i=1:3], start = [0, 0.6, 0.4][i])
@@ -1394,10 +1361,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), + 2x[1] -  y[1] + 2y[2] - (1/2)*y[3] <= 1)
     @constraint(Lower(model), + 2x[2] + 2y[1] -  y[2] - (1/2)*y[3] <= 1)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1413,7 +1377,8 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2])
     @variable(Lower(model), y[i=1:2])
@@ -1432,10 +1397,7 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
     @constraint(Lower(model), +  x[1] +  x[2]                 <= 2)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1453,7 +1415,8 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1469,10 +1432,7 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),     x - 2y <= 2)
     @constraint(Lower(model),         -y <= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1488,7 +1448,8 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2])
     @variable(Lower(model), y[i=1:2])
@@ -1509,10 +1470,7 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), - 2x[1]         +  y[1] -  y[2] <= -2.5)
     @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1531,7 +1489,8 @@ function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1550,10 +1509,7 @@ function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     # @constraint(Lower(model), y >= 0) # GAMS file has this constraint
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1568,7 +1524,8 @@ function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1589,10 +1546,7 @@ function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model),          y <= 20)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1608,7 +1562,8 @@ function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = 0)
     @variable(Lower(model), y[i=1:2], start = -10)
@@ -1633,10 +1588,7 @@ function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), [i=1:2], y[i] <= 20)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1654,7 +1606,8 @@ function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 3)
     @variable(Lower(model), y[i=1:2], start = [1, 2][i])
@@ -1669,10 +1622,7 @@ function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), y[1] + y[2] == x)
     @constraint(Lower(model), [i=1:2], y[i] >= 0)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1688,7 +1638,8 @@ function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 1)
     @variable(Lower(model), y, start = 3)
@@ -1707,10 +1658,7 @@ function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), y >= 0)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1726,7 +1674,8 @@ function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = 0.5)
     @variable(Lower(model), y[i=1:2], start = 0.5)
@@ -1742,10 +1691,7 @@ function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1760,7 +1706,8 @@ function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Con
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:2], start = 0.5*sqrt(3))
     @variable(Lower(model), y[i=1:2], start = 0.5*sqrt(3))
@@ -1776,10 +1723,7 @@ function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Con
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1795,7 +1739,8 @@ function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1814,10 +1759,7 @@ function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), y >= 0) # only difference from problem 1
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -1834,7 +1776,8 @@ function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 0.25)
     @variable(Lower(model), y, start = 0)
@@ -1853,10 +1796,7 @@ function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), y <= 1)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1872,7 +1812,8 @@ function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 2)
     @variable(Lower(model), y[i=1:2], start = [6, 0][i])
@@ -1891,10 +1832,7 @@ function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Lower(model), [i=1:2], y[i] >= 0)
 
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -1917,7 +1855,8 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -1931,10 +1870,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), y >= -x)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test termination_status(model) in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED, MOI.LOCALLY_INFEASIBLE]
 
@@ -1945,7 +1881,8 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 1)
     @variable(Lower(model), y, start = 1)
@@ -1960,10 +1897,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), y >= -x)
     @constraint(Lower(model), y >= +x)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
@@ -1981,7 +1915,8 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 1)
     @variable(Lower(model), y, start = -1)
@@ -1999,10 +1934,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), y >= -x)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
@@ -2016,7 +1948,8 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 2)
     @variable(Lower(model), y, start = 0)
@@ -2035,10 +1968,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), y >= -x)
     @constraint(Lower(model), y >= x - 2)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
@@ -2056,7 +1986,8 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:6])
     @variable(Lower(model), y[i=1:3])
@@ -2077,10 +2008,7 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model),                                                 -  y[1] - 2y[2] - y[3] <= -2)
     @constraint(Lower(model),         -  2x[2] - 3x[3]        - x[5]                                 <= -3)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -2099,7 +2027,8 @@ function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:4])
     @variable(Lower(model), y[i=1:2])
@@ -2124,10 +2053,7 @@ function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config
     @constraint(Lower(model), -9x[1] +9x[2] -9x[3] + 5x[4] -5y[1] -4y[2] <= -5)
     @constraint(Lower(model), +5x[1] +3x[2] + x[3] + 9x[4] + y[1] +5y[2] <= 32)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -2148,7 +2074,8 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -2162,10 +2089,7 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), -x <= 0)
     @constraint(Lower(model),  x <= 4)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
 
@@ -2183,7 +2107,8 @@ function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(UpperOnly(model), z)
@@ -2201,10 +2126,7 @@ function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model),  x <= 4)
     @constraint(Lower(model),  w == 1)
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test value(x) ≈ 1 atol=atol
     @test value(y) ≈ 6 atol=atol
@@ -2216,7 +2138,8 @@ function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode(), confi
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(UpperOnly(model), z)
@@ -2236,7 +2159,8 @@ function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode, config)
 
     atol = config.atol
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     if vectorized
         @variables(Upper(model), begin
@@ -2285,10 +2209,7 @@ function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode, config)
         @constraint(Lower(model),  w == 1)
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     @test value(x) ≈ 1 atol=atol
     @test value(y) ≈ 6 atol=atol
@@ -2305,7 +2226,8 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x, start = 50)
     if bounds
@@ -2332,10 +2254,7 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -2354,7 +2273,8 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     atol = config.atol
     start = config.start_value
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), q1, start = 20)
     @variable(Lower(model), g[i=1:4], start = [20, 40, 40, 0][i])
@@ -2374,10 +2294,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
 
     @objective(Upper(model), Max, lambda*g[1])
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -2391,7 +2308,8 @@ end
 
 function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x[i=1:3])
     @variable(Lower(model), y[i=1:3])
@@ -2413,10 +2331,7 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Upper(model), Min, x[1])
     @objective(Lower(model), Min, y[1])
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -2435,7 +2350,8 @@ end
 
 function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:2])
@@ -2475,10 +2391,7 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     primal_status(model)
     termination_status(model)
@@ -2491,7 +2404,8 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 end
 function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:2])
@@ -2532,10 +2446,7 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     JuMP.raw_status(model)
     primal_status(model)
@@ -2549,7 +2460,8 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 end
 function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
-    model = BilevelModel()
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y[i=1:3])
@@ -2588,10 +2500,7 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    MOI.empty!(optimizer)
-    @test MOI.is_empty(optimizer)
-
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
     JuMP.raw_status(model)
     primal_status(model)
