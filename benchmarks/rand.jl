@@ -1,5 +1,6 @@
-using SparseArrays
-using LinearAlgebra
+using SparseArrays, LinearAlgebra
+using JuMP, BilevelJuMP
+using Random
 
 function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
 
@@ -29,7 +30,8 @@ function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
     cl = sprand(rng, cols, 0.5, f_c)
     cu = sprand(rng, cols, 0.5, f_c)
 
-    model = BilevelModel()
+    # MOI.empty!(optimizer)
+    model = BilevelModel(optimizer, mode = mode)
 
     @variable(Upper(model), -1000 <= x[1:cols] <= 1000)
     @variable(Lower(model), -1000 <= y[1:cols] <= 1000)
@@ -45,11 +47,16 @@ function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
         Optimize
     =#
 
-    MOI.empty!(optimizer)
-    optimize!(model, optimizer, mode)
+    optimize!(model)
 
-    @show primal_status(model)
+    @show primal_st = primal_status(model)
+    @show term_st = termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
-    @show termination_status(model)
+    # solve_t = JuMP.solve_time(model)
+    # build_t = BilevelJuMP.build_time(model)
 
+    # obj_u = JuMP.objective_value(Upper(model))
+    # obj_l = JuMP.objective_value(Lower(model))
+
+    # return primal_st, term_st, solve_t, build_t, obj_l, obj_u
 end

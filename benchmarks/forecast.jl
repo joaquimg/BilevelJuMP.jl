@@ -1,4 +1,5 @@
 using Random
+using JuMP, BilevelJuMP
 
 function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
 
@@ -31,7 +32,8 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     ctrs = []
     vars = []
 
-    model = BilevelModel()
+    # MOI.empty!(optimizer)
+    model = BilevelModel(optimizer, mode = mode)
 
     # parameters
     v = @variable(Upper(model),  0 <= φ0[1:Products] <= 10)
@@ -67,7 +69,7 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     push!(ctrs, vec(c))
 
     @objective(Lower(model), Min,
-        sum(p_b[p] * q_b[p,t] + p_s[p] * q_s[p,t] + p_r[p] * q_r[p,t]
+        sum(p_b[p] * q_b[p,t] - p_s[p] * q_s[p,t] - p_r[p] * q_r[p,t]
             for t in Samples, p in 1:Products))
 
     #=
@@ -89,19 +91,14 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     push!(ctrs, vec(c))
 
     @objective(Upper(model), Min,
-        sum(p_b[p] * q_b[p,t] + p_s[p] * q2_s[p,t] + p_r[p] * q2_r[p,t]
+        sum(p_b[p] * q_b[p,t] - p_s[p] * q2_s[p,t] - p_r[p] * q2_r[p,t]
             for t in Samples, p in 1:Products))
 
     #=
         Optimize
     =#
 
-    MOI.empty!(optimizer)
-    optimize!(model, optimizer, mode)
-
-    @show primal_status(model)
-
-    @show termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
+    optimize!(model)
 
     #=
     for v in vars
@@ -112,4 +109,15 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
         val = value(c) - normalized_rhs(c) # >= 0
     end
     =#
+
+    @show primal_st = primal_status(model)
+    @show term_st = termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
+
+    # solve_t = solve_time(model)
+    # build_t = BilevelJuMP.build_time(model)
+
+    # obj_u = objective_value(Upper(model))
+    # obj_l = objective_value(Lower(model))
+
+    # return primal_st, term_st, solve_t, build_t, obj_l, obj_u
 end

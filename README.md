@@ -1,6 +1,6 @@
 # BilevelJuMP.jl
 
-A bilevel optimization extension of the [JuMP](https://github.com/JuliaOpt/JuMP.jl) package.
+A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.jl) package.
 
 | **Build Status** |
 |:----------------:|
@@ -16,16 +16,16 @@ A bilevel optimization extension of the [JuMP](https://github.com/JuliaOpt/JuMP.
 
 BilevelJuMP is a package for modeling and solving bilevel optimization problems in Julia. As an extension of the JuMP package, BilevelJuMP allows users to employ the usual JuMP syntax with minor modifications to describe the problem and query solutions.
 
-BilevelJuMP is built on top of [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl) and makes strong use of its features to reformulate the problem as a single level problem and solve it with available MIP, NLP, and other solvers.
+BilevelJuMP is built on top of [MathOptInterface](https://github.com/JuMP-dev/MathOptInterface.jl) and makes strong use of its features to reformulate the problem as a single level problem and solve it with available MIP, NLP, and other solvers.
 
-The currently available methods are based on re-writing the problem using the KKT conditions of the lower level. For that we make strong use of [Dualization.jl](https://github.com/JuliaOpt/Dualization.jl)
+The currently available methods are based on re-writing the problem using the KKT conditions of the lower level. For that we make strong use of [Dualization.jl](https://github.com/JuMP-dev/Dualization.jl)
 
 ## Example
 
 ```julia
-using JuMP, BilevelJuMP, Xpress
+using JuMP, BilevelJuMP, Cbc
 
-model = BilevelModel()
+model = BilevelModel(Cbc.Optimizer, mode = BilevelJuMP.SOS1Mode())
 
 @variable(Lower(model), x)
 @variable(Upper(model), y)
@@ -45,13 +45,58 @@ end)
     2x - 7y <= 0
 end)
 
-optimize!(model, Xpress.Optimizer(), BilevelJuMP.SOS1Mode())
+optimize!(model)
 
-objective_value(model) # = 3 * (3.5 * 8/15) + 8/15
-value(x) # = 3.5 * 8/15
-value(y) # = 8/15
+objective_value(model) # = 3 * (3.5 * 8/15) + 8/15 # = 6.13...
+value(x) # = 3.5 * 8/15 # = 1.86...
+value(y) # = 8/15 # = 0.53...
 ```
 
-The option `BilevelJuMP.SOS1Mode()` indicates that the solution method used will be a KKT reformulation emplying SOS1 to model complementarity constraints and solve the problem with MIP solvers (Cbc, Xpress, Gurobi, CPLEX).
+The option `BilevelJuMP.SOS1Mode()` indicates that the solution method used
+will be a KKT reformulation emplying SOS1 to model complementarity constraints
+and solve the problem with MIP solvers (Cbc, Xpress, Gurobi, CPLEX, SCIP).
 
-Another option is `BilevelJuMP.ProductMode()` that reformulates the complementarity constraints as products so that the problem can be solved by NLP (Ipopt, KNITRO) solvers or even MIP solver with the aid of binary expansions (see [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl)).
+Alternatively, the option `BilevelJuMP.IndicatorMode()` is almost equivalent to
+the previous. The main difference is that it relies on Indicator constraints
+instead. This kind of constraints is available in some MIP solvers.
+
+A third and classic option it the `BilevelJuMP.FortunyAmatMcCarlMode()`, which
+relies on the Fortuny-Amat and McCarl big-M method that requires a MIP solver
+with very basic functionality, i.e., just binary variables are needed.
+The main drawback of this method is that one must provide bounds for all primal
+and dual variables. However, if the bounds are good, this method can be more
+efficient than the previous. Bound hints to compute the big-Ms can be passed
+with the methods: `set_primal_(upper\lower)_bound_hint(variable, bound)`, for primals;
+and `set_dual_(upper\lower)_bound(constraint, bound)` for duals.
+Call
+
+Another option is `BilevelJuMP.ProductMode()` that reformulates the
+complementarity constraints as products so that the problem can be solved by
+NLP (Ipopt, KNITRO) solvers or even MIP solvers with the aid of binary
+expansions
+(see [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl)).
+Note that binary expansions require varibles to have upper and lower bounds.
+
+
+## Advanced Features
+
+### Lower level dual variables
+
+Suppose you have a constraint `b` in the lower level:
+
+```julia
+@constraint(Lower(model), b, ...)
+```
+
+It is possible to access the dual variable of `b` to use it in the upper level:
+
+```julia
+@variable(Upper(model), lambda, DualOf(b))
+```
+
+### Conic lower level
+
+BilevelJuMP allows users to write conic models in the lower level. However,
+solving this kind of problems is much harder and requires complex solution
+methods. Mosek's Conic MIP can be used with the aid of
+[QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl).

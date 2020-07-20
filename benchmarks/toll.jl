@@ -1,3 +1,4 @@
+using JuMP, BilevelJuMP
 using Random
 
 function bench_toll(nodes, optimizer, mode, seed = 1234)
@@ -23,7 +24,8 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
     ctrs_e = []
     vars = []
 
-    model = BilevelModel()
+    # MOI.empty!(optimizer)
+    model = BilevelModel(optimizer, mode = mode)
 
     v = @variable(Upper(model), 0 <= F[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w] <= cap)
     for vv in v; push!(vars, vv); end
@@ -73,12 +75,7 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
         Optimize
     =#
 
-    MOI.empty!(optimizer)
-    optimize!(model, optimizer, mode)
-
-    @show primal_status(model)
-
-    @show termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
+    optimize!(model)
 
     #=
     for v in vars
@@ -89,4 +86,15 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
         val = value(c) - normalized_rhs(c) # >= 0
     end
     =#
+
+    @show primal_st = primal_status(model)
+    @show term_st = termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
+
+    # solve_t = JuMP.solve_time(model)
+    # build_t = BilevelJuMP.build_time(model)
+
+    # obj_u = JuMP.objective_value(Upper(model))
+    # obj_l = JuMP.objective_value(Lower(model))
+
+    # return primal_st, term_st, solve_t, build_t, obj_l, obj_u
 end

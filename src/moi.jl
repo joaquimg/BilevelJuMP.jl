@@ -76,30 +76,26 @@ mutable struct NoMode{T} <: BilevelSolverMode{T}
 end
 
 mutable struct SOS1Mode{T} <: BilevelSolverMode{T}
-    epsilon::T
     function SOS1Mode()
-        return new{Float64}(zero(Float64))
+        return new{Float64}()
     end
 end
 
 mutable struct PositiveSOS1Mode{T} <: BilevelSolverMode{T}
-    epsilon::T
     function PositiveSOS1Mode()
-        return new{Float64}(zero(Float64))
+        return new{Float64}()
     end
 end
 
 mutable struct ComplementMode{T} <: BilevelSolverMode{T}
-    epsilon::T
     function ComplementMode()
-        return new{Float64}(zero(Float64))
+        return new{Float64}()
     end
 end
 
 mutable struct ComplementWithSlackMode{T} <: BilevelSolverMode{T}
-    epsilon::T
     function ComplementWithSlackMode()
-        return new{Float64}(zero(Float64))
+        return new{Float64}()
     end
 end
 
@@ -135,6 +131,8 @@ end
 mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
     with_slack::Bool
     safe::Bool # check variables bounds before MOI
+    primal_big_M::Float64
+    dual_big_M::Float64
     # internal usage
     upper::Dict{VI, VariableInfo}
     lower::Dict{VI, VariableInfo}
@@ -145,6 +143,8 @@ mutable struct FortunyAmatMcCarlMode{T} <: BilevelSolverMode{T}
         return new{Float64}(
             with_slack,
             safe,
+            Inf,
+            Inf,
             Dict{VI, VariableInfo}(),
             Dict{VI, VariableInfo}(),
             Dict{CI, ConstraintInfo}(),
@@ -217,8 +217,8 @@ end
 function get_canonical_complement(primal_model, map,
     ci::CI{F,S}) where {F, S<:VECTOR_SETS}
     T = Float64
-    func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
-    set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
+    func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
+    set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
     dim = MOI.dimension(set)
     # vector sets have no constant
     # for i in 1:dim
@@ -232,8 +232,8 @@ end
 function get_canonical_complement(primal_model, map,
     ci::CI{F,S}) where {F, S<:SCALAR_SETS}
     T = Float64
-    func = MOI.get(primal_model, MOI.ConstraintFunction(), ci)::F
-    set = MOI.get(primal_model, MOI.ConstraintSet(), ci)::S
+    func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
+    set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
     constant = Dualization.set_dot(1, set, T) *
         Dualization.get_scalar_term(primal_model, 1, ci)
     if F == MOI.SingleVariable
@@ -250,7 +250,7 @@ function set_with_zero(set::S) where {S<:SCALAR_SETS} where T
     return S(0.0)
 end
 function set_with_zero(set)
-    return copy(set)
+    return MOI.copy(set)
 end
 
 function build_bilevel(

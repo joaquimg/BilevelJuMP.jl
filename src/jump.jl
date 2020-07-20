@@ -58,6 +58,9 @@ mutable struct BilevelModel <: AbstractBilevelModel
     sblm_to_solver
     lower_primal_dual_map
 
+    solve_time::Float64
+    build_time::Float64
+
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
@@ -96,11 +99,25 @@ mutable struct BilevelModel <: AbstractBilevelModel
             nothing,
             nothing,
             nothing,
+
+            NaN,
+            NaN,
             Dict{Symbol, Any}(),
             )
 
         return model
     end
+end
+function BilevelModel(optimizer_constructor;
+    bridge_constraints::Bool=true, mode::BilevelSolverMode = SOS1Mode())
+    bm = BilevelModel()
+    set_mode(bm, mode)
+    JuMP.set_optimizer(bm, optimizer_constructor; bridge_constraints=bridge_constraints)
+    return bm
+end
+function set_mode(bm::BilevelModel, mode::BilevelSolverMode)
+    bm.mode = mode
+    return bm
 end
 
 abstract type InnerBilevelModel <: AbstractBilevelModel end
@@ -764,7 +781,16 @@ function JuMP.show_backend_summary(io::IO, model::BilevelModel)
     if model.solver === nothing
         print(io, "No solver attached")
     else
-        print(io, "Solver name: ", solver_name(model.solver))
+        name = try
+            MOI.get(model.solver, MOI.SolverName())::String
+        catch ex
+            if isa(ex, ArgumentError)
+                return "SolverName() attribute not implemented by the optimizer."
+            else
+                rethrow(ex)
+            end
+        end
+        print(io, "Solver name: ", name)
     end
 end
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
@@ -872,12 +898,23 @@ function print_lp(m, name)
 end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
-    error("cant solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{T} = SOS1Mode();
-    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "") where T
+    error("Can't solve a model of type: $T ")
+function JuMP.optimize!(model::BilevelModel;
+    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "")
 
-    if !MOI.is_empty(optimizer)
-        error("An empty optimizer must be provided")
+    if model.mode === nothing
+        error("No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`")
+    else
+        mode = model.mode
+    end
+
+    if model.solver === nothing
+        error("No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`")
+    else
+        solver = model.solver #optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
+        if true#!MOI.is_empty(solver)
+            MOI.empty!(solver)
+        end
     end
 
     upper = JuMP.backend(model.upper)
@@ -889,6 +926,8 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
     if length(upper_prob) > 0
         print_lp(upper, upper_prob)
     end
+
+    t0 = time()
 
     moi_upper = JuMP.index.(
         collect(values(model.upper_to_lower_link)))
@@ -919,15 +958,13 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
         else
             continue
         end
-
         pass_primal_info(single_blm, var, info)
     end
     if length(bilevel_prob) > 0
         print_lp(single_blm, bilevel_prob)
     end
     # print_lp(single_blm, "bilevel_orig.mof")
-    
-    solver = optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
+
     sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = true)
     # print_lp(solver, "bilevel_bridge.mof")
     # print_lp(solver.model, "bilevel_cache.mof")
@@ -936,10 +973,15 @@ function JuMP.optimize!(model::BilevelModel, optimizer, mode::BilevelSolverMode{
         print_lp(solver, solver_prob)
     end
 
+    t1 = time()
+    model.build_time = t1 - t0
+
     MOI.optimize!(solver)
 
-    model.mode = mode
-    model.solver  = solver#::MOI.ModelLike
+    model.solve_time = time() - t1
+
+    # model.mode = mode
+    # model.solver = solver#::MOI.ModelLike
     model.upper_to_sblm = upper_to_sblm
     model.lower_to_sblm = lower_to_sblm
     model.lower_dual_to_sblm = lower_dual_to_sblm
@@ -1090,15 +1132,17 @@ end
 function JuMP.objective_value(model::LowerModel)
     return lower_objective_value(model.m)
 end
+
+function inner_ref_to_value(lm::LowerModel, var)
+    m = lm.m
+    ref = m.sblm_to_solver[m.lower_to_sblm[JuMP.index(var)]]
+    return MOI.get(m.solver, MOI.VariablePrimal(), ref)
+end
 function lower_objective_value(model::BilevelModel)
-    # Create a dict with lower variables in the lower objective
-    vals = Dict()
-    for v in model.lower_objective_function.terms.keys
-        vals[MOI.VariableIndex(v.idx)] = JuMP.value(v)
-    end
+    f = JuMP.objective_function(Lower(model))
     # Evaluate the lower objective expression
-    return MOIU.eval_variables(vi -> vals[vi], 
-        model.lower.moi_backend.model_cache.model.objective)
+    return JuMP.value(f, v -> JuMP.value(v))
+    # return JuMP.value(v -> inner_ref_to_value(Lower(model), v), f)
 end
 
 function build_bounds!(::BilevelModel, ::BilevelSolverMode{T}) where T
@@ -1199,3 +1243,100 @@ dual_upper_bound(::CI{F,ET{T}}) where {F,T} =  0.0
 
 dual_lower_bound(::CI{F,S}) where {F,S} = -Inf
 dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
+
+function JuMP.solve_time(bm::BilevelModel)
+    return bm.solve_time
+end
+function build_time(bm::BilevelModel)
+    return bm.build_time
+end
+
+#=
+function JuMP.set_optimizer_attribute(bm::BilevelModel, name::String, value)
+    return JuMP.set_optimizer_attribute(bm.solver, MOI.RawParameter(name), value)
+end
+
+function JuMP.set_optimizer_attribute(
+    bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute, value
+)
+    return MOI.set(bm.solver, attr, value)
+end
+
+function JuMP.set_optimizer_attributes(bm::BilevelModel, pairs::Pair...)
+    for (name, value) in pairs
+        JuMP.set_optimizer_attribute(bm.solver, name, value)
+    end
+end
+
+function JuMP.get_optimizer_attribute(bm::BilevelModel, name::String)
+    return JuMP.get_optimizer_attribute(bm.solver, MOI.RawParameter(name))
+end
+
+function JuMP.get_optimizer_attribute(
+    bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute
+)
+    return MOI.get(bm.solver, attr)
+end
+=#
+
+function JuMP.set_silent(bm::BilevelModel)
+    return MOI.set(bm.solver, MOI.Silent(), true)
+end
+
+function JuMP.unset_silent(bm::BilevelModel)
+    return MOI.set(bm.solver, MOI.Silent(), false)
+end
+
+function JuMP.set_time_limit_sec(bm::BilevelModel, limit)
+    return MOI.set(bm.solver, MOI.TimeLimitSec(), limit)
+end
+
+function JuMP.unset_time_limit_sec(bm::BilevelModel)
+    return MOI.set(bm.solver, MOI.TimeLimitSec(), nothing)
+end
+
+function JuMP.time_limit_sec(bm::BilevelModel)
+    return MOI.get(bm.solver, MOI.TimeLimitSec())
+end
+
+function JuMP.simplex_iterations(bm::BilevelModel)
+    return MOI.get(bm.solver, MOI.SimplexIterations())
+end
+
+function JuMP.barrier_iterations(bm::BilevelModel)
+    return MOI.get(bm.solver, MOI.BarrierIterations())
+end
+
+function JuMP.node_count(bm::BilevelModel)
+    return MOI.get(bm.solver, MOI.NodeCount())
+end
+
+function JuMP.normalized_rhs(cref::BilevelConstraintRef)
+    return JuMP.normalized_rhs(raw_ref(cref))
+end
+
+function JuMP.result_count(bm::BilevelModel)::Int
+    return MOI.get(bm.solver, MOI.ResultCount())
+end
+
+function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
+    bridge_constraints::Bool=true)
+    # error_if_direct_mode(model, :set_optimizer)
+    if bridge_constraints
+        # We set `with_names=false` because the names are handled by the first
+        # caching optimizer. If `default_copy_to` without names is supported,
+        # no need for a second cache.
+        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64, with_names=false)
+        # for bridge_type in model.bridge_types
+        #     _moi_add_bridge(optimizer, bridge_type)
+        # end
+    else
+        optimizer = MOI.instantiate(optimizer_constructor)
+    end
+
+    bm.solver = optimizer
+    if !MOI.is_empty(bm.solver)
+        error("Calling the `optimizer_constructor` must return an empty optimizer")
+    end
+    return bm
+end
