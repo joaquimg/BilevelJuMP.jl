@@ -2306,6 +2306,42 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @test value(lambda) ≈ 1_000 atol=1e-3
 end
 
+
+function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+
+    atol = config.atol
+    start = config.start_value
+
+    MOI.empty!(optimizer)
+    m = BilevelModel(()->optimizer, mode = mode)
+
+    @variable(Upper(m), 0 <= x <= 3 )
+    @variable(Lower(m), 0 <= y[1:2])
+    @variable(Lower(m), 0 <= z[1:2])
+
+    a = JuMP.Containers.DenseAxisArray([y[i]+ z[i] for i = 1:2], 1:2)
+    d = JuMP.Containers.SparseAxisArray(Dict((1, i) => y[i] for i in 1:2))
+
+    c = y[1] + y[2]
+
+    @constraint(Upper(m), x >=1)
+
+    @constraint(Lower(m), y[1] >= 0.5)
+    @constraint(Lower(m), y[2] >= 0.5)
+
+    @objective(Upper(m), Min, x)
+
+    @objective(Lower(m), Min, y[1]+z[2])
+
+    optimize!(m)
+
+    # TODO add tests
+    _a = value.(a)
+    _c = value.(c)
+    _d = value.(d)
+
+end
+
 function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
     MOI.empty!(optimizer)

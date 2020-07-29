@@ -47,6 +47,7 @@ solvers_nlp = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
 solvers_fa = OptModeType[]
+solvers_fa2 = OptModeType[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
@@ -107,6 +108,8 @@ end
         jump_11b(solver.opt, solver.mode)
         jump_12(solver.opt, solver.mode)
         jump_14(solver.opt, solver.mode)
+        #
+        jump_16(solver.opt, solver.mode)
     end
     for solver in solvers_bin_exp
         jump_01(solver.opt, solver.mode, CONFIG_3_hint)
@@ -119,6 +122,12 @@ end
         jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
         jump_02(solver.opt, solver.mode, CONFIG_3_hint)
         jump_03(solver.opt, solver.mode, CONFIG_3_hint)
+    end
+    for solver in solvers_fa2
+        jump_01(solver.opt, solver.mode, CONFIG_3)
+        jump_01vec(solver.opt, solver.mode, CONFIG_3)
+        jump_02(solver.opt, solver.mode, CONFIG_3)
+        jump_03(solver.opt, solver.mode, CONFIG_3)
     end
     for solver in solvers_indicator
         jump_01(solver.opt, solver.mode)
