@@ -61,6 +61,8 @@ mutable struct BilevelModel <: AbstractBilevelModel
     solve_time::Float64
     build_time::Float64
 
+    copy_names::Bool
+
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
@@ -102,6 +104,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
             NaN,
             NaN,
+            false,
             Dict{Symbol, Any}(),
             )
 
@@ -634,7 +637,7 @@ function get_primal_lower_bound_hint(vref::BilevelVariableRef)
     vref.model.var_info[vref.idx].lower
 end
 
-function JuMP.value(cref::BilevelConstraintRef)
+function JuMP.value(cref::BilevelConstraintRef; result::Int = 1)
     if level(cref) == BilevelJuMP.LOWER_ONLY
         # Constraint index on the lower model
         con_lower_idx = cref.model.ctr_lower[cref.index].index
@@ -648,7 +651,7 @@ function JuMP.value(cref::BilevelConstraintRef)
     end
     # Solver constraint associated with the single bilevel model constraint
     con_solver_idx = cref.model.sblm_to_solver[con_sblm_idx]
-    return MOI.get(cref.model.solver, MOI.ConstraintPrimal(), con_solver_idx)
+    return MOI.get(cref.model.solver, MOI.ConstraintPrimal(result), con_solver_idx)
 end
 # variables again (duals)
 # code for using dual variables associated with lower level constraints
@@ -761,13 +764,22 @@ function JuMP.objective_function(m::InnerBilevelModel, FT::Type)
 end
 
 function JuMP.relative_gap(bm::BilevelModel)::Float64
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.RelativeGap())
 end
+function JuMP.relative_gap(bm::UpperModel)::Float64
+    return JuMP.relative_gap(bm.m)
+end
 function JuMP.dual_objective_value(bm::BilevelModel; result::Int = 1)::Float64
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.DualObjectiveValue(result))
 end
 function JuMP.objective_bound(bm::BilevelModel)::Float64
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.ObjectiveBound())
+end
+function JuMP.objective_bound(bm::UpperModel)::Float64
+    return JuMP.objective_bound(bm.m)
 end
 
 JuMP.num_variables(m::AbstractBilevelModel) = JuMP.num_variables(bilevel_model(m))
@@ -922,13 +934,11 @@ function JuMP.optimize!(model::BilevelModel;
         mode = model.mode
     end
 
-    if model.solver === nothing
-        error("No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`")
-    else
-        solver = model.solver #optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
-        if true#!MOI.is_empty(solver)
-            MOI.empty!(solver)
-        end
+    _check_solver(model)
+
+    solver = model.solver #optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
+    if true#!MOI.is_empty(solver)
+        MOI.empty!(solver)
     end
 
     upper = JuMP.backend(model.upper)
@@ -979,20 +989,13 @@ function JuMP.optimize!(model::BilevelModel;
     end
     # print_lp(single_blm, "bilevel_orig.mof")
 
-    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = true)
+    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = model.copy_names)
     # print_lp(solver, "bilevel_bridge.mof")
     # print_lp(solver.model, "bilevel_cache.mof")
 
     if length(solver_prob) > 0
         print_lp(solver, solver_prob)
     end
-
-    t1 = time()
-    model.build_time = t1 - t0
-
-    MOI.optimize!(solver)
-
-    model.solve_time = time() - t1
 
     # model.mode = mode
     # model.solver = solver#::MOI.ModelLike
@@ -1001,6 +1004,13 @@ function JuMP.optimize!(model::BilevelModel;
     model.lower_dual_to_sblm = lower_dual_to_sblm
     model.lower_primal_dual_map = lower_primal_dual_map
     model.sblm_to_solver = sblm_to_solver
+
+    t1 = time()
+    model.build_time = t1 - t0
+
+    MOI.optimize!(solver)
+
+    model.solve_time = time() - t1
 
     return nothing
 end
@@ -1070,11 +1080,11 @@ function index2(d::Dict)
     return ret
 end
 
-function JuMP.value(v::BilevelVariableRef)::Float64
+function JuMP.value(v::BilevelVariableRef; result::Int = 1)::Float64
     m = owner_model(v)
     solver = m.solver
     ref = solver_ref(v)
-    return MOI.get(solver, MOI.VariablePrimal(), ref)
+    return MOI.get(solver, MOI.VariablePrimal(result), ref)
 end
 
 function JuMP.dual(cref::BilevelConstraintRef)
@@ -1115,6 +1125,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
 end
 
 function JuMP.primal_status(model::BilevelModel)
+    _check_solver(model)
     return MOI.get(model.solver, MOI.PrimalStatus())
 end
 function JuMP.primal_status(model::InnerBilevelModel)
@@ -1124,20 +1135,25 @@ end
 JuMP.dual_status(::BilevelModel) = error(
     "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.")
 function JuMP.dual_status(model::UpperModel)
+    _check_solver(model.m)
     return MOI.get(model.m.solver, MOI.DualStatus())
 end
 function JuMP.dual_status(model::LowerModel)
+    _check_solver(model.m)
     return MOI.get(model.m.solver, MOI.PrimalStatus())
 end
 
 function JuMP.termination_status(model::BilevelModel)
+    _check_solver(model)
     return MOI.get(model.solver, MOI.TerminationStatus())
 end
 function JuMP.raw_status(model::BilevelModel)
+    _check_solver(model)
     return MOI.get(model.solver, MOI.RawStatusString())
 end
 
 function JuMP.objective_value(model::BilevelModel)
+    _check_solver(model)
     return MOI.get(model.solver, MOI.ObjectiveValue())
 end
 function JuMP.objective_value(model::UpperModel)
@@ -1147,15 +1163,15 @@ function JuMP.objective_value(model::LowerModel)
     return lower_objective_value(model.m)
 end
 
-function inner_ref_to_value(lm::LowerModel, var)
-    m = lm.m
-    ref = m.sblm_to_solver[m.lower_to_sblm[JuMP.index(var)]]
-    return MOI.get(m.solver, MOI.VariablePrimal(), ref)
-end
-function lower_objective_value(model::BilevelModel)
+# function inner_ref_to_value(lm::LowerModel, var)
+#     m = lm.m
+#     ref = m.sblm_to_solver[m.lower_to_sblm[JuMP.index(var)]]
+#     return MOI.get(m.solver, MOI.VariablePrimal(), ref)
+# end
+function lower_objective_value(model::BilevelModel; result::Int = 1)
     f = JuMP.objective_function(Lower(model))
     # Evaluate the lower objective expression
-    return JuMP.value(f, v -> JuMP.value(v))
+    return JuMP.value(f, v -> JuMP.value(v, result = result))
     # return JuMP.value(v -> inner_ref_to_value(Lower(model), v), f)
 end
 
@@ -1269,17 +1285,16 @@ function build_time(bm::BilevelModel)
     return bm.build_time
 end
 
-#=
 function JuMP.set_optimizer_attribute(bm::BilevelModel, name::String, value)
+    _check_solver(bm)
     return JuMP.set_optimizer_attribute(bm.solver, MOI.RawParameter(name), value)
 end
-
 function JuMP.set_optimizer_attribute(
     bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute, value
 )
+    _check_solver(bm)
     return MOI.set(bm.solver, attr, value)
 end
-
 function JuMP.set_optimizer_attributes(bm::BilevelModel, pairs::Pair...)
     for (name, value) in pairs
         JuMP.set_optimizer_attribute(bm.solver, name, value)
@@ -1287,45 +1302,53 @@ function JuMP.set_optimizer_attributes(bm::BilevelModel, pairs::Pair...)
 end
 
 function JuMP.get_optimizer_attribute(bm::BilevelModel, name::String)
+    _check_solver(bm)
     return JuMP.get_optimizer_attribute(bm.solver, MOI.RawParameter(name))
 end
-
 function JuMP.get_optimizer_attribute(
     bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute
 )
+    _check_solver(bm)
     return MOI.get(bm.solver, attr)
 end
-=#
 
 function JuMP.set_silent(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.set(bm.solver, MOI.Silent(), true)
 end
 
 function JuMP.unset_silent(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.set(bm.solver, MOI.Silent(), false)
 end
 
 function JuMP.set_time_limit_sec(bm::BilevelModel, limit)
+    _check_solver(bm)
     return MOI.set(bm.solver, MOI.TimeLimitSec(), limit)
 end
 
 function JuMP.unset_time_limit_sec(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.set(bm.solver, MOI.TimeLimitSec(), nothing)
 end
 
 function JuMP.time_limit_sec(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.TimeLimitSec())
 end
 
 function JuMP.simplex_iterations(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.SimplexIterations())
 end
 
 function JuMP.barrier_iterations(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.BarrierIterations())
 end
 
 function JuMP.node_count(bm::BilevelModel)
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.NodeCount())
 end
 
@@ -1334,7 +1357,15 @@ function JuMP.normalized_rhs(cref::BilevelConstraintRef)
 end
 
 function JuMP.result_count(bm::BilevelModel)::Int
+    _check_solver(bm)
     return MOI.get(bm.solver, MOI.ResultCount())
+end
+
+
+function _check_solver(bm::BilevelModel)
+    if bm.solver === nothing
+        error("No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`")
+    end
 end
 
 function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;

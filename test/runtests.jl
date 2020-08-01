@@ -27,7 +27,6 @@ struct Config
 end
 
 config = Config()
-config_low_tol = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
@@ -47,6 +46,7 @@ solvers_nlp = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
 solvers_fa = OptModeType[]
+solvers_fa2 = OptModeType[]
 
 include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
@@ -73,7 +73,7 @@ end
     for solver in solvers_nlp
         jump_01(solver.opt, solver.mode, CONFIG_3)
         jump_01vec(solver.opt, solver.mode, CONFIG_3)
-        jump_02(solver.opt, solver.mode)
+        # jump_02(solver.opt, solver.mode) # numerical isntability in ipopt
         jump_03(solver.opt, solver.mode, CONFIG_3_start)
         jump_03_vec(solver.opt, solver.mode, CONFIG_3_start)
         jump_04(solver.opt, solver.mode, CONFIG_3_start)
@@ -107,6 +107,8 @@ end
         jump_11b(solver.opt, solver.mode)
         jump_12(solver.opt, solver.mode)
         jump_14(solver.opt, solver.mode)
+        #
+        jump_16(solver.opt, solver.mode)
     end
     for solver in solvers_bin_exp
         jump_01(solver.opt, solver.mode, CONFIG_3_hint)
@@ -119,6 +121,12 @@ end
         jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
         jump_02(solver.opt, solver.mode, CONFIG_3_hint)
         jump_03(solver.opt, solver.mode, CONFIG_3_hint)
+    end
+    for solver in solvers_fa2
+        jump_01(solver.opt, solver.mode, CONFIG_3)
+        jump_01vec(solver.opt, solver.mode, CONFIG_3)
+        jump_02(solver.opt, solver.mode, CONFIG_3)
+        jump_03(solver.opt, solver.mode, CONFIG_3)
     end
     for solver in solvers_indicator
         jump_01(solver.opt, solver.mode)
@@ -146,7 +154,7 @@ end
         jump_HTP_lin04(solver.opt, solver.mode)
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
-        jump_HTP_lin07(solver.opt, solver.mode, CONFIG_3)
+        jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
         jump_HTP_lin08(solver.opt, solver.mode)
         jump_HTP_lin09(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)

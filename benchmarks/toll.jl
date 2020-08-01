@@ -26,6 +26,12 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
 
     # MOI.empty!(optimizer)
     model = BilevelModel(optimizer, mode = mode)
+    try
+        JuMP.set_time_limit_sec(model, MAX_TIME)
+    catch e
+        @show e
+        @show "failed to set limit time"
+    end
 
     v = @variable(Upper(model), 0 <= F[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w] <= cap)
     for vv in v; push!(vars, vv); end
@@ -90,11 +96,25 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
     @show primal_st = primal_status(model)
     @show term_st = termination_status(model) #in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
-    # solve_t = JuMP.solve_time(model)
-    # build_t = BilevelJuMP.build_time(model)
+    solve_t = JuMP.solve_time(model)
+    build_t = BilevelJuMP.build_time(model)
 
-    # obj_u = JuMP.objective_value(Upper(model))
-    # obj_l = JuMP.objective_value(Lower(model))
+    obj_l = try
+        objective_value(Lower(model))
+    catch
+        NaN
+    end
+    obj_u = try
+        objective_value(Upper(model))
+    catch
+         NaN
+    end
+    gap = try
+        bound = objective_bound(Upper(model))
+        abs(obj_u - bound)/max(abs(bound), 1e-8)
+    catch
+        NaN
+    end
 
-    # return primal_st, term_st, solve_t, build_t, obj_l, obj_u
+    return primal_st, term_st, solve_t, build_t, obj_l, obj_u, gap
 end

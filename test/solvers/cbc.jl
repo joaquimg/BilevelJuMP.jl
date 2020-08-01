@@ -13,6 +13,7 @@ push!(solvers_indicator, (opt = CBC_BRIDGED, mode = BilevelJuMP.IndicatorMode())
 
 push!(solvers_fa, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = false)))
 push!(solvers_fa, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = true)))
+push!(solvers_fa2, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100)))
 
 push!(solvers_bin_exp, (
     opt = QuadraticToBinary.Optimizer{Float64}(CBC_BRIDGED),

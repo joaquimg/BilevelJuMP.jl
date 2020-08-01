@@ -101,11 +101,11 @@ end
 
 mutable struct ProductMode{T} <: BilevelSolverMode{T}
     epsilon::T
+    function ProductMode(eps::T) where T
+        return new{Float64}(eps)
+    end
     function ProductMode()
         return new{Float64}(zero(Float64))
-    end
-    function ProductMode{T}(eps::T) where T
-        return new{Float64}(eps)
     end
 end
 
@@ -114,7 +114,7 @@ mutable struct ProductWithSlackMode{T} <: BilevelSolverMode{T}
     function ProductWithSlackMode()
         return new{Float64}(zero(Float64))
     end
-    function ProductWithSlackMode{T}(eps::T) where T
+    function ProductWithSlackMode(eps::T) where T
         return new{Float64}(eps)
     end
 end
@@ -561,12 +561,12 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement, idxmap_primal
 
     new_f = MOIU.operate(dot, T, f_dest, only_variable_functions(dual))
     new_f1 = MOIU.operate(-, T, new_f, eps)
-    c1 = MOI.add_constraint(m, 
+    c1 = MOIU.normalize_and_add_constraint(m, 
         new_f1,
         MOI.LessThan{T}(0.0))
     if comp.is_vec # conic
         new_f2 = MOIU.operate(+, T, new_f, eps)
-        c2 = MOI.add_constraint(m, 
+        c2 = MOIU.normalize_and_add_constraint(m, 
             new_f2,
             MOI.GreaterThan{T}(0.0))
     end
@@ -611,18 +611,18 @@ function add_complement(mode::ProductWithSlackMode{T}, m, comp::Complement, idxm
     prod_f = MOIU.operate(*, T, MOI.SingleVariable(slack), MOI.SingleVariable(dual))
 
     prod_f1 = MOIU.operate(-, T, prod_f, eps)
-    c1 = MOI.add_constraint(m, 
+    c1 = MOIU.normalize_and_add_constraint(m, 
         prod_f1,
         MOI.LessThan{Float64}(0.0))
     if comp.is_vec # conic
         prod_f2 = MOIU.operate(+, T, prod_f, eps)
-        c2 = MOI.add_constraint(m, 
+        c2 = MOIU.normalize_and_add_constraint(m, 
             prod_f2,
             MOI.GreaterThan{Float64}(0.0))
         MOI.set(m, MOI.ConstraintName(), c1, "compl_prodWslk2_($(nm))")
     end
 
-    # c1 = MOI.add_constraint(m, 
+    # c1 = MOIU.normalize_and_add_constraint(m, 
     #     prod_f1,
     #     MOI.EqualTo(zero(T)))
 
@@ -688,6 +688,7 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement, idxmap_prim
         s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
     end
 
+    # MOIU.normalize_and_add_constraint
     c1 = MOI.add_constraint(m, to_vector_affine(f1), s1)
     c2 = MOI.add_constraint(m, to_vector_affine(f2), s2)
 
@@ -697,10 +698,16 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement, idxmap_prim
     return c1
 end
 
-function get_bounds(var, map)
-    info = map[var]
-    # TODO deal with precision and performance
-    return IntervalArithmetic.interval(info.lower, info.upper)
+function get_bounds(var, map, fallback_bound = Inf)
+    if haskey(map, var)
+        info = map[var]
+        # TODO deal with precision and performance
+        return IntervalArithmetic.interval(info.lower, info.upper)
+    elseif 0.0 <= fallback_bound <= Inf
+        return IntervalArithmetic.interval(-fallback_bound, fallback_bound)
+    else
+        error("variable $var has no finite bounds defined")
+    end
 end
 
 function set_bound(inter::IntervalArithmetic.Interval, ::LT{T}) where T
@@ -723,7 +730,7 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
 
-    f_bounds = MOIU.eval_variables(vi -> get_bounds(vi, mode.map), f_dest)
+    f_bounds = MOIU.eval_variables(vi -> get_bounds(vi, mode.map, mode.primal_big_M), f_dest)
 
     if mode.with_slack
         new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
@@ -731,13 +738,14 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
     end
 
     dual = idxmap_dual[v]
-    v_bounds = get_bounds(dual, mode.map)
+    v_bounds = get_bounds(dual, mode.map, mode.dual_big_M)
 
     bin = MOI.add_variable(m)
 
+    s1 = flip_set(s)
     s2 = flip_set(s)
 
-    Ms = set_bound(f_bounds, s2)
+    Ms = set_bound(f_bounds, s1)
     Mv = set_bound(v_bounds, s2)
 
     if mode.with_slack
@@ -759,8 +767,8 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
         -Mv
     )
 
-    c1 = MOI.add_constraint(m, f1, s2)
-    c2 = MOI.add_constraint(m, f2, s2)
+    c1 = MOIU.normalize_and_add_constraint(m, f1, s2)
+    c2 = MOIU.normalize_and_add_constraint(m, f2, s2)
     c3 = MOI.add_constraint(m, MOI.SingleVariable(bin), MOI.ZeroOne())
 
     nm = MOI.get(m, MOI.VariableName(), dual)
