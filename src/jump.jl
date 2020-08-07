@@ -917,8 +917,8 @@ function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
 end
 replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
 
-function print_lp(m, name)
-    dest = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
+function print_lp(m, name, file_format = MOI.FileFormats.FORMAT_AUTOMATIC)
+    dest = MOI.FileFormats.Model(format = file_format, filename = name)
     MOI.copy_to(dest, m)
     MOI.write_to_file(dest, name)
 end
@@ -926,7 +926,7 @@ end
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} =
     error("Can't solve a model of type: $T ")
 function JuMP.optimize!(model::BilevelModel;
-    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "")
+    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "", file_format = MOI.FileFormats.FORMAT_AUTOMATIC)
 
     if model.mode === nothing
         error("No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`")
@@ -945,10 +945,10 @@ function JuMP.optimize!(model::BilevelModel;
     lower = JuMP.backend(model.lower)
 
     if length(lower_prob) > 0
-        print_lp(lower, lower_prob)
+        print_lp(lower, lower_prob, file_format)
     end
     if length(upper_prob) > 0
-        print_lp(upper, upper_prob)
+        print_lp(upper, upper_prob, file_format)
     end
 
     t0 = time()
@@ -985,7 +985,7 @@ function JuMP.optimize!(model::BilevelModel;
         pass_primal_info(single_blm, var, info)
     end
     if length(bilevel_prob) > 0
-        print_lp(single_blm, bilevel_prob)
+        print_lp(single_blm, bilevel_prob, file_format)
     end
     # print_lp(single_blm, "bilevel_orig.mof")
 
@@ -994,7 +994,7 @@ function JuMP.optimize!(model::BilevelModel;
     # print_lp(solver.model, "bilevel_cache.mof")
 
     if length(solver_prob) > 0
-        print_lp(solver, solver_prob)
+        print_lp(solver, solver_prob, file_format)
     end
 
     # model.mode = mode
