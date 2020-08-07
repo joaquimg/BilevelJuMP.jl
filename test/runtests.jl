@@ -270,4 +270,8 @@ end
     end
 end
 
+@testset "Invalid Bilevel models" begin
+    @test_throws ErrorException invalid_lower_objective()
+end
+
 end

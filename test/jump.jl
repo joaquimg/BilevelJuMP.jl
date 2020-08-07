@@ -54,6 +54,17 @@ function jump_display()
 
 end
 
+function invalid_lower_objective()
+    model = BilevelModel(CBC_BRIDGED, mode = BilevelJuMP.SOS1Mode())
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    optimize!(model)
+    return
+end
 
 jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, true, mode, config)
 jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
