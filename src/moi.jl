@@ -292,6 +292,8 @@ function build_bilevel(
         Pass Lower level model
     =#
 
+    handle_lower_objective_sense(lower)
+
     # cache and delete lower objective
     if !ignore_dual_objective(mode)
         # get primal obj
@@ -1025,3 +1027,13 @@ function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
 end
 MOIU.scalarize(v::Vector{T}) where T<:Number = v
 MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)#
+
+function handle_lower_objective_sense(lower::MOI.ModelLike)
+    lower_objective_sense = MOI.get(lower, MOI.ObjectiveSense())
+    if lower_objective_sense == MOI.FEASIBILITY_SENSE
+        throw(ErrorException("Lower level models with objective_sense: " * 
+                            lower_objective_sense * 
+                            " are not supported."))
+    end
+    return
+end
