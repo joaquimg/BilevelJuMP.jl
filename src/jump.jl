@@ -547,7 +547,7 @@ function JuMP.constraint_object(con_ref::ConstraintRef{BilevelModel, Int})
     raw = raw_ref(con_ref)
     return JuMP.constraint_object(raw)
 end
-# JuMP.add_constraint(m::UpperModel, c::JuMP.VectorConstraint, name::String="") = 
+# JuMP.add_constraint(m::UpperModel, c::JuMP.VectorConstraint, name::String="") =
 #     error("no vec ctr")
 function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstraint{F,S},JuMP.VectorConstraint{F,S}}, name::String="") where {F,S}
     blm = bilevel_model(m)
@@ -874,7 +874,7 @@ end
 
 # replace variables
 function replace_variables(var::BilevelVariableRef,
-    model::BilevelModel, 
+    model::BilevelModel,
     inner::JuMP.AbstractModel,
     variable_map::Dict{Int, V},
     level::Level) where {V<:JuMP.AbstractVariableRef}
@@ -923,7 +923,7 @@ function print_lp(m, name)
     MOI.write_to_file(dest, name)
 end
 
-JuMP.optimize!(::T) where {T<:AbstractBilevelModel} = 
+JuMP.optimize!(::T) where {T<:AbstractBilevelModel} =
     error("Can't solve a model of type: $T ")
 function JuMP.optimize!(model::BilevelModel;
     lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "")
@@ -1028,7 +1028,7 @@ function pass_dual_info(single_blm, dual, info::ConstraintInfo{Float64})
         MOI.add_constraint(single_blm,
             SVF(dual[]), GT{Float64}(info.lower))
     end
-    return 
+    return
 end
 function pass_dual_info(single_blm, dual, info::ConstraintInfo{Vector{Float64}})
     for i in eachindex(dual)
@@ -1060,7 +1060,7 @@ function pass_primal_info(single_blm, primal, info::VariableInfo{Float64})
         MOI.add_constraint(single_blm,
             SVF(primal), GT{Float64}(info.lower))
     end
-    return 
+    return
 end
 
 function JuMP.index(d::Dict)
@@ -1287,7 +1287,7 @@ end
 
 function JuMP.set_optimizer_attribute(bm::BilevelModel, name::String, value)
     _check_solver(bm)
-    return JuMP.set_optimizer_attribute(bm.solver, MOI.RawParameter(name), value)
+    return JuMP.set_optimizer_attribute(bm, MOI.RawParameter(name), value)
 end
 function JuMP.set_optimizer_attribute(
     bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute, value
