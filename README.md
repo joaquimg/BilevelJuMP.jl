@@ -78,7 +78,7 @@ complementarity constraints as products so that the problem can be solved by
 NLP (Ipopt, KNITRO) solvers or even MIP solvers with the aid of binary
 expansions
 (see [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl)).
-Note that binary expansions require varibles to have upper and lower bounds.
+Note that binary expansions require variables to have upper and lower bounds.
 
 
 ## Advanced Features
