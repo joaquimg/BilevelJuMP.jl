@@ -6,7 +6,7 @@ using MathOptInterface
 MOI = MathOptInterface
 MOIU = MOI.Utilities
 
-MAX_TIME = 600#600
+MAX_TIME = 600
 
 include("svr.jl")
 include("rand.jl")
@@ -46,12 +46,14 @@ function cpx()
     s
 end
 
-# warm-up
-MAX_TIME = 0#600
+# warm-up - precompilation
+MAX_TIME = 0
 bench_svr(1, 5, Gurobi.Optimizer, BilevelJuMP.SOS1Mode(), 1234)
 bench_forecast(1, 5, Gurobi.Optimizer, BilevelJuMP.SOS1Mode(), 1234)
 bench_toll(3, Gurobi.Optimizer, BilevelJuMP.SOS1Mode(), 1234)
-MAX_TIME = 600#600
+MAX_TIME = 600
+
+# comented due to KNTRO lic check
 # const KN_OPT = KNITRO.Optimizer()#maxtimecpu = MAX_TIME*1.0)
 # function new_knitro()
 #     MOI.empty!(KN_OPT)
@@ -62,15 +64,13 @@ MAX_TIME = 600#600
 
 SOLVERS = [
     #=
+        SOS1
     =#
-    #=
-        SOS1 (DONE)
-    =#
-    # (with_att(Gurobi.Optimizer, "TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "gurobi_sos1"),
-    # (with_att(CPLEX.Optimizer, "CPXPARAM_TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "cplex_sos1"),
-    # (with_att(Xpress.Optimizer, "MAXTIME" => -MAX_TIME*1, "logfile" => "output.log"), BilevelJuMP.SOS1Mode(), "xpress_sos1"),
-    # (with_att(Cbc.Optimizer, "seconds" => MAX_TIME*1.0), BilevelJuMP.SOS1Mode(), "cbc_sos1"),
-    # (with_att(SCIP.Optimizer, "limits/time" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "scip_sos1"),
+    (with_att(Gurobi.Optimizer, "TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "gurobi_sos1"),
+    (with_att(CPLEX.Optimizer, "CPXPARAM_TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "cplex_sos1"),
+    (with_att(Xpress.Optimizer, "MAXTIME" => -MAX_TIME*1, "logfile" => "output.log"), BilevelJuMP.SOS1Mode(), "xpress_sos1"),
+    (with_att(Cbc.Optimizer, "seconds" => MAX_TIME*1.0), BilevelJuMP.SOS1Mode(), "cbc_sos1"),
+    (with_att(SCIP.Optimizer, "limits/time" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "scip_sos1"),
     #=
         indicator
     =#
@@ -106,16 +106,16 @@ SOLVERS = [
     # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "mosek_prod10"),
     # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "gurobi_prod10"),
     # (()->QB(cpx(),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "cplex_prod10"), #TODO
-    (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "xpress_prod10"),
-    (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "cbc_prod10"),
-    (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "scip_prod10"),
+    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "xpress_prod10"),
+    # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "cbc_prod10"),
+    # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "scip_prod10"),
     #=
         Product BIN 100
     =#
     # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "glpk_prod100"),
-    (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "mosek_prod100"),
-    (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "gurobi_prod100"),
-    (()->QB(cpx(),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "cplex_prod100"),
+    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "mosek_prod100"),
+    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "gurobi_prod100"),
+    # (()->QB(cpx(),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "cplex_prod100"),
     # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "xpress_prod100"),
     # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "cbc_prod100"),
     # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "scip_prod100"),
@@ -123,10 +123,10 @@ SOLVERS = [
         PrimalDual BIN 10
     =#
     # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "glpk_sd10"),
-    (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "mosek_sd10"),
-    (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "gurobi_sd10"),
-    (()->QB(cpx(),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "cplex_sd10"),
-    (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "xpress_sd10"),
+    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "mosek_sd10"),
+    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "gurobi_sd10"),
+    # (()->QB(cpx(),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "cplex_sd10"),
+    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "xpress_sd10"),
     # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "cbc_sd10"), #TODO
     # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "scip_sd10"),
     #=
@@ -139,12 +139,6 @@ SOLVERS = [
     # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "xpress_sd100"),
     # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "cbc_sd100"),
     # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "scip_sd100"),
-    #=
-        TODO
-    =#
-    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-100,ub=100), BilevelJuMP.ProductMode(1e-7), "glpk_prod100"),
-    # GLPK here because sometimes breaks: this broke on TOLL
-    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-10,ub=10), BilevelJuMP.ProductMode(1e-7), "glpk_prod10"),
     #=
         PrimalDual NLP (DONE)
     =#
@@ -169,11 +163,11 @@ SOLVERS = [
 ]
 
 PROBLEMS = [
-    # :SVR,
-    # :TOLL,
+    :SVR,
+    :TOLL,
     :FORECAST,
+    :RAND,
 ]
-# :RAND,
 
 SEEDS = [
     1234,
@@ -190,19 +184,19 @@ SEEDS = [
 
 SVR = [
     # (features, sample_size)
-    # (  1,  10),
+    (  1,  10),
     (  1,  10),
     (  2,  10),
-    (  5,  10),
-    (  1, 100),
-    (  2, 100), # 600
-    (  5, 100),
-    ( 10, 100),
-    ( 20, 100),
-    ( 50, 100),
-    (  1,1000), # hard for prod10
-    (  2,1000),
-    (  5,1000),
+    # (  5,  10),
+    # (  1, 100),
+    # (  2, 100), # 600
+    # (  5, 100),
+    # ( 10, 100),
+    # ( 20, 100),
+    # ( 50, 100),
+    # (  1,1000), # hard for prod10
+    # (  2,1000),
+    # (  5,1000),
     # # # ( 10,1000),
     # # # ( 20,1000),
     # # # ( 50,1000),
@@ -218,12 +212,12 @@ RAND = [
     (  10,   5),
     (   5,  10),
     (  10,  10),
-    (  50,  10),
-    (  10,  50),
-    (  50,  50), # 600
-    ( 100,  50),
-    (  50, 100),
-    ( 100, 100),
+    # (  50,  10),
+    # (  10,  50),
+    # (  50,  50), # 600
+    # ( 100,  50),
+    # (  50, 100),
+    # ( 100, 100),
     # # ( 500, 100),
     # # ( 100, 500),
     # # ( 500, 500),
@@ -240,9 +234,9 @@ TOLL = [
     5,
     10,
     20,
-    50, # hard for prod10
-    100,
-    200, # also massive on memory
+    # 50, # hard for prod10
+    # 100,
+    # 200, # also massive on memory
     # 500, # 600 - broke gurobi
     # # 1000,
     # # 2000,
@@ -251,15 +245,15 @@ TOLL = [
 
 FORECAST = [
     # (products, sample_size)
-    # (  1,  10),
-    # (  2,  10),
-    # (  5,  10),
+    (  1,  10),
+    (  2,  10),
+    (  5,  10),
     # (  1, 100),
-    (  2, 100), # hard for prod10
-    (  5, 100), # 600
-    ( 10, 100),
-    ( 20, 100),
-    ( 50, 100),
+    # (  2, 100), # hard for prod10
+    # (  5, 100), # 600
+    # ( 10, 100),
+    # ( 20, 100),
+    # ( 50, 100),
     # (  1,1000),
     # (  2,1000),
     # (  5,1000),
@@ -337,7 +331,4 @@ end
 
 close(FILE)
 
-
-
-include("runbench2.jl")
 exit(0)
