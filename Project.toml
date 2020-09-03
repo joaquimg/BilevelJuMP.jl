@@ -1,7 +1,7 @@
 name = "BilevelJuMP"
 uuid = "485130c0-026e-11ea-0f1a-6992cd14145c"
 authors = ["Joaquim Garcia <joaquimgarcia@psr-inc.com>, guilhermebodin <guilherme.b.moraes@gmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 Dualization = "191a621a-6537-11e9-281d-650236a99e60"
