@@ -815,21 +815,24 @@ function pass_names(dest, src, map)
     end
 end
 
-function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool; allow_single_bounds::Bool = true)
+function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool, 
+    filter_constraints::Union{Nothing, Function}=nothing; allow_single_bounds::Bool = true)
     # MOI.empty!(dest)
 
     # idxmap = MOIU.IndexMap()
 
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
-    constraint_types = MOI.get(src, MOI.ListOfConstraints())
-    single_variable_types = [S for (F, S) in constraint_types
-                             if F == MOI.SingleVariable && allow_single_bounds]
-    vector_of_variables_types = [S for (F, S) in constraint_types
-                                 if F == MOI.VectorOfVariables]
-
+    # index_map_for_variable_indices only initializes the data structure
+    # idxmap = index_map_for_variable_indices(vis_src)
+    
     # The `NLPBlock` assumes that the order of variables does not change (#849)
     if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
-        error("not nlp for now")
+        error("NLP models are not supported.")
+        constraint_types = MOI.get(src, MOI.ListOfConstraints())
+        single_variable_types = [S for (F, S) in constraint_types
+                                 if F == MOI.SingleVariable]
+        vector_of_variables_types = [S for (F, S) in constraint_types
+                                     if F == MOI.VectorOfVariables]
         vector_of_variables_not_added = [
             MOI.get(src, MOI.ListOfConstraintIndices{MOI.VectorOfVariables, S}())
             for S in vector_of_variables_types
@@ -839,17 +842,22 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
             for S in single_variable_types
         ]
     else
-        vector_of_variables_not_added = [
-            MOIU.copy_vector_of_variables(dest, src, idxmap, S)
-            for S in vector_of_variables_types
-        ]
-        single_variable_not_added = [
-            MOIU.copy_single_variable(dest, src, idxmap, S)
-            for S in single_variable_types
-        ]
+        # the key asusmption here is that MOI keeps the following behaviour
+        # "The copy is only done when
+        # the variables to be copied are not already keys of `idxmap`. It returns a list
+        # of the constraints copied and not copied."
+        # from copy_single_variable and copy_vector_of_variables.
+        # this is very importante because variables are shered between
+        # upper, lower and lower dual levels
+        vector_of_variables_types, _, vector_of_variables_not_added,
+        single_variable_types, _, single_variable_not_added = MOIU.try_constrain_variables_on_creation(
+            dest, src, idxmap, MOI.add_constrained_variables, MOI.add_constrained_variable
+        )
     end
 
     # MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
+    # copy variables has a size check that dows not generalizes here
+    # because we have previously added variables
     for vi in vis_src
         if !haskey(idxmap.varmap, vi)
             var = MOI.add_variable(dest)
@@ -867,7 +875,8 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
     # Copy constraints
     MOIU.pass_constraints(dest, src, copy_names, idxmap,
                      single_variable_types, single_variable_not_added,
-                     vector_of_variables_types, vector_of_variables_not_added)
+                     vector_of_variables_types, vector_of_variables_not_added,
+                     filter_constraints=filter_constraints)
 
     return idxmap
 end
