@@ -817,6 +817,15 @@ end
 
 function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool, 
     filter_constraints::Union{Nothing, Function}=nothing; allow_single_bounds::Bool = true)
+
+    #=
+        This function follows closely the function `default_copy_to` defined in
+        MathOptInterface.Utilities
+        due to some caveats of this function we keep the commented functions
+        from the original function to highlight the differences and 
+        easen the burden of updating when `default_copy_to` is updated.
+    =#
+
     # MOI.empty!(dest)
 
     # idxmap = MOIU.IndexMap()
