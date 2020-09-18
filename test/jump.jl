@@ -2361,7 +2361,7 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @variable(Upper(model), x[i=1:3])
     @variable(Lower(model), y[i=1:3])
 
-    MOI.set(optimizer, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
+    # MOI.set(optimizer, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
 
     @constraint(Upper(model), soc_up, x in SecondOrderCone())
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
