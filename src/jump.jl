@@ -744,7 +744,7 @@ function get_constrain_ref(vref::BilevelVariableRef)
         end
     end
     @assert idx != -1
-    return BilevelConstraintRef(model, idx, DUAL_OF_LOWER)
+    return BilevelConstraintRef(model, idx)
 end
 
 # Objective
