@@ -157,12 +157,12 @@ end
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
         jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
-        jump_HTP_lin08(solver.opt, solver.mode)
+        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin09(solver.opt, solver.mode)
         # jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp_sd
-        jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
+        jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
         # jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
