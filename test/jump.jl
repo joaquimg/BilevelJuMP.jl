@@ -1391,8 +1391,8 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
 
-    @variable(Upper(model), x[i=1:2])
-    @variable(Lower(model), y[i=1:2])
+    @variable(Upper(model), x[i=1:2], start = [2, 0][i])
+    @variable(Lower(model), y[i=1:2], start = [1.5, 0][i])
 
     @objective(Upper(model), Min,
         -2x[1] + x[2] + 0.5*y[1])
@@ -1462,8 +1462,8 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
 
-    @variable(Upper(model), x[i=1:2])
-    @variable(Lower(model), y[i=1:2])
+    @variable(Upper(model), x[i=1:2], start = [2, 0][i])
+    @variable(Lower(model), y[i=1:2], start = [1.5, 0][i])
 
     @objective(Upper(model), Min,
         -2x[1] + x[2] + 0.5*y[1])
@@ -2301,7 +2301,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model), g[4] <= 100)
     @constraint(Lower(model), lb[i=1:4], g[i] >= 0)
 
-    @variable(Upper(model), lambda, DualOf(b), start = 1_000)
+    @variable(Upper(model), lambda >= 0, DualOf(b), start = 1_000)
 
     @objective(Upper(model), Max, lambda*g[1])
 
@@ -2317,6 +2317,47 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @test value(lambda) ≈ 1_000 atol=1e-3
 end
 
+function jump_eq_price(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+
+    atol = config.atol
+    start = config.start_value
+
+    j = 3
+    jger = 1
+    G = [10, 15, 12]
+    d = 26
+    c = [1, 2, 1.5]
+    p = 1
+    q = 10
+
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode)
+
+    @variable(Upper(model), u[i=1:jger] >= 0, start = [2.0][i])
+
+    @variable(Lower(model), def >= 0, start = 0)
+    @variable(Lower(model), g[i=1:j] >= 0, start = [10.0, 4.0, 12.0][i])
+    
+    @constraint(Lower(model), MaxGen[i=1:j], g[i] <= G[i])
+    @constraint(Lower(model), DemBal, sum(g[i] for i in 1:j) + def == d)
+    @objective(Lower(model), Min, sum(u[i]*g[i] for i in 1:jger) +
+                    sum(c[i+jger]*g[i+jger] for i in 1:(j-jger)) + 100*def)
+
+    @variable(Upper(model), lambda >= 0, DualOf(DemBal), start = 2.0)
+    @objective(Upper(model), Max, lambda*sum(g[i] for i in 1:jger) -
+                        sum(c[i]*g[i] for i in 1:jger) - (lambda - p)*q)
+
+    optimize!(model)
+
+    primal_status(model)
+    termination_status(model)
+
+    @test value.(g) ≈ [10.0, 4.0, 12.0]  atol=atol
+    @test value(def) ≈ 0.0  atol=atol
+    @test value(lambda) ≈ 2.0  atol=atol
+    @test value.(u) ≈ [2.0]  atol=atol
+
+end
 
 function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 

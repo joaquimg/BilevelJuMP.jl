@@ -43,8 +43,10 @@ solvers_quad = OptModeType[]
 solvers_bin_exp = OptModeType[]
 solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
+solvers_nlp_sd = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
+solvers_fa_quad_bin = OptModeType[]
 solvers_fa = OptModeType[]
 solvers_fa2 = OptModeType[]
 
@@ -146,17 +148,25 @@ end
 end
 
 @testset "Princeton Handbook of Test Problems" begin
-    for solver in solvers_nlp
+    for solver in vcat(solvers_nlp, solvers_nlp_sd)
         jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
-        jump_HTP_lin02(solver.opt, solver.mode)
+        # jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin03(solver.opt, solver.mode)
         jump_HTP_lin03_vec(solver.opt, solver.mode)
         jump_HTP_lin04(solver.opt, solver.mode)
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
         jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
-        jump_HTP_lin08(solver.opt, solver.mode)
+        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin09(solver.opt, solver.mode)
+        # jump_HTP_lin10(solver.opt, solver.mode)
+    end
+    for solver in solvers_nlp_sd
+        jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
+        # jump_HTP_lin10(solver.opt, solver.mode)
+    end
+    for solver in solvers_nlp
+        jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
@@ -236,19 +246,27 @@ end
     end
 end
 
-@testset "conejo2016" begin
+@testset "equilibrium" begin
     for solver in solvers_nlp
         jump_conejo2016(solver.opt, solver.mode)
-    end
-    for solver in solvers_sos_quad_bin
-        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    end
-end
-
-@testset "fanzeres2017" begin
-    for solver in solvers_nlp
         jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode)
     end
+    for solver in solvers_nlp_sd
+        jump_conejo2016(solver.opt, solver.mode)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode)
+    end
+    # for solver in solvers_sos_quad_bin
+    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+    #     jump_fanzeres2017(solver.opt, solver.mode)
+    #     jump_eq_price(solver.opt, solver.mode)
+    # end
+    # for solver in solvers_fa_quad_bin
+    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+    #     jump_fanzeres2017(solver.opt, solver.mode)
+    #     jump_eq_price(solver.opt, solver.mode)
+    # end
 end
 
 # require SOCtoNonConvexQuad bridge to work with Ipopt

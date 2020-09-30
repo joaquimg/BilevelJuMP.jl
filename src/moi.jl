@@ -189,7 +189,7 @@ mutable struct StrongDualityInequalityMode{T} <: StrongDualityMode{T}
     function StrongDualityInequalityMode()
         return new{Float64}(zero(Float64))
     end
-    function StrongDualityInequalityMode{T}(eps::T) where T
+    function StrongDualityInequalityMode(eps::T) where T
         return new{Float64}(eps)
     end
 end
