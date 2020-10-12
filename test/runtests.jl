@@ -58,8 +58,23 @@ include("solvers/ipopt.jl")
 
 include("moi.jl")
 include("jump.jl")
+include("jump_unit.jl")
 
 @testset "BilevelJuMP tests" begin
+
+@testset "Unit" begin
+    jump_display()
+    jump_objective()
+    jump_bounds()
+    jump_attributes()
+    for solver in solvers_sos
+        invalid_lower_objective(solver.opt, solver.mode)
+        jump_display_solver(solver.opt, solver.mode)
+        invalid_optimizer(solver.opt, solver.mode)
+        jump_objective_solver(solver.opt, solver.mode)
+        jump_attributes_solver(solver.opt, solver.mode)
+    end
+end
 
 @testset "Simple LP" begin
     for solver in solvers
@@ -68,9 +83,7 @@ include("jump.jl")
         moi_03(solver.opt, solver.mode)
     end
 end
-@testset "Printing" begin
-    jump_display()
-end
+
 @testset "Simple BLP JuMP" begin
     for solver in solvers_nlp
         jump_01(solver.opt, solver.mode, CONFIG_3)
@@ -293,10 +306,6 @@ end
         jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
         jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
     end
-end
-
-@testset "Invalid Bilevel models" begin
-    @test_throws ErrorException invalid_lower_objective()
 end
 
 end

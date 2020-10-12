@@ -203,6 +203,7 @@ function JuMP.delete_upper_bound(vref::BilevelVariableRef)
                                            info.has_start, info.start,
                                            info.binary, info.integer))
 end
+
 JuMP.is_fixed(vref::BilevelVariableRef) = variable_info(vref).has_fix
 JuMP.fix_value(vref::BilevelVariableRef) = variable_info(vref).fixed_value
 function JuMP.fix(vref::BilevelVariableRef, value; force::Bool=false)
@@ -231,6 +232,7 @@ function JuMP.unfix(vref::BilevelVariableRef)
                                            info.has_start, info.start,
                                            info.binary, info.integer))
 end
+
 function JuMP.start_value(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return get_dual_start(get_constrain_ref(vref))
@@ -252,6 +254,7 @@ function JuMP.set_start_value(vref::BilevelVariableRef, start)
                                            true, start,
                                            info.binary, info.integer))
 end
+
 JuMP.is_binary(vref::BilevelVariableRef) = variable_info(vref).binary
 function JuMP.set_binary(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER

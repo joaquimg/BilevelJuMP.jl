@@ -36,7 +36,6 @@ function JuMP.set_silent(bm::BilevelModel)
     _check_solver(bm)
     return MOI.set(bm.solver, MOI.Silent(), true)
 end
-
 function JuMP.unset_silent(bm::BilevelModel)
     _check_solver(bm)
     return MOI.set(bm.solver, MOI.Silent(), false)
@@ -46,12 +45,10 @@ function JuMP.set_time_limit_sec(bm::BilevelModel, limit)
     _check_solver(bm)
     return MOI.set(bm.solver, MOI.TimeLimitSec(), limit)
 end
-
 function JuMP.unset_time_limit_sec(bm::BilevelModel)
     _check_solver(bm)
     return MOI.set(bm.solver, MOI.TimeLimitSec(), nothing)
 end
-
 function JuMP.time_limit_sec(bm::BilevelModel)
     _check_solver(bm)
     return MOI.get(bm.solver, MOI.TimeLimitSec())
@@ -70,10 +67,6 @@ end
 function JuMP.node_count(bm::BilevelModel)
     _check_solver(bm)
     return MOI.get(bm.solver, MOI.NodeCount())
-end
-
-function JuMP.normalized_rhs(cref::BilevelConstraintRef)
-    return JuMP.normalized_rhs(raw_ref(cref))
 end
 
 function JuMP.result_count(bm::BilevelModel)::Int
@@ -101,5 +94,5 @@ function unset_pass_start(bm::BilevelModel)
     return nothing
 end
 function get_pass_start(bm::BilevelModel)
-    return bm.copy_names
+    return bm.pass_start
 end

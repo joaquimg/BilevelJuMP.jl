@@ -262,3 +262,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
         error("Dual solutions of upper level constraints are not available. Either the solution method does nto porvide duals or or the solver failed to get one.")
     end
 end
+
+function JuMP.normalized_rhs(cref::BilevelConstraintRef)
+    return JuMP.normalized_rhs(raw_ref(cref))
+end

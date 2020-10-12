@@ -1,71 +1,3 @@
-function jump_display()
-    atol = config.atol
-
-    # config.bound_hint = true
-
-    # min -4x -3y
-    # s.t.
-    # y = argmin_y y
-    #      2x + y <= 4
-    #       x +2y <= 4
-    #       x     >= 0
-    #           y >= 0
-    #
-    # sol: x = 2, y = 0
-    # obj_upper = -8
-    # obj_lower =  0
-
-    atol = config.atol
-
-    model = BilevelModel()
-
-    @variable(Upper(model), x)
-    @variable(Lower(model), y)
-
-    @objective(Upper(model), Min, -4x -3y)
-
-    @objective(Lower(model), Min, y)
-
-    @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
-        c3, x >= 0
-        c4, y >= 0
-    end)
-
-
-    display(x)
-    println()
-    display(c2)
-    println()
-    display(model)
-    println()
-    display(Upper(model))
-    println()
-    display(Lower(model))
-    println()
-
-    xx  = JuMP.variable_by_name(model, "x")
-    cc2 = JuMP.constraint_by_name(model, "c2")
-
-    # set_optimizer(model, MOIU.Model{Float64})
-    # display(model)
-    # println()
-
-end
-
-function invalid_lower_objective()
-    model = BilevelModel(CBC_BRIDGED, mode = BilevelJuMP.SOS1Mode())
-
-    @variable(Upper(model), x)
-    @variable(Lower(model), y)
-
-    @objective(Upper(model), Min, -4x -3y)
-
-    optimize!(model)
-    return
-end
-
 jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, true, mode, config)
 jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
 function _jump_01(optimizer, vectorized::Bool, mode, config)
@@ -149,6 +81,12 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ -8 atol=atol
+    @test objective_value(Upper(model)) ≈ -8 atol=atol
+
+    # @test JuMP.relative_gap(model) ≈ 0.0 atol=atol
+    # @test JuMP.relative_gap(Upper(model)) ≈ 0.0 atol=atol
+    # @test JuMP.dual_objective_value(model) ≈ -8 atol=atol
+    # @test JuMP.objective_bound(model) ≈ -8 atol=atol
 
     @test value(x) ≈  2 atol=atol
     @test value(y) ≈  0 atol=atol
@@ -157,6 +95,9 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     @test dual(c2) ≈ [0] atol=atol
     @test dual(c3) ≈ [0] atol=atol
     # @test dual(c4) ≈ [1] atol=atol #NLP fail
+
+    tp = JuMP.objective_function_type(Lower(model))
+    JuMP.objective_function(Lower(model), tp)
 
     # display(x)
     # display(c2)
@@ -2618,6 +2559,7 @@ function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
     @constraint(Lower(m), con_b[i=1:2], - p_N[i] + m_P[i] - m_N[i] == - 3*i)
     @objective(Lower(m), Min, -sum( - p_N[i]*0.1 - m_N[i]*(p + 0.01) + m_P[i]*(p - 0.003) for i in 1:2))
 
+    BilevelJuMP.set_copy_names(m)
     optimize!(m, bilevel_prob = "pb.lp", solver_prob = "ps.lp",
         upper_prob = "pu.lp")
     @test isfile("pb.lp")
@@ -2629,6 +2571,7 @@ function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
     @test isfile("ps.mof.json")
     @test isfile("pl.mof.json")
     @test isfile("pu.mof.json")
+
     JuMP.raw_status(m)
     primal_status(m)
     if p_max < 0.09

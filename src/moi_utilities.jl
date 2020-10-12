@@ -38,19 +38,19 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::
     # The `NLPBlock` assumes that the order of variables does not change (#849)
     if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
         error("NLP models are not supported.")
-        constraint_types = MOI.get(src, MOI.ListOfConstraints())
-        single_variable_types = [S for (F, S) in constraint_types
-                                 if F == MOI.SingleVariable]
-        vector_of_variables_types = [S for (F, S) in constraint_types
-                                     if F == MOI.VectorOfVariables]
-        vector_of_variables_not_added = [
-            MOI.get(src, MOI.ListOfConstraintIndices{MOI.VectorOfVariables, S}())
-            for S in vector_of_variables_types
-        ]
-        single_variable_not_added = [
-            MOI.get(src, MOI.ListOfConstraintIndices{MOI.SingleVariable, S}())
-            for S in single_variable_types
-        ]
+        # constraint_types = MOI.get(src, MOI.ListOfConstraints())
+        # single_variable_types = [S for (F, S) in constraint_types
+        #                          if F == MOI.SingleVariable]
+        # vector_of_variables_types = [S for (F, S) in constraint_types
+        #                              if F == MOI.VectorOfVariables]
+        # vector_of_variables_not_added = [
+        #     MOI.get(src, MOI.ListOfConstraintIndices{MOI.VectorOfVariables, S}())
+        #     for S in vector_of_variables_types
+        # ]
+        # single_variable_not_added = [
+        #     MOI.get(src, MOI.ListOfConstraintIndices{MOI.SingleVariable, S}())
+        #     for S in single_variable_types
+        # ]
     else
         # the key asusmption here is that MOI keeps the following behaviour
         # "The copy is only done when
