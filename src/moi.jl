@@ -51,15 +51,6 @@ function VariableInfo(_info::ConstraintInfo{T}) where T
     return info
 end
 
-# abstract type AsbtractBilevelOptimizer end
-# struct SOS1Optimizer{O} <: AsbtractBilevelOptimizer
-#     solver::O
-#     # options
-# end
-# function SOS1Optimizer(solver::O) where O
-#     return SOS1Optimizer{O}(solver)
-# end
-
 struct Complement#{M1 <: MOI.ModelLike, M2 <: MOI.ModelLike, F, S}
     is_vec
     # primal::M1
@@ -169,20 +160,11 @@ function build_full_map!(mode::FortunyAmatMcCarlMode,
     return nothing
 end
 
-abstract type StrongDualityMode{T} <: BilevelSolverMode{T} end
-
-mutable struct StrongDualityEqualityMode{T} <: StrongDualityMode{T}
-    function StrongDualityEqualityMode()
-        return new{Float64}()
-    end
-end
-mutable struct StrongDualityInequalityMode{T} <: StrongDualityMode{T}
+mutable struct StrongDualityMode{T} <: BilevelSolverMode{T}
+    inequality
     epsilon::T
-    function StrongDualityInequalityMode()
-        return new{Float64}(zero(Float64))
-    end
-    function StrongDualityInequalityMode(eps::T) where T
-        return new{Float64}(eps)
+    function StrongDualityMode(eps::T=zero(Float64); inequality = true) where T
+        return new{T}(inequality, eps)
     end
 end
 
@@ -238,7 +220,7 @@ function get_canonical_complement(primal_model, map,
     return con
 end
 
-function set_with_zero(set::S) where {S<:SCALAR_SETS} where T
+function set_with_zero(set::S) where {S<:SCALAR_SETS}
     return S(0.0)
 end
 function set_with_zero(set)
@@ -263,7 +245,7 @@ function build_bilevel(
         Initialize Lower DUAL level model
     =#
     # dualize the second level
-    dual_problem = dualize(lower,
+    dual_problem = Dualization.dualize(lower,
         dual_names = DualNames("dual_","dual_"),
         variable_parameters = upper_variables,
         ignore_objective = ignore_dual_objective(mode))
@@ -375,7 +357,7 @@ function build_bilevel(
     return m, upper_idxmap, lower_idxmap, lower_primal_dual_map, lower_dual_idxmap
 end
 
-function add_strong_duality(mode::StrongDualityEqualityMode{T}, m, primal_obj, dual_obj,
+function add_strong_duality(mode::StrongDualityMode{T}, m, primal_obj, dual_obj,
     idxmap_primal, idxmap_dual) where T
 
     primal = MOIU.map_indices.(Ref(idxmap_primal), primal_obj)
@@ -383,29 +365,21 @@ function add_strong_duality(mode::StrongDualityEqualityMode{T}, m, primal_obj, d
 
     func = MOIU.operate(-, T, primal, dual)
 
-    c = MOI.add_constraint(m, func, MOI.EqualTo(zero(T)))
-
-    MOI.set(m, MOI.ConstraintName(), c, "lower_strong_duality")
-
-    return c
-end
-function add_strong_duality(mode::StrongDualityInequalityMode{T}, m, primal_obj, dual_obj,
-    idxmap_primal, idxmap_dual) where T
-
-    primal = MOIU.map_indices.(Ref(idxmap_primal), primal_obj)
-    dual   = MOIU.map_indices.(Ref(idxmap_dual), dual_obj)
-
-    func = MOIU.operate(-, T, primal, dual)
-
-    func_up = MOIU.operate(-, T, func, mode.epsilon)
-    c_up = MOI.add_constraint(m, func_up, MOI.LessThan(zero(T)))
-    MOI.set(m, MOI.ConstraintName(), c_up, "lower_strong_duality_up")
-
-    func_lo = MOIU.operate(+, T, func, mode.epsilon)
-    c_lo = MOI.add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
-    MOI.set(m, MOI.ConstraintName(), c_lo, "lower_strong_duality_lo")
-
-    return c_up, c_lo
+    if !mode.inequality
+        c = MOI.add_constraint(m, func, MOI.EqualTo(zero(T)))
+        MOI.set(m, MOI.ConstraintName(), c, "lower_strong_duality")
+        return CI[c]
+    else
+        func_up = MOIU.operate(-, T, func, mode.epsilon)
+        c_up = MOI.add_constraint(m, func_up, MOI.LessThan(zero(T)))
+        MOI.set(m, MOI.ConstraintName(), c_up, "lower_strong_duality_up")
+    
+        func_lo = MOIU.operate(+, T, func, mode.epsilon)
+        c_lo = MOI.add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
+        MOI.set(m, MOI.ConstraintName(), c_lo, "lower_strong_duality_lo")
+    
+        return CI[c_up, c_lo]
+    end
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement,
@@ -556,12 +530,6 @@ function add_complement(mode::PositiveSOS1Mode{T}, m, comp::Complement,
     return slack, slack_in_set, equality, c1
 end
 
-function flip_set(set::MOI.LessThan{T}) where T
-    return MOI.GreaterThan{T}(0.0)
-end
-function flip_set(set::MOI.GreaterThan{T}) where T
-    return MOI.LessThan{T}(0.0)
-end
 is_equality(set::S) where {S<:MOI.AbstractSet} = false
 is_equality(set::MOI.EqualTo{T}) where T = true
 is_equality(set::MOI.Zeros) = true
@@ -778,6 +746,13 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
     return c1
 end
 
+function flip_set(set::MOI.LessThan{T}) where T
+    return MOI.GreaterThan{T}(0.0)
+end
+function flip_set(set::MOI.GreaterThan{T}) where T
+    return MOI.LessThan{T}(0.0)
+end
+
 function get_bounds(var, map, fallback_bound = Inf)
     if haskey(map, var)
         info = map[var]
@@ -903,254 +878,6 @@ end
 function to_vector_affine(f::MOI.VectorOfVariables)
     return MOI.VectorAffineFunction{Float64}(f)
 end
-
-function pass_names(dest, src, map)
-    for vi in MOI.get(src, MOI.ListOfVariableIndices())
-        name = MOI.get(src, MOI.VariableName(), vi)
-        if name != ""
-            MOI.set(dest, MOI.VariableName(), map[vi], name)
-        end
-    end
-    for (F,S) in MOI.get(src, MOI.ListOfConstraints())
-        for con in MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
-            name = MOI.get(src, MOI.ConstraintName(), con)
-            if name != ""
-                MOI.set(dest, MOI.ConstraintName(), map[con], name)
-            end
-        end
-    end
-end
-
-function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, copy_names::Bool, 
-    filter_constraints::Union{Nothing, Function}=nothing; allow_single_bounds::Bool = true)
-
-    #=
-        This function follows closely the function `default_copy_to` defined in
-        MathOptInterface.Utilities
-        due to some caveats of this function we keep the commented functions
-        from the original function to highlight the differences and 
-        easen the burden of updating when `default_copy_to` is updated.
-    =#
-
-    # MOI.empty!(dest)
-
-    # idxmap = MOIU.IndexMap()
-
-    vis_src = MOI.get(src, MOI.ListOfVariableIndices())
-    # index_map_for_variable_indices only initializes the data structure
-    # idxmap = index_map_for_variable_indices(vis_src)
-    
-    # The `NLPBlock` assumes that the order of variables does not change (#849)
-    if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
-        error("NLP models are not supported.")
-        constraint_types = MOI.get(src, MOI.ListOfConstraints())
-        single_variable_types = [S for (F, S) in constraint_types
-                                 if F == MOI.SingleVariable]
-        vector_of_variables_types = [S for (F, S) in constraint_types
-                                     if F == MOI.VectorOfVariables]
-        vector_of_variables_not_added = [
-            MOI.get(src, MOI.ListOfConstraintIndices{MOI.VectorOfVariables, S}())
-            for S in vector_of_variables_types
-        ]
-        single_variable_not_added = [
-            MOI.get(src, MOI.ListOfConstraintIndices{MOI.SingleVariable, S}())
-            for S in single_variable_types
-        ]
-    else
-        # the key asusmption here is that MOI keeps the following behaviour
-        # "The copy is only done when
-        # the variables to be copied are not already keys of `idxmap`. It returns a list
-        # of the constraints copied and not copied."
-        # from copy_single_variable and copy_vector_of_variables.
-        # this is very importante because variables are shered between
-        # upper, lower and lower dual levels
-        vector_of_variables_types, _, vector_of_variables_not_added,
-        single_variable_types, _, single_variable_not_added = MOIU.try_constrain_variables_on_creation(
-            dest, src, idxmap, MOI.add_constrained_variables, MOI.add_constrained_variable
-        )
-    end
-
-    # MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
-    # copy variables has a size check that dows not generalizes here
-    # because we have previously added variables
-    for vi in vis_src
-        if !haskey(idxmap.varmap, vi)
-            var = MOI.add_variable(dest)
-            idxmap.varmap[vi] = var
-        end
-    end
-
-    # Copy variable attributes
-    MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
-
-    # Copy model attributes
-    # attention HERE to no pass objective functions!
-    # pass_attributes(dest, src, copy_names, idxmap)
-
-    # Copy constraints
-    MOIU.pass_constraints(dest, src, copy_names, idxmap,
-                     single_variable_types, single_variable_not_added,
-                     vector_of_variables_types, vector_of_variables_not_added,
-                     filter_constraints=filter_constraints)
-
-    return idxmap
-end
-
-using LinearAlgebra
-
-# scalar
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}},
-    ::Type{T}
-    ) where T
-    MOI.ScalarAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{T},
-    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}}
-    ) where T
-    MOI.ScalarAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}},
-    ::Type{<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction{T}}}
-    ) where T
-    MOI.ScalarQuadraticFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{MOI.ScalarQuadraticFunction{T}},
-    ::Type{T}
-    ) where T
-    MOI.ScalarQuadraticFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{T},
-    ::Type{MOI.ScalarQuadraticFunction{T}}
-    ) where T
-    MOI.ScalarQuadraticFunction{T}
-end
-# flip
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        MOI.SingleVariable,
-        MOI.ScalarAffineFunction{T},
-        MOI.ScalarQuadraticFunction{T}
-        },
-    α::T) where T
-    return MOIU.operate(LinearAlgebra.dot, T, α, f)
-end
-# pass to *
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        T,
-        MOI.SingleVariable,
-        MOI.ScalarAffineFunction{T}
-        },
-    g::Union{
-        MOI.SingleVariable,
-        MOI.ScalarAffineFunction{T}
-        }
-    ) where T
-    return MOIU.operate(*, T, f, g)
-end
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    α::T,
-    f::MOI.ScalarQuadraticFunction{T}
-    ) where T
-    return MOIU.operate(*, T, f, α)
-end
-
-# vector
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
-    ::Type{Vector{T}}
-    ) where T
-    MOI.VectorAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{Vector{T}},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
-    ) where T
-    MOI.VectorAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
-    ) where T
-    MOI.VectorQuadraticFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{MOI.VectorQuadraticFunction{T}},
-    ::Type{Vector{T}}
-    ) where T
-    MOI.VectorQuadraticFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{Vector{T}},
-    ::Type{MOI.VectorQuadraticFunction{T}}
-    ) where T
-    MOI.VectorQuadraticFunction{T}
-end
-# flip
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-        },
-    α::Vector{T}) where T
-    return MOIU.operate(LinearAlgebra.dot, T, α, f)
-end
-# pass to _operate(LinearAlgebra.dot, ...)
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        Vector{T},
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T}
-        },
-    g::Union{
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T}
-        }
-    ) where T
-    return _operate(LinearAlgebra.dot, T, f, g)
-end
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    α::T,
-    f::MOI.VectorQuadraticFunction{T}
-    ) where T
-    return _operate(LinearAlgebra.dot, T, f, α)
-end
-function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        Vector{T},
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-        },
-    g::Union{
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-    }) where T
-
-    dim = MOI.output_dimension(g)
-    if MOI.output_dimension(f) != dim
-        throw(DimensionMismatch("f and g are of different MOI.output_dimension's!"))
-    end
-
-    fs = MOIU.scalarize(f)
-    gs = MOIU.scalarize(g)
-
-    out = MOIU.operate(*, T, fs[1], gs[1])
-    for i in 2:dim
-        MOIU.operate!(+, T, out, MOIU.operate(*, T, fs[i], gs[i]))
-    end
-
-    return out
-end
-MOIU.scalarize(v::Vector{T}) where T<:Number = v
-MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)#
 
 function handle_lower_objective_sense(lower::MOI.ModelLike)
     lower_objective_sense = MOI.get(lower, MOI.ObjectiveSense())
