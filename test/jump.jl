@@ -2600,3 +2600,44 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test value(y[1]) ≈ 2 atol=1e-3
     @test sqrt(value(y[2])^2 + value(y[3])^2) <= 2 + 1e-3
 end
+
+# from: https://github.com/joaquimg/BilevelJuMP.jl/issues/82
+function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(), p_max = 0.1)
+
+    MOI.empty!(optimizer)
+    m = BilevelModel(()->optimizer, mode = mode)
+
+    @variable(Upper(m), 0 <= p <= p_max)
+    @variable(Lower(m), 0 <= p_N[1:2] <= 10)
+    @variable(Lower(m), 0 <= m_P[1:2] <= 10)
+    @variable(Lower(m), 0 <= m_N[1:2] <= 10)
+    
+    @constraint(Upper(m), con_a, sum(m_P[i] - m_N[i] for i in 1:2) == 0)
+    @objective(Upper(m), Min, -sum(0.01*m_N[i] + 0.003*m_P[i] for i in 1:2))
+    
+    @constraint(Lower(m), con_b[i=1:2], - p_N[i] + m_P[i] - m_N[i] == - 3*i)
+    @objective(Lower(m), Min, -sum( - p_N[i]*0.1 - m_N[i]*(p + 0.01) + m_P[i]*(p - 0.003) for i in 1:2))
+
+    optimize!(m, bilevel_prob = "pb.lp", solver_prob = "ps.lp",
+        upper_prob = "pu.lp")
+    @test isfile("pb.lp")
+    @test isfile("ps.lp")
+    @test isfile("pu.lp")
+    optimize!(m, bilevel_prob = "pb.mof.json", solver_prob = "ps.mof.json",
+        lower_prob = "pl.mof.json", upper_prob = "pu.mof.json")
+    @test isfile("pb.mof.json")
+    @test isfile("ps.mof.json")
+    @test isfile("pl.mof.json")
+    @test isfile("pu.mof.json")
+    JuMP.raw_status(m)
+    primal_status(m)
+    if p_max < 0.09
+        @test termination_status(m) in [MOI.INFEASIBLE, MOI.LOCALLY_INFEASIBLE]
+    else
+        @test termination_status(m) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+        @test value.(m_P) ≈ [0, 0] atol=1e-3
+        @test value.(m_N) ≈ [0, 0] atol=1e-3
+        @test value.(p_N) ≈ [3, 6] atol=1e-3
+    end
+    return nothing
+end

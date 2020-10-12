@@ -62,6 +62,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     build_time::Float64
 
     copy_names::Bool
+    pass_start::Bool
 
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
 
@@ -105,6 +106,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             NaN,
             NaN,
             false,
+            true,
             Dict{Symbol, Any}(),
             )
 
@@ -119,7 +121,7 @@ function BilevelModel(optimizer_constructor;
     return bm
 end
 function set_mode(bm::BilevelModel, mode::BilevelSolverMode)
-    bm.mode = mode
+    bm.mode = deepcopy(mode)
     return bm
 end
 
@@ -962,7 +964,8 @@ function JuMP.optimize!(model::BilevelModel;
     build_bounds!(model, mode)
 
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
-    build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2)
+        build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2,
+            copy_names = model.copy_names, pass_start = model.pass_start)
 
     # pass lower level dual variables info (start, upper, lower)
     for (idx, info) in model.ctr_info
@@ -1361,6 +1364,28 @@ function JuMP.result_count(bm::BilevelModel)::Int
     return MOI.get(bm.solver, MOI.ResultCount())
 end
 
+function set_copy_names(bm::BilevelModel)
+    bm.copy_names = true
+    return nothing
+end
+function unset_copy_names(bm::BilevelModel)
+    bm.copy_names = false
+    return nothing
+end
+function get_copy_names(bm::BilevelModel)
+    return bm.copy_names
+end
+function set_pass_start(bm::BilevelModel)
+    bm.pass_start = true
+    return nothing
+end
+function unset_pass_start(bm::BilevelModel)
+    bm.pass_start = false
+    return nothing
+end
+function get_pass_start(bm::BilevelModel)
+    return bm.copy_names
+end
 
 function _check_solver(bm::BilevelModel)
     if bm.solver === nothing
