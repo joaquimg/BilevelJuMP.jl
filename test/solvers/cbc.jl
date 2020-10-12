@@ -18,12 +18,12 @@ push!(solvers_fa2, (opt = CBC_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(
 
 push!(solvers_bin_exp, (
     opt = QuadraticToBinary.Optimizer{Float64}(CBC_BRIDGED),
-    mode = BilevelJuMP.StrongDualityInequalityMode(1e-9)))
+    mode = BilevelJuMP.StrongDualityMode(1e-9, inequality = true)))
 MOI.set(solvers_bin_exp[end].opt, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
 
 push!(solvers_bin_exp, (
     opt = QuadraticToBinary.Optimizer{Float64}(CBC_BRIDGED),
-    mode = BilevelJuMP.StrongDualityEqualityMode()))
+    mode = BilevelJuMP.StrongDualityMode(inequality = false)))
 MOI.set(solvers_bin_exp[end].opt, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
 
 #=

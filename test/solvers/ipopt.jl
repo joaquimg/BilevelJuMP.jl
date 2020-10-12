@@ -9,14 +9,14 @@ MOI.Bridges.add_bridge(IPO_BRIDGED, MOI.Bridges.Constraint.SOCtoNonConvexQuadBri
 
 push!(solvers_nlp_lowtol, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-5)))
 push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
-push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductWithSlackMode(1e-9)))
+push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9, with_slack = true)))
 
 push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
 push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
 
-# push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode(1e-9)))
-push!(solvers_nlp_sd, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityEqualityMode()))
+# push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
+push!(solvers_nlp_sd, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(inequality = false)))
 #=
-push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode(1e-9)))
-push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityInequalityMode(1e-9)))
+push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
+push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
 =#

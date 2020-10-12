@@ -15,6 +15,13 @@ Upper, Lower, UpperOnly, LowerOnly,
 DualOf
 
 include("moi.jl")
+include("moi_utilities.jl")
+
 include("jump.jl")
+include("jump_variables.jl")
+include("jump_constraints.jl")
+include("jump_objective.jl")
+include("jump_print.jl")
+include("jump_attributes.jl")
 
 end
