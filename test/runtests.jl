@@ -270,10 +270,6 @@ end
 end
 
 @testset "Fruits" begin
-    for solver in solvers_sos
-        jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.05)
-        jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.09)
-    end
     for solver in solvers_fa2
         jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.05)
         jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.09)
