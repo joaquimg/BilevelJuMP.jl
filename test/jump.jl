@@ -252,7 +252,7 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
     @test dual(l1) ≈ [0] atol=atol
     # @test dual(l2) #≈ [0] atol=atol
     @test dual(l3) ≈ [0] atol=atol
-    # @show dual(l4) #≈ [0] atol=atol
+    # @test dual(l4) #≈ [0] atol=atol
 
     if typeof(mode) <: BilevelJuMP.ProductMode
         @test JuMP.dual_status(Upper(model)) == MOI.FEASIBLE_POINT

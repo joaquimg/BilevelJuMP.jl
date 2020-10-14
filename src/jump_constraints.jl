@@ -32,8 +32,6 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     blm.nextconidx += 1
     cref = JuMP.ConstraintRef(blm, blm.nextconidx, JuMP.shape(c))
     func = JuMP.jump_function(c)
-    # @show c
-    # @show func
     level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)

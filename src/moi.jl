@@ -191,7 +191,6 @@ function _build_bound_map!(mode::ComplementBoundCache,
     end
     for (k,v) in mode.ldual
         vec = lower_primal_dual_map.primal_con_dual_var[k]#[1] # TODO check this scalar
-        # @show typeof(vec)
         for var in vec
             mode.map[lower_dual_idxmap[var]] = VariableInfo(v)
         end
@@ -440,8 +439,6 @@ function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where {
     S<:Union{MOI.EqualTo{T}, MOI.LessThan{T}, MOI.GreaterThan{T}}
 }
     key = map[VI(ci.value)]
-    @show ci, key, map
-    @show mode.constraint_mode_map_v
     if haskey(mode.constraint_mode_map_v, key)
         return mode.constraint_mode_map_v[key]
     else
@@ -450,8 +447,6 @@ function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where {
 end
 function get_mode(mode::MixedMode{T}, ci::CI{S,F}, map) where T where {F,S}
     key = map[ci]
-    @show ci, key, map
-    @show mode.constraint_mode_map_c
     if haskey(mode.constraint_mode_map_c, key)
         return mode.constraint_mode_map_c[key]
     else

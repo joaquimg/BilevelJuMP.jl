@@ -335,7 +335,7 @@ function jump_attributes_solver(optimizer, mode)
     JuMP.unset_time_limit_sec(model)
 
     @test JuMP.result_count(model) == 1
-    @show JuMP.node_count(model)
+    JuMP.node_count(model)
     @test_throws ArgumentError JuMP.simplex_iterations(model)
     @test_throws ArgumentError JuMP.barrier_iterations(model)
 
