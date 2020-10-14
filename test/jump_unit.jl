@@ -29,6 +29,7 @@ end
 
 function jump_objective_solver(optimizer, mode)
 
+    MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)
@@ -115,6 +116,7 @@ function jump_display()
 end
 
 function invalid_lower_objective(optimizer, mode)
+    MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
 
     @variable(Upper(model), x)

@@ -106,6 +106,9 @@ end
         jump_14(solver.opt, solver.mode)
     end
     for solver in solvers_sos
+        jump_01_mixed(solver.opt)
+    end
+    for solver in solvers_sos
         jump_01(solver.opt, solver.mode)
         jump_02(solver.opt, solver.mode)
         jump_03(solver.opt, solver.mode)
