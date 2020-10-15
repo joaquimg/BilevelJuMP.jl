@@ -607,21 +607,30 @@ function set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode{T}) 
     bm.mode.constraint_mode_map_c[ctr] = _mode
     return nothing
 end
+function unset_mode(ci::BilevelConstraintRef)
+    bm = ci.model
+    check_mixed_mode(bm.mode)
+    ctr = JuMP.index(bm.ctr_lower[ci.index])
+    delete!(bm.mode.constraint_mode_map_c, ctr)
+    return nothing
+end
 
 function get_mode(ci::BilevelConstraintRef)
     bm = ci.model
     check_mixed_mode(bm.mode)
     ctr = JuMP.index(bm.ctr_lower[ci.index])
-    return bm.mode.constraint_mode_map_c[ctr]
+    if haskey(bm.mode.constraint_mode_map_c, ctr)
+        return bm.mode.constraint_mode_map_c[ctr]
+    else
+        return nothing
+    end
 end
 
 function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where T
     error("Cant set MixedMode in a specific constraint")
-    return nothing
 end
 function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where T
     error("Cant set StrongDualityMode in a specific constraint")
-    return nothing
 end
 
 function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where T
@@ -634,19 +643,28 @@ function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) wh
     bm.mode.constraint_mode_map_v[var] = _mode
     return nothing
 end
+function unset_mode(vi::BilevelVariableRef)
+    bm = vi.model
+    check_mixed_mode(bm.mode)
+    var = JuMP.index(bm.var_lower[vi.idx])
+    delete!(bm.mode.constraint_mode_map_v, var)
+    return nothing
+end
 
 function get_mode(vi::BilevelVariableRef)
     bm = vi.model
     check_mixed_mode(bm.mode)
     var = JuMP.index(bm.var_lower[vi.idx])
-    return bm.mode.constraint_mode_map_v[var]
+    if haskey(bm.mode.constraint_mode_map_v, var)
+        return bm.mode.constraint_mode_map_v[var]
+    else
+        return nothing
+    end
 end
 
 function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
     error("Cant set MixedMode in a specific variable")
-    return nothing
 end
 function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
     error("Cant set StrongDualityMode in a specific variable")
-    return nothing
 end

@@ -25,6 +25,97 @@ function jump_objective()
     @test_throws ErrorException JuMP.objective_bound(model)
     @test_throws ErrorException JuMP.set_objective(model, MOI.MAX_SENSE, x)
 
+    @test_throws ErrorException JuMP.objective_function_type(model)
+    @test_throws ErrorException JuMP.objective_function(model)
+    @test_throws ErrorException JuMP.objective_function(model, MOI.SingleVariable)
+
+end
+
+function jump_constraints()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @constraints(Upper(model), begin
+        cup, 2x+y <= 4
+    end)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1, 2x+y <= 4
+        c2, x+2y <= 4
+        c3, x >= 0
+        c4, y >= 0
+    end)
+
+    @test JuMP.normalized_rhs(c1) == 4.0
+
+    @test_throws ErrorException JuMP.delete(model, c1)
+
+    @test is_valid(model, x)
+    @test is_valid(Upper(model), x)
+    @test is_valid(Lower(model), x) # it is in both levels
+
+    @test is_valid(model, c1)
+    @test !is_valid(Upper(model), c1)
+    @test is_valid(Lower(model), c1)
+
+    # JuMP.constraint_object(c1, MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64})
+
+    BilevelJuMP.set_dual_start(c1, 1.2)
+    BilevelJuMP.get_dual_start(c1) == 1.2
+
+    BilevelJuMP.set_primal_upper_bound_hint(x, 1.7)
+    @test BilevelJuMP.get_primal_upper_bound_hint(x) == 1.7
+    BilevelJuMP.set_primal_lower_bound_hint(x, 1.8)
+    @test BilevelJuMP.get_primal_lower_bound_hint(x) == 1.8
+
+    @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(c1))
+    @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup))
+
+
+end
+
+function jump_variables()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @constraints(Upper(model), begin
+        cup, 2x+y <= 4
+    end)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1, 2x+y <= 4
+        c2, x+2y <= 4
+        c3, x >= 0
+        c4, y >= 0
+    end)
+
+    @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(c1))
+
+    JuMP.set_start_value(alpha, 2.2)
+    @test JuMP.start_value(alpha) == 2.2
+
+    @test x === copy(x)
+    @test JuMP.isequal_canonical(x, copy(x))
+    @test !JuMP.isequal_canonical(x, y)
+
+    @test JuMP.variable_type(model) == BilevelJuMP.BilevelVariableRef
+
+    @test_throws ErrorException JuMP.delete(model, x)
+    @test JuMP.is_valid(model, x)
 end
 
 function jump_objective_solver(optimizer, mode)
@@ -339,4 +430,66 @@ function jump_attributes_solver(optimizer, mode)
     @test_throws ArgumentError JuMP.simplex_iterations(model)
     @test_throws ArgumentError JuMP.barrier_iterations(model)
 
+    @test_throws MethodError JuMP.set_optimizer_attributes(mode, "weird" => true, "strange" => "yes")
+
+end
+
+
+function mixed_mode_unit()
+
+    # min -4x -3y
+    # s.t.
+    # y = argmin_y y
+    #      2x + y <= 4
+    #       x +2y <= 4
+    #       x     >= 0
+    #           y >= 0
+    #
+    # sol: x = 2, y = 0
+    # obj_upper = -8
+    # obj_lower =  0
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x >= 0)
+    @variable(Lower(model), y >= 0)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1, 2x+y <= 4
+        c2, x+2y <= 4
+    end)
+
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.SOS1Mode())
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.IndicatorMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.SOS1Mode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.IndicatorMode())
+
+    BilevelJuMP.set_mode(model, BilevelJuMP.MixedMode())
+
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.MixedMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.StrongDualityMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.MixedMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.StrongDualityMode())
+
+    BilevelJuMP.set_mode(x, BilevelJuMP.FortunyAmatMcCarlMode())
+    BilevelJuMP.set_mode(y, BilevelJuMP.IndicatorMode())
+    BilevelJuMP.set_mode(c1, BilevelJuMP.FortunyAmatMcCarlMode())
+    BilevelJuMP.set_mode(c2, BilevelJuMP.IndicatorMode())
+
+    @test typeof(BilevelJuMP.get_mode(y)) <: BilevelJuMP.IndicatorMode
+    @test typeof(BilevelJuMP.get_mode(c2)) <: BilevelJuMP.IndicatorMode
+
+    BilevelJuMP.unset_mode(x)
+    BilevelJuMP.unset_mode(y)
+    BilevelJuMP.unset_mode(c1)
+    BilevelJuMP.unset_mode(c2)
+
+    @test BilevelJuMP.get_mode(y) === nothing
+    @test BilevelJuMP.get_mode(c2) === nothing
+
+    return nothing
 end

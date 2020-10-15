@@ -73,12 +73,6 @@ mutable struct SOS1Mode{T} <: AbstractBilevelSolverMode{T}
     end
 end
 
-mutable struct PositiveSOS1Mode{T} <: AbstractBilevelSolverMode{T}
-    function PositiveSOS1Mode()
-        return new{Float64}()
-    end
-end
-
 mutable struct ComplementMode{T} <: AbstractBilevelSolverMode{T}
     with_slack::Bool
     function ComplementMode(;with_slack = false)
@@ -542,63 +536,6 @@ function add_complement(mode::SOS1Mode{T}, m, comp::Complement,
         MOI.set(m, MOI.ConstraintName(), c1, "compl_sos1_($(nm))")
     end
 
-    return slack, slack_in_set, equality, c1
-end
-
-function add_complement(mode::PositiveSOS1Mode{T}, m, comp::Complement,
-    idxmap_primal, idxmap_dual, copy_names::Bool, pass_start::Bool) where T
-    f = comp.func_w_cte
-    s = comp.set_w_zero
-    v = comp.variable
-
-    if comp.is_vec
-        error("Vector constraint is not supported by PositiveSOS1 mode")
-    end
-
-    f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
-
-    if typeof(s) <: MOI.LessThan # 0
-        # requires flipping
-        # flipped slack
-        slack, slack_in_set = MOI.add_constrained_variable(m, MOI.GreaterThan{T}(0.0))
-        new_f = MOIU.operate(+, T, f_dest, MOI.SingleVariable(slack))
-        # flipped dual
-        real_dual = idxmap_dual[v]
-        dual, dual_in_set = MOI.add_constrained_variable(m, MOI.GreaterThan{T}(0.0))
-        # dual + real_dual == 0
-        opposite = MOIU.normalize_and_add_constraint(m,
-            MOI.ScalarAffineFunction(
-                [MOI.ScalarAffineTerm(1.0, real_dual),
-                 MOI.ScalarAffineTerm(1.0, dual)],
-                0.0),
-            MOI.EqualTo(zero(T)))
-        if copy_names
-            nm = MOI.get(m, MOI.VariableName(), dual)
-            MOI.set(m, MOI.VariableName(), slack, "flip_dual_($(nm))")
-            MOI.set(m, MOI.ConstraintName(), slack_in_set, "flip_dual_in_set_($(nm))")
-            MOI.set(m, MOI.ConstraintName(), opposite, "flip_dual_eq_($(nm))")
-        end
-    elseif typeof(s) <: MOI.GreaterThan # 0
-        slack, slack_in_set = MOI.add_constrained_variable(m, s)
-        new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
-        dual = idxmap_dual[v]
-    else
-        error("Unexpected set type: $s, while building complment constraints.")
-    end
-
-    equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
-
-    c1 = MOI.add_constraint(m, 
-        MOI.VectorOfVariables([slack, dual]),
-        MOI.SOS1([1.0, 2.0]))
-
-    if copy_names
-        nm = MOI.get(m, MOI.VariableName(), dual)
-        MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
-        MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
-        MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
-        MOI.set(m, MOI.ConstraintName(), c1, "compl_sos1_($(nm))")
-    end
     return slack, slack_in_set, equality, c1
 end
 
