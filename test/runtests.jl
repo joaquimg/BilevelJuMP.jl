@@ -67,6 +67,9 @@ include("jump_unit.jl")
     jump_objective()
     jump_bounds()
     jump_attributes()
+    mixed_mode_unit()
+    jump_constraints()
+    jump_variables()
     for solver in solvers_sos
         invalid_lower_objective(solver.opt, solver.mode)
         jump_display_solver(solver.opt, solver.mode)
@@ -104,6 +107,9 @@ end
         jump_11b(solver.opt, solver.mode)
         jump_12(solver.opt, solver.mode)
         jump_14(solver.opt, solver.mode)
+    end
+    for solver in solvers_sos
+        jump_01_mixed(solver.opt)
     end
     for solver in solvers_sos
         jump_01(solver.opt, solver.mode)

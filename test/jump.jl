@@ -22,6 +22,7 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
+    BilevelJuMP.set_copy_names(model)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
@@ -251,7 +252,7 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
     @test dual(l1) ≈ [0] atol=atol
     # @test dual(l2) #≈ [0] atol=atol
     @test dual(l3) ≈ [0] atol=atol
-    # @show dual(l4) #≈ [0] atol=atol
+    # @test dual(l4) #≈ [0] atol=atol
 
     if typeof(mode) <: BilevelJuMP.ProductMode
         @test JuMP.dual_status(Upper(model)) == MOI.FEASIBLE_POINT
@@ -2180,6 +2181,7 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
+    BilevelJuMP.set_copy_names(model)
 
     @variable(Upper(model), x, start = 50)
     if bounds
@@ -2307,6 +2309,7 @@ function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     MOI.empty!(optimizer)
     m = BilevelModel(()->optimizer, mode = mode)
+    BilevelJuMP.set_copy_names(m)
 
     @variable(Upper(m), 0 <= x <= 3 )
     @variable(Lower(m), 0 <= y[1:2])
@@ -2339,6 +2342,7 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
+    BilevelJuMP.set_copy_names(model)
 
     @variable(Upper(model), x[i=1:3])
     @variable(Lower(model), y[i=1:3])
@@ -2583,4 +2587,79 @@ function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
         @test value.(p_N) ≈ [3, 6] atol=1e-3
     end
     return nothing
+end
+
+function jump_01_mixed(optimizer, config = Config())
+
+    atol = config.atol
+
+    # config.bound_hint = true
+
+    # min -4x -3y
+    # s.t.
+    # y = argmin_y y
+    #      2x + y <= 4
+    #       x +2y <= 4
+    #       x     >= 0
+    #           y >= 0
+    #
+    # sol: x = 2, y = 0
+    # obj_upper = -8
+    # obj_lower =  0
+
+    atol = config.atol
+
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = BilevelJuMP.MixedMode(default = BilevelJuMP.FortunyAmatMcCarlMode()))
+    BilevelJuMP.set_copy_names(model)
+
+    @variable(Upper(model), x >= 0)
+    @variable(Lower(model), y >= 0)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1, 2x+y <= 4
+        c2, x+2y <= 4
+    end)
+
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.MixedMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.StrongDualityMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.MixedMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.StrongDualityMode())
+
+    BilevelJuMP.set_mode(x, BilevelJuMP.SOS1Mode())
+    BilevelJuMP.set_mode(y, BilevelJuMP.IndicatorMode())
+    BilevelJuMP.set_mode(c1, BilevelJuMP.SOS1Mode())
+    BilevelJuMP.set_mode(c2, BilevelJuMP.IndicatorMode())
+
+    # if config.bound_hint
+    #     for cref in [c1, c2, c3, c4]
+    #         BilevelJuMP.set_dual_upper_bound(cref, 10)
+    #         BilevelJuMP.set_dual_lower_bound(cref, -10)
+    #     end
+    #     BilevelJuMP.set_primal_lower_bound_hint(x, -1)
+    #     BilevelJuMP.set_primal_lower_bound_hint(y, -1)
+    #     BilevelJuMP.set_primal_upper_bound_hint(x, 5)
+    #     BilevelJuMP.set_primal_upper_bound_hint(y, 5)
+    # end
+
+    optimize!(model)
+
+    primal_status(model)
+
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+
+    @test objective_value(model) ≈ -8 atol=atol
+
+    @test value(x) ≈  2 atol=atol
+    @test value(y) ≈  0 atol=atol
+
+    # @test dual(c1) ≈ [0] atol=atol #NLP fail
+    @test dual(c2) ≈ [0] atol=atol
+    # @test dual(c3) ≈ [0] atol=atol
+    # @test dual(c4) ≈ [1] atol=atol #NLP fail
+
 end

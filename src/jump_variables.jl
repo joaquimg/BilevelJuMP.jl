@@ -1,4 +1,5 @@
 
+level(v::BilevelVariableRef) = v.level
 mylevel(v::BilevelVariableRef) = v.level
 in_level(v::BilevelVariableRef, level::Level) = (
     v.level === BOTH ||
@@ -78,12 +79,14 @@ function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable,
     m.var_info[vref.idx] = empty_info(v)
     vref
 end
-function MOI.delete!(m::AbstractBilevelModel, vref::BilevelVariableRef)
+function JuMP.delete(m::AbstractBilevelModel, vref::BilevelVariableRef)
     error("No deletion on bilevel models")
-    delete!(m.variables, vref.idx)
-    delete!(m.varnames, vref.idx)
+    # delete!(m.variables, vref.idx)
+    # delete!(m.varnames, vref.idx)
 end
-MOI.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.variables)
+JuMP.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.variables)
+JuMP.is_valid(m::InnerBilevelModel, vref::BilevelVariableRef) =
+    JuMP.is_valid(bilevel_model(m), vref) && in_level(vref, level(m))
 JuMP.num_variables(m::BilevelModel) = length(m.variables)
 JuMP.num_variables(m::UpperModel) = length(m.m.var_upper)
 JuMP.num_variables(m::LowerModel) = length(m.m.var_lower)

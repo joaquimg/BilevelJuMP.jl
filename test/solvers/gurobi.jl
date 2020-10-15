@@ -20,8 +20,3 @@ push!(solvers_fa2, (opt = GRB_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(
 push!(solvers_sos_quad_bin, (
     opt = QuadraticToBinary.Optimizer{Float64}(GRB_BRIDGED),
     mode = BilevelJuMP.SOS1Mode()))
-
-push!(solvers, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))
-push!(solvers_sos, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))
-push!(solvers_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))
-push!(solvers_sos_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.PositiveSOS1Mode()))

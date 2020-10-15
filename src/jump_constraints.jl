@@ -32,8 +32,6 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     blm.nextconidx += 1
     cref = JuMP.ConstraintRef(blm, blm.nextconidx, JuMP.shape(c))
     func = JuMP.jump_function(c)
-    # @show c
-    # @show func
     level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
@@ -44,15 +42,15 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     JuMP.set_name(cref, name)
     cref
 end
-function MOI.delete!(m::AbstractBilevelModel, cref::BilevelConstraintRef)
+function JuMP.delete(m::AbstractBilevelModel, cref::BilevelConstraintRef)
     error("can't delete")
-    m.need_rebuild = true
-    delete!(m.constraints, cref.index)
-    delete!(m.connames, cref.index)
+    # m.need_rebuild = true
+    # delete!(m.constraints, cref.index)
+    # delete!(m.connames, cref.index)
 end
-MOI.is_valid(m::BilevelModel, cref::BilevelConstraintRef) = cref.index in keys(m.constraints)
-MOI.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef) =
-    MOI.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
+JuMP.is_valid(m::BilevelModel, cref::BilevelConstraintRef) = cref.index in keys(m.constraints)
+JuMP.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef) =
+    JuMP.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
 function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
     c = cref.model.constraints[cref.index]
     # `TypeError` should be thrown is `F` and `S` are not correct
@@ -158,6 +156,10 @@ function JuMP.build_variable(
     dual_of::DualOf;
     extra_kw_args...,
 )
+
+    if level(dual_of.ci) != LOWER_ONLY
+        error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
+    end
     for (kwarg, _) in extra_kw_args
         _error("Unrecognized keyword argument $kwarg")
     end
@@ -184,10 +186,6 @@ function JuMP.build_variable(
     info = JuMP.VariableInfo(false, NaN, false, NaN,
                              false, NaN, false, NaN,
                              false, false)
-
-    if level(dual_of.ci) != LOWER_ONLY
-        error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
-    end
 
     return DualVariableInfo(
         info,

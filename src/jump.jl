@@ -114,14 +114,15 @@ mutable struct BilevelModel <: AbstractBilevelModel
     end
 end
 function BilevelModel(optimizer_constructor;
-    bridge_constraints::Bool=true, mode::BilevelSolverMode = SOS1Mode())
+    bridge_constraints::Bool=true, mode::AbstractBilevelSolverMode = SOS1Mode())
     bm = BilevelModel()
     set_mode(bm, mode)
     JuMP.set_optimizer(bm, optimizer_constructor; bridge_constraints=bridge_constraints)
     return bm
 end
-function set_mode(bm::BilevelModel, mode::BilevelSolverMode)
+function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
     bm.mode = deepcopy(mode)
+    reset!(bm.mode)
     return bm
 end
 
@@ -479,10 +480,13 @@ end
 
 # Bounds
 
-function build_bounds!(::BilevelModel, ::BilevelSolverMode{T}) where T
+function build_bounds!(::BilevelModel, ::AbstractBilevelSolverMode{T}) where T
     return nothing
 end
-function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
+function build_bounds!(model::BilevelModel, mode::AbstractBoundedMode{T}) where T
+    return _build_bounds!(model, mode.cache)
+end
+function _build_bounds!(model::BilevelModel, mode::ComplementBoundCache)
     # compute variable bounds for FA mode
     fa_vi_up = mode.upper
     fa_vi_lo = mode.lower
@@ -509,26 +513,13 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
         lb = JuMP.has_lower_bound(vref) ? JuMP.lower_bound(vref) : -Inf
         ub = JuMP.has_upper_bound(vref) ? JuMP.upper_bound(vref) : +Inf
         info.upper = min(ub, inf_if_nan(+, info.upper))
-        if info.upper == +Inf
-            info.upper = +bigM(is_dual, mode)
-        end
         info.lower = max(lb, inf_if_nan(-, info.lower))
-        if info.lower == -Inf
-            info.lower = -bigM(is_dual, mode)
-        end
-        if info.upper == +Inf && mode.safe
-            error("Problem with UB of variable $vref")
-        end
-        if info.lower == -Inf && mode.safe
-            error("Problem with LB of variable $vref")
-        end
         if is_lower
             fa_vi_lo[var] = info
         else
             fa_vi_up[var] = info
         end
         @assert info.lower <= info.upper
-
     end
     for (idx, _info) in model.ctr_info
         if haskey(model.ctr_lower, idx)
@@ -539,19 +530,7 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
             ub = dual_upper_bound(ctr)
             lb = dual_lower_bound(ctr)
             info.upper = min(ub, inf_if_nan(+, info.upper))
-            if info.upper == +Inf
-                info.upper = +bigM(true, mode)
-            end
             info.lower = max(lb, inf_if_nan(-, info.lower))
-            if info.lower == -Inf
-                info.lower = -bigM(true, mode)
-            end
-            if info.upper == +Inf && mode.safe
-                error("Problem with UB of dual of constraint $cref")
-            end
-            if info.lower == -Inf && mode.safe
-                error("Problem with LB of dual of constraint $cref")
-            end
             @assert info.lower <= info.upper
             # TODO vector
             fa_vi_ld[ctr] = info
@@ -560,7 +539,6 @@ function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode{T}) wher
     return nothing
 end
 
-bigM(is_dual, mode::FortunyAmatMcCarlMode) = ifelse(is_dual, mode.dual_big_M, mode.primal_big_M)
 inf_if_nan(::typeof(+), val) = ifelse(isnan(val), Inf, val)
 inf_if_nan(::typeof(-), val) = ifelse(isnan(val), -Inf, val)
 
@@ -604,4 +582,89 @@ function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
         error("Calling the `optimizer_constructor` must return an empty optimizer")
     end
     return bm
+end
+
+
+function pass_cache(bm::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
+    mode.cache = bm.mode.cache
+    return nothing
+end
+function pass_cache(bm::BilevelModel, mode::AbstractBilevelSolverMode{T}) where T
+    return nothing
+end
+
+function check_mixed_mode(::MixedMode{T}) where T
+end
+function check_mixed_mode(mode)
+    error("Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`")
+end
+function set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode{T}) where T
+    bm = ci.model
+    check_mixed_mode(bm.mode)
+    _mode = deepcopy(mode)
+    pass_cache(bm, _mode)
+    ctr = JuMP.index(bm.ctr_lower[ci.index])
+    bm.mode.constraint_mode_map_c[ctr] = _mode
+    return nothing
+end
+function unset_mode(ci::BilevelConstraintRef)
+    bm = ci.model
+    check_mixed_mode(bm.mode)
+    ctr = JuMP.index(bm.ctr_lower[ci.index])
+    delete!(bm.mode.constraint_mode_map_c, ctr)
+    return nothing
+end
+
+function get_mode(ci::BilevelConstraintRef)
+    bm = ci.model
+    check_mixed_mode(bm.mode)
+    ctr = JuMP.index(bm.ctr_lower[ci.index])
+    if haskey(bm.mode.constraint_mode_map_c, ctr)
+        return bm.mode.constraint_mode_map_c[ctr]
+    else
+        return nothing
+    end
+end
+
+function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where T
+    error("Cant set MixedMode in a specific constraint")
+end
+function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where T
+    error("Cant set StrongDualityMode in a specific constraint")
+end
+
+function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where T
+    bm = vi.model
+    check_mixed_mode(bm.mode)
+    _mode = deepcopy(mode)
+    pass_cache(bm, _mode)
+    var = JuMP.index(bm.var_lower[vi.idx])
+    # var is the MOI backend index in jump
+    bm.mode.constraint_mode_map_v[var] = _mode
+    return nothing
+end
+function unset_mode(vi::BilevelVariableRef)
+    bm = vi.model
+    check_mixed_mode(bm.mode)
+    var = JuMP.index(bm.var_lower[vi.idx])
+    delete!(bm.mode.constraint_mode_map_v, var)
+    return nothing
+end
+
+function get_mode(vi::BilevelVariableRef)
+    bm = vi.model
+    check_mixed_mode(bm.mode)
+    var = JuMP.index(bm.var_lower[vi.idx])
+    if haskey(bm.mode.constraint_mode_map_v, var)
+        return bm.mode.constraint_mode_map_v[var]
+    else
+        return nothing
+    end
+end
+
+function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
+    error("Cant set MixedMode in a specific variable")
+end
+function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
+    error("Cant set StrongDualityMode in a specific variable")
 end
