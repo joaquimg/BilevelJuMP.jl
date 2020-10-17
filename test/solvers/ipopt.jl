@@ -1,22 +1,17 @@
 using Ipopt
 
-const IPO_OPTIMIZER = Ipopt.Optimizer(print_level=0)
-MOI.set(IPO_OPTIMIZER, MOI.Silent(), true)
-const IPO_CACHE = MOIU.UniversalFallback(MOIU.Model{Float64}())
-const IPO_CACHED = MOIU.CachingOptimizer(IPO_CACHE, IPO_OPTIMIZER)
-const IPO_BRIDGED = MOI.Bridges.full_bridge_optimizer(IPO_CACHED, Float64)
-MOI.Bridges.add_bridge(IPO_BRIDGED, MOI.Bridges.Constraint.SOCtoNonConvexQuadBridge{Float64})
+IPO_OPT = Ipopt.Optimizer(print_level=0)
+IPO = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(IPO_OPT)
 
-push!(solvers_nlp_lowtol, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-5)))
-push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
-push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9, with_slack = true)))
+push!(solvers_nlp_lowtol, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-5)))
+push!(solvers_nlp, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9)))
+push!(solvers_nlp, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9, with_slack = true)))
 
-push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
-push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.ProductMode(1e-9)))
+push!(solvers, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9)))
+push!(solvers_cached, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9)))
+push!(solvers_quad, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9)))
 
-# push!(solvers_nlp, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
-push!(solvers_nlp_sd, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(inequality = false)))
-#=
-push!(solvers, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
-push!(solvers_quad, (opt = IPO_BRIDGED, mode = BilevelJuMP.StrongDualityMode(1e-9)))
-=#
+push!(solvers_nlp_sd, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(1e-9, inequality = true)))
+push!(solvers_nlp_sd, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(inequality = false)))
+push!(solvers_nlp_sd_i, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(1e-9, inequality = true)))
+push!(solvers_nlp_sd_e, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(inequality = false)))

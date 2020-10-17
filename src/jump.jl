@@ -62,6 +62,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     build_time::Float64
 
     copy_names::Bool
+    copy_names_to_solver::Bool
     pass_start::Bool
 
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
@@ -106,6 +107,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             NaN,
             NaN,
             false,
+            false,
             true,
             Dict{Symbol, Any}(),
             )
@@ -114,10 +116,15 @@ mutable struct BilevelModel <: AbstractBilevelModel
     end
 end
 function BilevelModel(optimizer_constructor;
-    bridge_constraints::Bool=true, mode::AbstractBilevelSolverMode = SOS1Mode())
+    mode::AbstractBilevelSolverMode = SOS1Mode(),
+    bridge_constraints::Bool=true,
+    with_names=true)
     bm = BilevelModel()
+    bm.copy_names=with_names
     set_mode(bm, mode)
-    JuMP.set_optimizer(bm, optimizer_constructor; bridge_constraints=bridge_constraints)
+    JuMP.set_optimizer(bm, optimizer_constructor;
+        bridge_constraints=bridge_constraints,
+        with_names=with_names)
     return bm
 end
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
@@ -405,7 +412,7 @@ function JuMP.optimize!(model::BilevelModel;
         print_lp(single_blm, bilevel_prob, file_format)
     end
 
-    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = model.copy_names)
+    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = model.copy_names_to_solver)
 
     if length(solver_prob) > 0
         print_lp(solver, solver_prob, file_format)
@@ -429,7 +436,7 @@ end
 
 # Extra info
 
-function pass_primal_info(single_blm, primal, info::VariableInfo{Float64})
+function pass_primal_info(single_blm, primal, info::VariableInfo)
     if !isnan(info.upper) &&
         !MOI.is_valid(single_blm, CI{SVF,LT{Float64}}(primal.value))
         MOI.add_constraint(single_blm,
@@ -529,9 +536,9 @@ function _build_bounds!(model::BilevelModel, mode::ComplementBoundCache)
             # scalar
             ub = dual_upper_bound(ctr)
             lb = dual_lower_bound(ctr)
-            info.upper = min(ub, inf_if_nan(+, info.upper))
-            info.lower = max(lb, inf_if_nan(-, info.lower))
-            @assert info.lower <= info.upper
+            info.upper = min.(ub, inf_if_nan.(+, info.upper))
+            info.lower = max.(lb, inf_if_nan.(-, info.lower))
+            @assert sum(info.lower .<= info.upper) == length(info.upper)
             # TODO vector
             fa_vi_ld[ctr] = info
         end
@@ -563,13 +570,13 @@ function _check_solver(bm::BilevelModel)
 end
 
 function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
-    bridge_constraints::Bool=true)
+    bridge_constraints::Bool=true, with_names=true)
     # error_if_direct_mode(model, :set_optimizer)
     if bridge_constraints
         # We set `with_names=false` because the names are handled by the first
         # caching optimizer. If `default_copy_to` without names is supported,
         # no need for a second cache.
-        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64, with_names=false)
+        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64, with_names=with_names)
         # for bridge_type in model.bridge_types
         #     _moi_add_bridge(optimizer, bridge_type)
         # end

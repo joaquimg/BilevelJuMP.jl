@@ -27,6 +27,7 @@ struct Config
 end
 
 config = Config()
+CONFIG_1 = Config(atol = 1e-1, rtol = 1e-2)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
@@ -37,6 +38,7 @@ CONFIG_5 = Config(atol = 1e-5, rtol = 1e-5)
 OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
 
 solvers = OptModeType[]
+solvers_cached = OptModeType[]
 solvers_sos = OptModeType[]
 solvers_indicator = OptModeType[]
 solvers_quad = OptModeType[]
@@ -44,9 +46,12 @@ solvers_bin_exp = OptModeType[]
 solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
 solvers_nlp_sd = OptModeType[]
+solvers_nlp_sd_e = OptModeType[]
+solvers_nlp_sd_i = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
 solvers_fa_quad_bin = OptModeType[]
+solvers_fa_quad_bin_mixed = OptModeType[]
 solvers_fa = OptModeType[]
 solvers_fa2 = OptModeType[]
 
@@ -80,7 +85,7 @@ include("jump_unit.jl")
 end
 
 @testset "Simple LP" begin
-    for solver in solvers
+    for solver in solvers_cached
         moi_01(solver.opt)
         moi_02(solver.opt, solver.mode)
         moi_03(solver.opt, solver.mode)
@@ -176,17 +181,23 @@ end
         jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
         jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
-        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin09(solver.opt, solver.mode)
-        # jump_HTP_lin10(solver.opt, solver.mode)
-    end
-    for solver in solvers_nlp_sd
-        jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
         # jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
         jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)
+    end
+    for solver in solvers_nlp_sd
+        jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
+    end
+    for solver in solvers_nlp_sd_i
+        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_1)
+        jump_HTP_lin10(solver.opt, solver.mode, CONFIG_4)
+    end
+    for solver in solvers_nlp_sd_e
+        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
+        # jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
         jump_HTP_quad01(solver.opt, solver.mode)
@@ -276,16 +287,16 @@ end
         # jump_fanzeres2017(solver.opt, solver.mode)
         # jump_eq_price(solver.opt, solver.mode)
     end
-    # for solver in solvers_sos_quad_bin
-    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    #     jump_fanzeres2017(solver.opt, solver.mode)
-    #     jump_eq_price(solver.opt, solver.mode)
-    # end
-    # for solver in solvers_fa_quad_bin
-    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    #     jump_fanzeres2017(solver.opt, solver.mode)
-    #     jump_eq_price(solver.opt, solver.mode)
-    # end
+    for solver in solvers_sos_quad_bin
+        # jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
+    end
+    for solver in solvers_fa_quad_bin
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        jump_eq_price(solver.opt, solver.mode)
+    end
 end
 
 @testset "Fruits" begin
@@ -295,7 +306,6 @@ end
     end
 end
 
-# require SOCtoNonConvexQuad bridge to work with Ipopt
 @testset "Bilevel Conic JuMP NLP" begin
     for solver in solvers_nlp_lowtol
         jump_conic01(solver.opt, solver.mode)
@@ -305,12 +315,12 @@ end
     end
 end
 
-@testset "Bilevel Conic JuMP SOC + MIP" begin
-    for solver in solvers_sos_quad_bin
-        jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+@testset "Bilevel Conic JuMP MIP" begin
+    for solver in solvers_fa_quad_bin_mixed
+        # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
     end
 end
 

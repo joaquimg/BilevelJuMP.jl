@@ -37,17 +37,23 @@ end
 mutable struct VariableInfo{T<:Union{Float64, Vector{Float64}}}
     upper::T
     lower::T
-    function VariableInfo{Float64}()
-        new(NaN, NaN)
+    function VariableInfo()
+        new{Float64}(NaN, NaN)
     end
-    function VariableInfo{Vector{Float64}}(N::Integer)
-        new(fill(NaN, N), fill(NaN, N))
+    function VariableInfo(N::Integer)
+        new{Vector{Float64}}(fill(NaN, N), fill(NaN, N))
     end
 end
 function VariableInfo(_info::ConstraintInfo{T}) where T
-    info = VariableInfo{Float64}()
-    info.lower = _info.lower
-    info.upper = _info.upper
+    if isa(_info.upper, Number)
+        info = VariableInfo()
+        info.lower = _info.lower
+        info.upper = _info.upper
+    else
+        info = VariableInfo(length(_info.upper))
+        info.lower .= _info.lower
+        info.upper .= _info.upper
+    end
     return info
 end
 
@@ -191,15 +197,9 @@ function _build_bound_map!(mode::ComplementBoundCache,
     end
     return nothing
 end
-# function _build_mode_map!(mode::ComplementBoundCache,
-#     upper_idxmap, lower_idxmap, lower_dual_idxmap, lower_primal_dual_map)
-#     for (ci, m) in mode.constraint_mode_premap
-#         mode.constraint_mode_map[lower_idxmap[ci]] = m
-#     end
-# end
 
 mutable struct StrongDualityMode{T} <: AbstractBilevelSolverMode{T}
-    inequality
+    inequality::Bool
     epsilon::T
     function StrongDualityMode(eps::T=zero(Float64); inequality = true) where T
         return new{T}(inequality, eps)
@@ -216,6 +216,7 @@ function accept_vector_set(mode::AbstractBilevelSolverMode{T}, con::Complement) 
     return nothing
 end
 accept_vector_set(::ProductMode{T}, ::Complement) where T = nothing
+accept_vector_set(::MixedMode{T}, ::Complement) where T = nothing
 
 function get_canonical_complements(primal_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
@@ -423,6 +424,7 @@ end
 function add_complement(mode::MixedMode{T}, m, comp::Complement,
         idxmap_primal, idxmap_dual, copy_names::Bool, pass_start::Bool) where T
     _mode = get_mode(mode, comp.constraint, idxmap_primal)
+    accept_vector_set(_mode, comp)
     add_complement(_mode, m, comp,
         idxmap_primal, idxmap_dual, copy_names, pass_start)
 end
@@ -432,15 +434,18 @@ function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where {
     F<:MOI.SingleVariable,
     S<:Union{MOI.EqualTo{T}, MOI.LessThan{T}, MOI.GreaterThan{T}}
 }
-    key = map[VI(ci.value)]
+    # key = map[VI(ci.value)]
+    key = VI(ci.value)
     if haskey(mode.constraint_mode_map_v, key)
         return mode.constraint_mode_map_v[key]
     else
         return mode.default
     end
 end
-function get_mode(mode::MixedMode{T}, ci::CI{S,F}, map) where T where {F,S}
-    key = map[ci]
+function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where T where {F,S}
+    key = ci#map[ci]
+    # @show ci, key, map
+    # @show mode.constraint_mode_map_c
     if haskey(mode.constraint_mode_map_c, key)
         return mode.constraint_mode_map_c[key]
     else
