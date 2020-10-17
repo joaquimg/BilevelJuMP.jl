@@ -27,6 +27,7 @@ struct Config
 end
 
 config = Config()
+CONFIG_1 = Config(atol = 1e-1, rtol = 1e-2)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
@@ -185,8 +186,7 @@ end
     end
     for solver in solvers_nlp_sd
         jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
-        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_2)
-        # jump_HTP_lin10(solver.opt, solver.mode)
+        jump_HTP_lin10(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
         jump_HTP_lin02(solver.opt, solver.mode)
