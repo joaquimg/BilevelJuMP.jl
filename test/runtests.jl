@@ -281,7 +281,7 @@ end
     for solver in solvers_sos_quad_bin
         # jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
         # jump_fanzeres2017(solver.opt, solver.mode)
-        jump_eq_price(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
     end
     for solver in solvers_fa_quad_bin
         jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
