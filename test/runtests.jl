@@ -192,10 +192,10 @@ end
         jump_HTP_lin02(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)
     end
-    for solver in solvers_nlp_i
+    for solver in solvers_nlp_sd_i
         jump_HTP_lin08(solver.opt, solver.mode, CONFIG_2)
     end
-    for solver in solvers_nlp_e
+    for solver in solvers_nlp_sd_e
         jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
     end
     for solver in solvers_nlp
