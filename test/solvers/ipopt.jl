@@ -13,5 +13,5 @@ push!(solvers_quad, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-9)))
 
 push!(solvers_nlp_sd, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(1e-9, inequality = true)))
 push!(solvers_nlp_sd, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(inequality = false)))
-push!(solvers_nlp_sd_i, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(1e-11, inequality = true)))
+push!(solvers_nlp_sd_i, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(1e-9, inequality = true)))
 push!(solvers_nlp_sd_e, (opt = IPO, mode = BilevelJuMP.StrongDualityMode(inequality = false)))
