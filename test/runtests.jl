@@ -37,6 +37,7 @@ CONFIG_5 = Config(atol = 1e-5, rtol = 1e-5)
 OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
 
 solvers = OptModeType[]
+solvers_cached = OptModeType[]
 solvers_sos = OptModeType[]
 solvers_indicator = OptModeType[]
 solvers_quad = OptModeType[]
@@ -47,6 +48,7 @@ solvers_nlp_sd = OptModeType[]
 solvers_nlp_lowtol = OptModeType[]
 solvers_sos_quad_bin = OptModeType[]
 solvers_fa_quad_bin = OptModeType[]
+solvers_fa_quad_bin_mixed = OptModeType[]
 solvers_fa = OptModeType[]
 solvers_fa2 = OptModeType[]
 
@@ -80,7 +82,7 @@ include("jump_unit.jl")
 end
 
 @testset "Simple LP" begin
-    for solver in solvers
+    for solver in solvers_cached
         moi_01(solver.opt)
         moi_02(solver.opt, solver.mode)
         moi_03(solver.opt, solver.mode)
@@ -276,16 +278,16 @@ end
         # jump_fanzeres2017(solver.opt, solver.mode)
         # jump_eq_price(solver.opt, solver.mode)
     end
-    # for solver in solvers_sos_quad_bin
-    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    #     jump_fanzeres2017(solver.opt, solver.mode)
-    #     jump_eq_price(solver.opt, solver.mode)
-    # end
-    # for solver in solvers_fa_quad_bin
-    #     jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
-    #     jump_fanzeres2017(solver.opt, solver.mode)
-    #     jump_eq_price(solver.opt, solver.mode)
-    # end
+    for solver in solvers_sos_quad_bin
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        jump_eq_price(solver.opt, solver.mode)
+    end
+    for solver in solvers_fa_quad_bin
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        jump_eq_price(solver.opt, solver.mode)
+    end
 end
 
 @testset "Fruits" begin
@@ -295,7 +297,6 @@ end
     end
 end
 
-# require SOCtoNonConvexQuad bridge to work with Ipopt
 @testset "Bilevel Conic JuMP NLP" begin
     for solver in solvers_nlp_lowtol
         jump_conic01(solver.opt, solver.mode)
@@ -305,12 +306,12 @@ end
     end
 end
 
-@testset "Bilevel Conic JuMP SOC + MIP" begin
-    for solver in solvers_sos_quad_bin
-        jump_conic01(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic02(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic03(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
-        jump_conic04(solver.opt, BilevelJuMP.ProductMode(), config, bounds = true)
+@testset "Bilevel Conic JuMP MIP" begin
+    for solver in solvers_fa_quad_bin_mixed
+        # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
     end
 end
 

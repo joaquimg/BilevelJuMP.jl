@@ -155,7 +155,7 @@ function moi_02(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
-    MOI.copy_to(optimizer, blp)
+    MOI.copy_to(optimizer, blp, copy_names = false)
 
     MOI.optimize!(optimizer)
 
@@ -254,7 +254,7 @@ function moi_03(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     MOI.empty!(optimizer)
     @test MOI.is_empty(optimizer)
-    MOI.copy_to(optimizer, blp)
+    MOI.copy_to(optimizer, blp, copy_names = false)
 
     MOI.optimize!(optimizer)
 

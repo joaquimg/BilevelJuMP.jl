@@ -207,7 +207,7 @@ function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name:
     vref
 end
 function empty_info(::DualVariableInfo)
-    return VariableInfo{Float64}()
+    return VariableInfo()
 end
 
 function get_constrain_ref(vref::BilevelVariableRef)

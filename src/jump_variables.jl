@@ -91,7 +91,7 @@ JuMP.num_variables(m::BilevelModel) = length(m.variables)
 JuMP.num_variables(m::UpperModel) = length(m.m.var_upper)
 JuMP.num_variables(m::LowerModel) = length(m.m.var_lower)
 function empty_info(::JuMP.AbstractVariable)
-    return VariableInfo{Float64}()
+    return VariableInfo()
 end
 
 """
