@@ -59,6 +59,7 @@ include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
 # include("solvers/gurobi.jl")
 # include("solvers/xpress.jl")
+# include("solvers/alpine.jl") # require NLP from JuMP
 # include("solvers/path.jl")
 
 include("moi.jl")
