@@ -144,5 +144,5 @@ In this case we need to add a special, non-standard bridge, to Ipopt as follows:
 ```julia
 IPO_OPT = Ipopt.Optimizer(print_level=0)
 IPO = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(IPO_OPT)
-BilevelModel(IPO, mode = BilevelJuMP.ProductMode(1e-5))
+BilevelModel(()->IPO, mode = BilevelJuMP.ProductMode(1e-5))
 ```
