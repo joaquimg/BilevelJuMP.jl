@@ -7,8 +7,8 @@ A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.
 | [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] |
 
 
-[build-img]: https://travis-ci.org/joaquimg/BilevelJuMP.jl.svg?branch=master
-[build-url]: https://travis-ci.org/joaquimg/BilevelJuMP.jl
+[build-img]: https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master
+[build-url]: https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI
 [codecov-img]: http://codecov.io/github/joaquimg/BilevelJuMP.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/joaquimg/BilevelJuMP.jl?branch=master
 
