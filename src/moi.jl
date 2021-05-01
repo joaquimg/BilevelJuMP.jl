@@ -277,7 +277,6 @@ function build_bilevel(
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
-    # m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), moi_mode)
     m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), moi_mode)
 
     #=
@@ -405,16 +404,16 @@ function add_strong_duality(mode::StrongDualityMode{T}, m, primal_obj, dual_obj,
     func = MOIU.operate(-, T, primal, dual)
 
     if !mode.inequality
-        c = MOI.add_constraint(m, func, MOI.EqualTo(zero(T)))
+        c = MOIU.normalize_and_add_constraint(m, func, MOI.EqualTo(zero(T)))
         MOI.set(m, MOI.ConstraintName(), c, "lower_strong_duality")
         return CI[c]
     else
         func_up = MOIU.operate(-, T, func, mode.epsilon)
-        c_up = MOI.add_constraint(m, func_up, MOI.LessThan(zero(T)))
+        c_up = MOIU.normalize_and_add_constraint(m, func_up, MOI.LessThan(zero(T)))
         MOI.set(m, MOI.ConstraintName(), c_up, "lower_strong_duality_up")
     
         func_lo = MOIU.operate(+, T, func, mode.epsilon)
-        c_lo = MOI.add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
+        c_lo = MOIU.normalize_and_add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
         MOI.set(m, MOI.ConstraintName(), c_lo, "lower_strong_duality_lo")
     
         return CI[c_up, c_lo]
@@ -715,7 +714,8 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
         vb2 = vb1
     end
 
-    f1 = MOIU.operate(vcat, T, SVF(vb1), f_dest)
+    pre_f1, pre_s1 = MOIU.normalize_constant(f_dest, MOI.EqualTo(zero(T)))
+    f1 = MOIU.operate(vcat, T, SVF(vb1), pre_f1)
     f2 = MOIU.operate(vcat, T, SVF(vb2), SVF(dual))
 
     if pass_start
@@ -728,28 +728,28 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
     end
 
     if method == ONE_ONE
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(pre_s1)
         s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
             MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 0.0, 1.0))
         end
     elseif method == ZERO_ZERO
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(pre_s1)
         s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 0.0, 1.0))
             MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 1.0, 0.0))
         end
     else
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(pre_s1)
         s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
         end
     end
 
-    # MOIU.normalize_and_add_constraint
+    # do not MOIU.normalize_and_add_constraint because are vector functions
     c1 = MOI.add_constraint(m, to_vector_affine(f1), s1)
     c2 = MOI.add_constraint(m, to_vector_affine(f2), s2)
 
