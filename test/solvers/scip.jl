@@ -2,7 +2,7 @@ using SCIP
 using QuadraticToBinary
 
 SCIPopt = SCIP.Optimizer()
-MOI.set(SCIPopt, MOI.Silent(), false)
+MOI.set(SCIPopt, MOI.Silent(), true)
 MOI.set(SCIPopt, MOI.TimeLimitSec(), 5)
 SCIPopt_CACHED = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), SCIPopt)
 
