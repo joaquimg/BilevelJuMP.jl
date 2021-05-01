@@ -432,8 +432,8 @@ function jump_attributes_solver(optimizer, mode)
     @test JuMP.result_count(model) == 1
     JuMP.node_count(model)
     # TODO improve this check
-    # @test_throws ArgumentError JuMP.simplex_iterations(model)
-    # @test_throws ArgumentError JuMP.barrier_iterations(model)
+    @test JuMP.simplex_iterations(model) >= 0
+    @test_throws ArgumentError JuMP.barrier_iterations(model)
 
     @test_throws MethodError JuMP.set_optimizer_attributes(mode, "weird" => true, "strange" => "yes")
 

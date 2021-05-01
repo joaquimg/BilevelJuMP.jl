@@ -8,6 +8,7 @@ SCIPopt_CACHED = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64
 
 push!(solvers, (opt = SCIPopt, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_sos, (opt = SCIPopt, mode = BilevelJuMP.SOS1Mode()))
+push!(solvers_unit, (opt = SCIPopt, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_indicator, (opt = SCIPopt, mode = BilevelJuMP.IndicatorMode()))
 
 push!(solvers_fa, (opt = SCIPopt, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = false)))

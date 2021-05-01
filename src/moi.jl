@@ -277,7 +277,6 @@ function build_bilevel(
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
-    # m = MOIU.CachingOptimizer(MOIU.Model{Float64}(), moi_mode)
     m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), moi_mode)
 
     #=

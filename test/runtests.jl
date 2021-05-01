@@ -40,6 +40,7 @@ OptModeType = NamedTuple{(:opt, :mode),Tuple{Any,Any}}
 solvers = OptModeType[]
 solvers_cached = OptModeType[]
 solvers_sos = OptModeType[]
+solvers_unit = OptModeType[]
 solvers_indicator = OptModeType[]
 solvers_quad = OptModeType[]
 solvers_bin_exp = OptModeType[]
@@ -73,6 +74,11 @@ include("jump_unit.jl")
 
 @testset "BilevelJuMP tests" begin
 
+# @testset "nlp" begin
+#     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+#     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+# end
+
 @testset "Unit" begin
     jump_display()
     jump_objective()
@@ -81,7 +87,7 @@ include("jump_unit.jl")
     mixed_mode_unit()
     jump_constraints()
     jump_variables()
-    for solver in solvers_sos
+    for solver in solvers_unit
         invalid_lower_objective(solver.opt, solver.mode)
         jump_display_solver(solver.opt, solver.mode)
         invalid_optimizer(solver.opt, solver.mode)
@@ -163,7 +169,7 @@ end
     for solver in solvers_indicator
         jump_01(solver.opt, solver.mode)
         jump_01vec(solver.opt, solver.mode)
-        # jump_02(solver.opt, solver.mode) # fail cbc - pass xpress 8.9
+        jump_02(solver.opt, solver.mode) # fail cbc - pass xpress 8.9
         jump_03(solver.opt, solver.mode)
     end
 end
@@ -209,10 +215,9 @@ end
     for solver in solvers_sos
         jump_HTP_lin01(solver.opt, solver.mode)
         jump_HTP_lin02(solver.opt, solver.mode)
-        # jump_HTP_lin03(solver.opt, solver.mode) # failing cbc
+        jump_HTP_lin03(solver.opt, solver.mode) # failing cbc
         jump_HTP_lin04(solver.opt, solver.mode)
-        println("Skipping HTP linear 05")
-        # jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
+        jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
         jump_HTP_lin06(solver.opt, solver.mode)
         jump_HTP_lin07(solver.opt, solver.mode)
         jump_HTP_lin08(solver.opt, solver.mode)
@@ -220,6 +225,7 @@ end
         jump_HTP_lin10(solver.opt, solver.mode)
     end
 end
+
 @testset "Princeton Handbook Quadratic" begin
     for solver in solvers_nlp
         jump_HTP_quad01(solver.opt, solver.mode)
@@ -241,9 +247,9 @@ end
         jump_HTP_quad04(solver.opt, solver.mode)
         jump_HTP_quad05(solver.opt, solver.mode)
         jump_HTP_quad06(solver.opt, solver.mode)
-        # jump_HTP_quad06b(solver.opt, solver.mode)
+        jump_HTP_quad06b(solver.opt, solver.mode)
         jump_HTP_quad07(solver.opt, solver.mode)
-        # jump_HTP_quad08(solver.opt, solver.mode) # not PSD
+        jump_HTP_quad08(solver.opt, solver.mode) # not PSD
     end
     for solver in solvers_sos
         jump_HTP_quad03(solver.opt, solver.mode)
@@ -297,9 +303,9 @@ end
         # jump_eq_price(solver.opt, solver.mode)
     end
     for solver in solvers_sos_quad_bin
-        # jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
         # jump_fanzeres2017(solver.opt, solver.mode)
-        # jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
+        jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
     end
     for solver in solvers_fa_quad_bin
         jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
@@ -326,7 +332,7 @@ end
 
 @testset "Bilevel Conic JuMP MIP" begin
     for solver in solvers_fa_quad_bin_mixed
-        # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
+        @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
