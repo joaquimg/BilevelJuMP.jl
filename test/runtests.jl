@@ -332,7 +332,7 @@ end
 
 @testset "Bilevel Conic JuMP MIP" begin
     for solver in solvers_fa_quad_bin_mixed
-        @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
+        # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
