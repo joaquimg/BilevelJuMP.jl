@@ -55,12 +55,17 @@ solvers_fa_quad_bin_mixed = OptModeType[]
 solvers_fa = OptModeType[]
 solvers_fa2 = OptModeType[]
 
-include("solvers/cbc.jl")
+# include("solvers/cbc.jl")
 include("solvers/ipopt.jl")
 # include("solvers/gurobi.jl")
 # include("solvers/xpress.jl")
 # include("solvers/alpine.jl") # require NLP from JuMP
 # include("solvers/path.jl")
+#
+include("solvers/scip.jl")
+# include("solvers/knitro.jl")
+# include("solvers/bonmin.jl")
+# include("solvers/couenne.jl")
 
 include("moi.jl")
 include("jump.jl")
@@ -118,21 +123,21 @@ end
         jump_01_mixed(solver.opt)
     end
     for solver in solvers_sos
-        jump_01(solver.opt, solver.mode)
-        jump_02(solver.opt, solver.mode)
+        jump_01(solver.opt, solver.mode)#
+        jump_02(solver.opt, solver.mode)#
         jump_03(solver.opt, solver.mode)
         jump_04(solver.opt, solver.mode)
-        jump_05(solver.opt, solver.mode)
+        jump_05(solver.opt, solver.mode)#
         jump_3SAT(solver.opt, solver.mode)
-        jump_06(solver.opt, solver.mode)
+        jump_06(solver.opt, solver.mode)#
         jump_06_sv(solver.opt, solver.mode)
-        jump_07(solver.opt, solver.mode)
-        jump_08(solver.opt, solver.mode)
+        jump_07(solver.opt, solver.mode)#
+        jump_08(solver.opt, solver.mode)#
         jump_09a(solver.opt, solver.mode) # fail on cbc positive SOS
         jump_09b(solver.opt, solver.mode)
-        jump_11a(solver.opt, solver.mode)
+        jump_11a(solver.opt, solver.mode)#
         jump_11b(solver.opt, solver.mode)
-        jump_12(solver.opt, solver.mode)
+        jump_12(solver.opt, solver.mode)#
         jump_14(solver.opt, solver.mode)
         #
         jump_16(solver.opt, solver.mode)
@@ -172,7 +177,7 @@ end
     end
 end
 
-@testset "Princeton Handbook of Test Problems" begin
+@testset "Princeton Handbook Linear" begin
     for solver in vcat(solvers_nlp, solvers_nlp_sd)
         jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
         # jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
@@ -193,26 +198,13 @@ end
         jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
     end
     for solver in solvers_nlp_sd_i
-        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_1)
+        # jump_HTP_lin08(solver.opt, solver.mode, CONFIG_1)
         jump_HTP_lin10(solver.opt, solver.mode, CONFIG_4)
     end
     for solver in solvers_nlp_sd_e
-        jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
+        # TODO add dual start
+        # jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
         # jump_HTP_lin10(solver.opt, solver.mode)
-    end
-    for solver in solvers_nlp
-        jump_HTP_quad01(solver.opt, solver.mode)
-        jump_HTP_quad02(solver.opt, solver.mode)
-        jump_HTP_quad04(solver.opt, solver.mode, CONFIG_3)
-        jump_HTP_quad05(solver.opt, solver.mode)
-        jump_HTP_quad06(solver.opt, solver.mode, CONFIG_3)
-        # jump_HTP_quad06b(solver.opt, solver.mode) # TODO weird results
-        jump_HTP_quad07(solver.opt, solver.mode)
-        jump_HTP_quad08(solver.opt, solver.mode) # not PSD
-    end
-    for solver in solvers_nlp
-        jump_HTP_quad03(solver.opt, solver.mode)
-        jump_HTP_quad09(solver.opt, solver.mode)
     end
     for solver in solvers_sos
         jump_HTP_lin01(solver.opt, solver.mode)
@@ -226,6 +218,22 @@ end
         jump_HTP_lin08(solver.opt, solver.mode)
         jump_HTP_lin09(solver.opt, solver.mode)
         jump_HTP_lin10(solver.opt, solver.mode)
+    end
+end
+@testset "Princeton Handbook Quadratic" begin
+    for solver in solvers_nlp
+        jump_HTP_quad01(solver.opt, solver.mode)
+        jump_HTP_quad02(solver.opt, solver.mode)
+        jump_HTP_quad04(solver.opt, solver.mode, CONFIG_3)
+        jump_HTP_quad05(solver.opt, solver.mode)
+        jump_HTP_quad06(solver.opt, solver.mode, CONFIG_3)
+        # jump_HTP_quad06b(solver.opt, solver.mode) # TODO weird results
+        jump_HTP_quad07(solver.opt, solver.mode)
+        jump_HTP_quad08(solver.opt, solver.mode) # not PSD
+    end
+    for solver in solvers_nlp
+        jump_HTP_quad03(solver.opt, solver.mode)
+        jump_HTP_quad09(solver.opt, solver.mode)
     end
     for solver in solvers_sos_quad
         jump_HTP_quad01(solver.opt, solver.mode, CONFIG_5)

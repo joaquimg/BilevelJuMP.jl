@@ -2,7 +2,8 @@ using Cbc
 using QuadraticToBinary
 
 CBC_OPTIMIZER = Cbc.Optimizer()
-MOI.set(CBC_OPTIMIZER, MOI.Silent(), true)
+# MOI.set(CBC_OPTIMIZER, MOI.Silent(), false)
+MOI.set(CBC_OPTIMIZER, MOI.TimeLimitSec(), 5)
 
 CBC = CBC_OPTIMIZER
 
