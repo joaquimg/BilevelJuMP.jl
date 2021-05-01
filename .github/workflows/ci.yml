@@ -15,7 +15,7 @@ jobs:
           - version: '1'
             os: ubuntu-latest
             arch: x64
-          - version: '1.0'
+          - version: '1.3' # SCIP requires a JLL (wont build in earlier version)
             os: ubuntu-latest
             arch: x64
     steps:
