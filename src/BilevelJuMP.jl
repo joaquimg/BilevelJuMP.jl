@@ -23,5 +23,6 @@ include("jump_constraints.jl")
 include("jump_objective.jl")
 include("jump_print.jl")
 include("jump_attributes.jl")
+include("jump_nlp.jl")
 
 end

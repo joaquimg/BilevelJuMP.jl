@@ -71,13 +71,15 @@ include("solvers/scip.jl")
 include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
+include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
 
-# @testset "nlp" begin
-#     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
-#     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
-# end
+@testset "nlp" begin
+    jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+    jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+    jump_nlp_03(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+end
 
 @testset "Unit" begin
     jump_display()

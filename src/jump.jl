@@ -364,6 +364,13 @@ function JuMP.optimize!(model::BilevelModel;
         MOI.empty!(solver)
     end
 
+    if _has_nlp_data(model.upper)
+        # this first NLPBlock passing is fake,
+        # this is just necessary to force the variables
+        # order to remain the same
+        _load_nlp_data(model.upper)
+    end
+
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
 
@@ -413,6 +420,31 @@ function JuMP.optimize!(model::BilevelModel;
     end
 
     sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = model.copy_names_to_solver)
+    
+    if _has_nlp_data(model.upper)
+        # NLP requires an upstream jump model
+        # probably is neough to have the fields:
+        # np_data (YES)
+        # moi_backend (YES)
+        nlp_model = Model()
+        nlp_model.moi_backend = solver
+        nlp_model.nlp_data = model.upper.nlp_data
+        # TODO assert varible index ordering
+        vars_upper_orig = MOI.get(model.upper, MOI.ListOfVariableIndices())
+        vars_in_solver = MOI.get(nlp_model, MOI.ListOfVariableIndices())
+        for i in eachindex(vars_upper_orig) #less vars
+            vi_up = vars_upper_orig[i]
+            vi_sb = upper_to_sblm[vi_up]
+            vi_ss = sblm_to_solver[vi_sb]
+            vi_is = vars_in_solver[i]
+            if vi_ss != vi_is
+                error("Failed building Non linear problem, please report an issue")
+                # in case jump or MOI change something in copy/nlpblock
+            end
+        end
+        _load_nlp_data(nlp_model)
+    end
+
 
     if length(solver_prob) > 0
         print_lp(solver, solver_prob, file_format)
