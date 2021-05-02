@@ -75,6 +75,7 @@ function jump_nlp_03(optimizer; mode = BilevelJuMP.ProductMode(1e-8), config = C
 
     @variable(Upper(model), x >= 0, start = 2)
     @variable(Lower(model), y >= 0, start = 0)
+    @variable(LowerOnly(model), z >= 0, start = 0)
 
     @objective(Upper(model), Max, x)
     # TODO NL obj
@@ -84,9 +85,10 @@ function jump_nlp_03(optimizer; mode = BilevelJuMP.ProductMode(1e-8), config = C
     @NLconstraint(Upper(model), x^2 <= 4)
     @test_throws ErrorException @NLconstraint(Lower(model), x^3 + 18*y >= 1)
     @NLconstraint(Upper(model), -1 <= x*y <= 1)
+    @test_throws ErrorException @NLconstraint(Upper(model), -1 <= z*y <= 1)
 
     @test_throws ErrorException @NLobjective(Lower(model), Min, y^3)
-    @objective(Lower(model), Min, y^2)
+    @objective(Lower(model), Min, y^2 + z)
 
     @constraint(Lower(model), y >= 0)
 
