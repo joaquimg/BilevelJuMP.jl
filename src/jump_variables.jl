@@ -238,13 +238,13 @@ end
 
 function JuMP.start_value(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        return get_dual_start(get_constrain_ref(vref))
+        return JuMP.dual_start_value(get_constrain_ref(vref))
     end
     variable_info(vref).start
 end
 function JuMP.set_start_value(vref::BilevelVariableRef, start)
     if mylevel(vref) == DUAL_OF_LOWER
-        set_dual_start(get_constrain_ref(vref), start)
+        JuMP.set_dual_start_value(get_constrain_ref(vref), start)
         return vref.model.variables[vref.idx]
     end
     info = variable_info(vref)

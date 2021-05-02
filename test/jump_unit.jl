@@ -67,8 +67,8 @@ function jump_constraints()
 
     # JuMP.constraint_object(c1, MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64})
 
-    BilevelJuMP.set_dual_start(c1, 1.2)
-    BilevelJuMP.get_dual_start(c1) == 1.2
+    JuMP.set_dual_start_value(c1, 1.2)
+    JuMP.dual_start_value(c1) == 1.2
 
     BilevelJuMP.set_primal_upper_bound_hint(x, 1.7)
     @test BilevelJuMP.get_primal_upper_bound_hint(x) == 1.7

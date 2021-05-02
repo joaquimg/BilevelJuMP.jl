@@ -1,3 +1,7 @@
+function JuMP.set_objective_sense(m::InnerBilevelModel, sense::MOI.OptimizationSense)
+    set_mylevel_obj_sense(m, sense)
+    JuMP.set_objective_sense(mylevel_model(m), sense)
+end
 function JuMP.set_objective(m::InnerBilevelModel, sense::MOI.OptimizationSense,
     f::JuMP.AbstractJuMPScalar)
     set_mylevel_obj_sense(m, sense)
