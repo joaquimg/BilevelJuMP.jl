@@ -66,15 +66,15 @@ function empty_info(c::JuMP.VectorConstraint{F,S}) where {F,S}
     return ConstraintInfo{Vector{Float64}}(MOI.dimension(c.set))
 end
 
-function set_dual_start(cref::BilevelConstraintRef, value::T) where T<:Number
+function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where T<:Number
     cref.model.ctr_info[cref.index].start = value
 end
-function set_dual_start(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].start
     @assert length(array) == length(value)
     copyto!(array, value)
 end
-function get_dual_start(cref::BilevelConstraintRef)
+function JuMP.dual_start_value(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.index].start
 end
 function set_dual_upper_bound(cref::BilevelConstraintRef, value::T) where T<:Number
@@ -176,7 +176,7 @@ function JuMP.build_variable(
     end
     info.has_fix   && _error("Dual variable does not support fixing")
     if info.has_start
-        set_dual_start(dual_of.ci, info.start)
+        JuMP.set_dual_start_value(dual_of.ci, info.start)
         # info.has_start = false
         # info.start = NaN
     end
