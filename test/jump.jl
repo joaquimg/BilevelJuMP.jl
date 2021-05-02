@@ -141,6 +141,13 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
         BilevelJuMP.set_primal_upper_bound_hint(x, 7)
     end
 
+    JuMP.set_dual_start_value(c1, -1)
+    JuMP.set_dual_start_value(c2, 0)
+    JuMP.set_dual_start_value(c3, 0)
+    JuMP.set_dual_start_value(c4, 0)
+    JuMP.set_dual_start_value(c5, -1)
+    JuMP.set_dual_start_value(c6, 0)
+
     optimize!(model)
 
     primal_status(model)
@@ -156,6 +163,8 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test dual(c1) ≈ [-1] atol=atol
     @test dual(c2) ≈ [0] atol=atol
     @test dual(c3) ≈ [0] atol=atol
+    @test dual(c4) ≈ [0] atol=atol
+    # @show dual(c5)# ≈ [0] atol=atol
     @test dual(c6) ≈ [0] atol=atol
     @test value(c1) ≈ 8 atol=atol
     @test value(c2) ≈ 14 atol=atol
@@ -356,23 +365,33 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     # @variable(Upper(model), z)
 
     @objective(Upper(model), Min, sum(x[i] for i in 1:n) - z)
-    @constraint(Upper(model), z <= 1)
-    @constraint(Upper(model), z >= 0)
-    @constraint(Upper(model), [i=1:n], ya[i] >= 0)
-    @constraint(Upper(model), [i=1:n], ya[i] <= 1)
-    @constraint(Upper(model), [i=1:n], yb[i] >= 0)
-    @constraint(Upper(model), [i=1:n], yb[i] <= 1)
-    @constraint(Upper(model), [i=1:n], ya[i] + yb[i] == 1)
-    for c in clauses
-        @constraint(Upper(model),
-            sum(i > 0 ? ya[i] : yb[-i] for i in c) >= z)
-    end
+    @constraint(Upper(model), ca, z <= 1)
+    @constraint(Upper(model), cb, z >= 0)
+    @constraint(Upper(model), c1[i=1:n], ya[i] >= 0)
+    @constraint(Upper(model), c2[i=1:n], ya[i] <= 1)
+    @constraint(Upper(model), c3[i=1:n], yb[i] >= 0)
+    @constraint(Upper(model), c4[i=1:n], yb[i] <= 1)
+    @constraint(Upper(model), c5[i=1:n], ya[i] + yb[i] == 1)
+    # for c in clauses
+        @constraint(Upper(model), cc[k in eachindex(clauses)],
+            sum(i > 0 ? ya[i] : yb[-i] for i in clauses[k]) >= z)
+    # end
 
     @objective(Lower(model), Min, -sum(x[i] for i in 1:n))
 
-    @constraint(Lower(model), [i=1:n], x[i] >= 0)
-    @constraint(Lower(model), [i=1:n], x[i] <= ya[i])
-    @constraint(Lower(model), [i=1:n], x[i] <= yb[i])
+    @constraint(Lower(model), b1[i=1:n], x[i] >= 0)
+    @constraint(Lower(model), b2[i=1:n], x[i] <= ya[i])
+    @constraint(Lower(model), b3[i=1:n], x[i] <= yb[i])
+
+    JuMP.set_start_value.(x, 0)
+    JuMP.set_start_value.(ya, 1)
+    JuMP.set_start_value.(yb, 0)
+    JuMP.set_start_value(z, 1)
+    for i in 1:n
+        JuMP.set_dual_start_value.(b1, 0)
+        JuMP.set_dual_start_value.(b2, 0)
+        JuMP.set_dual_start_value.(b3, -1)
+    end
 
     optimize!(model)
 
@@ -383,6 +402,14 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test objective_value(model) ≈ -1 atol=atol
 
     # 3SAT is yese IFF obj = -1
+
+    @test value.(x) ≈ zeros(n) atol=atol
+    @test value.(ya) ≈ ones(n) atol=atol
+    @test value.(yb) ≈ zeros(n) atol=atol
+    @test value(z) ≈ 1 atol=atol
+    # @show dual.(b1) #≈ 6 atol=atol
+    # @show dual.(b2) #≈ 2 atol=atol
+    # @show dual.(b3) #≈ 2 atol=atol
 
 end
 

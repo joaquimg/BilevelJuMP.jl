@@ -110,12 +110,12 @@ end
     for solver in solvers_nlp
         jump_01(solver.opt, solver.mode, CONFIG_3)
         jump_01vec(solver.opt, solver.mode, CONFIG_3)
-        # jump_02(solver.opt, solver.mode) # numerical isntability in ipopt
+        jump_02(solver.opt, solver.mode) # numerical isntability in ipopt
         jump_03(solver.opt, solver.mode, CONFIG_3_start)
         jump_03_vec(solver.opt, solver.mode, CONFIG_3_start)
         jump_04(solver.opt, solver.mode, CONFIG_3_start)
         jump_05(solver.opt, solver.mode)
-        #jump_3SAT(solver.opt, solver.mode)
+        jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)
         jump_06_sv(solver.opt, solver.mode)
         jump_07(solver.opt, solver.mode, CONFIG_2)
