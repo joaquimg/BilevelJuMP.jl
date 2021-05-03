@@ -59,17 +59,20 @@ solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
 include("solvers/scip.jl")
-
+# DONE
 # include("solvers/cbc.jl")
 # include("solvers/gurobi.jl")
 # include("solvers/xpress.jl")
 # include("solvers/knitro.jl")
 # include("solvers/gams.jl")
-
-# include("solvers/alpine.jl") # require NLP from JuMP
-# include("solvers/bonmin.jl")
 # include("solvers/couenne.jl")
-# include("solvers/path.jl")
+# include("solvers/bonmin.jl")
+# include("solvers/baron.jl")
+# TODO
+# include("solvers/alpine.jl") # require NLP from JuMP
+# include("solvers/pavito.jl") # require NLP from JuMP
+# include("solvers/juniper.jl") # require NLP from JuMP
+# include("solvers/path.jl") # require LCP method
 
 include("moi.jl")
 include("jump.jl")

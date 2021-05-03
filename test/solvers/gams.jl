@@ -1,5 +1,5 @@
 # name = "GAMS"
-# uuid = "1ca51c6a-1b4d-4546-9ae1-53e0a243ab12"
+# GAMS = "1ca51c6a-1b4d-4546-9ae1-53e0a243ab12"
 
 using GAMS
 
