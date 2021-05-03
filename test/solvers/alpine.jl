@@ -1,4 +1,7 @@
-using Alpine
+# name = "Alpine"
+# Alpine = "07493b3f-dabb-5b16-a503-4139292d7dd4"
+
+using Alpine, Ipopt, Cbc
 
 const ALP_IPOPT = optimizer_with_attributes(Ipopt.Optimizer, MOI.Silent() => true, "sb" => "yes")
 const ALP_CBC = optimizer_with_attributes(Cbc.Optimizer, MOI.Silent() => true)
