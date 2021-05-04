@@ -6,10 +6,15 @@ in_level(v::BilevelVariableRef, level::Level) = (
     v.level === level ||
     (v.level === DUAL_OF_LOWER && level === UPPER_ONLY))
 
+in_level(v::BilevelVariableRef, ::UpperModel) = in_upper(v)
+in_level(v::BilevelVariableRef, ::LowerModel) = in_lower(v)
 in_upper(v::BilevelVariableRef) = in_upper(mylevel(v))
 in_lower(v::BilevelVariableRef) = in_lower(mylevel(v))
 upper_ref(v::BilevelVariableRef) = v.model.var_upper[v.idx]
 lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
+
+const BilevelAffExpr = GenericAffExpr{Float64, BilevelVariableRef}
+const BilevelQuadExpr = GenericQuadExpr{Float64, BilevelVariableRef}
 
 function bound_ref(v::BilevelVariableRef)
     if mylevel(v) == LOWER_ONLY
@@ -79,10 +84,29 @@ function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable,
     m.var_info[vref.idx] = empty_info(v)
     vref
 end
-function JuMP.delete(m::AbstractBilevelModel, vref::BilevelVariableRef)
-    error("No deletion on bilevel models")
-    # delete!(m.variables, vref.idx)
-    # delete!(m.varnames, vref.idx)
+function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
+    model = vref.model
+    idx = vref.idx
+    delete!(model.variables, idx)
+    delete!(model.varnames, idx)
+    model.need_rebuild_names_var = true
+    delete!(model.var_level, idx)
+    delete!(model.var_info, idx)
+    if haskey(model.var_upper, idx)
+        v_up = model.var_upper[idx]
+        delete!(model.var_upper, idx)
+        delete!(model.upper_to_lower_link, v_up)
+        delete!(model.upper_var_to_lower_ctr_link, v_up)
+        delete!(model.link, v_up)
+        JuMP.delete(model.upper, v_up)
+    end
+    if haskey(model.var_lower, idx)
+        v_lo = model.var_lower[idx]
+        delete!(model.var_lower, idx)
+        delete!(model.lower_to_upper_link, v_lo)
+        JuMP.delete(model.lower, v_lo)
+    end
+    return nothing
 end
 JuMP.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.variables)
 JuMP.is_valid(m::InnerBilevelModel, vref::BilevelVariableRef) =
@@ -92,6 +116,24 @@ JuMP.num_variables(m::UpperModel) = length(m.m.var_upper)
 JuMP.num_variables(m::LowerModel) = length(m.m.var_lower)
 function empty_info(::JuMP.AbstractVariable)
     return VariableInfo()
+end
+
+function JuMP.all_variables(m::InnerBilevelModel)
+    list = keys(mylevel_var_list(m))
+    model = bilevel_model(m)
+    ret = BilevelVariableRef[]
+    for idx in list
+        var = BilevelVariableRef(model, idx)
+        if in_level(var, m)
+            push!(ret, var)
+        end
+    end
+    return ret
+end
+function JuMP.all_variables(model::BilevelModel)
+    vec = JuMP.all_variables(Upper(model))
+    append!(vec, JuMP.all_variables(Lower(model)))
+    return unique(vec)
 end
 
 """

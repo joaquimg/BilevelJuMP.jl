@@ -207,7 +207,7 @@ struct BilevelVariableRef <: JuMP.AbstractVariableRef
     idx::Int       # Index in `model.variables`
     level::Level
 end
-function BilevelVariableRef(model, idx)
+function BilevelVariableRef(model::BilevelModel, idx)
     return BilevelVariableRef(model, idx, model.var_level[idx])
 end
 

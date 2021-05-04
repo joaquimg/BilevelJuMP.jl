@@ -12,7 +12,7 @@ using IntervalArithmetic
 export
 BilevelModel, UpperToLower, LowerToUpper,
 Upper, Lower, UpperOnly, LowerOnly,
-DualOf
+DualOf, BilevelAffExpr, BilevelQuadExpr
 
 include("moi.jl")
 include("moi_utilities.jl")

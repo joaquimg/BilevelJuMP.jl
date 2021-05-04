@@ -114,7 +114,6 @@ function jump_variables()
 
     @test JuMP.variable_type(model) == BilevelJuMP.BilevelVariableRef
 
-    @test_throws ErrorException JuMP.delete(model, x)
     @test JuMP.is_valid(model, x)
 end
 
@@ -439,7 +438,6 @@ function jump_attributes_solver(optimizer, mode)
 
 end
 
-
 function mixed_mode_unit()
 
     # min -4x -3y
@@ -495,6 +493,47 @@ function mixed_mode_unit()
 
     @test BilevelJuMP.get_mode(y) === nothing
     @test BilevelJuMP.get_mode(c2) === nothing
+
+    return nothing
+end
+
+function variables_unit()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), w >= 0)
+    @variable(Upper(model), x >= 0)
+    @variable(Lower(model), y >= 0)
+    @variable(Lower(model), z >= 0)
+
+    @test Set(JuMP.all_variables(Upper(model))) == Set([x,y,z,w])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([x,y,z,w])
+    @test Set(JuMP.all_variables(model)) == Set([x,y,z,w])
+
+    JuMP.delete(model, x)
+    JuMP.delete(model, y)
+
+    @test Set(JuMP.all_variables(Upper(model))) == Set([w,z])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([w,z])
+    @test Set(JuMP.all_variables(model)) == Set([w,z])
+
+    ex = @expression(model, w + z)
+    @constraint(Upper(model), ex >= 0)
+
+    ex1 = BilevelAffExpr(-1.0)
+    add_to_expression!(ex1, 2.0, w)
+    add_to_expression!(ex1, 1.0, z)
+    @constraint(Lower(model), ex1 >= 0)
+
+    ex2 = w + z + 1
+    @constraint(Lower(model), ex2 >= 0)
+
+    ex3 = ex = w^2 + 2 * w * z + z^2 + w + z - 1
+    @objective(Lower(model), Min, ex3)
+
+    @test coefficient(ex3, w, z) == 2
+
+
 
     return nothing
 end
