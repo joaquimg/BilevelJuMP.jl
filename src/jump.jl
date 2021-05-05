@@ -34,7 +34,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     nextconidx::Int                                 # Next constraint index is nextconidx+1
     constraints::Dict{Int, JuMP.AbstractConstraint} # Map conidx -> variable
     connames::Dict{Int, String}                     # Map varidx -> name
-    connames_rev::Dict{String, Int}                     # Map varidx -> name
+    connames_rev::Dict{String, Int}                 # Map varidx -> name
     ctr_level::Dict{Int, Level}
     ctr_upper::Dict{Int, JuMP.ConstraintRef}
     ctr_lower::Dict{Int, JuMP.ConstraintRef}
@@ -706,4 +706,14 @@ function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
 end
 function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
     error("Cant set StrongDualityMode in a specific variable")
+end
+
+function MOI.set(::BilevelModel, ::MOI.LazyConstraintCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
+end
+function MOI.set(::BilevelModel, ::MOI.UserCutCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
+end
+function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
 end

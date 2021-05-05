@@ -85,6 +85,7 @@ include("jump_nlp.jl")
     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_03(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+    jump_nlp_04(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
 end
 
 @testset "Unit" begin

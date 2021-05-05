@@ -518,7 +518,17 @@ function variables_unit()
     @test Set(JuMP.all_variables(model)) == Set([w,z])
 
     ex = @expression(model, w + z)
-    @constraint(Upper(model), ex >= 0)
+    @constraint(Upper(model), ctr, ex >= 0)
+
+    @test 0.0 == JuMP.normalized_rhs(ctr)
+    JuMP.set_normalized_rhs(ctr, 4)
+    @test 4.0 == JuMP.normalized_rhs(ctr)
+    JuMP.add_to_function_constant(ctr, 2)
+    @test 2.0 == JuMP.normalized_rhs(ctr)
+
+    @test 1.0 == JuMP.normalized_coefficient(ctr, w)
+    JuMP.set_normalized_coefficient(ctr, w, 2.0)
+    @test 2.0 == JuMP.normalized_coefficient(ctr, w)
 
     ex1 = BilevelAffExpr(-1.0)
     add_to_expression!(ex1, 2.0, w)
@@ -533,7 +543,9 @@ function variables_unit()
 
     @test coefficient(ex3, w, z) == 2
 
-
+    @test_throws ErrorException MOI.set(model, MOI.LazyConstraintCallback(), x -> x)
+    @test_throws ErrorException MOI.set(model, MOI.UserCutCallback(), x -> x)
+    @test_throws ErrorException MOI.set(model, MOI.HeuristicCallback(), x -> x)
 
     return nothing
 end

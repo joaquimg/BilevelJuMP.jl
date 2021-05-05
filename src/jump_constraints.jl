@@ -264,3 +264,38 @@ end
 function JuMP.normalized_rhs(cref::BilevelConstraintRef)
     return JuMP.normalized_rhs(raw_ref(cref))
 end
+
+function JuMP.set_normalized_rhs(cref::BilevelConstraintRef, val)
+    return JuMP.set_normalized_rhs(raw_ref(cref), val)
+end
+
+function JuMP.add_to_function_constant(cref::BilevelConstraintRef, val)
+    return JuMP.add_to_function_constant(raw_ref(cref), val)
+end
+
+function JuMP.normalized_coefficient(cref::BilevelConstraintRef, var::BilevelVariableRef)
+    cidx = cref.index
+    model = cref.model
+    level = model.ctr_level[cidx]
+    vidx = var.idx
+    level_var = if level == UPPER_ONLY
+        model.var_upper[vidx]
+    else
+        model.var_lower[vidx]
+    end
+    return JuMP.normalized_coefficient(raw_ref(cref), level_var)
+end
+
+function JuMP.set_normalized_coefficient(
+    cref::BilevelConstraintRef, var::BilevelVariableRef, val)
+    cidx = cref.index
+    model = cref.model
+    level = model.ctr_level[cidx]
+    vidx = var.idx
+    level_var = if level == UPPER_ONLY
+        model.var_upper[vidx]
+    else
+        model.var_lower[vidx]
+    end
+    return JuMP.set_normalized_coefficient(raw_ref(cref), level_var, val)
+end
