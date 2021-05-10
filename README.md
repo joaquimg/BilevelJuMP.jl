@@ -4,13 +4,15 @@ A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.
 
 | **Build Status** |
 |:----------------:|
-| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] |
+| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![Documentation][docs-latest-img]][docs-latest-url]|
 
 
 [build-img]: https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master
 [build-url]: https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI
 [codecov-img]: http://codecov.io/github/joaquimg/BilevelJuMP.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/joaquimg/BilevelJuMP.jl?branch=master
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg)
+[docs-latest-url]: https://joaquimg.github.io/BilvelJuMP.jl/latest/
 
 ## Introduction
 
