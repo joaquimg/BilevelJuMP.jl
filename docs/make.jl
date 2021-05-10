@@ -4,7 +4,7 @@ makedocs(
     modules = [BilevelJuMP],
     doctest  = false,
     clean    = true,
-    format   = Documenter.HTML(mathengine = Documenter.MathJax()),
+    format   = Documenter.HTML(mathengine = Documenter.MathJax2()),
     sitename = "BilevelJuMP.jl",
     authors  = "Joaquim Garcia",
     pages   = [
