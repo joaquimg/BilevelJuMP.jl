@@ -4,7 +4,7 @@ A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.
 
 | **Build Status** |
 |:----------------:|
-| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joaquimg.github.io/BilvelJuMP.jl/latest/)|
+| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joaquimg.github.io/BilevelJuMP.jl/dev/)|
 
 
 [build-img]: https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master
