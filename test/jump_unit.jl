@@ -5,9 +5,13 @@ function jump_objective()
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    ex1 = -4x -3y
 
-    @objective(Lower(model), Min, y)
+    @objective(Upper(model), Min, ex1)
+
+    ex2 = y
+
+    @objective(Lower(model), Min, ex2)
 
     @constraints(Lower(model), begin
         c1, 2x+y <= 4
@@ -17,7 +21,10 @@ function jump_objective()
     end)
 
     tp = JuMP.objective_function_type(Lower(model))
-    JuMP.objective_function(Lower(model), tp)
+    @test JuMP.objective_function(Lower(model), tp) == ex2
+
+    tp = JuMP.objective_function_type(Upper(model))
+    @test JuMP.objective_function(Upper(model), tp) == ex1
 
     @test JuMP.objective_sense(model) == MOI.MIN_SENSE
     @test_throws ErrorException JuMP.relative_gap(model)
@@ -28,6 +35,8 @@ function jump_objective()
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
     @test_throws ErrorException JuMP.objective_function(model, MOI.SingleVariable)
+
+    @test_throws ErrorException JuMP.optimize!(Upper(model))
 
 end
 
@@ -377,7 +386,8 @@ function jump_attributes()
     @test isnan(JuMP.solve_time(model))
     @test isnan(BilevelJuMP.build_time(model))
 
-    @test_throws MethodError JuMP.set_optimizer_attributes(mode, "weird" => true, "strange" => "yes")
+    @test_throws MethodError JuMP.set_optimizer_attributes(model, "weird" => true, "strange" => "yes")
+    @test_throws ErrorException JuMP.get_optimizer_attribute(model, "weird")
 
     return nothing
 end

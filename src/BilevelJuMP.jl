@@ -10,7 +10,7 @@ using IntervalArithmetic
 
 
 export
-BilevelModel, UpperToLower, LowerToUpper,
+BilevelModel,
 Upper, Lower, UpperOnly, LowerOnly,
 DualOf, BilevelAffExpr, BilevelQuadExpr
 

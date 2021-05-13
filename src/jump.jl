@@ -135,12 +135,10 @@ struct UpperModel <: InnerBilevelModel
     m::BilevelModel
 end
 Upper(m::BilevelModel) = UpperModel(m)
-UpperToLower(m::BilevelModel) = UpperModel(m)
 struct LowerModel <: InnerBilevelModel
     m::BilevelModel
 end
 Lower(m::BilevelModel) = LowerModel(m)
-LowerToUpper(m::BilevelModel) = LowerModel(m)
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
@@ -152,11 +150,6 @@ mylevel_var_list(m::LowerModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperModel) = bilevel_model(m).var_upper
 
 # obj
-
-mylevel_obj_sense(m::LowerModel) = bilevel_model(m).lower_objective_sense
-mylevel_obj_function(m::LowerModel) = bilevel_model(m).lower_objective_function
-mylevel_obj_sense(m::UpperModel) = bilevel_model(m).upper_objective_sense
-mylevel_obj_function(m::UpperModel) = bilevel_model(m).upper_objective_function
 
 function set_link!(m::UpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
     bilevel_model(m).upper_to_lower_link[upper] = lower

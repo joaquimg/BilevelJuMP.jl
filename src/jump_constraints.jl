@@ -42,12 +42,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     JuMP.set_name(cref, name)
     cref
 end
-function JuMP.delete(m::AbstractBilevelModel, cref::BilevelConstraintRef)
-    error("can't delete")
-    # m.need_rebuild = true
-    # delete!(m.constraints, cref.index)
-    # delete!(m.connames, cref.index)
-end
+
 JuMP.is_valid(m::BilevelModel, cref::BilevelConstraintRef) = cref.index in keys(m.constraints)
 JuMP.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef) =
     JuMP.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
