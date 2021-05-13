@@ -55,8 +55,6 @@ function jump_constraints()
 
     @test JuMP.normalized_rhs(c1) == 4.0
 
-    @test_throws ErrorException JuMP.delete(model, c1)
-
     @test is_valid(model, x)
     @test is_valid(Upper(model), x)
     @test is_valid(Lower(model), x) # it is in both levels
@@ -543,9 +541,47 @@ function variables_unit()
 
     @test coefficient(ex3, w, z) == 2
 
+    return nothing
+end
+
+function jump_no_cb()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x >= 0)
+
     @test_throws ErrorException MOI.set(model, MOI.LazyConstraintCallback(), x -> x)
     @test_throws ErrorException MOI.set(model, MOI.UserCutCallback(), x -> x)
     @test_throws ErrorException MOI.set(model, MOI.HeuristicCallback(), x -> x)
 
     return nothing
+end
+
+function constraint_unit()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Upper(model), ctru, x == 0)
+    @constraint(Lower(model), ctrl, y == 0)
+
+    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+        @test ctru == JuMP.all_constraints(Upper(model), f, s)[]
+    end
+    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+        @test ctrl == JuMP.all_constraints(Lower(model), f, s)[]
+    end
+    @test JuMP.list_of_constraint_types(Lower(model)) ==
+        JuMP.list_of_constraint_types(Upper(model))
+    @test JuMP.list_of_constraint_types(Lower(model)) ==
+        JuMP.list_of_constraint_types(model)
+
+
+    JuMP.delete(model, ctru)
+    @test isempty(JuMP.list_of_constraint_types(Upper(model)))
+    @test !isempty(JuMP.list_of_constraint_types(Lower(model)))
+    JuMP.delete(model, ctrl)
+    @test isempty(JuMP.list_of_constraint_types(Lower(model)))
 end

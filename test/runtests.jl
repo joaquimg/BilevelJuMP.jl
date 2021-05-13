@@ -97,6 +97,8 @@ end
     jump_constraints()
     jump_variables()
     variables_unit()
+    jump_no_cb()
+    constraint_unit()
     for solver in solvers_unit
         invalid_lower_objective(solver.opt, solver.mode)
         jump_display_solver(solver.opt, solver.mode)

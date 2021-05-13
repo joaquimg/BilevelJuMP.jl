@@ -106,6 +106,28 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     # display(Upper(model))
     # display(Lower(model))
 
+    JuMP.set_objective_coefficient(Upper(model), x, -5)
+    JuMP.set_objective_coefficient(Lower(model), x, +1)
+
+    # solve again to check robustness
+    optimize!(model)
+
+    primal_status(model)
+
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+
+    @test objective_value(model) ≈ -10 atol=atol
+    @test objective_value(Upper(model)) ≈ -10 atol=atol
+    @test objective_value(Lower(model)) ≈ 2 atol=atol
+
+    # @test JuMP.relative_gap(model) ≈ 0.0 atol=atol
+    # @test JuMP.relative_gap(Upper(model)) ≈ 0.0 atol=atol
+    # @test JuMP.dual_objective_value(model) ≈ -8 atol=atol
+    # @test JuMP.objective_bound(model) ≈ -8 atol=atol
+
+    @test value(x) ≈  2 atol=atol
+    @test value(y) ≈  0 atol=atol
+
 end
 
 function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
