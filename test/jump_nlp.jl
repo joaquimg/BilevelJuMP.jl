@@ -117,6 +117,7 @@ function jump_nlp_04(optimizer; mode = BilevelJuMP.ProductMode(1e-8), config = C
     @variable(Lower(model), y >= 0, start = 0)
 
     @test_throws ErrorException @NLparameter(model, rhs == 4.0)
+    @test_throws ErrorException @NLparameter(Lower(model), rhs == 4.0)
     @NLparameter(Upper(model), rhs == 4.0)
 
     @objective(Upper(model), Max, x -3y)

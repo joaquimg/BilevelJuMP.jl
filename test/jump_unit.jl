@@ -75,7 +75,8 @@ function jump_constraints()
 
     @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(c1))
     @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup))
-
+    @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup), bad_key_arg = false)
+    @test_throws ErrorException @constraint(model, x+2y <= 4)
 
 end
 
@@ -572,13 +573,19 @@ function constraint_unit()
     end
     for (f,s) in JuMP.list_of_constraint_types(Lower(model))
         @test ctrl == JuMP.all_constraints(Lower(model), f, s)[]
+        @test Set([ctrl, ctru]) == Set(JuMP.all_constraints(model, f, s))
     end
     @test JuMP.list_of_constraint_types(Lower(model)) ==
         JuMP.list_of_constraint_types(Upper(model))
     @test JuMP.list_of_constraint_types(Lower(model)) ==
         JuMP.list_of_constraint_types(model)
 
-
+    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+        @test JuMP.num_constraints(Upper(model), f, s) == 1
+    end
+    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+        @test JuMP.num_constraints(Lower(model), f, s) == 1
+    end
     JuMP.delete(model, ctru)
     @test isempty(JuMP.list_of_constraint_types(Upper(model)))
     @test !isempty(JuMP.list_of_constraint_types(Lower(model)))
