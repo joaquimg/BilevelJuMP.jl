@@ -21,6 +21,8 @@ mutable struct BilevelModel <: AbstractBilevelModel
     var_upper::Dict{Int, JuMP.AbstractVariableRef}
     var_lower::Dict{Int, JuMP.AbstractVariableRef} #
     var_info::Dict{Int, VariableInfo}
+    var_upper_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}} # bilevel ref no defined
+    var_lower_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}} # bilevel ref no defined
 
     # upper level decisions that are "parameters" of the second level
     upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
@@ -34,17 +36,13 @@ mutable struct BilevelModel <: AbstractBilevelModel
     nextconidx::Int                                 # Next constraint index is nextconidx+1
     constraints::Dict{Int, JuMP.AbstractConstraint} # Map conidx -> variable
     connames::Dict{Int, String}                     # Map varidx -> name
-    connames_rev::Dict{String, Int}                     # Map varidx -> name
+    connames_rev::Dict{String, Int}                 # Map varidx -> name
     ctr_level::Dict{Int, Level}
     ctr_upper::Dict{Int, JuMP.ConstraintRef}
     ctr_lower::Dict{Int, JuMP.ConstraintRef}
     ctr_info::Dict{Int, ConstraintInfo}
-
-    upper_objective_sense::MOI.OptimizationSense
-    upper_objective_function::JuMP.AbstractJuMPScalar
-
-    lower_objective_sense::MOI.OptimizationSense
-    lower_objective_function::JuMP.AbstractJuMPScalar
+    ctr_upper_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
+    ctr_lower_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
 
     # solution data
     need_rebuild::Bool
@@ -78,6 +76,8 @@ mutable struct BilevelModel <: AbstractBilevelModel
             Dict{Int, String}(),Dict{String, Int}(),
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractVariable}(), Dict{Int, JuMP.AbstractVariable}(),
             Dict{Int, VariableInfo}(),
+            nothing,
+            nothing,
             # links
             Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(), Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
             Dict{JuMP.AbstractVariable, JuMP.ConstraintRef}(),
@@ -87,11 +87,8 @@ mutable struct BilevelModel <: AbstractBilevelModel
             Dict{Int, String}(),Dict{String, Int}(),
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, JuMP.AbstractConstraint}(),
             Dict{Int, ConstraintInfo}(),
-            #obj
-            MOI.FEASIBILITY_SENSE,
-            zero(JuMP.GenericAffExpr{Float64, BilevelVariableRef}), # Model objective
-            MOI.FEASIBILITY_SENSE,
-            zero(JuMP.GenericAffExpr{Float64, BilevelVariableRef}), # Model objective
+            nothing,
+            nothing,
 
             true,
             true,
@@ -138,33 +135,21 @@ struct UpperModel <: InnerBilevelModel
     m::BilevelModel
 end
 Upper(m::BilevelModel) = UpperModel(m)
-UpperToLower(m::BilevelModel) = UpperModel(m)
 struct LowerModel <: InnerBilevelModel
     m::BilevelModel
 end
 Lower(m::BilevelModel) = LowerModel(m)
-LowerToUpper(m::BilevelModel) = LowerModel(m)
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
-level(m::LowerModel) = LOWER_ONLY
-level(m::UpperModel) = UPPER_ONLY
+level(::LowerModel) = LOWER_ONLY
+level(::UpperModel) = UPPER_ONLY
 mylevel_ctr_list(m::LowerModel) = bilevel_model(m).ctr_lower
 mylevel_ctr_list(m::UpperModel) = bilevel_model(m).ctr_upper
 mylevel_var_list(m::LowerModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperModel) = bilevel_model(m).var_upper
 
 # obj
-
-mylevel_obj_sense(m::LowerModel) = bilevel_model(m).lower_objective_sense
-mylevel_obj_function(m::LowerModel) = bilevel_model(m).lower_objective_function
-mylevel_obj_sense(m::UpperModel) = bilevel_model(m).upper_objective_sense
-mylevel_obj_function(m::UpperModel) = bilevel_model(m).upper_objective_function
-
-set_mylevel_obj_sense(m::LowerModel, val) = bilevel_model(m).lower_objective_sense = val
-set_mylevel_obj_function(m::LowerModel, val) = bilevel_model(m).lower_objective_function = val
-set_mylevel_obj_sense(m::UpperModel, val) = bilevel_model(m).upper_objective_sense = val
-set_mylevel_obj_function(m::UpperModel, val) = bilevel_model(m).upper_objective_function = val
 
 function set_link!(m::UpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
     bilevel_model(m).upper_to_lower_link[upper] = lower
@@ -207,7 +192,7 @@ struct BilevelVariableRef <: JuMP.AbstractVariableRef
     idx::Int       # Index in `model.variables`
     level::Level
 end
-function BilevelVariableRef(model, idx)
+function BilevelVariableRef(model::BilevelModel, idx)
     return BilevelVariableRef(model, idx, model.var_level[idx])
 end
 
@@ -294,11 +279,39 @@ end
 
 # Replace variables
 
+replace_var_type(::Type{BilevelModel}) = JuMP.VariableRef
+replace_var_type(::Type{M}) where {M<:JuMP.AbstractModel} = BilevelVariableRef
+function build_reverse_var_map!(um::UpperModel)
+    m = bilevel_model(um)
+    m.var_upper_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+    for (idx, ref) in m.var_upper
+        m.var_upper_rev[ref] = BilevelVariableRef(m, idx)
+    end
+end
+function build_reverse_var_map!(lm::LowerModel)
+    m = bilevel_model(lm)
+    m.var_lower_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+    for (idx, ref) in m.var_lower
+        m.var_lower_rev[ref] = BilevelVariableRef(m, idx)
+    end
+    return nothing
+end
+get_reverse_var_map(m::UpperModel) = m.m.var_upper_rev
+get_reverse_var_map(m::LowerModel) = m.m.var_lower_rev
+function reverse_replace_variable(f, m::InnerBilevelModel)
+    build_reverse_var_map!(m)
+    return replace_variables(f, mylevel_model(m), get_reverse_var_map(m), level(m))
+end
+function replace_variables(var::VV, # JuMP.VariableRef
+    model::M,
+    variable_map::Dict{I, V},
+    level::Level) where {I,V<:JuMP.AbstractVariableRef, M, VV<:JuMP.AbstractVariableRef}
+    return variable_map[var]
+end
 function replace_variables(var::BilevelVariableRef,
-    model::BilevelModel,
-    inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V},
-    level::Level) where {V<:JuMP.AbstractVariableRef}
+    model::M,
+    variable_map::Dict{I, V},
+    level::Level) where {I,V<:JuMP.AbstractVariableRef, M<:BilevelModel}
     if var.model === model && in_level(var, level)
         return variable_map[var.idx]
     elseif var.model === model
@@ -307,32 +320,30 @@ function replace_variables(var::BilevelVariableRef,
         error("A BilevelModel cannot have expression using variables of a BilevelModel different from itself")
     end
 end
-function replace_variables(aff::JuMP.GenericAffExpr{C, BilevelVariableRef},
-    model::BilevelModel,
-    inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V},
-    level::Level) where {C,V<:JuMP.AbstractVariableRef}
-    result = JuMP.GenericAffExpr{C, JuMP.VariableRef}(0.0)#zero(aff)
+function replace_variables(aff::JuMP.GenericAffExpr{C, VV},
+    model::M,
+    variable_map::Dict{I, V},
+    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
+    result = JuMP.GenericAffExpr{C, replace_var_type(M)}(0.0)#zero(aff)
     result.constant = aff.constant
     for (coef, var) in JuMP.linear_terms(aff)
         JuMP.add_to_expression!(result,
         coef,
-        replace_variables(var, model, model, variable_map, level))
+        replace_variables(var, model, variable_map, level))
     end
     return result
 end
-function replace_variables(quad::JuMP.GenericQuadExpr{C, BilevelVariableRef},
-    model::BilevelModel,
-    inner::JuMP.AbstractModel,
-    variable_map::Dict{Int, V},
-    level::Level) where {C,V<:JuMP.AbstractVariableRef}
-    aff = replace_variables(quad.aff, model, model, variable_map, level)
-    quadv = JuMP.GenericQuadExpr{C, JuMP.VariableRef}(aff)
+function replace_variables(quad::JuMP.GenericQuadExpr{C, VV},
+    model::M,
+    variable_map::Dict{I, V},
+    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
+    aff = replace_variables(quad.aff, model, variable_map, level)
+    quadv = JuMP.GenericQuadExpr{C, replace_var_type(M)}(aff)
     for (coef, var1, var2) in JuMP.quad_terms(quad)
         JuMP.add_to_expression!(quadv,
         coef,
-        replace_variables(var1, model, model, variable_map, level),
-        replace_variables(var2, model, model, variable_map, level))
+        replace_variables(var1, model, variable_map, level),
+        replace_variables(var2, model, variable_map, level))
     end
     return quadv
 end
@@ -706,4 +717,14 @@ function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
 end
 function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
     error("Cant set StrongDualityMode in a specific variable")
+end
+
+function MOI.set(::BilevelModel, ::MOI.LazyConstraintCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
+end
+function MOI.set(::BilevelModel, ::MOI.UserCutCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
+end
+function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
+    error("Callbacks are not available in BilevelJuMP Models")
 end

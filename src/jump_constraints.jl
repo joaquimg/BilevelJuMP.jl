@@ -11,7 +11,7 @@ raw_ref(cref::BilevelConstraintRef) = raw_ref(cref.model, cref.index)
 
 function BilevelConstraintRef(model, idx)
     raw = raw_ref(model, idx)
-    JuMP.ConstraintRef(model, idx, raw.shape)
+    return JuMP.ConstraintRef(model, idx, raw.shape)
 end
 JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 level(cref::BilevelConstraintRef) = cref.model.ctr_level[cref.index]
@@ -32,7 +32,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     blm.nextconidx += 1
     cref = JuMP.ConstraintRef(blm, blm.nextconidx, JuMP.shape(c))
     func = JuMP.jump_function(c)
-    level_func = replace_variables(func, bilevel_model(m), mylevel_model(m), mylevel_var_list(m), level(m))
+    level_func = replace_variables(func, bilevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
     blm.ctr_level[cref.index] = level(m)
@@ -42,12 +42,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     JuMP.set_name(cref, name)
     cref
 end
-function JuMP.delete(m::AbstractBilevelModel, cref::BilevelConstraintRef)
-    error("can't delete")
-    # m.need_rebuild = true
-    # delete!(m.constraints, cref.index)
-    # delete!(m.connames, cref.index)
-end
+
 JuMP.is_valid(m::BilevelModel, cref::BilevelConstraintRef) = cref.index in keys(m.constraints)
 JuMP.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef) =
     JuMP.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
@@ -141,6 +136,13 @@ function JuMP.num_constraints(model::LowerModel)
 end
 function JuMP.num_constraints(model::UpperModel)
     return length(model.m.ctr_upper)
+end
+function JuMP.num_constraints(model::InnerBilevelModel, f, s)
+    return JuMP.num_constraints(mylevel_model(model), f, s)
+end
+function JuMP.num_constraints(model::BilevelModel, f, s)
+    return JuMP.num_constraints(Upper(model), f, s) +
+        JuMP.num_constraints(Lower(model), f, s)
 end
 
 struct DualOf
@@ -263,4 +265,108 @@ end
 
 function JuMP.normalized_rhs(cref::BilevelConstraintRef)
     return JuMP.normalized_rhs(raw_ref(cref))
+end
+
+function JuMP.set_normalized_rhs(cref::BilevelConstraintRef, val)
+    return JuMP.set_normalized_rhs(raw_ref(cref), val)
+end
+
+function JuMP.add_to_function_constant(cref::BilevelConstraintRef, val)
+    return JuMP.add_to_function_constant(raw_ref(cref), val)
+end
+
+function JuMP.normalized_coefficient(cref::BilevelConstraintRef, var::BilevelVariableRef)
+    cidx = cref.index
+    model = cref.model
+    level = model.ctr_level[cidx]
+    vidx = var.idx
+    level_var = if level == UPPER_ONLY
+        model.var_upper[vidx]
+    else
+        model.var_lower[vidx]
+    end
+    return JuMP.normalized_coefficient(raw_ref(cref), level_var)
+end
+
+function JuMP.set_normalized_coefficient(
+    cref::BilevelConstraintRef, var::BilevelVariableRef, val)
+    cidx = cref.index
+    model = cref.model
+    level = model.ctr_level[cidx]
+    vidx = var.idx
+    level_var = if level == UPPER_ONLY
+        model.var_upper[vidx]
+    else
+        model.var_lower[vidx]
+    end
+    return JuMP.set_normalized_coefficient(raw_ref(cref), level_var, val)
+end
+
+function JuMP.list_of_constraint_types(
+    model::InnerBilevelModel,
+)::Vector{Tuple{DataType,DataType}}
+    return JuMP.list_of_constraint_types(mylevel_model(model))
+end
+function JuMP.list_of_constraint_types(
+    model::BilevelModel,
+)::Vector{Tuple{DataType,DataType}}
+    return unique!(vcat(
+        JuMP.list_of_constraint_types(Upper(model)),
+        JuMP.list_of_constraint_types(Lower(model)),
+    ))
+end
+
+function JuMP.all_constraints(model::BilevelModel, f, s)
+    return unique!(vcat(
+        JuMP.all_constraints(Upper(model), f, s),
+        JuMP.all_constraints(Lower(model), f, s),
+    ))
+end
+
+function JuMP.all_constraints(model::InnerBilevelModel, f, s)
+    build_reverse_ctr_map!(model)
+    m = mylevel_model(model)
+    list = JuMP.all_constraints(m, f, s)
+    get_reverse_ctr_map.(model, list)
+end
+function build_reverse_ctr_map!(um::UpperModel)
+    m = bilevel_model(um)
+    m.ctr_upper_rev = Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}()
+    for (idx, ref) in m.ctr_upper
+        m.ctr_upper_rev[ref] = BilevelConstraintRef(m, idx)
+    end
+end
+function build_reverse_ctr_map!(lm::LowerModel)
+    m = bilevel_model(lm)
+    m.ctr_lower_rev = Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}()
+    for (idx, ref) in m.ctr_lower
+        m.ctr_lower_rev[ref] = BilevelConstraintRef(m, idx)
+    end
+    return nothing
+end
+get_reverse_ctr_map(m::UpperModel, idx) = m.m.ctr_upper_rev[idx]
+get_reverse_ctr_map(m::LowerModel, idx) = m.m.ctr_lower_rev[idx]
+
+function JuMP.delete(mod::BilevelModel, cref::BilevelConstraintRef)
+    model = cref.model
+    @assert model === mod
+    idx = cref.index
+    delete!(model.constraints, idx)
+    delete!(model.connames, idx)
+    model.need_rebuild_names_ctr = true
+    delete!(model.ctr_level, idx)
+    if haskey(model.ctr_upper, idx)
+        c_up = model.ctr_upper[idx]
+        delete!(model.ctr_upper, idx)
+        JuMP.delete(model.upper, c_up)
+    end
+    if haskey(model.ctr_lower, idx)
+        c_lo = model.ctr_lower[idx]
+        delete!(model.ctr_lower, idx)
+        JuMP.delete(model.lower, c_lo)
+    end
+    delete!(model.ctr_info, idx)
+    model.ctr_upper_rev = nothing
+    model.ctr_lower_rev = nothing
+    return nothing
 end

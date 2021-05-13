@@ -85,6 +85,7 @@ include("jump_nlp.jl")
     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_03(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
+    jump_nlp_04(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
 end
 
 @testset "Unit" begin
@@ -95,6 +96,9 @@ end
     mixed_mode_unit()
     jump_constraints()
     jump_variables()
+    variables_unit()
+    jump_no_cb()
+    constraint_unit()
     for solver in solvers_unit
         invalid_lower_objective(solver.opt, solver.mode)
         jump_display_solver(solver.opt, solver.mode)

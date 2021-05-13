@@ -33,10 +33,27 @@ function Base.getproperty(m::LowerModel, s::Symbol)
     end
 end
 
+no_nlp() = error("Non-linear data must be passed to the Upper(.) model")
 no_nlp_lower() = error("NLconstraint(s) are not allowed in the lower level")
+no_nlp_lower_param() = error("NLparameter(s) are not allowed in the lower level")
 
 JuMP._init_NLP(m::UpperModel) = JuMP._init_NLP(mylevel_model(m))
 JuMP._init_NLP(m::LowerModel) = no_nlp_lower()
+
+function JuMP._new_parameter(m::UpperModel, value::Number)
+    JuMP._init_NLP(m)
+    upper = m.m.upper
+    nldata::JuMP._NLPData = upper.nlp_data
+    push!(nldata.nlparamvalues, value)
+    return JuMP.NonlinearParameter(upper, length(nldata.nlparamvalues))
+end
+
+function JuMP._new_parameter(::LowerModel, ::Number)
+    no_nlp_lower_param()
+end
+function JuMP._new_parameter(::BilevelModel, ::Number)
+    no_nlp()
+end
 
 # function JuMP.set_objective_function(m::UpperModel, func::JuMP._NonlinearExprData)
 #     JuMP.set_objective_function(mylevel_model(m), func)
@@ -93,13 +110,13 @@ end
 
 # TODO: dela with param
 function JuMP._parse_NL_expr_runtime(
-    m::Model,
-    x::NonlinearParameter,
+    m::JuMP.Model,
+    x::JuMP.NonlinearParameter,
     tape,
     parent,
     values,
 )
-    push!(tape, NodeData(PARAMETER, x.index, parent))
+    push!(tape, JuMP.NodeData(JuMP.PARAMETER, x.index, parent))
     return nothing
 end
 

@@ -5,9 +5,13 @@ function jump_objective()
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    ex1 = -4x -3y
 
-    @objective(Lower(model), Min, y)
+    @objective(Upper(model), Min, ex1)
+
+    ex2 = y
+
+    @objective(Lower(model), Min, ex2)
 
     @constraints(Lower(model), begin
         c1, 2x+y <= 4
@@ -17,7 +21,10 @@ function jump_objective()
     end)
 
     tp = JuMP.objective_function_type(Lower(model))
-    JuMP.objective_function(Lower(model), tp)
+    @test JuMP.objective_function(Lower(model), tp) == ex2
+
+    tp = JuMP.objective_function_type(Upper(model))
+    @test JuMP.objective_function(Upper(model), tp) == ex1
 
     @test JuMP.objective_sense(model) == MOI.MIN_SENSE
     @test_throws ErrorException JuMP.relative_gap(model)
@@ -28,6 +35,8 @@ function jump_objective()
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
     @test_throws ErrorException JuMP.objective_function(model, MOI.SingleVariable)
+
+    @test_throws ErrorException JuMP.optimize!(Upper(model))
 
 end
 
@@ -55,8 +64,6 @@ function jump_constraints()
 
     @test JuMP.normalized_rhs(c1) == 4.0
 
-    @test_throws ErrorException JuMP.delete(model, c1)
-
     @test is_valid(model, x)
     @test is_valid(Upper(model), x)
     @test is_valid(Lower(model), x) # it is in both levels
@@ -77,7 +84,8 @@ function jump_constraints()
 
     @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(c1))
     @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup))
-
+    @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup), bad_key_arg = false)
+    @test_throws ErrorException @constraint(model, x+2y <= 4)
 
 end
 
@@ -114,7 +122,6 @@ function jump_variables()
 
     @test JuMP.variable_type(model) == BilevelJuMP.BilevelVariableRef
 
-    @test_throws ErrorException JuMP.delete(model, x)
     @test JuMP.is_valid(model, x)
 end
 
@@ -379,7 +386,8 @@ function jump_attributes()
     @test isnan(JuMP.solve_time(model))
     @test isnan(BilevelJuMP.build_time(model))
 
-    @test_throws MethodError JuMP.set_optimizer_attributes(mode, "weird" => true, "strange" => "yes")
+    @test_throws MethodError JuMP.set_optimizer_attributes(model, "weird" => true, "strange" => "yes")
+    @test_throws ErrorException JuMP.get_optimizer_attribute(model, "weird")
 
     return nothing
 end
@@ -439,7 +447,6 @@ function jump_attributes_solver(optimizer, mode)
 
 end
 
-
 function mixed_mode_unit()
 
     # min -4x -3y
@@ -497,4 +504,101 @@ function mixed_mode_unit()
     @test BilevelJuMP.get_mode(c2) === nothing
 
     return nothing
+end
+
+function variables_unit()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), w >= 0)
+    @variable(Upper(model), x >= 0)
+    @variable(Lower(model), y >= 0)
+    @variable(Lower(model), z >= 0)
+
+    @test Set(JuMP.all_variables(Upper(model))) == Set([x,y,z,w])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([x,y,z,w])
+    @test Set(JuMP.all_variables(model)) == Set([x,y,z,w])
+
+    JuMP.delete(model, x)
+    JuMP.delete(model, y)
+
+    @test Set(JuMP.all_variables(Upper(model))) == Set([w,z])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([w,z])
+    @test Set(JuMP.all_variables(model)) == Set([w,z])
+
+    ex = @expression(model, w + z)
+    @constraint(Upper(model), ctr, ex >= 0)
+
+    @test 0.0 == JuMP.normalized_rhs(ctr)
+    JuMP.set_normalized_rhs(ctr, 4)
+    @test 4.0 == JuMP.normalized_rhs(ctr)
+    JuMP.add_to_function_constant(ctr, 2)
+    @test 2.0 == JuMP.normalized_rhs(ctr)
+
+    @test 1.0 == JuMP.normalized_coefficient(ctr, w)
+    JuMP.set_normalized_coefficient(ctr, w, 2.0)
+    @test 2.0 == JuMP.normalized_coefficient(ctr, w)
+
+    ex1 = BilevelAffExpr(-1.0)
+    add_to_expression!(ex1, 2.0, w)
+    add_to_expression!(ex1, 1.0, z)
+    @constraint(Lower(model), ex1 >= 0)
+
+    ex2 = w + z + 1
+    @constraint(Lower(model), ex2 >= 0)
+
+    ex3 = ex = w^2 + 2 * w * z + z^2 + w + z - 1
+    @objective(Lower(model), Min, ex3)
+
+    @test coefficient(ex3, w, z) == 2
+
+    return nothing
+end
+
+function jump_no_cb()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x >= 0)
+
+    @test_throws ErrorException MOI.set(model, MOI.LazyConstraintCallback(), x -> x)
+    @test_throws ErrorException MOI.set(model, MOI.UserCutCallback(), x -> x)
+    @test_throws ErrorException MOI.set(model, MOI.HeuristicCallback(), x -> x)
+
+    return nothing
+end
+
+function constraint_unit()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Upper(model), ctru, x == 0)
+    @constraint(Lower(model), ctrl, y == 0)
+
+    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+        @test ctru == JuMP.all_constraints(Upper(model), f, s)[]
+    end
+    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+        @test ctrl == JuMP.all_constraints(Lower(model), f, s)[]
+        @test Set([ctrl, ctru]) == Set(JuMP.all_constraints(model, f, s))
+    end
+    @test JuMP.list_of_constraint_types(Lower(model)) ==
+        JuMP.list_of_constraint_types(Upper(model))
+    @test JuMP.list_of_constraint_types(Lower(model)) ==
+        JuMP.list_of_constraint_types(model)
+
+    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+        @test JuMP.num_constraints(Upper(model), f, s) == 1
+    end
+    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+        @test JuMP.num_constraints(Lower(model), f, s) == 1
+    end
+    JuMP.delete(model, ctru)
+    @test isempty(JuMP.list_of_constraint_types(Upper(model)))
+    @test !isempty(JuMP.list_of_constraint_types(Lower(model)))
+    JuMP.delete(model, ctrl)
+    @test isempty(JuMP.list_of_constraint_types(Lower(model)))
 end
