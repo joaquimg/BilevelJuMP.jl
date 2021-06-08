@@ -15,4 +15,5 @@ makedocs(
 
 deploydocs(
     repo = "github.com/joaquimg/BilevelJuMP.jl.git",
+    push_preview = true
 )
