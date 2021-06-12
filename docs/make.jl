@@ -9,7 +9,8 @@ makedocs(
     authors  = "Joaquim Garcia",
     pages   = [
         "Home" => "index.md",
-        "manual.md"
+        "manual.md",
+        "theory.md"
     ]
 )
 
