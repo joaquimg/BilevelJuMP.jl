@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Theory of Bi-level Optimization
 ## Introduction
 
@@ -11,8 +11,7 @@ Dijkstra, E. W. (1968).
 Go to statement considered harmful. 
 Communications of the ACM, 11(3), 147-148.
 =======
-# Theory to Bi-level programming
-Hello
+
 
 
 ```math
@@ -22,4 +21,4 @@ Hello
 & \;\;\text{s.t.} & A_i x + b_i & \in \mathcal{C}_i & i = 1 \ldots m
 \end{align}
 ```
->>>>>>> 82caca13c623ea0a1da625b6b5bd48a345fb052a
+
