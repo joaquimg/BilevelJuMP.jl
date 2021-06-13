@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Theory of Bi-level Optimization
 ## Introduction
 
@@ -9,3 +10,16 @@ Standard single-level optimization problems consist of a single decision maker w
 Dijkstra, E. W. (1968). 
 Go to statement considered harmful. 
 Communications of the ACM, 11(3), 147-148.
+=======
+# Theory to Bi-level programming
+Hello
+
+
+```math
+\begin{align}
+& \min_{x \in \mathbb{R}^n} & a_0^T x + b_0
+\\
+& \;\;\text{s.t.} & A_i x + b_i & \in \mathcal{C}_i & i = 1 \ldots m
+\end{align}
+```
+>>>>>>> 82caca13c623ea0a1da625b6b5bd48a345fb052a
