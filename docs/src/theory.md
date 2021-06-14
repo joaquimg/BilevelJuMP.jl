@@ -158,7 +158,7 @@ Example (1) indicates that bilevel problems are intrinsically nonconvex due to t
 
 In this section, we take a closer look at bilevel problems with linear or convex followers. This is the class of bilevel problems that we mainly consider in this research. In case of LP-LP problems, we have the following property.
 
-!!!note Theorem 1. If the set of optimal solutions of an LP-LP problem is nonempty, then it contains at least one vertex of the shared constraint set Ω.
+!!!note Theorem 1. If the set of optimal solutions of an LP-LP problem is nonempty, then it contains at least one vertex of the shared constraint set ``\Omega``.
 
 <div class="panel panel-warning">
 **Theorem 1.**
