@@ -10,11 +10,11 @@
 #   description of the problem.                                     #src
 
 using BilevelJuMP
-using Cbc
+using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Cbc.Optimizer, mode = BilevelJuMP.SOS1Mode())
+model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 
