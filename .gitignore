@@ -4,6 +4,7 @@
 deps/deps.jl
 Manifest.toml
 docs/build
+docs/src/examples/*.md
 .DS_Store
 */.DS_Store
 */*/.DS_Store
