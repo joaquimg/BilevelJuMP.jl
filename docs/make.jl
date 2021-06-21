@@ -1,6 +1,9 @@
-using Documenter, BilevelJuMP
+using Documenter, BilevelJuMP, DocumenterCitations
+
+bib = CitationBibliography(joinpath(@__DIR__, "src/references.bib"), sorting = :nyt)
 
 makedocs(
+    bib,
     modules = [BilevelJuMP],
     doctest  = false,
     clean    = true,
