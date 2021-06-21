@@ -1,21 +1,19 @@
-# Foundations of Bilevel Programming: Example 2.1
-
-# link to the book https://www.springer.com/gp/book/9781402006319
-
+# # Foundations of Bilevel Programming: Example 2.1
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
-# Dempe, Chapter 3.2, Page 25.
+# Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
 # Moving the bound on x to lower level
 
-#------------------------------------------------------------------
-#------------------------------------------------------------------
+
 # Model of the problem
-#------------------------------------------------------------------
+
 # First level
+# ```
 # Min 3x + y 
 # s.t.
 # 0 <= y <=8
-#------------------------------------------------------------------
+# ```
 # Second level
+# ```
 # Min -x
 # s.t.
 # x + y <= 8
@@ -23,8 +21,7 @@
 # 2x + y <= 13
 # 2x - y <= 0
 # x <= 5
-#------------------------------------------------------------------
-#------------------------------------------------------------------
+# ```
 
 
 using BilevelJuMP
