@@ -66,7 +66,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 optimize!(model)
 
-@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-6
+@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-3
 @test value(x) ≈ 3.5 * 8 / 15 atol=1e-6
 @test value(y) ≈ 8 / 15 atol=1e-6
 
