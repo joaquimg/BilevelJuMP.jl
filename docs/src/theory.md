@@ -1,9 +1,28 @@
 
 # Theory of Bi-level Optimization
 ## Introduction
-Standard single-level optimization problems consist of a single decision-maker who controls a set of decision variables to optimize its goal. However, in many real-world problems, several decision-makers with conflicting goals interact, and each individual decision impacts the decisions and outcomes of the others. Such interdependencies cannot be captured with the standard-setting of a single decision-maker, and other, more adequate, optimization problems are required [[1]](#1).
- 
-Decisions in this context can be made simultaneously, or it can have subsequently hierarchical structure. In this package, we are mainly focused on problems so-called Stackelberg in which the leader decides first, anticipating the rational response of the so-called Stackelberg follower, who decides second. This requires the leader to have explicit knowledge of the reactions of the follower, and such problems can then be solved via backward induction. These hierarchical optimization problems with two levels are commonly called bilevel problems. For an overview of the vast literature on bilevel optimization, we refer to the surveys by Anandalingam and Friesz [[2]](#2), Ben- Ayed [[3]](#3), Colson et al. [[4]](#4), Kolstad [[5]](#5), Vicente and Calamai [[6]](#6), and Wen and Hsu [[7]](#7) as well as the books Bard [[8]](#8), Dempe [[9]](#9), Dempe, Kalashnikov, et al. [[10]](#10), and Dempe and Zemkoho [[11]](#11). 
+Primarily, research in mathematical optimization has been focused on **idealized** models. In the definition of the ideal model, we have only a single decision-maker (DM) facing the problem of making a single set of decisions at a single point in time and under perfect knowledge. Over the past decades, different approaches have been well developed with high-quality implementation widely available in off-the-shelf software for these mathematical problems. The general structure of an ideal problems consists of an objective function subject to some conditions or, better to say, some constraints like
+
+```math
+	\begin{align}
+	&\text{\textbf{(GO)}}\\
+	&\min_{x\in X} f(x),\\
+```
+
+Where "X\subset\mathbb{R}^n "is the feasible region defined by a set of constraints and "f:\mathbb{R}^n\rightarrow\mathbb{R} "is the objective function. 
+
+Despite its widespread usage of ideal models, the property of many real-world problems does not align with this category. Most real-world applications involve multiple DMs, multiple competing objectives, and/or decisions made at multiple points in time. We are not able to capture the complexity of these problems with the conventional definition of ideal models. Therefore new categories have been introduced under the title of multistage and multilevel optimization to address these complexities.
+
+The multistage optimization problem is mainly about a single MD whose decisions are taken over multiple time periods with an objective that encapsulates the impact of future stages at the current time. On the other hand, in multilevel optimization, we are dealing with multiple MDs who make decisions simultaneously or in a subsequent hierarchical structure. In this package, we are mainly focused on problems so-called Stackelberg, in which there are two MDs with hierarchical structure decision; any decision taken by the upper-level authority (leader) to optimize their goals is affected by the response of lower-level entities (follower), who will seek to optimize their outcomes. These hierarchical optimization problems with two levels are commonly called bilevel problems. Ankur Sinha et al. provide an excellent representation for this category of problems. 
+
+<figure align = "center">
+ <img src="images/Ankur.png" alt="my alt text"/ width= "500" >
+ <figcaption align = "center"> hierarchical structure of bilevel problems
+</figcaption>
+</figure>
+
+In the figure, you can see for any given upper-level decision vector, there is a corresponding (parametric) lower-level optimization problem that needs to be solved. In other words, each decision vector ("x_u ") of the leader creates an optimization problem follower. In the figure, "x_u "and "x_l^ "represent the leader's and follower's decision vectors, respectively. Feasible space for the upper-level problem is defined with "(x_u, x_l^*) "pairs where the vector "x_l^* "is an optimal solution to the lower-level problem. It is expected that each layer has its own objectives and constraints. In the context of bilevel optimization, the leader decides first while anticipating the rational response of the so-called Stackelberg follower, who decides second. For an overview of the vast literature on bilevel optimization, we refer to the surveys by Ankur Sinha et al. [[1]](#1), Colson et al. [[2]](#2), the books Bard [[3]](#3), Dempe [[4]](#4), Dempe, Kalashnikov, et al. [[5]](#5), and Dempe and Zemkoho [[6]](#6). 
+
 
 Bi-level optimization is a step forward in modeling real worlds challenges and over the last 50 years, numerous works used bilevel optimization as a modeling tool for problems stemming from a broad spectrum of applications, such as agricultural planning (Fortuny-Amat and McCarl [[12]](#12)), critical infrastructure defense (DeNegre [[13]](#13), Caprara et al. [[14]](#14)), energy markets (Grimm, Schewe, et al. [[15]](#15), Hu and Ralph [[16]](#16)), portfolio optimization (Leal et al. [[17]](#17)), pricing (Labbé and Violin [[18]](#18)), or traffic planning (Migdalas [[19]](#19)), to name only a few.
 
@@ -42,6 +61,7 @@ we denote the set of optimal follower solutions in dependence of the leader deci
 	&\Psi(x):= \{y\inY: g(x,y)\leq 0, f(x,y)\leq &\varphi(x)\}.
 	\end{align}
 ```
+
 This set is sometimes also referred to as the rational reaction set. In bilevel optimization, the leader anticipates the response ``y\in\Psi(x)`` of the follower and chooses ``x\in X`` to maximize the objective function ``F(x,y): \mathbb{R}^n\times\mathbb{R}^m\rightarrow \mathbb{R}`` subject to the leader constraints ``G(x,y)\leq 0``, ``G(x,y): \mathbb{R}^n\times\mathbb{R}^m\rightarrow \mathbb{R}^k``. In general, the optimal solution of the follower problem (BP-F) is ambiguous, which means that ``\Psi(x)`` is not a singleton. In this case, we assume the optimistic or cooperative approach. Among all ambiguous follower solution ``y\in\Psi(x)``, the leader may. Select the one most favorable for it. Thus, the leader solves the optimistic bilevel problem
 
 ```math
@@ -206,38 +226,24 @@ Assume that the parametric follower problem (BP-F) is convex and that a constrai
 
 
 ## References
+
 <a id="1">[1]</a> 
-Kleinert, Thomas. Algorithms for Mixed-Integer Bilevel Problems with Convex Followers. Diss. 2021.
+Sinha, Ankur, Pekka Malo, and Kalyanmoy Deb. "A review on bilevel optimization: from classical to evolutionary approaches and applications." IEEE Transactions on Evolutionary Computation 22.2 (2017): 276-295.
+
 
 <a id="2">[2]</a> 
-Anandalingam, G., and Terry L. Friesz. "Hierarchical optimization: An introduction." Annals of Operations Research 34.1 (1992): 1-11.
-
-<a id="3">[3]</a> 
-Ben-Ayed, Omar. "Bilevel linear programming." Computers & operations research 20.5 (1993): 485-501.
-
-<a id="4">[4]</a> 
 Colson, Benoît, Patrice Marcotte, and Gilles Savard. "An overview of bilevel optimization." Annals of operations research 153.1 (2007): 235-256.
 
-<a id="5">[5]</a> 
-Kolstad, Charles D. "A review of the literature on bi-level mathematical programming." (1985).
-
-
-<a id="6">[6]</a> 
-Vicente, Luis N., and Paul H. Calamai. "Bilevel and multilevel programming: A bibliography review." Journal of Global optimization 5.3 (1994): 291-306.
-
-<a id="7">[7]</a> 
-Wen, Ue-Pyng, and Shuh-Tzy Hsu. "Linear bi-level programming problems—a review." Journal of the Operational Research Society 42.2 (1991): 125-133.
-
-<a id="8">[8]</a> 
+<a id="3">[3]</a> 
 Bard, Jonathan F. Practical bilevel optimization: algorithms and applications. Vol. 30. Springer Science & Business Media, 2013.
 
-<a id="9">[9]</a> 
+<a id="4">[4]</a> 
 Dempe, Stephan. Foundations of bilevel programming. Springer Science & Business Media, 2002.
 
-<a id="10">[10]</a> 
+<a id="5">[5]</a> 
 Dempe, Stephan, et al. "Bilevel programming problems." Energy Systems. Springer, Berlin (2015).
 
-<a id="11">[11]</a> 
+<a id="6">[6]</a> 
 Dempe, Stephan, and Alain Zemkoho. Bilevel Optimization. Springer, 2020.
 
 <a id="12">[12]</a> 
@@ -307,7 +313,8 @@ Candler, Wilfred, and Roger Norton. Multi-level programming and development poli
 <a id="32">[32]</a> 
 DeNegre, Scott T., and Ted K. Ralphs. "A branch-and-cut algorithm for integer bilevel linear programs." Operations research and cyber-infrastructure. Springer, Boston, MA, 2009. 65-78.
 
-
+<a id="33">[33]</a> 
+Kleinert, Thomas. Algorithms for Mixed-Integer Bilevel Problems with Convex Followers. Diss. 2021.
 
 =======
 
