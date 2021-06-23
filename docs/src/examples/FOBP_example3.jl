@@ -1,7 +1,6 @@
 # # Foundations of Bilevel Programming: Example 3
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 3.7, Page 59. [url](https://www.springer.com/gp/book/9781402006319)
-# Moving the bound on x to lower level
 
 
 # Model of the problem
@@ -28,7 +27,8 @@
 # \notag s.t.\\
 # \sum x_i \geq 0,\\
 # x_i \leq y^a_i, \forall i\in I,\\
-# x_i \leq y^b_i, \forall i\in I\\
+# x_i \leq y^b_i, \forall i\in I,\\
+# I = \{1,...,7\}
 # ```
 
 
