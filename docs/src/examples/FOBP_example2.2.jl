@@ -1,31 +1,25 @@
-# Foundations of Bilevel Programming: Example 2.1
-
-# link to the book https://www.springer.com/gp/book/9781402006319
-
+# # Foundations of Bilevel Programming: Example 4
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
-# Dempe, Chapter 3.2, Page 25.
-# Moving the bound on x to lower level
+# Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
 
-#------------------------------------------------------------------
-#------------------------------------------------------------------
+
 # Model of the problem
-#------------------------------------------------------------------
 # First level
-# Min 3x + y 
-# s.t.
-# 0 <= y <=8
-#------------------------------------------------------------------
+# ```math
+# \min 3x + y,\\
+# \notag s.t.\\
+# 0 \leq y \leq 8,\\
+# ```
 # Second level
-# Min -x
-# s.t.
-# x + y <= 8
-# 4x + y >= 8
-# 2x + y <= 13
-# 2x - y <= 0
-# x <= 5
-#------------------------------------------------------------------
-#------------------------------------------------------------------
-
+# ```
+# Min -x,\\
+# \notag s.t.\\
+# x + y \leq 8,\\
+# 4x + y \geq 8,\\
+# 2x + y \leq 13,\\
+# 2x - y \leq 0,\\
+# x \leq 5,\\
+# ```
 
 using BilevelJuMP
 using Ipopt
@@ -38,14 +32,13 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 @variable(Lower(model), x, start = 3.5 * 8 / 15)
 
-#-
 
 @variable(Upper(model), y, start = 8 / 15)
 
 # Then we can add the objective and constraints of the upper problem:
 
 @objective(Upper(model), Min, 3x + y)
-#-
+
 
 @constraint(Upper(model), y <= 8)
 @constraint(Upper(model), y >= 0)
@@ -54,7 +47,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 @objective(Lower(model), Min, -x)
 
-#-
+
 @constraint(Lower(model), x +  y <= 8)
 @constraint(Lower(model), 4x +  y >= 8)
 @constraint(Lower(model), 2x +  y <= 13)
@@ -66,7 +59,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 optimize!(model)
 
-@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-6\
+@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-3
 @test value(x) ≈ 3.5 * 8 / 15 atol=1e-6
 @test value(y) ≈ 8 / 15 atol=1e-6
 
