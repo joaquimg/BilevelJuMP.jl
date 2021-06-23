@@ -26,7 +26,7 @@ using Test
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
-atol = 1e-6
+atol = 1e-3
 
 # First we need to create all of the variables in the upper and lower problems:
 
