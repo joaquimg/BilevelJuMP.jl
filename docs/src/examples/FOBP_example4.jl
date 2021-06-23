@@ -17,7 +17,6 @@
 # x \geq 0,\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
