@@ -62,7 +62,6 @@ primal_status(model)
 termination_status(model)
 
 # Auto testing
-status(model)
 @test objective_value(model) ≈ 0 atol=atol
 @test value(x) ≈ 0 atol=atol
 @test value(y) ≈ 0 atol=atol
