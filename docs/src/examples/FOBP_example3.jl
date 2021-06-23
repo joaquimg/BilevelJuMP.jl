@@ -42,6 +42,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 # Global variables
 
 I = 7 # maximum literals
+clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
 atol = 1e-6
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -52,7 +53,7 @@ atol = 1e-6
 
 
 #Lower level variables
-@variable(Lower(model), x[i=1:n])
+@variable(Lower(model), x[i=1:I])
 
 # Then we can add the objective and constraints of the upper problem:
 
@@ -89,7 +90,7 @@ JuMP.set_start_value.(x, 0)
 JuMP.set_start_value.(ya, 1)
 JuMP.set_start_value.(yb, 0)
 JuMP.set_start_value(z, 1)
-for i in 1:n
+for i in 1:I
     JuMP.set_dual_start_value.(b1, 0)
     JuMP.set_dual_start_value.(b2, 0)
     JuMP.set_dual_start_value.(b3, -1)
@@ -106,9 +107,9 @@ termination_status(model)
 
 # Auto testing
 @test objective_value(model) ≈ -1 atol=atol
-@test value.(x) ≈ zeros(n) atol=atol
-@test value.(ya) ≈ ones(n) atol=atol
-@test value.(yb) ≈ zeros(n) atol=atol
+@test value.(x) ≈ zeros(I) atol=atol
+@test value.(ya) ≈ ones(I) atol=atol
+@test value.(yb) ≈ zeros(I) atol=atol
 @test value(z) ≈ 1 atol=atol
 # @show dual.(b1) #≈ 6 atol=atol
 # @show dual.(b2) #≈ 2 atol=atol
