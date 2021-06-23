@@ -7,28 +7,28 @@
 # Model of the problem
 
 # First level
-# ``` math
-# \min \sum_{i\in I} x_i - z,
-# \notag s.t.
-# y^a_i\geq 0, \forall i \in I,
-# y^a_i\leq 1, \forall i \in I,
-# y^b_i\geq 0, \forall i \in I,
-# y^b_i\leq 1, \forall i \in I,
-# y^a_i + y^b_i = 1, \forall i \in I,
-# z\geq 0,
-# z\leq 1,
-# y^a_1 + y^a_2 + y^a_3 \geq z,
-# -y^b_1 - y^b_4 + y^a_3 \geq z,
-# y^b_7 - y^b_6 + y^a_4 \geq z,
-# y^a_5 + y^a_6 + y^a_7 \geq z.
+# ```math
+# \min \sum_{i\in I} x_i - z,\\
+# \notag s.t.\\
+# y^a_i\geq 0, \forall i \in I,\\
+# y^a_i\leq 1, \forall i \in I,\\
+# y^b_i\geq 0, \forall i \in I,\\
+# y^b_i\leq 1, \forall i \in I,\\
+# y^a_i + y^b_i = 1, \forall i \in I,\\
+# z\geq 0,\\
+# z\leq 1,\\
+# y^a_1 + y^a_2 + y^a_3 \geq z,\\
+# -y^b_1 - y^b_4 + y^a_3 \geq z,\\
+# y^b_7 - y^b_6 + y^a_4 \geq z,\\
+# y^a_5 + y^a_6 + y^a_7 \geq z.\\
 # ```
 # Second level
-# ```
-# \min -\sum_{i\in I}x_i,
-# \notag s.t.
-# \sum x_i \geq 0,
-# x_i \leq y^a_i, \forall i\in I,
-# x_i \leq y^b_i, \forall i\in I
+# ```math
+# \min -\sum_{i\in I}x_i,\\
+# \notag s.t.\\
+# \sum x_i \geq 0,\\
+# x_i \leq y^a_i, \forall i\in I,\\
+# x_i \leq y^b_i, \forall i\in I\\
 # ```
 
 
