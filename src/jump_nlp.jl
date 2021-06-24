@@ -108,17 +108,17 @@ end
 #     return nothing
 # end
 
-# TODO: dela with param
-function JuMP._parse_NL_expr_runtime(
-    m::JuMP.Model,
-    x::JuMP.NonlinearParameter,
-    tape,
-    parent,
-    values,
-)
-    push!(tape, JuMP.NodeData(JuMP.PARAMETER, x.index, parent))
-    return nothing
-end
+# TODO: deal with param
+# function JuMP._parse_NL_expr_runtime(
+#     m::JuMP.Model,
+#     x::JuMP.NonlinearParameter,
+#     tape,
+#     parent,
+#     values,
+# )
+#     push!(tape, JuMP.NodeData(JuMP.PARAMETER, x.index, parent))
+#     return nothing
+# end
 
 # function JuMP._parse_NL_expr_runtime(
 #     m::Model,
