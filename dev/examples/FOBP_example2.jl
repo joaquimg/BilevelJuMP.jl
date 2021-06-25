@@ -1,13 +1,29 @@
 # # Foundations of Bilevel Programming: Example 2
-
-# TODO: add a link to the book  #src
-
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
-# Dempe, Chapter 3.2, Page 25.
+# Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
+# Moving the bound on x to lower level
 
-# TODO:                                                             #src
-#   We should include the math formulation here, or at least some   #src
-#   description of the problem.                                     #src
+
+
+# Model of the problem
+# First level
+# ```math
+# \min 3x + y,\\
+# \notag s.t.\\
+# x \leq 5,\\ 
+# y \leq 8,\\
+# y \geq 0,\\
+# ```
+# Second level
+# ```
+# \min -x,\\
+# \notag s.t.\\
+# x + y <= 8,\\
+# 4x + y >= 8,\\
+# 2x + y <= 13,\\
+# 2x - y <= 0,\\
+# x <= 5\\
+# ```
 
 using BilevelJuMP
 using Ipopt
@@ -16,20 +32,16 @@ using Test
 
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
-# First we need to create all of the variables in the upper and lower problems:
-
-@variable(Lower(model), x, start = 3.5 * 8 / 15)
-
-#-
+# First we need to define all of the variables in the upper and lower problems:
 
 @variable(Upper(model), y, start = 8 / 15)
+@variable(Lower(model), x, start = 3.5 * 8 / 15)
 
 # Then we can add the objective and constraints of the upper problem:
-
+# Upper level objective function
 @objective(Upper(model), Min, 3x + y)
 
-#-
-
+# Upper level constraints
 @constraints(Upper(model), begin
     u1, x <= 5
     u2, y <= 8
@@ -37,11 +49,10 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 end)
 
 # Followed by the objective and constraints of the lower problem:
-
+# Lower level objective function
 @objective(Lower(model), Min, -x)
 
-#-
-
+# Lower level constraints
 @constraint(Lower(model), l1,  x +  y <= 8)
 @constraint(Lower(model), l2, 4x +  y >= 8)
 @constraint(Lower(model), l3, 2x +  y <= 13)
@@ -73,7 +84,7 @@ BilevelJuMP.set_primal_upper_bound_hint(y, 9)
 
 optimize!(model)
 
-#-
+# Automated testing
 
 @test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-6
 @test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-6
