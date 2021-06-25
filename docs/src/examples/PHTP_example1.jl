@@ -9,8 +9,13 @@
 # ```math
 # \min (x-5)^2+(2y+1)^2,\\
 # \notag s.t.\\
+<<<<<<< HEAD
 # x \geq 0,\\
 # y \geq 0,\\
+=======
+# x \qeq 0,\\
+# y \qeq 0,\\
+>>>>>>> 4c4473548e37dbbdce4d406b7117bc059acddb63
 # ```
 # Second level
 # ```math
