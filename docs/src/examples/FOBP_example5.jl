@@ -41,7 +41,7 @@ atol = 1e-3
 # Then we can add the objective and constraints of the upper problem:
 
 # Upper level objecive function
-@objective(Upper(model), Min, 0)
+@objective(Upper(model), Min, 0.0)
 
 
 # Followed by the objective and constraints of the lower problem:
@@ -63,4 +63,3 @@ atol = 1e-3
 optimize!(model)
 primal_status(model)
 termination_status(model)
-
