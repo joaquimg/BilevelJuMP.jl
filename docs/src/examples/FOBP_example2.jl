@@ -15,7 +15,7 @@
 # y \geq 0,\\
 # ```
 # Second level
-# ```
+# ```math
 # \min -x,\\
 # \notag s.t.\\
 # x + y <= 8,\\
