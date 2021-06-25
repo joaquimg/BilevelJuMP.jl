@@ -8,3 +8,4 @@ docs/src/examples/*.md
 .DS_Store
 */.DS_Store
 */*/.DS_Store
+docs/src/.DS_Store
