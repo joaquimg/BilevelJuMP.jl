@@ -1,4 +1,4 @@
-# # Foundations of Bilevel Programming: Example 4
+# # Example 4
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 5.1, Page 127. [url](https://www.springer.com/gp/book/9781402006319)
 
