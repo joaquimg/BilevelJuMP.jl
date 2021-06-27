@@ -1,4 +1,4 @@
-# # Foundations of Bilevel Programming: Example 9
+# # Example 9
 # This example is from the book Investment in Electricity Generation and Transmission. [url](https://www.springer.com/gp/book/9783319294995)
 
 # Bold point(s): using Dualof() in case we have information on the dual variable(s) of the lower level problem. 
@@ -22,7 +22,7 @@
 # y[i] \geq 0, \forall i \in I\\
 # ```
 
-# Model with doul variable
+# Model with dual variable
 # ```math
 # \min 40000x + 8760*(10y_1-\lambda * y_1),\\
 # \notag s.t.\\
