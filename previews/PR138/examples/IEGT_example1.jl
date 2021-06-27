@@ -7,7 +7,7 @@
 # Model of the problem
 # First level
 # ```math
-# \min 40000x + 8760*(10y_1-\lambda * y_1),\\
+# \min 40000x,\\
 # \notag s.t.\\
 # 0 \leq x \leq 250,\\
 # ```
@@ -16,6 +16,24 @@
 # \min 10y_1 + 12y_2 + 15y_3,\\
 # \notag s.t.\\
 # y_1 + y_2 + y_3 = 200,\\
+# y_1 \leq x,\\
+# y_2 \leq 150,\\
+# y_3 \leq 100,\\
+# y[i] \geq 0, \forall i \in I\\
+# ```
+
+# Model with doul variable
+# ```math
+# \min 40000x + 8760*(10y_1-\lambda * y_1),\\
+# \notag s.t.\\
+# 0 \leq x \leq 250,\\
+# \lambda\(y_1 + y_2 + y_3 - 200\) = 0,\\
+# 0 \leq \lambda \leq 20,\\
+# ```
+# Second level
+# ```math
+# \min 10y_1 + 12y_2 + 15y_3,\\
+# \notag s.t.\\
 # y_1 \leq x,\\
 # y_2 \leq 150,\\
 # y_3 \leq 100,\\
