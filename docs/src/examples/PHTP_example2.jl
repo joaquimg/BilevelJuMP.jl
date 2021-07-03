@@ -1,4 +1,4 @@
-# # Foundations of Bilevel Programming: Example 7
+# # Example 7
 # This example is from the book Princeton Handbook of Test Problems in Local and Global Optimization
 # Dempe, Chapter 9.3.2 -parg 223 [url](https://www.springer.com/gp/book/9780792358015)
 
@@ -29,8 +29,6 @@ using Test
 
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
-# Global variables
-atol = 1e-3
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -52,28 +50,23 @@ atol = 1e-3
 @constraint(Upper(model), [i=1:2], y[i] >= -10)
 @constraint(Upper(model), [i=1:2], y[i] <= 20)
 
-
-
 # Followed by the objective and constraints of the lower problem:
 
 # Lower objective function
-@objective(Lower(model), Min,(-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
+@objective(Lower(model), Min, (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
 
 # Lower constraints
 @constraint(Lower(model),  [i=1:2],- x[i] + 2y[i] <= -10)
 @constraint(Lower(model), [i=1:2], y[i] >= -10)
 @constraint(Lower(model), [i=1:2], y[i] <= 20)
 
-# Initial Starting conditions  #src
-
-# Now we can solve the problem and verify the solution again that reported by
-# Dempe.
+# Now we can solve the problem and verify the solution again that reported by the book
 
 optimize!(model)
 primal_status(model)
 termination_status(model)
 
 # Auto testing
-@test objective_value(model) ≈ 0 atol=atol
+@test objective_value(model) ≈ 0 atol=1e-3
 sol = vcat(value.(x), value.(y))
-@test sol ≈ [0 ; 0 ; -10; -10] || sol ≈ [0 ; 30; -10; 10] #atol=atol
+@test sol ≈ [0 ; 0 ; -10; -10] || sol ≈ [0 ; 30; -10; 10] #atol=1e-3
