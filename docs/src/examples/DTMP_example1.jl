@@ -1,13 +1,13 @@
-# # Foundations of Bilevel Programming: Example 8
+# # Example 8
 # This example is from the book Decomposition Techniques in Mathematical Programming
 # Chapter 7.2, page 281, [url](https://www.springer.com/gp/book/9783540276852)
 
-# Bold point: using upperonly and loweronly, using equality in constraints
+# Bold points in example: Here, we are using upperonly, loweronly for defining variables. Also, we are using equality in constraints. Using upperonly/loweronly will create variables that will appear in the proper model. By this definition, we might have slightly smaller reformulated models in the algorithm. 
+
 
 # Model of the problem
 # First level
 # ```math
-
 # \min -x + 4y + z,\\
 # \notag s.t.\\
 # y + 2x + z \leq 9,\\
@@ -24,16 +24,12 @@
 # x = 1.\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
-
-# Global variables
-atol = 1e-3
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -73,7 +69,7 @@ atol = 1e-3
 optimize!(model)
 
 # Auto testing
-@test value(x) ≈ 1 atol=atol
-@test value(y) ≈ 6 atol=atol
-@test value(z) ≈ 1 atol=atol
-@test value(w) ≈ 1 atol=atol
+@test value(x) ≈ 1 atol=1e-2
+@test value(y) ≈ 6 atol=1e-2
+@test value(z) ≈ 1 atol=1e-2
+@test value(w) ≈ 1 atol=1e-2
