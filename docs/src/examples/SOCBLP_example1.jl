@@ -20,9 +20,13 @@
 # 2y_1 - 2y_2 \leq  12,\\
 # y_1 \geq 0,\\
 # y_2 \geq 0,\\
-# y in K_2\\
+# y \in K^2\\
 # ```
 
+# Here, ``K^2`` is second order cone and it represents:
+# ```math
+# y \in \{y=(y_1,y_2)\in \mathbb{R}\times \mathbb{R}:y_1 \geq ||y_2||_2\}\\
+# ```
 
 using BilevelJuMP
 using Ipopt
@@ -35,7 +39,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 # Upper level variables
 @variable(Upper(model), x)
-    
+
 
 #Lower level variables
 @variable(Lower(model), y[i=1:2])
