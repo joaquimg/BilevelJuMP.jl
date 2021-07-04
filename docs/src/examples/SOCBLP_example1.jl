@@ -33,7 +33,9 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+
+
+model = BilevelModel(() -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer()), mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 
