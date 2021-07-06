@@ -1,4 +1,4 @@
-# # Foundations of Bilevel Programming: Example 2
+# # Example 2
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
 # Moving the bound on x to lower level
