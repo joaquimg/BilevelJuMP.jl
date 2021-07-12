@@ -88,10 +88,10 @@ Number of Iterations....: 34
 
                                    (scaled)                 (unscaled)
 Objective...............:   2.3999999455996644e+01    2.3999999455996644e+01
-Dual infeasibility......:   7.4596069373886107e-12    7.4596069373886107e-12
+Dual infeasibility......:   7.4578336764811025e-12    7.4578336764811025e-12
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   2.5133913251322196e-09    2.5133913251322196e-09
-Overall NLP error.......:   2.5133913251322196e-09    2.5133913251322196e-09
+Complementarity.........:   2.5133913974248273e-09    2.5133913974248273e-09
+Overall NLP error.......:   2.5133913974248273e-09    2.5133913974248273e-09
 
 
 Number of objective function evaluations             = 41
@@ -101,7 +101,7 @@ Number of inequality constraint evaluations          = 41
 Number of equality constraint Jacobian evaluations   = 35
 Number of inequality constraint Jacobian evaluations = 35
 Number of Lagrangian Hessian evaluations             = 34
-Total CPU secs in IPOPT (w/o function evaluations)   =      0.021
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.020
 Total CPU secs in NLP function evaluations           =      0.001
 
 EXIT: Optimal Solution Found.</pre><p>Auto testing</p><pre><code class="language-julia">@test value(x) ≈ 1 atol=1e-2
