@@ -6,12 +6,14 @@ using Test
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 @variable(Upper(model), y, start = 8 / 15)
+@variable(Upper(model), z, start = 8 / 15)
 @variable(Lower(model), x, start = 3.5 * 8 / 15)
-@objective(Upper(model), Min, 3x + y)
+@objective(Upper(model), Min, 3x + y + z)
 @constraints(Upper(model), begin
     u1, x <= 5
     u2, y <= 8
     u3, y >= 0
+    u4, z >=0
 end)
 
 @objective(Lower(model), Min, -x)
@@ -34,42 +36,39 @@ end
 function _build_single_model(
     upper::MOI.ModelLike, 
     lower::MOI.ModelLike, 
+
     # A dictionary that maps variables in the upper to variables in the lower
-    linkUL::Dict{MOI.VariableIndex,MOI.VariableIndex},
-    linkLU::Dict{MOI.VariableIndex,MOI.VariableIndex}
+    upper_to_lower_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
+    lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex}
 )
     # A new model to build
-    model = MOI.Utilities.Model{Float64}()
+    #model = MOI.Utilities.Model{Float64}()
+    model = MOI.FileFormats.MPS.Model()
+    
     # Create a copy of the upper model
     upper_to_model_link = MOI.copy_to(model, upper)
-    upper_variables = [upper_to_model_link[k] for k in keys(upper_to_lower_link)]
-    lower_varibales = [index_map[k] for k in values(linkLU)]
-    # upper only variables 
+    #upper_variables = [upper_to_model_link[k] for k in keys(upper_to_lower_link)]
+    lower_variables = [upper_to_model_link[k] for k in values(lower_to_upper_link)]
+
+    lower_constraints = Any[]
+    for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
+        for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
+            lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
+            set = MOI.get(lower, MOI.ConstraintSet(), ci)
+            lower_f = MOI.Utilities.map_indices(lower_f) do x
+                return upper_to_model_link[lower_to_upper_link[x]]
+            end
+            new_ci = MOI.add_constraint(model, model_f, set)
+            push!(lower_constraints, new_ci)
+        end
+    end
     
-    #print(index_map)
-
-    # objective function of the lower level
-
-    # constraint of the lower level
-    # variable of the lower level
-    # variable of the upper level
-
-
-   # tp_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType()) 
-   # @assert tp_primal_obj !== nothing 
     lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}()) 
-    MOI.Utilities.map_indices(lower_primal_obj) do x
+    lower_objective = MOI.Utilities.map_indices(lower_primal_obj) do x
         return upper_to_model_link[lower_to_upper_link[x]]
     end
-    # deepcopy and delete dual obj 
-    #     MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{MOI.ScalarAffineFunction}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
 
-
-    # TODO ... add the lower problem to `model`
-    return model#, upper_variables, lower_variables, lower_objective
-    #return model, upper_variables#, lower_variables, lower_objective
-    #return model, upper_variables, lower_variables#, lower_objective
-    #return model, upper_variables, lower_variables, lower_objective
+    return model, lower_variables, lower_objective, lower_constraints
 end
 
 # optimize!(model)
@@ -94,6 +93,9 @@ for x in List_Var
     println(MOI.get(new_model, MOI.VariableName(), x))  
     println(MOI.is_valid(new_model, MOI.ConstraintIndex{MOI.SingleVariable, MOI.Integer}(x.value)))   
 end
+
+
+
 
 for ci in MOI.get(new_model, MOI.ListOfConstraintIndices{MOI.SingleVariable, MOI.Integer}())
     MOI.VariableIndex(ci.value)
