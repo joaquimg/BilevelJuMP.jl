@@ -59,7 +59,7 @@ function _build_single_model(
    # @assert tp_primal_obj !== nothing 
     lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}()) 
     MOI.Utilities.map_indices(lower_primal_obj) do x
-        return uppertomodel[linkLU[x]]
+        return upper_to_model_link[lower_to_upper_link[x]]
     end
     # deepcopy and delete dual obj 
     #     MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{MOI.ScalarAffineFunction}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
