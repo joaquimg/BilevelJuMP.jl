@@ -42,7 +42,7 @@ function _build_single_model(
     model = MOI.Utilities.Model{Float64}()
     # Create a copy of the upper model
     upper_to_model_link = MOI.copy_to(model, upper)
-    upper_varibales = [index_map[k] for k in keys(linkUL)]
+    upper_variables = [upper_to_model_link[k] for k in keys(upper_to_lower_link)]
     lower_varibales = [index_map[k] for k in values(linkLU)]
     # upper only variables 
     
