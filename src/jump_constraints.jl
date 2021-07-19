@@ -352,7 +352,6 @@ function JuMP.delete(mod::BilevelModel, cref::BilevelConstraintRef)
     @assert model === mod
     idx = cref.index
     delete!(model.constraints, idx)
-    delete!(model.connames, idx)
     model.need_rebuild_names_ctr = true
     delete!(model.ctr_level, idx)
     if haskey(model.ctr_upper, idx)

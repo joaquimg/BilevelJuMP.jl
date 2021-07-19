@@ -89,7 +89,6 @@ function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
     model = vref.model
     idx = vref.idx
     delete!(model.variables, idx)
-    delete!(model.varnames, idx)
     model.need_rebuild_names_var = true
     delete!(model.var_level, idx)
     delete!(model.var_info, idx)
