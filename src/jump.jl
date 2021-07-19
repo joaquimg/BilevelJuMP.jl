@@ -26,11 +26,6 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # TODO remove and rely on MOI
     variables::Dict{Int, JuMP.AbstractVariable}     # Map varidx -> variable
 
-    # storage for variable names
-    # TODO remove and rely on MOI
-    varnames::Dict{Int, String}                     # Map varidx -> name
-    varnames_rev::Dict{String, Int}                 # Map varidx -> name
-
     # holds the variable level: BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
     var_level::Dict{Int, Level}
 
@@ -77,11 +72,6 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # holds JuMP.(Scalar/Vector)Constraint{F,S}
     # only used in: JuMP.constraint_object
     constraints::Dict{Int, JuMP.AbstractConstraint} # Map conidx -> variable
-
-    # storage for constraint names
-    # TODO remove and rely on MOI
-    connames::Dict{Int, String}                     # Map varidx -> name
-    connames_rev::Dict{String, Int}                 # Map varidx -> name
 
     # holds the variable level: LOWER_ONLY UPPER_ONLY
     ctr_level::Dict{Int, Level}
@@ -145,7 +135,6 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
             # var
             0, Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, String}(),Dict{String, Int}(),
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractVariable}(), Dict{Int, JuMP.AbstractVariable}(),
             Dict{Int, VariableInfo}(),
             nothing,
@@ -159,7 +148,6 @@ mutable struct BilevelModel <: AbstractBilevelModel
             Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
             #ctr
             0, Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, String}(),Dict{String, Int}(),
             Dict{Int, Level}(), Dict{Int, JuMP.AbstractConstraint}(), Dict{Int, JuMP.AbstractConstraint}(),
             Dict{Int, ConstraintInfo}(),
             nothing,
@@ -305,29 +293,85 @@ function index2(d::Dict)
 end
 
 # Names
-JuMP.name(vref::BilevelVariableRef) = vref.model.varnames[vref.idx]
-function JuMP.set_name(vref::BilevelVariableRef, name::String)
-    vref.model.varnames[vref.idx] = name
+function JuMP.name(vref::BilevelVariableRef)
+    level = vref.model.var_level[vref.idx]
+    var = if in_lower(level)
+        vref.model.var_lower[vref.idx]
+    else
+        vref.model.var_upper[vref.idx]
+    end
+    return JuMP.name(var)
 end
-JuMP.name(cref::BilevelConstraintRef) = cref.model.connames[cref.index]
-function JuMP.set_name(cref::BilevelConstraintRef, name::String)
-    cref.model.connames[cref.index] = name
+function JuMP.set_name(vref::BilevelVariableRef, name::String)
+    level = vref.model.var_level[vref.idx]
+    if in_lower(level)
+        var = vref.model.var_lower[vref.idx]
+        JuMP.set_name(var, name)
+    end
+    if in_upper(level)
+        var = vref.model.var_upper[vref.idx]
+        JuMP.set_name(var, name)
+    end
+    return
 end
 function JuMP.variable_by_name(model::BilevelModel, name::String)
-    if model.need_rebuild_names_var
-        model.varnames_rev = Dict(v => k for (k,v) in model.varnames)
+    var = JuMP.variable_by_name(model.upper, name)
+    if var !== nothing
+        if model.var_upper_rev === nothing
+            build_reverse_var_map!(Upper(model))
+        end
+        return model.var_upper_rev[var]
     end
-    idx = model.varnames_rev[name]
-    return BilevelVariableRef(model, idx)
+    var = JuMP.variable_by_name(model.lower, name)
+    if var !== nothing
+        if model.var_lower_rev === nothing
+            build_reverse_var_map!(Lower(model))
+        end
+        return model.var_lower_rev[var]
+    end
+    return nothing
+end
+function JuMP.name(cref::BilevelConstraintRef)
+    level = cref.model.ctr_level[cref.index]
+    ctr = if in_lower(level)
+        cref.model.ctr_lower[cref.index]
+    else
+        cref.model.ctr_upper[cref.index]
+    end
+    return JuMP.name(ctr)
+end
+function JuMP.set_name(cref::BilevelConstraintRef, name::String)
+    level = cref.model.ctr_level[cref.index]
+    if in_lower(level)
+        ctr = cref.model.ctr_lower[cref.index]
+        JuMP.set_name(ctr, name)
+    end
+    if in_upper(level)
+        ctr = cref.model.ctr_upper[cref.index]
+        JuMP.set_name(ctr, name)
+    end
+    return
 end
 function JuMP.constraint_by_name(model::BilevelModel, name::String)
-    if model.need_rebuild_names_ctr
-        model.connames_rev = Dict(v => k for (k,v) in model.connames)
+    ctr = JuMP.constraint_by_name(model.upper, name)
+    if ctr !== nothing
+        if model.ctr_upper_rev === nothing
+            build_reverse_ctr_map!(Upper(model))
+        end
+        return model.ctr_upper_rev[ctr]
     end
-    idx = model.connames_rev[name]
-    return BilevelConstraintRef(model, idx)
+    ctr = JuMP.constraint_by_name(model.lower, name)
+    if ctr !== nothing
+        if model.ctr_lower_rev === nothing
+            build_reverse_ctr_map!(Lower(model))
+        end
+        return model.ctr_lower_rev[ctr]
+    end
+    return nothing
 end
 
+
+# Statuses
 function JuMP.primal_status(model::BilevelModel)
     _check_solver(model)
     return MOI.get(model.solver, MOI.PrimalStatus())
@@ -335,8 +379,6 @@ end
 function JuMP.primal_status(model::InnerBilevelModel)
     return JuMP.primal_status(model.m)
 end
-
-# Statuses
 
 JuMP.dual_status(::BilevelModel) = error(
     "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.")
