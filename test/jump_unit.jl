@@ -178,6 +178,9 @@ function jump_display()
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
+    @variable(LowerOnly(model), z)
+
+    @constraint(Lower(model), c0, x >= -1)
 
     @objective(Upper(model), Min, -4x -3y)
 
@@ -204,8 +207,10 @@ function jump_display()
     display(Lower(model))
     println()
 
-    xx  = JuMP.variable_by_name(model, "x")
-    cc2 = JuMP.constraint_by_name(model, "c2")
+    @test JuMP.variable_by_name(model, "x") == x
+    @test JuMP.variable_by_name(model, "z") == z
+    @test JuMP.constraint_by_name(model, "c2") == c2
+    @test JuMP.constraint_by_name(model, "c0") == c0
 
     # set_optimizer(model, MOIU.Model{Float64})
     # display(model)
