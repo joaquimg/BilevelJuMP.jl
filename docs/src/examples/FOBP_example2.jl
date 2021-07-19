@@ -86,15 +86,15 @@ optimize!(model)
 
 # Automated testing
 
-@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-6
-@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-6
-@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol=1e-6
-@test value(x) ≈ 3.5 * 8 / 15 atol=1e-6
-@test value(y) ≈ 8 / 15 atol=1e-6
-@test value(u1) ≈ 3.5 * 8 / 15 atol=1e-6
-@test value(l1) ≈ 4.5 * 8 / 15 atol=1e-6
-@test dual(l1) ≈ [0] atol=1e-6
-@test dual(l3) ≈ [0] atol=1e-6
+@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-4
+@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-4
+@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol=1e-4
+@test value(x) ≈ 3.5 * 8 / 15 atol=1e-4
+@test value(y) ≈ 8 / 15 atol=1e-4
+@test value(u1) ≈ 3.5 * 8 / 15 atol=1e-4
+@test value(l1) ≈ 4.5 * 8 / 15 atol=1e-4
+@test dual(l1) ≈ [0] atol=1e-4
+@test dual(l3) ≈ [0] atol=1e-4
 
 # TODO: why are these commented out?    #src
 # @test dual(l2) #≈ [0] atol=atol       #src
