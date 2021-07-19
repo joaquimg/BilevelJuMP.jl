@@ -57,8 +57,8 @@ JuMP.variable_type(::AbstractBilevelModel) = BilevelVariableRef
 # add in BOTH levels
 function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, name::String="")
     m = bilevel_model(inner)
-    m.nextvaridx += 1
-    vref = BilevelVariableRef(m, m.nextvaridx, BOTH)
+    m.last_variable_index += 1
+    vref = BilevelVariableRef(m, m.last_variable_index, BOTH)
     # break info so that bounds go to correct level
     var_upper, var_lower = split_variable(inner, v)
     v_upper = JuMP.add_variable(m.upper, var_upper, name)
@@ -74,11 +74,12 @@ function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, n
 end
 function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable, name::String="")
     m = bilevel_model(single)
-    m.nextvaridx += 1
-    vref = BilevelVariableRef(m, m.nextvaridx, level(single))
+    m.last_variable_index += 1
+    vref = BilevelVariableRef(m, m.last_variable_index, level(single))
     v_level = JuMP.add_variable(mylevel_model(single), v, name)
     mylevel_var_list(single)[vref.idx] = v_level
     m.var_level[vref.idx] = level(single)
+    push_single_level_variable!(single, v_level)
     m.variables[vref.idx] = v
     JuMP.set_name(vref, name)
     m.var_info[vref.idx] = empty_info(v)
@@ -95,6 +96,7 @@ function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
     if haskey(model.var_upper, idx)
         v_up = model.var_upper[idx]
         delete!(model.var_upper, idx)
+        delete!(model.upper_only, v_up)
         delete!(model.upper_to_lower_link, v_up)
         delete!(model.upper_var_to_lower_ctr_link, v_up)
         delete!(model.link, v_up)
@@ -103,6 +105,7 @@ function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
     if haskey(model.var_lower, idx)
         v_lo = model.var_lower[idx]
         delete!(model.var_lower, idx)
+        delete!(model.lower_only, v_lo)
         delete!(model.lower_to_upper_link, v_lo)
         JuMP.delete(model.lower, v_lo)
     end
