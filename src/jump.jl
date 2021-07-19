@@ -9,38 +9,94 @@ Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
 
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
+    # JuMP models that hold data for each of the two levels
+    # constraints and objectives only appear in the named level
+    # (Upper/Lower)Only variable also appear only on the named level
+    # other variables (linking from both sides) appear on both
+    # linking variable must be differentiated by other methods
     upper::JuMP.AbstractModel
     lower::JuMP.AbstractModel
 
     # Model data
-    nextvaridx::Int                                 # Next variable index is nextvaridx+1
+    # Integer index of the last variable added (for indexing BilevelVariableRef's)
+    last_variable_index::Int
+    # Maps indexes to JuMP.ScalarVariable
+    # structure that holds basic data for variables
+    # such as start values, bounds, integrality
+    # TODO remove and rely on MOI
     variables::Dict{Int, JuMP.AbstractVariable}     # Map varidx -> variable
+
+    # storage for variable names
+    # TODO remove and rely on MOI
     varnames::Dict{Int, String}                     # Map varidx -> name
     varnames_rev::Dict{String, Int}                 # Map varidx -> name
+
+    # holds the variable level: BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
     var_level::Dict{Int, Level}
+
+    # maps the BilevelVariableRef index
+    # to JuMP variables of the correct level
+    # variable that appear in both levels are inboth dicts
     var_upper::Dict{Int, JuMP.AbstractVariableRef}
-    var_lower::Dict{Int, JuMP.AbstractVariableRef} #
+    var_lower::Dict{Int, JuMP.AbstractVariableRef}
+
+    # additional info for variables such as bound hints
+    # TODO merge with `var_level` and `variables`
     var_info::Dict{Int, VariableInfo}
-    var_upper_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}} # bilevel ref no defined
-    var_lower_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}} # bilevel ref no defined
+
+    # maps JuMP.VariableRef to BilevelVariableRef
+    # built upon necessity for getting contraints and functions
+    var_upper_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
+    var_lower_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
+
+    # JuMP.VariableRef of variables from named level that are NOT linking
+    upper_only::Set{JuMP.AbstractVariableRef}
+    lower_only::Set{JuMP.AbstractVariableRef}
 
     # upper level decisions that are "parameters" of the second level
+    # keys are *decision* variables from the upper level
+    # values are *parameter* variables from the lower level (linked to the keys)
     upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
+    # keys are *decision* variables from the lower level
+    # values are *parameter* variables from the upper level (linked to the keys)
     lower_to_upper_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
+    # keys are upper level variables (representing lower level dual variables)
+    # values are lower level constraints
     upper_var_to_lower_ctr_link::Dict{JuMP.AbstractVariableRef, JuMP.ConstraintRef}
     # joint link
+    # for all variables that appear in both models
+    # keys are upper indices and values are lower indices
+    # same as: merge(upper_to_lower_link, reverse(lower_to_upper_link))
     link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
 
-    nextconidx::Int                                 # Next constraint index is nextconidx+1
+    # Integer index of the last constraint added (for indexing BilevelConstraintRef's)
+    nextconidx::Int
+
+    # holds JuMP.(Scalar/Vector)Constraint{F,S}
+    # only used in: JuMP.constraint_object
     constraints::Dict{Int, JuMP.AbstractConstraint} # Map conidx -> variable
+
+    # storage for constraint names
+    # TODO remove and rely on MOI
     connames::Dict{Int, String}                     # Map varidx -> name
     connames_rev::Dict{String, Int}                 # Map varidx -> name
+
+    # holds the variable level: LOWER_ONLY UPPER_ONLY
     ctr_level::Dict{Int, Level}
+
+    # maps the BilevelConstraintRef index
+    # to JuMP ConstraintRef of the correct level
     ctr_upper::Dict{Int, JuMP.ConstraintRef}
     ctr_lower::Dict{Int, JuMP.ConstraintRef}
+
+    # additional info for constraints such as bound hints and start values
+    # TODO merge with `ctr_level` and `constraints`
     ctr_info::Dict{Int, ConstraintInfo}
+
+    # maps JuMP.ConstraintRef to BilevelConstraintRef
+    # built upon necessity for getting contraints and functions
     ctr_upper_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
     ctr_lower_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
 
@@ -48,21 +104,37 @@ mutable struct BilevelModel <: AbstractBilevelModel
     need_rebuild::Bool
     need_rebuild_names_ctr::Bool
     need_rebuild_names_var::Bool
+
+    #
     solver#::MOI.ModelLike
     mode
+
+    # maps for MPEC based solution methods
+    # from upper level JuMP.index(JuMP.VariableRef) = (MOI.VI)
+    # to mpec indices
     upper_to_sblm
+    # from lower MOI indices
+    # to mpec indices
     lower_to_sblm
+    # from lower dual MOI indices
+    # to mpec indices
     lower_dual_to_sblm
+    # from mped indices to solver indices
     sblm_to_solver
+    # lower primal to dual map
+    # to obtain dual variables from primal constraints
     lower_primal_dual_map
 
+    # results from opt process
     solve_time::Float64
     build_time::Float64
 
+    # BilevelModel model attributes
     copy_names::Bool
     copy_names_to_solver::Bool
     pass_start::Bool
 
+    # for completing the JuMP.Model API
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
@@ -79,7 +151,10 @@ mutable struct BilevelModel <: AbstractBilevelModel
             nothing,
             nothing,
             # links
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(), Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
+            Set{JuMP.AbstractVariableRef}(),
+            Set{JuMP.AbstractVariableRef}(),
+            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
             Dict{JuMP.AbstractVariable, JuMP.ConstraintRef}(),
             Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
             #ctr
@@ -184,6 +259,12 @@ mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 in_upper(l::Level) = l == BOTH || l == UPPER_ONLY || l == DUAL_OF_LOWER
 in_lower(l::Level) = l == BOTH || l == LOWER_ONLY
 
+function push_single_level_variable!(m::LowerOnlyModel, vref::JuMP.AbstractVariableRef)
+    push!(bilevel_model(m).lower_only, vref)
+end
+function push_single_level_variable!(m::UpperOnlyModel, vref::JuMP.AbstractVariableRef)
+    push!(bilevel_model(m).upper_only, vref)
+end
 #### Model ####
 
 # Variables
@@ -206,7 +287,7 @@ const BilevelConstraintRef = JuMP.ConstraintRef{BilevelModel, Int}#, Shape <: Ab
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
 JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel_model(m))
 
-function JuMP.index(d::Dict)
+function convert_indices(d::Dict)
     ret = Dict{VI,VI}()
     # sizehint!(ret, length(d))
     for (k,v) in d
@@ -396,7 +477,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     moi_upper = JuMP.index.(
         collect(values(model.upper_to_lower_link)))
-    moi_link = JuMP.index(model.link)
+    moi_link = convert_indices(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
     # build bound for FortunyAmatMcCarlMode

@@ -197,8 +197,8 @@ end
 function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name::String="")
     # TODO vector version
     m = bilevel_model(inner)
-    m.nextvaridx += 1
-    vref = BilevelVariableRef(m, m.nextvaridx, DUAL_OF_LOWER)
+    m.last_variable_index += 1
+    vref = BilevelVariableRef(m, m.last_variable_index, DUAL_OF_LOWER)
     v_upper = JuMP.add_variable(m.upper, JuMP.ScalarVariable(dual_info.info), name)
     m.var_upper[vref.idx] = v_upper
     m.var_level[vref.idx] = DUAL_OF_LOWER
