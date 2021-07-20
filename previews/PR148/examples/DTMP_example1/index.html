@@ -82,16 +82,16 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   31  2.4000150e+01 0.00e+00 1.24e-07  -3.8 7.42e-09    -  1.00e+00 1.00e+00h  1
   32  2.4000000e+01 1.11e-16 3.40e+01  -8.6 3.01e-05    -  9.99e-01 1.00e+00f  1
   33  2.3999999e+01 0.00e+00 2.04e-07  -8.6 9.09e-08    -  1.00e+00 1.00e+00f  1
-  34  2.3999999e+01 0.00e+00 7.46e-12  -8.6 5.50e-10    -  1.00e+00 1.00e+00f  1
+  34  2.3999999e+01 0.00e+00 7.45e-12  -8.6 5.50e-10    -  1.00e+00 1.00e+00f  1
 
 Number of Iterations....: 34
 
                                    (scaled)                 (unscaled)
-Objective...............:   2.3999999455996647e+01    2.3999999455996647e+01
-Dual infeasibility......:   7.4577875755218081e-12    7.4577875755218081e-12
+Objective...............:   2.3999999455996640e+01    2.3999999455996640e+01
+Dual infeasibility......:   7.4515560481230456e-12    7.4515560481230456e-12
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   2.5133913726708432e-09    2.5133913726708432e-09
-Overall NLP error.......:   2.5133913726708432e-09    2.5133913726708432e-09
+Complementarity.........:   2.5133913733272863e-09    2.5133913733272863e-09
+Overall NLP error.......:   2.5133913733272863e-09    2.5133913733272863e-09
 
 
 Number of objective function evaluations             = 41
@@ -101,10 +101,10 @@ Number of inequality constraint evaluations          = 41
 Number of equality constraint Jacobian evaluations   = 35
 Number of inequality constraint Jacobian evaluations = 35
 Number of Lagrangian Hessian evaluations             = 34
-Total CPU secs in IPOPT (w/o function evaluations)   =      0.027
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.018
 Total CPU secs in NLP function evaluations           =      0.001
 
 EXIT: Optimal Solution Found.</pre><p>Auto testing</p><pre><code class="language-julia">@test value(x) ≈ 1 atol=1e-2
 @test value(y) ≈ 6 atol=1e-2
 @test value(z) ≈ 1 atol=1e-2
-@test value(w) ≈ 1 atol=1e-2</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 July 2021 00:28">Tuesday 20 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@test value(w) ≈ 1 atol=1e-2</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 July 2021 01:10">Tuesday 20 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
