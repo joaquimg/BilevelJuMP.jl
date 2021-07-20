@@ -38,7 +38,7 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     blm.ctr_level[cref.index] = level(m)
     mylevel_ctr_list(m)[cref.index] = level_cref
     blm.constraints[cref.index] = c
-    blm.ctr_info[cref.index] = empty_info(c)
+    blm.ctr_info[cref.index] = empty_info(level(m), c)
     JuMP.set_name(cref, name)
     cref
 end
@@ -54,11 +54,11 @@ function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
     c.set::S
     c
 end
-function empty_info(c::JuMP.ScalarConstraint{F,S}) where {F,S}
-    return ConstraintInfo{Float64}()
+function empty_info(level, c::JuMP.ScalarConstraint{F,S}) where {F,S}
+    return BilevelConstraintInfo{Float64}(level)
 end
-function empty_info(c::JuMP.VectorConstraint{F,S}) where {F,S}
-    return ConstraintInfo{Vector{Float64}}(MOI.dimension(c.set))
+function empty_info(level, c::JuMP.VectorConstraint{F,S}) where {F,S}
+    return BilevelConstraintInfo{Vector{Float64}}(level, MOI.dimension(c.set))
 end
 
 function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where T<:Number
@@ -201,15 +201,11 @@ function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name:
     vref = BilevelVariableRef(m, m.last_variable_index, DUAL_OF_LOWER)
     v_upper = JuMP.add_variable(m.upper, JuMP.ScalarVariable(dual_info.info), name)
     m.var_upper[vref.idx] = v_upper
-    m.var_level[vref.idx] = DUAL_OF_LOWER
     m.upper_var_to_lower_ctr_link[v_upper] = m.ctr_lower[dual_info.ci.index] # TODO improve this
-    m.variables[vref.idx] = JuMP.ScalarVariable(dual_info.info)
+    # m.variables[vref.idx] = JuMP.ScalarVariable(dual_info.info)
+    m.var_info[vref.idx] = empty_info(DUAL_OF_LOWER)
     JuMP.set_name(vref, name)
-    m.var_info[vref.idx] = empty_info(dual_info)
     vref
-end
-function empty_info(::DualVariableInfo)
-    return VariableInfo()
 end
 
 function get_constrain_ref(vref::BilevelVariableRef)
@@ -352,7 +348,6 @@ function JuMP.delete(mod::BilevelModel, cref::BilevelConstraintRef)
     @assert model === mod
     idx = cref.index
     delete!(model.constraints, idx)
-    model.need_rebuild_names_ctr = true
     delete!(model.ctr_level, idx)
     if haskey(model.ctr_upper, idx)
         c_up = model.ctr_upper[idx]

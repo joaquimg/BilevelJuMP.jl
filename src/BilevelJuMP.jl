@@ -14,6 +14,8 @@ BilevelModel,
 Upper, Lower, UpperOnly, LowerOnly,
 DualOf, BilevelAffExpr, BilevelQuadExpr
 
+@enum Level LOWER_BOTH UPPER_BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
+
 include("moi.jl")
 include("moi_utilities.jl")
 
