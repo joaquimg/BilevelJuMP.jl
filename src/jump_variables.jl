@@ -57,6 +57,8 @@ function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, n
     set_link!(inner, v_upper, v_lower)
     m.var_info[vref.idx] = empty_info(level_both(inner))
     JuMP.set_name(vref, name)
+    m.var_upper_rev = nothing
+    m.var_lower_rev = nothing
     vref
 end
 function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable, name::String="")
@@ -68,6 +70,8 @@ function JuMP.add_variable(single::SingleBilevelModel, v::JuMP.AbstractVariable,
     push_single_level_variable!(single, v_level)
     m.var_info[vref.idx] = empty_info(level(single))
     JuMP.set_name(vref, name)
+    m.var_upper_rev = nothing
+    m.var_lower_rev = nothing
     vref
 end
 function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
@@ -90,6 +94,8 @@ function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
         delete!(model.lower_to_upper_link, v_lo)
         JuMP.delete(model.lower, v_lo)
     end
+    model.var_upper_rev = nothing
+    model.var_lower_rev = nothing
     return nothing
 end
 JuMP.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.var_info)

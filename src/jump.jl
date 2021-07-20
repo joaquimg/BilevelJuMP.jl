@@ -55,21 +55,12 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # Integer index of the last constraint added (for indexing BilevelConstraintRef's)
     nextconidx::Int
 
-    # holds JuMP.(Scalar/Vector)Constraint{F,S}
-    # only used in: JuMP.constraint_object
-    # TODO: remove
-    constraints::Dict{Int, JuMP.AbstractConstraint} # Map conidx -> variable
-
-    # holds the variable level: LOWER_ONLY UPPER_ONLY
-    ctr_level::Dict{Int, Level}
-
     # maps the BilevelConstraintRef index
     # to JuMP ConstraintRef of the correct level
     ctr_upper::Dict{Int, JuMP.ConstraintRef}
     ctr_lower::Dict{Int, JuMP.ConstraintRef}
 
     # additional info for constraints such as bound hints and start values
-    # TODO merge with `ctr_level`
     ctr_info::Dict{Int, BilevelConstraintInfo}
 
     # maps JuMP.ConstraintRef to BilevelConstraintRef
@@ -132,8 +123,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
 
             #ctr
-            0, Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, Level}(),
+            0,
             Dict{Int, JuMP.AbstractConstraint}(),
             Dict{Int, JuMP.AbstractConstraint}(),
             Dict{Int, BilevelConstraintInfo}(),
@@ -309,22 +299,18 @@ end
 function JuMP.variable_by_name(model::BilevelModel, name::String)
     var = JuMP.variable_by_name(model.upper, name)
     if var !== nothing
-        if model.var_upper_rev === nothing
-            build_reverse_var_map!(Upper(model))
-        end
+        build_reverse_var_map!(Upper(model))
         return model.var_upper_rev[var]
     end
     var = JuMP.variable_by_name(model.lower, name)
     if var !== nothing
-        if model.var_lower_rev === nothing
-            build_reverse_var_map!(Lower(model))
-        end
+        build_reverse_var_map!(Lower(model))
         return model.var_lower_rev[var]
     end
     return nothing
 end
 function JuMP.name(cref::BilevelConstraintRef)
-    level = cref.model.ctr_level[cref.index]
+    level = cref.model.ctr_info[cref.index].level
     ctr = if in_lower(level)
         cref.model.ctr_lower[cref.index]
     else
@@ -333,7 +319,7 @@ function JuMP.name(cref::BilevelConstraintRef)
     return JuMP.name(ctr)
 end
 function JuMP.set_name(cref::BilevelConstraintRef, name::String)
-    level = cref.model.ctr_level[cref.index]
+    level = cref.model.ctr_info[cref.index].level
     if in_lower(level)
         ctr = cref.model.ctr_lower[cref.index]
         JuMP.set_name(ctr, name)
@@ -398,18 +384,23 @@ replace_var_type(::Type{BilevelModel}) = JuMP.VariableRef
 replace_var_type(::Type{M}) where {M<:JuMP.AbstractModel} = BilevelVariableRef
 function build_reverse_var_map!(um::UpperModel)
     m = bilevel_model(um)
-    m.var_upper_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
-    for (idx, ref) in m.var_upper
-        m.var_upper_rev[ref] = BilevelVariableRef(m, idx)
+    if m.var_upper_rev === nothing
+        m.var_upper_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        for (idx, ref) in m.var_upper
+            m.var_upper_rev[ref] = BilevelVariableRef(m, idx)
+        end
     end
+    return
 end
 function build_reverse_var_map!(lm::LowerModel)
     m = bilevel_model(lm)
-    m.var_lower_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
-    for (idx, ref) in m.var_lower
-        m.var_lower_rev[ref] = BilevelVariableRef(m, idx)
+    if m.var_lower_rev === nothing
+        m.var_lower_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        for (idx, ref) in m.var_lower
+            m.var_lower_rev[ref] = BilevelVariableRef(m, idx)
+        end
     end
-    return nothing
+    return
 end
 get_reverse_var_map(m::UpperModel) = m.m.var_upper_rev
 get_reverse_var_map(m::LowerModel) = m.m.var_lower_rev
