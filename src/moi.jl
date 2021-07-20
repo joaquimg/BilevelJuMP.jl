@@ -22,35 +22,37 @@ const VECTOR_SETS = Union{
 }
 
 # dual variable info
-mutable struct ConstraintInfo{T<:Union{Float64, Vector{Float64}}}
+mutable struct BilevelConstraintInfo{T<:Union{Float64, Vector{Float64}}}
+    level::Level
     start::T
     upper::T
     lower::T
-    function ConstraintInfo{Float64}()
-        new(NaN, NaN, NaN)
+    function BilevelConstraintInfo{Float64}(level)
+        new(level, NaN, NaN, NaN)
     end
-    function ConstraintInfo{Vector{Float64}}(N::Integer)
-        new(fill(NaN, N), fill(NaN, N), fill(NaN, N))
+    function BilevelConstraintInfo{Vector{Float64}}(level, N::Integer)
+        new(level, fill(NaN, N), fill(NaN, N), fill(NaN, N))
     end
 end
 
-mutable struct VariableInfo{T<:Union{Float64, Vector{Float64}}}
+mutable struct BilevelVariableInfo{T<:Union{Float64, Vector{Float64}}}
+    level::Level
     upper::T
     lower::T
-    function VariableInfo()
-        new{Float64}(NaN, NaN)
+    function BilevelVariableInfo(level)
+        new{Float64}(level, NaN, NaN)
     end
-    function VariableInfo(N::Integer)
-        new{Vector{Float64}}(fill(NaN, N), fill(NaN, N))
+    function BilevelVariableInfo(level, N::Integer)
+        new{Vector{Float64}}(level, fill(NaN, N), fill(NaN, N))
     end
 end
-function VariableInfo(_info::ConstraintInfo{T}) where T
+function BilevelVariableInfo(_info::BilevelConstraintInfo{T}) where T
     if isa(_info.upper, Number)
-        info = VariableInfo()
+        info = BilevelVariableInfo(DUAL_OF_LOWER)
         info.lower = _info.lower
         info.upper = _info.upper
     else
-        info = VariableInfo(length(_info.upper))
+        info = BilevelVariableInfo(DUAL_OF_LOWER, length(_info.upper))
         info.lower .= _info.lower
         info.upper .= _info.upper
     end
@@ -105,17 +107,17 @@ end
 
 struct ComplementBoundCache
     # internal usage
-    upper::Dict{VI, VariableInfo}
-    lower::Dict{VI, VariableInfo}
-    ldual::Dict{CI, ConstraintInfo}
+    upper::Dict{VI, BilevelVariableInfo}
+    lower::Dict{VI, BilevelVariableInfo}
+    ldual::Dict{CI, BilevelConstraintInfo}
     # full map
-    map::Dict{VI, VariableInfo}
+    map::Dict{VI, BilevelVariableInfo}
     function ComplementBoundCache()
         return new(
-            Dict{VI, VariableInfo}(),
-            Dict{VI, VariableInfo}(),
-            Dict{CI, ConstraintInfo}(),
-            Dict{VI, VariableInfo}(),
+            Dict{VI, BilevelVariableInfo}(),
+            Dict{VI, BilevelVariableInfo}(),
+            Dict{CI, BilevelConstraintInfo}(),
+            Dict{VI, BilevelVariableInfo}(),
         )
     end
 end
@@ -192,7 +194,7 @@ function _build_bound_map!(mode::ComplementBoundCache,
     for (k,v) in mode.ldual
         vec = lower_primal_dual_map.primal_con_dual_var[k]#[1] # TODO check this scalar
         for var in vec
-            mode.map[lower_dual_idxmap[var]] = VariableInfo(v)
+            mode.map[lower_dual_idxmap[var]] = BilevelVariableInfo(v)
         end
     end
     return nothing
