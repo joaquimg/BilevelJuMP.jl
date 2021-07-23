@@ -8,7 +8,6 @@ using Dualization
 using LinearAlgebra
 using IntervalArithmetic
 
-
 export
 BilevelModel,
 Upper, Lower, UpperOnly, LowerOnly,
@@ -24,5 +23,6 @@ include("jump_objective.jl")
 include("jump_print.jl")
 include("jump_attributes.jl")
 include("jump_nlp.jl")
+include("jump_input.jl")
 
 end
