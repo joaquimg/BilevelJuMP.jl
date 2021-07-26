@@ -8,3 +8,4 @@ docs/src/examples/*.md
 docs/src/.DS_Store
 .DS_Store
 gurobi.log
+*.mps
