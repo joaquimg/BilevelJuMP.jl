@@ -1,3 +1,4 @@
+using MibS_jll
 
 function _build_single_model(
     model::BilevelModel,
@@ -60,4 +61,75 @@ function _build_single_model(
 
     return model, lower_variables, lower_objective, lower_constraints
 end
+
+
+
+"""
+    index_to_row_link(model::MOI.FileFormats.MPS.Model)
+
+Returns a dictionary that maps the affine constraint indices of `model` to their
+row in the MPS file.
+"""
+function index_to_row_link(model::MOI.FileFormats.MPS.Model)
+    i = 0
+    dict = Dict{MOI.ConstraintIndex,Int}()
+    for (S, _) in MOI.FileFormats.MPS.SET_TYPES
+        for ci in MOI.get(
+            model,
+            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64},S}(),
+        )  
+            dict[ci] = i
+            i += 1
+        end
+    end
+    return dict
+end
+
+"""
+    index_to_column_link(model::MOI.FileFormats.MPS.Model)
+
+Returns a dictionary that maps the variable indices of `model` to their column 
+in the MPS file.
+"""
+function index_to_column_link(model::MOI.FileFormats.MPS.Model)
+    variables = MOI.get(model, MOI.ListOfVariableIndices())
+    return Dict{MOI.VariableIndex,Int}(
+        x => i - 1 for (i, x) in MOI.enumerate(variables)
+    )
+end
+
+
+
+#=
+function write_AUX(
+
+
+    
+
+
+
+)
+=#
+
+function solve_MibS(
+    model::BilevelModel,
+)
+# Single MIP
+# write the MPS
+# write the AUX
+
+MOI.write_to_file(new_model, "model.mps")
+
+
+# call MibS
+
+MibS_jll.mibs() do exe
+    run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
+end
+
+# return the solution
+
+end
+
+1+1
 
