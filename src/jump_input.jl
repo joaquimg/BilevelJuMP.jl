@@ -59,7 +59,9 @@ function _build_single_model(
         return upper_to_model_link[lower_to_upper_link[x]]
     end
 
-    return model, lower_variables, lower_objective, lower_constraints
+    lower_sense = MOI.get(lower, MOI.ObjectiveSense())
+
+    return model, lower_variables, lower_objective, lower_constraints, lower_sense
 end
 
 
@@ -99,16 +101,14 @@ function index_to_column_link(model::MOI.FileFormats.MPS.Model)
 end
 
 
-
 #=
+
 function write_AUX(
-
-
-    
 
 
 
 )
+
 =#
 
 function solve_MibS(
@@ -121,7 +121,7 @@ function solve_MibS(
 MOI.write_to_file(new_model, "model.mps")
 
 
-# call MibS
+# Call MibS
 
 MibS_jll.mibs() do exe
     run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
