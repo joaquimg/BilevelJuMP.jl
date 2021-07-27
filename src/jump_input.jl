@@ -1,4 +1,7 @@
+using BilevelJuMP
+using JuMP
 using MibS_jll
+
 
 function _build_single_model(
     model::BilevelModel,
@@ -65,14 +68,9 @@ function _build_single_model(
 end
 
 
+function index_to_row_link(
+    model::MOI.FileFormats.MPS.Model)
 
-"""
-    index_to_row_link(model::MOI.FileFormats.MPS.Model)
-
-Returns a dictionary that maps the affine constraint indices of `model` to their
-row in the MPS file.
-"""
-function index_to_row_link(model::MOI.FileFormats.MPS.Model)
     i = 0
     dict = Dict{MOI.ConstraintIndex,Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
@@ -87,13 +85,10 @@ function index_to_row_link(model::MOI.FileFormats.MPS.Model)
     return dict
 end
 
-"""
-    index_to_column_link(model::MOI.FileFormats.MPS.Model)
 
-Returns a dictionary that maps the variable indices of `model` to their column 
-in the MPS file.
-"""
-function index_to_column_link(model::MOI.FileFormats.MPS.Model)
+function index_to_column_link(
+    model::MOI.FileFormats.MPS.Model)
+
     variables = MOI.get(model, MOI.ListOfVariableIndices())
     return Dict{MOI.VariableIndex,Int}(
         x => i - 1 for (i, x) in MOI.enumerate(variables)
@@ -101,35 +96,97 @@ function index_to_column_link(model::MOI.FileFormats.MPS.Model)
 end
 
 
-#=
+
 
 function write_AUX(
+            )
 
-
-
-)
-
+#=
+    with open(aux_filename, "w") as OUTPUT:
+    # Num lower-level variables
+    OUTPUT.write("N {}\n".format(len(L.x)))
+    # Num lower-level constraints
+    OUTPUT.write("M {}\n".format(L.b.size))
+    # Indices of lower-level variables
+    nx_upper = len(U.x)
+    for i in range(len(L.x)):
+        OUTPUT.write("LC {}\n".format(i+nx_upper))
+    # Indices of lower-level constraints
+    nc_upper = U.b.size
+    for i in range(L.b.size):
+        OUTPUT.write("LR {}\n".format(i+nc_upper))
+    # Coefficients for lower-level objective
+    for i in range(len(L.x)):
+        OUTPUT.write("LO {}\n".format(L.c[L][i]))
+    # Lower-level objective sense
+    if L.minimize:
+        OUTPUT.write("OS 1\n")
+    else:
+        OUTPUT.write("OS -1\n")
 =#
+
+
+end
+
+
 
 function solve_MibS(
     model::BilevelModel,
 )
-# Single MIP
-# write the MPS
-# write the AUX
 
-MOI.write_to_file(new_model, "model.mps")
+    new_model, lower_variables, lower_objective, lower_constraints, lower_sense  =_build_single_model(model)
 
 
-# Call MibS
+    # Write the MPS
+    MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
+    
+    # Write the AUX
+    
+    Row = index_to_row_link(new_model)
+    Col = index_to_column_link(new_model)
+    
+    println(Col)
 
-MibS_jll.mibs() do exe
-    run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
+    #= Call MibS
+
+    MibS_jll.mibs() do exe
+        run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
+    end
+
+    return the solution
+    =# 
+
 end
 
-# return the solution
 
+
+function testing_solve_MibS()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), y)
+    @variable(Upper(model), z)
+    @variable(Lower(model), x)
+    @objective(Upper(model), Min, 3x + y + z)
+    @constraints(Upper(model), begin
+        u1, x <= 5
+        u2, y <= 8
+        u3, y >= 0
+        u4, z >=0
+    end)
+
+    @objective(Lower(model), Min, -x)
+    @constraint(Lower(model), l1,  x +  y <= 8)
+    @constraint(Lower(model), l2, 4x +  y >= 8)
+    @constraint(Lower(model), l3, 2x +  y <= 13)
+    @constraint(Lower(model), l4, 2x - 7y <= 0)
+
+    solve_MibS(model)
+
+    
 end
 
-1+1
+
+testing_solve_MibS()
+
 
