@@ -10,10 +10,12 @@ function _build_single_model(
     lower = JuMP.backend(model.lower)
     
     linkLU = Dict(
-        # lower to upper
-        JuMP.index(v) => JuMP.index(k) for (k,v) in model.link
+
         # model.link means all link from upper to lower
+        JuMP.index(v) => JuMP.index(k) for (k,v) in model.link
+
     )
+
     linkLOnly = Dict(
         JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
     )
@@ -74,7 +76,7 @@ end
 function index_to_row_link(
     model::MOI.FileFormats.MPS.Model)
 
-    i = 0
+    i = 1
     dict = Dict{MOI.ConstraintIndex, Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
         for ci in MOI.get(
@@ -107,19 +109,37 @@ function write_auxillary_file(
     lower_sense::MOI.OptimizationSense
     )
 
+    Row = index_to_row_link(new_model)
+    Col = index_to_column_link(new_model)
 
     open("test.txt", "w") do io 
-        println(io, length(lower_variables))
-        println(io, length(lower_constraints))
+        println(io, "N    $(length(lower_variables))")
+        println(io, "M    $(length(lower_constraints))")
 
+        for vi in lower_variables
+            println(io, "LC    $(Col[vi])")
+        end
+
+        for ci in lower_constraints
+            println(io, "LR    $(Row[ci])")
+        end
+
+        
+        if lower_sense == MOI.MIN_SENSE
+            println(io, "OS    -1")
+        elseif lower_sense == MOI.MAX_SENSE
+            println(io, "OS    1")
+        else
+            #send and error
+        end
+        
     end
     #println(typeof(lower_variables))
     #println(typeof(lower_objective))
     #println(lower_constraints)
 
     # Write the AUX
-    Row = index_to_row_link(new_model)
-    Col = index_to_column_link(new_model)
+    
 
 #=
     with open(aux_filename, "w") as OUTPUT:
