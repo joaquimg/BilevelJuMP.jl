@@ -106,10 +106,11 @@ function write_auxillary_file(
     )
 
 
-    io = open("test.txt", "w");
-    println(io, length(lower_variables))
-    println(io, length(lower_constraints))
+    open("test.txt", "w") do io 
+        println(io, length(lower_variables))
+        println(io, length(lower_constraints))
 
+    end
     #println(typeof(lower_variables))
     #println(typeof(lower_objective))
     #println(lower_constraints)
@@ -118,7 +119,6 @@ function write_auxillary_file(
     Row = index_to_row_link(new_model)
     Col = index_to_column_link(new_model)
 
-    close(io);
 #=
     with open(aux_filename, "w") as OUTPUT:
     # Num lower-level variables
@@ -158,7 +158,6 @@ function solve_MibS(
     MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
     write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
 
- 
     #= Call MibS
 
     MibS_jll.mibs() do exe
