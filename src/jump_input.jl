@@ -28,6 +28,7 @@ function _build_single_model(
     lower_to_upper_link::Dict{MOI.VariableIndex, MOI.VariableIndex},
     lower_only::Dict{MOI.VariableIndex, MOI.VariableIndex}
 )
+
     # A new model to build
     #model = MOI.Utilities.Model{Float64}()
     model = MOI.FileFormats.MPS.Model()
@@ -55,7 +56,7 @@ function _build_single_model(
             push!(lower_constraints, new_ci)
         end
     end
-
+ 
     
     lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}()) 
     lower_objective = MOI.Utilities.map_indices(lower_primal_obj) do x
@@ -72,11 +73,11 @@ function index_to_row_link(
     model::MOI.FileFormats.MPS.Model)
 
     i = 0
-    dict = Dict{MOI.ConstraintIndex,Int}()
+    dict = Dict{MOI.ConstraintIndex, Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
         for ci in MOI.get(
             model,
-            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64},S}(),
+            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64}, S}(),
         )  
             dict[ci] = i
             i += 1
@@ -96,10 +97,10 @@ function index_to_column_link(
 end
 
 
-
-
 function write_AUX(
             )
+
+
 
 #=
     with open(aux_filename, "w") as OUTPUT:
@@ -134,18 +135,24 @@ function solve_MibS(
     model::BilevelModel,
 )
 
-    new_model, lower_variables, lower_objective, lower_constraints, lower_sense  =_build_single_model(model)
-
+    new_model, lower_variables, lower_objective, lower_constraints, lower_sense  = _build_single_model(model)
 
     # Write the MPS
     MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
     
     # Write the AUX
+    io = open("test.aux", "w");
+
+    write(io, length(lower_variables))
+    write(io, length(lower_constraints))
     
+
+    close(io);
+
     Row = index_to_row_link(new_model)
     Col = index_to_column_link(new_model)
     
-    println(Col)
+    
 
     #= Call MibS
 
@@ -182,7 +189,6 @@ function testing_solve_MibS()
     @constraint(Lower(model), l4, 2x - 7y <= 0)
 
     solve_MibS(model)
-
     
 end
 
