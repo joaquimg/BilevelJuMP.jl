@@ -141,12 +141,12 @@ function solve_MibS(
     MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
     
     # Write the AUX
-    io = open("test.aux", "w");
+    io = open("test.txt", "w");
+    println(io, length(lower_variables))
+    println(io, length(lower_constraints))
 
-    write(io, length(lower_variables))
-    write(io, length(lower_constraints))
+
     
-
     close(io);
 
     Row = index_to_row_link(new_model)
