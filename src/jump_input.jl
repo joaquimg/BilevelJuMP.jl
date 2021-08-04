@@ -14,7 +14,9 @@ function _build_single_model(
         JuMP.index(v) => JuMP.index(k) for (k,v) in model.link
         # model.link means all link from upper to lower
     )
-    linkLOnly = JuMP.index(model.lower_to_upper_link)
+    linkLOnly = Dict(
+        JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
+    )
     return _build_single_model(upper, lower, linkLU, linkLOnly)
 end 
 
@@ -198,5 +200,4 @@ end
 
 
 testing_solve_MibS()
-
 
