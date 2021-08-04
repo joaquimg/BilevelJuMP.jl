@@ -40,7 +40,7 @@ function _build_single_model(
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
 
     
-    lower_constraints = Any[]
+    lower_constraints = Vector{MOI.ConstraintIndex}()
     for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             
@@ -97,11 +97,28 @@ function index_to_column_link(
 end
 
 
-function write_AUX(
-            )
+function write_auxillary_file(
+    new_model::MOI.FileFormats.MPS.Model,
+    lower_variables::Vector{MOI.VariableIndex},
+    lower_objective::MOI.ScalarAffineFunction,
+    lower_constraints::Vector{MOI.ConstraintIndex},
+    lower_sense::MOI.OptimizationSense
+    )
 
 
+    io = open("test.txt", "w");
+    println(io, length(lower_variables))
+    println(io, length(lower_constraints))
 
+    #println(typeof(lower_variables))
+    #println(typeof(lower_objective))
+    #println(lower_constraints)
+
+    # Write the AUX
+    Row = index_to_row_link(new_model)
+    Col = index_to_column_link(new_model)
+
+    close(io);
 #=
     with open(aux_filename, "w") as OUTPUT:
     # Num lower-level variables
@@ -139,21 +156,9 @@ function solve_MibS(
 
     # Write the MPS
     MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
-    
-    # Write the AUX
-    io = open("test.txt", "w");
-    println(io, length(lower_variables))
-    println(io, length(lower_constraints))
+    write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
 
-
-    
-    close(io);
-
-    Row = index_to_row_link(new_model)
-    Col = index_to_column_link(new_model)
-    
-    
-
+ 
     #= Call MibS
 
     MibS_jll.mibs() do exe
