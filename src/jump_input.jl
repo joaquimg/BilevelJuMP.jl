@@ -165,14 +165,13 @@ function solve_MibS(
     # Write the MPS
     MOI.write_to_file(new_model, "model.mps")
     write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
-    #=
+    
 
     MibS_jll.mibs() do exe
         run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
     end
 
-    return the solution
-    =#
+    
 end
 
 
