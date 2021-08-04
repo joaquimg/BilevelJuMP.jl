@@ -112,16 +112,33 @@ function write_auxillary_file(
     Row = index_to_row_link(new_model)
     Col = index_to_column_link(new_model)
 
-    open("test.txt", "w") do io 
+    open("model.aux", "w") do io 
         println(io, "N    $(length(lower_variables))")
         println(io, "M    $(length(lower_constraints))")
 
-        for vi in lower_variables
+        for x in 1:length(lower_variables)
+            vi = lower_variables[x]
             println(io, "LC    $(Col[vi])")
         end
 
-        for ci in lower_constraints
+        for y in 1:length(lower_constraints)
+            ci = lower_constraints[y]
             println(io, "LR    $(Row[ci])")
+        end
+
+        for x in 1:length(lower_variables)
+
+            vi = lower_variables[x]
+
+            for y in 1:length(lower_objective.terms)
+
+                vj = lower_objective.terms[y].variable_index
+
+                if vi == vj
+                    println(io, "LO    $(lower_objective.terms[y].coefficient)")
+                    break
+                end
+            end
         end
 
         
@@ -130,41 +147,10 @@ function write_auxillary_file(
         elseif lower_sense == MOI.MAX_SENSE
             println(io, "OS    1")
         else
-            #send and error
+            # error
         end
         
     end
-    #println(typeof(lower_variables))
-    #println(typeof(lower_objective))
-    #println(lower_constraints)
-
-    # Write the AUX
-    
-
-#=
-    with open(aux_filename, "w") as OUTPUT:
-    # Num lower-level variables
-    OUTPUT.write("N {}\n".format(len(L.x)))
-    # Num lower-level constraints
-    OUTPUT.write("M {}\n".format(L.b.size))
-    # Indices of lower-level variables
-    nx_upper = len(U.x)
-    for i in range(len(L.x)):
-        OUTPUT.write("LC {}\n".format(i+nx_upper))
-    # Indices of lower-level constraints
-    nc_upper = U.b.size
-    for i in range(L.b.size):
-        OUTPUT.write("LR {}\n".format(i+nc_upper))
-    # Coefficients for lower-level objective
-    for i in range(len(L.x)):
-        OUTPUT.write("LO {}\n".format(L.c[L][i]))
-    # Lower-level objective sense
-    if L.minimize:
-        OUTPUT.write("OS 1\n")
-    else:
-        OUTPUT.write("OS -1\n")
-=#
-
 
 end
 
@@ -177,18 +163,16 @@ function solve_MibS(
     new_model, lower_variables, lower_objective, lower_constraints, lower_sense  = _build_single_model(model)
 
     # Write the MPS
-    MOI.write_to_file(new_model, "/Users/hesamshaelaie/Documents/BilevelJuMP.jl/src/model.mps")
+    MOI.write_to_file(new_model, "model.mps")
     write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
-
-    #= Call MibS
+    #=
 
     MibS_jll.mibs() do exe
         run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
     end
 
     return the solution
-    =# 
-
+    =#
 end
 
 
