@@ -116,42 +116,30 @@ function write_auxillary_file(
         println(io, "N    $(length(lower_variables))")
         println(io, "M    $(length(lower_constraints))")
 
-        for x in 1:length(lower_variables)
-            vi = lower_variables[x]
-            println(io, "LC    $(Col[vi])")
+        for x in lower_variables
+            println(io, "LC    $(Col[x])")
         end
 
-        for y in 1:length(lower_constraints)
-            ci = lower_constraints[y]
-            println(io, "LR    $(Row[ci])")
+        for y in lower_constraints
+            println(io, "LR    $(Row[y])")
         end
-
-        for x in 1:length(lower_variables)
-
-            vi = lower_variables[x]
-
-            for y in 1:length(lower_objective.terms)
-
-                vj = lower_objective.terms[y].variable_index
-
-                if vi == vj
-                    println(io, "LO    $(lower_objective.terms[y].coefficient)")
-                    break
-                end
+        
+        obj_coefficients = Dict{MOI.VariableIndex,Float64}(
+            x => 0.0 for x in lower_variables
+        )
+        
+        for term in lower_objective.terms
+            if haskey(obj_coefficients, term.variable_index)
+                obj_coefficients[term.variable_index] += term.coefficient
             end
         end
-
         
-        if lower_sense == MOI.MIN_SENSE
-            println(io, "OS    -1")
-        elseif lower_sense == MOI.MAX_SENSE
-            println(io, "OS    1")
-        else
-            # error
+        for x in lower_variables
+            println(io, "LO    $(obj_coefficients[x])")
         end
         
+        println(io, "OS    ", lower_sense == MOI.MAX_SENSE ? 1 : -1)
     end
-
 end
 
 
@@ -166,11 +154,11 @@ function solve_MibS(
     MOI.write_to_file(new_model, "model.mps")
     write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
     
-
+    #=
     MibS_jll.mibs() do exe
         run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
     end
-
+    =#
     
 end
 
