@@ -1,35 +1,29 @@
 NAME          
 ROWS
-	N  OBJ
-	L  u1
-	L  c2
-	L  c3
-	L  c4
-	L  c5
-	L  c6
+ N  OBJ
+ L  c1
+ L  c2
+ L  c3
+ L  c4
 COLUMNS
-	x         u1        1
-	x         c2        -25
-	x         c3        1
-	x         c4        2
-	x         c5        -2
-	x         OBJ       -1
-	y         c2        -20
-	y         c3        2
-	y         c4        -1
-	y         c5        -10
-	y         c6        1
-	y         OBJ       -10
+    MARKER    'MARKER'                 'INTORG'
+    x         c1        -25
+    x         c2        1
+    x         c3        2
+    x         c4        -2
+    x         OBJ       -1
+    y         c1        -20
+    y         c2        2
+    y         c3        -1
+    y         c4        -10
+    y         OBJ       -10
 RHS
-	rhs       u1        10
-	rhs       c2        30
-	rhs       c3        10
-	rhs       c4        15
-	rhs       c5        -15
-	rhs       c6        5
+    rhs       c1        30
+    rhs       c2        10
+    rhs       c3        15
+    rhs       c4        -15
 RANGES
 BOUNDS
-	FR bounds    x
-	FR bounds    y
+ FR bounds    x
+ FR bounds    y
 ENDATA
-	;

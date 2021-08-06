@@ -23,4 +23,7 @@ RHS
     B         R2     10
     B         R3     15
     B         R4     -15
+BOUNDS
+ UP BOUND     UV     10000
+ UP BOUND     LV     50000
 ENDATA

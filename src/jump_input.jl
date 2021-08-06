@@ -115,15 +115,15 @@ function write_auxillary_file(
     Col = index_to_column_link(new_model)
 
     open(aux_address, "w") do io 
-        println(io, "N    $(length(lower_variables))")
-        println(io, "M    $(length(lower_constraints))")
+        println(io, "N $(length(lower_variables))")
+        println(io, "M $(length(lower_constraints))")
 
         for x in lower_variables
-            println(io, "LC    $(Col[x])")
+            println(io, "LC $(Col[x])")
         end
 
         for y in lower_constraints
-            println(io, "LR    $(Row[y])")
+            println(io, "LR $(Row[y])")
         end
         
         obj_coefficients = Dict{MOI.VariableIndex,Float64}(
@@ -137,10 +137,10 @@ function write_auxillary_file(
         end
         
         for x in lower_variables
-            println(io, "LO    $(obj_coefficients[x])")
+            println(io, "LO $(obj_coefficients[x])")
         end
         
-        println(io, "OS    ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
+        println(io, "OS ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
     end
 end
 
@@ -235,8 +235,8 @@ function test_Writing_MibS_input_v3()
 
     model = BilevelModel()
 
-    @variable(Upper(model), x)
-    @variable(Lower(model), y)
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
 
     @objective(Upper(model), Min, -x - 10y)
     @constraint(Upper(model), u1, x <= 10)
@@ -252,9 +252,28 @@ function test_Writing_MibS_input_v3()
     Writing_MibS_inputs(model, "model-moore90WithName")
 end
 
+
+function test_Writing_MibS_input_v4()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
+
+    @objective(Upper(model), Min, -x - 10y)
+
+    @objective(Lower(model), Min, y)
+
+    @constraint(Lower(model), l1,  -25x -  20y <= 30)
+    @constraint(Lower(model), l2,  x +  2y <= 10)
+    @constraint(Lower(model), l3,  2x -  y <= 15)
+    @constraint(Lower(model), l4, -2x -  10y <= -15)
+    Writing_MibS_inputs(model, "model-moore90WithName")
+end
+
 #test_Writing_MibS_input_v1()
 #test_Writing_MibS_input_v2()
-test_Writing_MibS_input_v3()
+#test_Writing_MibS_input_v4()
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
 #Running_MibS("modelv2.mps", "modelv2.aux")
@@ -264,5 +283,14 @@ test_Writing_MibS_input_v3()
 #Running_MibS("model_ted_v3.mps", "model_ted_v3.aux")
 #Running_MibS("moore90WithName.mps", "moore90WithName.txt")
 #Running_MibS("knapsack.mps", "knapsack.aux")
-#Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
+
+#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
+#Running_MibS("moore90WithNamev3.mps", "moore90WithName.txt")
+#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
+
+
+#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
+Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
+
+
 #Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
