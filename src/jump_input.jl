@@ -166,7 +166,15 @@ function Running_MibS(
 add_mpx::AbstractString = "model.mps",
 add_aux::AbstractString = "model.aux"
 )
-
+    println("============================")
+    println("============================")
+    println("============================")
+    println(add_mpx)
+    println(add_aux)
+    println("============================")
+    println("============================")
+    println("============================")
+    sleep(3)
     MibS_jll.mibs() do exe
         run(`$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`)
     end
@@ -227,4 +235,6 @@ end
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
 #Running_MibS("modelv2.mps", "modelv2.aux")
-Running_MibS("modelv2.mps", "modelv2.aux")
+#Running_MibS("modelv2.mps", "modelv2.aux")
+#Running_MibS("model_ted_v1.mps", "model_ted_v1.aux")
+Running_MibS("model_ted_v2.mps", "model_ted_v2.aux")
