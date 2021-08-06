@@ -188,9 +188,9 @@ function test_Writing_MibS_input_v1()
 
     model = BilevelModel()
 
-    @variable(Upper(model), y)
-    @variable(Upper(model), z)
-    @variable(Lower(model), x)
+    @variable(Upper(model), y, Int)
+    @variable(Upper(model), z, Int)
+    @variable(Lower(model), x, Int)
     @objective(Upper(model), Min, 3x + y + z)
     @constraints(Upper(model), begin
         u1, x <= 5
@@ -295,4 +295,4 @@ end
 
 
 #Running_MibS("model-moore90WithNamev2.mps", "model-moore90WithNamev2.aux")
-Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
+#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
