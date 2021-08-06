@@ -106,13 +106,14 @@ function write_auxillary_file(
     lower_variables::Vector{MOI.VariableIndex},
     lower_objective::MOI.ScalarAffineFunction,
     lower_constraints::Vector{MOI.ConstraintIndex},
-    lower_sense::MOI.OptimizationSense
+    lower_sense::MOI.OptimizationSense,
+    aux_address::AbstractString
     )
 
     Row = index_to_row_link(new_model)
     Col = index_to_column_link(new_model)
 
-    open("model.aux", "w") do io 
+    open(aux_address, "w") do io 
         println(io, "N    $(length(lower_variables))")
         println(io, "M    $(length(lower_constraints))")
 
@@ -144,27 +145,37 @@ end
 
 
 
-function solve_MibS(
+function Writing_MibS_inputs(
     model::BilevelModel,
+    name::AbstractString = "model"
 )
 
     new_model, lower_variables, lower_objective, lower_constraints, lower_sense  = _build_single_model(model)
 
     # Write the MPS
-    MOI.write_to_file(new_model, "model.mps")
-    write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense)
-    
-    #=
+    #name = "modelv2"
+    name_mps = string(name, ".mps")
+    name_aux = string(name, ".aux")
+
+    MOI.write_to_file(new_model, name_mps)
+    write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_aux)
+
+end
+
+function Running_MibS(
+add_mpx::AbstractString = "model.mps",
+add_aux::AbstractString = "model.aux"
+)
+
     MibS_jll.mibs() do exe
-        run(`$(exe) -Alps_instance model.mps -MibS_auxiliaryInfoFile model.aux`)
+        run(`$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`)
     end
-    =#
-    
+
 end
 
 
 
-function testing_solve_MibS()
+function test_Writing_MibS_input_v1()
 
     model = BilevelModel()
 
@@ -185,10 +196,35 @@ function testing_solve_MibS()
     @constraint(Lower(model), l3, 2x +  y <= 13)
     @constraint(Lower(model), l4, 2x - 7y <= 0)
 
-    solve_MibS(model)
+    Writing_MibS_inputs(model, "modelv1")
     
 end
 
 
-testing_solve_MibS()
+function test_Writing_MibS_input_v2()
 
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+    @objective(Upper(model), Min, -3x - 7y)
+    @constraints(Upper(model), begin
+        u1, -3x + 2y <= 12
+        u2, x + 2y <= 20
+        u3, x <= 10
+    end)
+
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1,  2x -  y <= 7)
+    @constraint(Lower(model), l2, -2x +  4y <= 16)
+    @constraint(Lower(model), l3, y <= 5)
+
+    Writing_MibS_inputs(model, "modelv2")
+end
+
+#test_Writing_MibS_input_v1()
+#test_Writing_MibS_input_v2()
+
+#Running_MibS("modelv1.mps", "modelv1.aux")
+#Running_MibS("modelv2.mps", "modelv2.aux")
+Running_MibS("modelv2.mps", "modelv2.aux")
