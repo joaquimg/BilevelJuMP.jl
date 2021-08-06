@@ -77,7 +77,7 @@ end
 function index_to_row_link(
     model::MOI.FileFormats.MPS.Model)
 
-    i = 1
+    i = 0
     dict = Dict{MOI.ConstraintIndex, Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
         for ci in MOI.get(
@@ -242,7 +242,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Upper(model), u1, x <= 10)
 
     @objective(Lower(model), Min, y)
-    @constraint(Lower(model), l1,  -25x -  20y <= 30)
+    @constraint(Lower(model), l1,  -25x +  20y <= 30)
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
@@ -264,7 +264,7 @@ function test_Writing_MibS_input_v4()
 
     @objective(Lower(model), Min, y)
 
-    @constraint(Lower(model), l1,  -25x -  20y <= 30)
+    @constraint(Lower(model), l1,  -25x +  20y <= 30)
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
@@ -273,6 +273,7 @@ end
 
 #test_Writing_MibS_input_v1()
 #test_Writing_MibS_input_v2()
+#test_Writing_MibS_input_v3()
 #test_Writing_MibS_input_v4()
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
@@ -290,7 +291,8 @@ end
 
 
 #Running_MibS("moore90WithName.mps", "moore90WithName.txt")
-Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
+#Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
 
 
-#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
+#Running_MibS("model-moore90WithNamev2.mps", "model-moore90WithNamev2.aux")
+Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
