@@ -140,7 +140,7 @@ function write_auxillary_file(
             println(io, "LO    $(obj_coefficients[x])")
         end
         
-        println(io, "OS    ", lower_sense == MOI.MAX_SENSE ? 1 : -1)
+        println(io, "OS    ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
     end
 end
 
@@ -231,11 +231,33 @@ function test_Writing_MibS_input_v2()
     Writing_MibS_inputs(model, "modelv2")
 end
 
+function test_Writing_MibS_input_v3()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @objective(Upper(model), Min, -x - 10y)
+    @constraint(Upper(model), u1, x <= 10)
+
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1,  -25x -  20y <= 30)
+    @constraint(Lower(model), l2,  x +  2y <= 10)
+    @constraint(Lower(model), l3,  2x -  y <= 15)
+    @constraint(Lower(model), l4, -2x -  10y <= -15)
+    @constraint(Lower(model), l5, y <= 5)
+    
+
+    Writing_MibS_inputs(model, "model-moore90WithName")
+end
+
 #test_Writing_MibS_input_v1()
 #test_Writing_MibS_input_v2()
+test_Writing_MibS_input_v3()
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
-Running_MibS("modelv2.mps", "modelv2.aux")
+#Running_MibS("modelv2.mps", "modelv2.aux")
 #Running_MibS("modelv2.mps", "modelv2.aux")
 #Running_MibS("model_ted_v1.mps", "model_ted_v1.aux")
 #Running_MibS("model_ted_v2.mps", "model_ted_v2.aux")
@@ -243,4 +265,4 @@ Running_MibS("modelv2.mps", "modelv2.aux")
 #Running_MibS("moore90WithName.mps", "moore90WithName.txt")
 #Running_MibS("knapsack.mps", "knapsack.aux")
 #Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
-#moore90WithNamev2
+#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
