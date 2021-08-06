@@ -8,6 +8,7 @@ ROWS
  L  c5
  L  c6
 COLUMNS
+    MARKER    'MARKER'                 'INTORG'
     x         u1        -3
     x         u2        1
     x         u3        1
@@ -20,6 +21,7 @@ COLUMNS
     y         c5        4
     y         c6        1
     y         OBJ       -7
+    MARKER    'MARKER'                 'INTEND'
 RHS
     rhs       u1        12
     rhs       u2        20

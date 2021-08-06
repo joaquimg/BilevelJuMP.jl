@@ -48,16 +48,17 @@ function _build_single_model(
     for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             
-            lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
-            lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
-            #@show lower_f, lower_s
+                lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
+                lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
 
-            lower_f = MOI.Utilities.map_indices(lower_f) do x
-               return upper_to_model_link[lower_to_upper_link[x]]
+                lower_f = MOI.Utilities.map_indices(lower_f) do x
+                return upper_to_model_link[lower_to_upper_link[x]]
+                end
+                new_ci = MOI.add_constraint(model, lower_f, lower_s)
+
+            if F == MOI.ScalarAffineFunction{Float64}
+                push!(lower_constraints, new_ci)    
             end
-
-            new_ci = MOI.add_constraint(model, lower_f, lower_s)
-            push!(lower_constraints, new_ci)
         end
     end
  
@@ -213,8 +214,8 @@ function test_Writing_MibS_input_v2()
 
     model = BilevelModel()
 
-    @variable(Upper(model), x)
-    @variable(Lower(model), y)
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
     @objective(Upper(model), Min, -3x - 7y)
     @constraints(Upper(model), begin
         u1, -3x + 2y <= 12
@@ -234,7 +235,12 @@ end
 #test_Writing_MibS_input_v2()
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
-#Running_MibS("modelv2.mps", "modelv2.aux")
+Running_MibS("modelv2.mps", "modelv2.aux")
 #Running_MibS("modelv2.mps", "modelv2.aux")
 #Running_MibS("model_ted_v1.mps", "model_ted_v1.aux")
-Running_MibS("model_ted_v2.mps", "model_ted_v2.aux")
+#Running_MibS("model_ted_v2.mps", "model_ted_v2.aux")
+#Running_MibS("model_ted_v3.mps", "model_ted_v3.aux")
+#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
+#Running_MibS("knapsack.mps", "knapsack.aux")
+#Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
+#moore90WithNamev2
