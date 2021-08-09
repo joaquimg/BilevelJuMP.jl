@@ -9,12 +9,12 @@ ROWS
  L  c6
 COLUMNS
     MARKER    'MARKER'                 'INTORG'
-    z         u1        1
-    z         c2        -25
-    z         c3        1
-    z         c4        2
-    z         c5        -2
-    z         OBJ       -1
+    x         u1        1
+    x         c2        -25
+    x         c3        1
+    x         c4        2
+    x         c5        -2
+    x         OBJ       -1
     y         c2        20
     y         c3        2
     y         c4        -1
@@ -30,6 +30,6 @@ RHS
     rhs       c6        5
 RANGES
 BOUNDS
- FR bounds    z
+ FR bounds    x
  FR bounds    y
 ENDATA

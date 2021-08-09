@@ -165,8 +165,14 @@ end
 
 function Running_MibS(
 add_mpx::AbstractString = "model.mps",
-add_aux::AbstractString = "model.aux"
+add_aux::AbstractString = "model.aux",
+Save::Bool = false
 )
+    if ~isfile(add_mpx) || ~isfile(add_aux)
+        println("Cannot find the input files!!")
+        return
+    end
+
     println("============================")
     println("============================")
     println("============================")
@@ -176,11 +182,33 @@ add_aux::AbstractString = "model.aux"
     println("============================")
     println("============================")
     sleep(3)
-    MibS_jll.mibs() do exe
-        run(`$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`)
+
+
+    if Save == true
+
+        io = IOBuffer()
+        MibS_jll.mibs() do exe
+            run(
+                pipeline(
+                    `$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`,
+                    stdout = io,
+                )
+            )
+        end
+        seekstart(io)
+        output = read(io, String)
+        println(output)
+
+    else
+        MibS_jll.mibs() do exe
+            run(`$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`)
+        end
+
     end
+    
 
 end
+
 
 
 
@@ -294,5 +322,5 @@ end
 #Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
 
 
-#Running_MibS("model-moore90WithNamev2.mps", "model-moore90WithNamev2.aux")
+Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux", true)
 #Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
