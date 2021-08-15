@@ -235,27 +235,48 @@ function  MibS(model::BilevelModel,
 
     
     Key_Optimal = false
-    Dict_Upper = Dict()
-    Dict_Lower = Dict()
+    Dict_Upper_Name = Dict()
+    Dict_Lower_Name = Dict()
+    Dict_Upper_Value = Dict()
+    Dict_Lower_Value = Dict()
 
     if occursin("Optimal solution", output)
         Key_Optimal = true
-        
 
         variablesA = MOI.get(new_model, MOI.ListOfVariableIndices())
         CntU = 0
         CntD = 0
         for (x, y) in MOI.enumerate(variablesA)
             if y in lower_variables
-                Dict_Lower[CntD] = y
+                Dict_Lower_Name[CntD] = y
+                Dict_Lower_Value[y] = 0
                 CntD = CntD + 1
             else
-                Dict_Upper[CntU] = y
+                Dict_Upper_Name[CntU] = y
+                Dict_Upper_Value[y] = 0
                 CntU = CntU + 1
             end
         end
-        println(Dict_Lower)
-        println(Dict_Upper)
+
+        Start_Str = findfirst("Cost =", output)[1]
+        Finish_Str = length(output)
+        output = SubString(output, Start_Str, Finish_Str)
+
+
+        Start_Str = 1
+        Finish_Str = findfirst("Number", output)[1]-1
+        output = SubString(output, Start_Str, Finish_Str)
+        
+        println(output)
+        #println(Start_Str[1])
+        #println(output[Start_Str])
+        #for line in eachline("my_file.txt")
+        #    print(line)
+        #end
+
+
+
+        
     end
     
     
