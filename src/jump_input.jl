@@ -262,21 +262,45 @@ function  MibS(model::BilevelModel,
         Finish_Str = length(output)
         output = SubString(output, Start_Str, Finish_Str)
 
-
         Start_Str = 1
-        Finish_Str = findfirst("Number", output)[1]-1
+        Finish_Str = findfirst("Number", output)[1]-2
         output = SubString(output, Start_Str, Finish_Str)
+
         
-        println(output)
         #println(Start_Str[1])
         #println(output[Start_Str])
-        #for line in eachline("my_file.txt")
-        #    print(line)
-        #end
+        Result = split(output, "\n")
+        TotalObj = 0.0
 
+        for line in Result
 
-
+            Start_Str = findfirst("=", line)[1]
+            Start_Str = Start_Str + 1
+            Finish_Str = length(line)
+            StrNum = SubString(line, Start_Str, Finish_Str)
+            #StrNum = strip(StrNum, " ")
+            
+            Num = parse(Float64, StrNum)
         
+            if startswith(line, "C")
+                TotalObj =  Num 
+            
+            else 
+                
+                Start_Str = findfirst("[", line)[1] + 1 
+                Finish_Str = findfirst("]", line)[1] -1
+                StrNum = SubString(line, Start_Str, Finish_Str)
+                VarIndex = parse(Int32, StrNum)
+                
+                if startswith(line, "x")
+                    VarName = Dict_Upper_Name[VarIndex]
+                    Dict_Upper_Value[VarName] = Num
+                else
+                    VarName = Dict_Lower_Name[VarIndex]
+                    Dict_Lower_Value[VarName] = Num
+                end
+            end            
+        end
     end
     
     
