@@ -10,3 +10,6 @@ docs/src/.DS_Store
 gurobi.log
 *.txt
 test.jl
+
+*.mps
+*.aux

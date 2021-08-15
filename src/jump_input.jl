@@ -161,6 +161,7 @@ function Writing_MibS_inputs(
     MOI.write_to_file(new_model, name_mps)
     write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_aux)
 
+    return new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux
 end
 
 function Running_MibS(
@@ -172,17 +173,6 @@ Save::Bool = false
         println("Cannot find the input files!!")
         return
     end
-
-    println("============================")
-    println("============================")
-    println("============================")
-    println(add_mpx)
-    println(add_aux)
-    println("============================")
-    println("============================")
-    println("============================")
-    sleep(3)
-
 
     if Save == true
 
@@ -197,7 +187,7 @@ Save::Bool = false
         end
         seekstart(io)
         output = read(io, String)
-        println(output)
+        return outputsdfgsdfgsdfgsdfgsdfgsadfgsdfg
 
     else
         MibS_jll.mibs() do exe
@@ -210,6 +200,32 @@ Save::Bool = false
 end
 
 
+function  MibS(model::BilevelModel,
+    name::AbstractString = "model"
+)
+name_lower = lowercase(name)
+end_mps = ".mps"
+end_aux = ".aux"
+name_new = ""
+
+if endswith(name_lower, end_mps) || endswith(name_lower, end_aux)
+    name_new = SubString(name, 1, length(name_lower)-4)
+else
+    name_new = SubString(name, 1, length(name_lower))
+end
+
+println("========================================")
+println("Input name:   ", name_lower)
+println("========================================")
+new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux = Writing_MibS_inputs(model, name_new)
+println("Mps and Aux has been created.")
+println("========================================")
+output = Running_MibS(name_mps, name_aux)
+
+
+
+
+end
 
 
 function test_Writing_MibS_input_v1()
@@ -268,6 +284,7 @@ function test_Writing_MibS_input_v3()
 
     @objective(Upper(model), Min, -x - 10y)
     @constraint(Upper(model), u1, x <= 10)
+    #@constraint(Upper(model), u2, x >= 11)
 
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), l1,  -25x +  20y <= 30)
@@ -276,8 +293,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l4, -2x -  10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
     
-
-    Writing_MibS_inputs(model, "model-moore90WithName")
+    MibS(model, "NewModel")
 end
 
 
@@ -301,7 +317,7 @@ end
 
 #test_Writing_MibS_input_v1()
 #test_Writing_MibS_input_v2()
-#test_Writing_MibS_input_v3()
+test_Writing_MibS_input_v3()
 #test_Writing_MibS_input_v4()
 
 #Running_MibS("modelv1.mps", "modelv1.aux")
@@ -322,5 +338,5 @@ end
 #Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
 
 
-Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux", true)
+#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
 #Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
