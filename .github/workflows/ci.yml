@@ -15,9 +15,6 @@ jobs:
           - version: '1'
             os: ubuntu-latest
             arch: x64
-          - version: '1.4' # SCIP requires a JLL (wont build in earlier version)
-            os: ubuntu-latest
-            arch: x64
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
