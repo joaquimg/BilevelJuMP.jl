@@ -166,42 +166,33 @@ end
 
 function Running_MibS(
 add_mpx::AbstractString = "model.mps",
-add_aux::AbstractString = "model.aux",
-Save::Bool = false
+add_aux::AbstractString = "model.aux"
 )
     if ~isfile(add_mpx) || ~isfile(add_aux)
         println("Cannot find the input files!!")
         return
     end
 
-    if Save == true
-
-        io = IOBuffer()
-        MibS_jll.mibs() do exe
-            run(
-                pipeline(
-                    `$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`,
-                    stdout = io,
-                )
+    io = IOBuffer()
+    MibS_jll.mibs() do exe
+        run(
+            pipeline(
+                `$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`,
+                stdout = io,
             )
-        end
-        seekstart(io)
-        output = read(io, String)
-        return outputsdfgsdfgsdfgsdfgsdfgsadfgsdfg
-
-    else
-        MibS_jll.mibs() do exe
-            run(`$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`)
-        end
-
+        )
     end
-    
-
+    seekstart(io)
+    output = read(io, String)
+    return output
 end
 
 
 function  MibS(model::BilevelModel,
-    name::AbstractString = "model"
+    name::AbstractString = "model",
+    displayMibS::Bool = true,
+    saveMibS::Bool = true,
+    output_address::AbstractString = ""
 )
 name_lower = lowercase(name)
 end_mps = ".mps"
@@ -221,6 +212,37 @@ new_model, lower_variables, lower_objective, lower_constraints, lower_sense, nam
 println("Mps and Aux has been created.")
 println("========================================")
 output = Running_MibS(name_mps, name_aux)
+
+if displayMibS
+    println(output)
+end
+
+if ~saveMibS
+    return
+end
+
+
+name_log = ""
+if output_address == string.empty
+    name_log = name_new + ".log"
+end
+
+open(name_log, "w") do io 
+    
+
+    if occursin("Optimal solution", output)
+
+    
+    else
+        println(io, "Not able to find any solution.")
+        println(io, "Possible reasons are:")
+        println(io, "1- problem is infeasble.")
+        println(io, "2- linking variables are not integar.")
+    end
+
+end
+
+
 
 
 
@@ -293,7 +315,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l4, -2x -  10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
     
-    MibS(model, "NewModel")
+    MibS(model, "NewModel",)
 end
 
 
