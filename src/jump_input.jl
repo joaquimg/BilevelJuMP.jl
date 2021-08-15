@@ -1,89 +1,58 @@
-using BilevelJuMP
-using JuMP
-using MibS_jll
+import MibS_jll
 
-
-function _build_single_model(
-    model::BilevelModel,
-)
+function _build_single_model(model::BilevelModel)
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
-    
-    linkLU = Dict(
-
-        # model.link means all link from upper to lower
-        JuMP.index(v) => JuMP.index(k) for (k,v) in model.link
-
-    )
-
-    linkLOnly = Dict(
+    lower_to_upper =
+        Dict(JuMP.index(v) => JuMP.index(k) for (k, v) in model.link)
+    lower_only = Dict(
         JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
     )
-    return _build_single_model(upper, lower, linkLU, linkLOnly)
-end 
-
+    return _build_single_model(upper, lower, lower_to_upper, lower_only)
+end
 
 function _build_single_model(
-    upper::MOI.ModelLike, 
-    lower::MOI.ModelLike, 
-
-    # A dictionary that maps variables in the upper to variables in the lower
-    # upper_to_lower_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
-    lower_to_upper_link::Dict{MOI.VariableIndex, MOI.VariableIndex},
-    lower_only::Dict{MOI.VariableIndex, MOI.VariableIndex}
+    upper::MOI.ModelLike,
+    lower::MOI.ModelLike,
+    lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
+    lower_only::Dict{MOI.VariableIndex,MOI.VariableIndex}
 )
-
-    # A new model to build
-    #model = MOI.Utilities.Model{Float64}()
     model = MOI.FileFormats.MPS.Model()
-    
-    # Create a copy of the upper model
     upper_to_model_link = MOI.copy_to(model, upper)
-
-    #upper_variables = [upper_to_model_link[k] for k in keys(upper_to_lower_link)]
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
-
-    
     lower_constraints = Vector{MOI.ConstraintIndex}()
     for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
-            
-                lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
-                lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
-
-                lower_f = MOI.Utilities.map_indices(lower_f) do x
+            lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
+            lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
+            lower_f = MOI.Utilities.map_indices(lower_f) do x
                 return upper_to_model_link[lower_to_upper_link[x]]
-                end
-                new_ci = MOI.add_constraint(model, lower_f, lower_s)
-
+            end
+            new_ci = MOI.add_constraint(model, lower_f, lower_s)
             if F == MOI.ScalarAffineFunction{Float64}
-                push!(lower_constraints, new_ci)    
+                push!(lower_constraints, new_ci)
             end
         end
     end
- 
-    
-    lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}()) 
-    lower_objective = MOI.Utilities.map_indices(lower_primal_obj) do x
+    lower_objective = MOI.get(
+        lower,
+        MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),
+    )
+    lower_objective = MOI.Utilities.map_indices(lower_objective) do x
         return upper_to_model_link[lower_to_upper_link[x]]
     end
-
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
-
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
 end
 
-
-function index_to_row_link(
-    model::MOI.FileFormats.MPS.Model)
-
+function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
     i = 0
     dict = Dict{MOI.ConstraintIndex, Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
         for ci in MOI.get(
             model,
             MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64}, S}(),
-        )  
+        )
             dict[ci] = i
             i += 1
         end
@@ -91,355 +60,118 @@ function index_to_row_link(
     return dict
 end
 
-
-function index_to_column_link(
-    model::MOI.FileFormats.MPS.Model)
-
+function _index_to_column_link(model::MOI.FileFormats.MPS.Model)
     variables = MOI.get(model, MOI.ListOfVariableIndices())
     return Dict{MOI.VariableIndex,Int}(
         x => i - 1 for (i, x) in MOI.enumerate(variables)
     )
 end
 
-
-function write_auxillary_file(
+function _write_auxillary_file(
     new_model::MOI.FileFormats.MPS.Model,
     lower_variables::Vector{MOI.VariableIndex},
     lower_objective::MOI.ScalarAffineFunction,
     lower_constraints::Vector{MOI.ConstraintIndex},
     lower_sense::MOI.OptimizationSense,
-    aux_address::AbstractString
+    aux_filename::String
+)
+    rows = _index_to_row_link(new_model)
+    cols = _index_to_column_link(new_model)
+    obj_coefficients = Dict{MOI.VariableIndex,Float64}(
+        x => 0.0 for x in lower_variables
     )
-
-    Row = index_to_row_link(new_model)
-    Col = index_to_column_link(new_model)
-
-    open(aux_address, "w") do io 
+    for term in lower_objective.terms
+        if haskey(obj_coefficients, term.variable_index)
+            obj_coefficients[term.variable_index] += term.coefficient
+        end
+    end
+    open(aux_filename, "w") do io
         println(io, "N $(length(lower_variables))")
         println(io, "M $(length(lower_constraints))")
-
         for x in lower_variables
-            println(io, "LC $(Col[x])")
+            println(io, "LC $(cols[x])")
         end
-
         for y in lower_constraints
-            println(io, "LR $(Row[y])")
+            println(io, "LR $(rows[y])")
         end
-        
-        obj_coefficients = Dict{MOI.VariableIndex,Float64}(
-            x => 0.0 for x in lower_variables
-        )
-        
-        for term in lower_objective.terms
-            if haskey(obj_coefficients, term.variable_index)
-                obj_coefficients[term.variable_index] += term.coefficient
-            end
-        end
-        
         for x in lower_variables
             println(io, "LO $(obj_coefficients[x])")
         end
-        
         println(io, "OS ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
     end
+    return
 end
 
-
-
-function Writing_MibS_inputs(
-    model::BilevelModel,
-    name::AbstractString = "model"
-)
-
-    new_model, lower_variables, lower_objective, lower_constraints, lower_sense  = _build_single_model(model)
-
-    # Write the MPS
-    #name = "modelv2"
-    name_mps = string(name, ".mps")
-    name_aux = string(name, ".aux")
-
-    MOI.write_to_file(new_model, name_mps)
-    write_auxillary_file(new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_aux)
-
-    return new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux
-end
-
-function Running_MibS(
-add_mpx::AbstractString = "model.mps",
-add_aux::AbstractString = "model.aux"
-)
-    if ~isfile(add_mpx) || ~isfile(add_aux)
-        println("Cannot find the input files!!")
-        return
-    end
-
+function _call_mibs(mps_filename, aux_filename)
     io = IOBuffer()
     MibS_jll.mibs() do exe
         run(
             pipeline(
-                `$(exe) -Alps_instance $(add_mpx) -MibS_auxiliaryInfoFile $(add_aux)`,
+                `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
                 stdout = io,
             )
         )
     end
     seekstart(io)
-    output = read(io, String)
-    return output
+    return read(io, String)
 end
 
-
-function  MibS(model::BilevelModel,
-    name::AbstractString = "model",
-    displayMibS::Bool = true,
-    saveMibS::Bool = true,
-    saveMibS_details::Bool = true,
-    output_MibS::AbstractString = ""
-    )
-
-
-    name_lower = lowercase(name)
-    end_mps = ".mps"
-    end_aux = ".aux"
-    name_new = ""
-
-    if endswith(name_lower, end_mps) || endswith(name_lower, end_aux)
-        name_new = SubString(name, 1, length(name_lower)-4)
-    else
-        name_new = SubString(name, 1, length(name_lower))
-    end
-    
-    println("========================================")
-    println("Input name:   ", name_new)
-    println("========================================")
-    new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux = Writing_MibS_inputs(model, name_new)
-    println("Mps and Aux has been created.")
-    println("========================================")
-    output = Running_MibS(name_mps, name_aux)
-
-    if displayMibS
-        println(output)
-    end
-
-    
-    if saveMibS_details
-
-        name_log = ""
-        if output_MibS == name_log
-            name_log = string(name_new, "-Dlog.txt")
-        end
-
-        open(name_log, "w") do io 
-            println(io, output)
-        end
-    end
-
-    
-    Key_Optimal = false
-    Dict_Upper_Name = Dict()
-    Dict_Lower_Name = Dict()
-    Dict_Upper_Value = Dict()
-    Dict_Lower_Value = Dict()
-
-    if occursin("Optimal solution", output)
-        Key_Optimal = true
-
-        variablesA = MOI.get(new_model, MOI.ListOfVariableIndices())
-        CntU = 0
-        CntD = 0
-        for (x, y) in MOI.enumerate(variablesA)
-            if y in lower_variables
-                Dict_Lower_Name[CntD] = y
-                Dict_Lower_Value[y] = 0
-                CntD = CntD + 1
-            else
-                Dict_Upper_Name[CntU] = y
-                Dict_Upper_Value[y] = 0
-                CntU = CntU + 1
+function _parse_output(output)
+    lines = split(output, '\n')
+    found_status = false
+    objective_value = NaN
+    upper = Dict{Int,Float64}()
+    lower = Dict{Int,Float64}()
+    for line in lines
+        if !found_status
+            if occursin("Optimal solution", line)
+                found_status = true
             end
+            continue
         end
-
-        Start_Str = findfirst("Cost =", output)[1]
-        Finish_Str = length(output)
-        output = SubString(output, Start_Str, Finish_Str)
-
-        Start_Str = 1
-        Finish_Str = findfirst("Number", output)[1]-2
-        output = SubString(output, Start_Str, Finish_Str)
-
-        
-        #println(Start_Str[1])
-        #println(output[Start_Str])
-        Result = split(output, "\n")
-        TotalObj = 0.0
-
-        for line in Result
-
-            Start_Str = findfirst("=", line)[1]
-            Start_Str = Start_Str + 1
-            Finish_Str = length(line)
-            StrNum = SubString(line, Start_Str, Finish_Str)
-            #StrNum = strip(StrNum, " ")
-            
-            Num = parse(Float64, StrNum)
-        
-            if startswith(line, "C")
-                TotalObj =  Num 
-            
-            else 
-                
-                Start_Str = findfirst("[", line)[1] + 1 
-                Finish_Str = findfirst("]", line)[1] -1
-                StrNum = SubString(line, Start_Str, Finish_Str)
-                VarIndex = parse(Int32, StrNum)
-                
-                if startswith(line, "x")
-                    VarName = Dict_Upper_Name[VarIndex]
-                    Dict_Upper_Value[VarName] = Num
-                else
-                    VarName = Dict_Lower_Name[VarIndex]
-                    Dict_Lower_Value[VarName] = Num
-                end
-            end            
+        m = match(r"([xy])\[([0-9]+)\] \= (.+)", line)
+        if m === nothing
+            m = match(r"Cost \= (.+)", line)
+            if m !== nothing
+                objective_value = parse(Float64, m[1])
+            end
+            continue
         end
-    end
-    
-    
-    name_log = ""
-    if output_MibS == name_log
-        name_log = string(name_new , "-Slog.txt")
-    end
-
-    open(name_log, "w") do io 
-
-        if Key_Optimal
-            println(io, "Not able to find any solution.")
-            println(io, "Possible reasons are:")
-            println(io, "1- problem is infeasble.")
-            println(io, "2- linking variables are not integar.")
-
+        column = parse(Int, m[2])
+        value = parse(Float64, m[3])
+        if m[1] == "x"
+            upper[column] = value
         else
-            println(io, "Not able to find any solution.")
-            println(io, "Possible reasons are:")
-            println(io, "1- problem is infeasble.")
-            println(io, "2- linking variables are not integar.")
-
+            lower[column] = value
         end
-
     end
-
-
+    return (
+        status = found_status,
+        objective = objective_value,
+        nonzero_upper = upper,
+        nonzero_lower = lower,
+    )
 end
 
-
-function test_Writing_MibS_input_v1()
-
-    model = BilevelModel()
-
-    @variable(Upper(model), y, Int)
-    @variable(Upper(model), z, Int)
-    @variable(Lower(model), x, Int)
-    @objective(Upper(model), Min, 3x + y + z)
-    @constraints(Upper(model), begin
-        u1, x <= 5
-        u2, y <= 8
-        u3, y >= 0
-        u4, z >=0
-    end)
-
-    @objective(Lower(model), Min, -x)
-    @constraint(Lower(model), l1,  x +  y <= 8)
-    @constraint(Lower(model), l2, 4x +  y >= 8)
-    @constraint(Lower(model), l3, 2x +  y <= 13)
-    @constraint(Lower(model), l4, 2x - 7y <= 0)
-
-    Writing_MibS_inputs(model, "modelv1")
-    
+function solve_with_MibS(model::BilevelModel; silent::Bool = true)
+    mktempdir() do path
+        mps_filename = joinpath(path, "model.mps")
+        aux_filename = joinpath(path, "model.aux")
+        new_model, variables, objective, constraints, sense  =
+            _build_single_model(model)
+        MOI.write_to_file(new_model, mps_filename)
+        _write_auxillary_file(
+            new_model,
+            variables,
+            objective,
+            constraints,
+            sense,
+            aux_filename,
+        )
+        output = _call_mibs(mps_filename, aux_filename)
+        if !silent
+            println(output)
+        end
+        return _parse_output(output)
+    end
 end
-
-
-function test_Writing_MibS_input_v2()
-
-    model = BilevelModel()
-
-    @variable(Upper(model), x, Int)
-    @variable(Lower(model), y, Int)
-    @objective(Upper(model), Min, -3x - 7y)
-    @constraints(Upper(model), begin
-        u1, -3x + 2y <= 12
-        u2, x + 2y <= 20
-        u3, x <= 10
-    end)
-
-    @objective(Lower(model), Min, y)
-    @constraint(Lower(model), l1,  2x -  y <= 7)
-    @constraint(Lower(model), l2, -2x +  4y <= 16)
-    @constraint(Lower(model), l3, y <= 5)
-
-    Writing_MibS_inputs(model, "modelv2")
-end
-
-function test_Writing_MibS_input_v3()
-
-    model = BilevelModel()
-
-    @variable(Upper(model), x, Int)
-    @variable(Lower(model), y, Int)
-
-    @objective(Upper(model), Min, -x - 10y)
-    @constraint(Upper(model), u1, x <= 10)
-    #@constraint(Upper(model), u2, x >= 11)
-
-    @objective(Lower(model), Min, y)
-    @constraint(Lower(model), l1,  -25x +  20y <= 30)
-    @constraint(Lower(model), l2,  x +  2y <= 10)
-    @constraint(Lower(model), l3,  2x -  y <= 15)
-    @constraint(Lower(model), l4, -2x -  10y <= -15)
-    @constraint(Lower(model), l5, y <= 5)
-    
-    MibS(model, "NewModel")
-end
-
-
-function test_Writing_MibS_input_v4()
-
-    model = BilevelModel()
-
-    @variable(Upper(model), x, Int)
-    @variable(Lower(model), y, Int)
-
-    @objective(Upper(model), Min, -x - 10y)
-
-    @objective(Lower(model), Min, y)
-
-    @constraint(Lower(model), l1,  -25x +  20y <= 30)
-    @constraint(Lower(model), l2,  x +  2y <= 10)
-    @constraint(Lower(model), l3,  2x -  y <= 15)
-    @constraint(Lower(model), l4, -2x -  10y <= -15)
-    Writing_MibS_inputs(model, "model-moore90WithName")
-end
-
-#test_Writing_MibS_input_v1()
-#test_Writing_MibS_input_v2()
-test_Writing_MibS_input_v3()
-#test_Writing_MibS_input_v4()
-
-#Running_MibS("modelv1.mps", "modelv1.aux")
-#Running_MibS("modelv2.mps", "modelv2.aux")
-#Running_MibS("modelv2.mps", "modelv2.aux")
-#Running_MibS("model_ted_v1.mps", "model_ted_v1.aux")
-#Running_MibS("model_ted_v2.mps", "model_ted_v2.aux")
-#Running_MibS("model_ted_v3.mps", "model_ted_v3.aux")
-#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
-#Running_MibS("knapsack.mps", "knapsack.aux")
-
-#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
-#Running_MibS("moore90WithNamev3.mps", "moore90WithName.txt")
-#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
-
-
-#Running_MibS("moore90WithName.mps", "moore90WithName.txt")
-#Running_MibS("moore90WithNamev2.mps", "moore90WithName.txt")
-
-
-#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
-#Running_MibS("model-moore90WithName.mps", "model-moore90WithName.aux")
