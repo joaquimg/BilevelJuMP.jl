@@ -192,59 +192,95 @@ function  MibS(model::BilevelModel,
     name::AbstractString = "model",
     displayMibS::Bool = true,
     saveMibS::Bool = true,
-    output_address::AbstractString = ""
-)
-name_lower = lowercase(name)
-end_mps = ".mps"
-end_aux = ".aux"
-name_new = ""
-
-if endswith(name_lower, end_mps) || endswith(name_lower, end_aux)
-    name_new = SubString(name, 1, length(name_lower)-4)
-else
-    name_new = SubString(name, 1, length(name_lower))
-end
-
-println("========================================")
-println("Input name:   ", name_lower)
-println("========================================")
-new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux = Writing_MibS_inputs(model, name_new)
-println("Mps and Aux has been created.")
-println("========================================")
-output = Running_MibS(name_mps, name_aux)
-
-if displayMibS
-    println(output)
-end
-
-if ~saveMibS
-    return
-end
+    saveMibS_details::Bool = true,
+    output_MibS::AbstractString = ""
+    )
 
 
-name_log = ""
-if output_address == string.empty
-    name_log = name_new + ".log"
-end
+    name_lower = lowercase(name)
+    end_mps = ".mps"
+    end_aux = ".aux"
+    name_new = ""
 
-open(name_log, "w") do io 
-    
-
-    if occursin("Optimal solution", output)
-
-    
+    if endswith(name_lower, end_mps) || endswith(name_lower, end_aux)
+        name_new = SubString(name, 1, length(name_lower)-4)
     else
-        println(io, "Not able to find any solution.")
-        println(io, "Possible reasons are:")
-        println(io, "1- problem is infeasble.")
-        println(io, "2- linking variables are not integar.")
+        name_new = SubString(name, 1, length(name_lower))
+    end
+    
+    println("========================================")
+    println("Input name:   ", name_new)
+    println("========================================")
+    new_model, lower_variables, lower_objective, lower_constraints, lower_sense, name_mps, name_aux = Writing_MibS_inputs(model, name_new)
+    println("Mps and Aux has been created.")
+    println("========================================")
+    output = Running_MibS(name_mps, name_aux)
+
+    if displayMibS
+        println(output)
     end
 
-end
+    
+    if saveMibS_details
 
+        name_log = ""
+        if output_MibS == name_log
+            name_log = string(name_new, "-Dlog.txt")
+        end
 
+        open(name_log, "w") do io 
+            println(io, output)
+        end
+    end
 
+    
+    Key_Optimal = false
+    Dict_Upper = Dict()
+    Dict_Lower = Dict()
 
+    if occursin("Optimal solution", output)
+        Key_Optimal = true
+        
+
+        variablesA = MOI.get(new_model, MOI.ListOfVariableIndices())
+        CntU = 0
+        CntD = 0
+        for (x, y) in MOI.enumerate(variablesA)
+            if y in lower_variables
+                Dict_Lower[CntD] = y
+                CntD = CntD + 1
+            else
+                Dict_Upper[CntU] = y
+                CntU = CntU + 1
+            end
+        end
+        println(Dict_Lower)
+        println(Dict_Upper)
+    end
+    
+    
+    name_log = ""
+    if output_MibS == name_log
+        name_log = string(name_new , "-Slog.txt")
+    end
+
+    open(name_log, "w") do io 
+
+        if Key_Optimal
+            println(io, "Not able to find any solution.")
+            println(io, "Possible reasons are:")
+            println(io, "1- problem is infeasble.")
+            println(io, "2- linking variables are not integar.")
+
+        else
+            println(io, "Not able to find any solution.")
+            println(io, "Possible reasons are:")
+            println(io, "1- problem is infeasble.")
+            println(io, "2- linking variables are not integar.")
+
+        end
+
+    end
 
 
 end
@@ -315,7 +351,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l4, -2x -  10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
     
-    MibS(model, "NewModel",)
+    MibS(model, "NewModel")
 end
 
 
