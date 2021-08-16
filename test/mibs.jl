@@ -237,6 +237,8 @@ function test_Writing_MibS_input_v2()
     @test solution.objective ≈ -53
     @test solution.nonzero_upper == Dict(0 => 6.0)
     @test solution.nonzero_lower == Dict(0 => 5.0)
+    @test solution.all_upper["x"] == 6.0
+    @test solution.all_lower["y"] == 5.0
     return
 end
 

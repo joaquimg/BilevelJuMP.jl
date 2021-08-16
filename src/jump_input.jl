@@ -1,4 +1,4 @@
-import MibS_jll
+
 
 function _build_single_model(model::BilevelModel)
     upper = JuMP.backend(model.upper)
@@ -41,6 +41,7 @@ function _build_single_model(
     lower_objective = MOI.Utilities.map_indices(lower_objective) do x
         return upper_to_model_link[lower_to_upper_link[x]]
     end
+    #number varibles == inter + binary const
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
 end
@@ -116,12 +117,44 @@ function _call_mibs(mps_filename, aux_filename)
     return read(io, String)
 end
 
-function _parse_output(output)
+function _parse_output(
+    output::String,
+    new_model::MOI.FileFormats.MPS.Model,
+    lower_variables::Vector{MOI.VariableIndex}
+    )
     lines = split(output, '\n')
     found_status = false
     objective_value = NaN
+
     upper = Dict{Int,Float64}()
     lower = Dict{Int,Float64}()
+
+
+    all_var = MOI.get(new_model, MOI.ListOfVariableIndices())
+
+    CntU = 0
+    CntD = 0
+
+    Dict_Lower_Name = Dict()
+    Dict_Lower_Value = Dict()
+    Dict_Upper_Name = Dict()
+    Dict_Upper_Value = Dict()
+
+    for (x, y) in MOI.enumerate(all_var)
+        nameofvar = MOI.get(new_model, MOI.VariableName(), y)
+        if y in lower_variables
+            Dict_Lower_Name[CntD] = nameofvar
+            Dict_Lower_Value[nameofvar] = 0
+            CntD = CntD + 1
+        else
+            Dict_Upper_Name[CntU] = nameofvar  
+            Dict_Upper_Value[nameofvar] = 0
+            CntU = CntU + 1
+        end
+    end
+
+
+
     for line in lines
         if !found_status
             if occursin("Optimal solution", line)
@@ -137,21 +170,34 @@ function _parse_output(output)
             end
             continue
         end
+
         column = parse(Int, m[2])
         value = parse(Float64, m[3])
+
         if m[1] == "x"
             upper[column] = value
+            nameofvar = Dict_Upper_Name[column]
+            Dict_Upper_Value[nameofvar] = value
         else
             lower[column] = value
+            nameofvar = Dict_Lower_Name[column]
+            Dict_Lower_Value[nameofvar] = value
         end
     end
+
     return (
         status = found_status,
         objective = objective_value,
         nonzero_upper = upper,
         nonzero_lower = lower,
+        all_upper = Dict_Upper_Value,
+        all_lower = Dict_Lower_Value
     )
 end
+
+# input
+# fails on ,...
+# outputs
 
 function solve_with_MibS(model::BilevelModel; silent::Bool = true)
     mktempdir() do path
@@ -172,6 +218,6 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
         if !silent
             println(output)
         end
-        return _parse_output(output)
+        return _parse_output(output, new_model, variables)
     end
 end
