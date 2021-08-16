@@ -280,6 +280,63 @@ function test_Writing_MibS_input_v4()
     return
 end
 
+
+
+function test_Writing_MibS_input_v5()
+    model = BilevelModel()
+    @variable(Upper(model), x, Int)
+    @variable(Upper(model), z, Int)
+    @variable(Lower(model), y, Int)
+    @objective(Upper(model), Min, -z - 10y + x)
+    @constraint(Upper(model), u1,  25z +  2x <= 30)
+    @constraint(Upper(model), u2,  x <= 6)
+    @constraint(Upper(model), u3,  x >= 2)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1,  -25x +  20y <= 30)
+    @constraint(Lower(model), l2,  x +  2y <= 10)
+    @constraint(Lower(model), l3,  2x -  y <= 15)
+    @constraint(Lower(model), l4, -2x -  10y <= -15)
+    solution = BilevelJuMP.solve_with_MibS(model, silent = true)
+    @test solution.status == true
+    @test solution.objective ≈ -19
+    #@test solution.nonzero_upper == Dict(0 => 1.0)
+    #@test solution.nonzero_upper == Dict(0 => 2.0)
+    #@test solution.nonzero_lower == Dict(0 => 2.0)
+    @test solution.all_upper["x"] == 2
+    @test solution.all_upper["z"] == 1
+    @test solution.all_lower["y"] == 2
+    return
+end
+
+
+function test_Writing_MibS_input_v6()
+    model = BilevelModel()
+    @variable(Upper(model), x, Int)
+    @variable(Upper(model), z, Int)
+    @variable(Lower(model), y, Int)
+    @objective(Upper(model), Min, -x - 10y + z)
+    @constraint(Upper(model), u1,  25x +  2z <= 30)
+    @constraint(Upper(model), u2,  z <= 6)
+    @constraint(Upper(model), u3,  z >= 2)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1,  -25z +  20y <= 30)
+    @constraint(Lower(model), l2,  z +  2y <= 10)
+    @constraint(Lower(model), l3,  2z -  y <= 15)
+    @constraint(Lower(model), l4, -2z -  10y <= -15)
+    solution = BilevelJuMP.solve_with_MibS(model, silent = true)
+    @test solution.status == true
+    @test solution.objective ≈ -19
+    #@test solution.nonzero_upper == Dict(0 => 2.0)
+    #@test solution.nonzero_upper == Dict(0 => 1.0)
+    #@test solution.nonzero_lower == Dict(0 => 2.0)
+    @test solution.all_upper["x"] == 1
+    @test solution.all_upper["z"] == 2
+    @test solution.all_lower["y"] == 2
+    return
+end
+
+
+
 end  # module
 
 TestJuMPInput.runtests()

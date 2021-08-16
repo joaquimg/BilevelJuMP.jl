@@ -215,7 +215,7 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
             aux_filename,
         )
         output = _call_mibs(mps_filename, aux_filename)
-        if !silent
+        if silent
             println(output)
         end
         return _parse_output(output, new_model, variables)
