@@ -1,4 +1,4 @@
-
+using MibS_jll
 
 function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
     upper = JuMP.backend(model.upper)
