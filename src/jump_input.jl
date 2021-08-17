@@ -206,30 +206,22 @@ function _parse_output(
 end
 
 """
-    solve_with_MibS(
-                    model::BilevelModel; 
-                    silent::Bool = true)
+    solve_with_MibS(model::BilevelModel; silent::Bool = true)
 
 ## Inputs
-Inputs of the function are consist of one `model` with the data structure of MathOptInterface and `silent` which is an attribute for MibS solver to show the details of the solution or not (`true` value has been considered to hide the information). 
-
+* `model::BilevelModel`:  the model. to optimize
+* `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
 ## Outputs
-For the output, we have multiple values, which are:
-* `status`: if the problem is feasible and has optimal value(s), it returns `true`.
-* `objective`: it is the objective value (cost) of the bilevel problem
-* `nonzero_upper`: it returns `dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here the order of the variables is based on their order of appearance in the MPS file.
-* `nonzero_lower`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
-* `all_upper`: it returns all the upper variables, including zero and non-zero variables. For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
-* `all_lower`: it has the same structure as the `all_upper` but is defined for lower variables.
-
-
-## Note
-Currently, `MibS` is designed to solve only MIP-MIP problems. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
-
+This function returns a `NamedTuple` with fields:
+* `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
+* `objective::Float64`: objective value (cost) of the problem
+* `nonzero_upper::Dict{Int, Float64}`: it returns `Dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here, the order of the variables is based on their order of appearance in the MPS file.
+* `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
+* `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
+* `all_lower::Dict{String, Float64}`: it has the same structure as the `all_upper` but is defined for lower variables.
+!!! warning
+Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-
-
-
 function solve_with_MibS(model::BilevelModel; silent::Bool = true)
     mktempdir() do path
         mps_filename = joinpath(path, "model.mps")
