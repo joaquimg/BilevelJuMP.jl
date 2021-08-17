@@ -209,12 +209,12 @@ end
     solve_with_MibS(model::BilevelModel; silent::Bool = true)
 
 ## Inputs
-* `model::BilevelModel`:  the model. to optimize
+* `model::BilevelModel`:  the model to optimize
 * `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
 ## Outputs
 This function returns a `NamedTuple` with fields:
 * `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
-* `objective::Float64`: objective value (cost) of the problem
+* `objective::Float64`: objective value (cost) of the upper problem
 * `nonzero_upper::Dict{Int, Float64}`: it returns `Dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here, the order of the variables is based on their order of appearance in the MPS file.
 * `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
 * `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
