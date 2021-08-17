@@ -205,10 +205,6 @@ function _parse_output(
     )
 end
 
-# input
-# fails on ,...
-# outputs
-
 """
     solve_with_MibS(
                     model::BilevelModel; 
