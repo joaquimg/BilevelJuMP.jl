@@ -1,6 +1,6 @@
 
 
-function _build_single_model(model::BilevelModel)
+function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
     lower_to_upper =
@@ -8,14 +8,15 @@ function _build_single_model(model::BilevelModel)
     lower_only = Dict(
         JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
     )
-    return _build_single_model(upper, lower, lower_to_upper, lower_only)
+    return _build_single_model(upper, lower, lower_to_upper, lower_only, check_MIPMIP)
 end
 
 function _build_single_model(
     upper::MOI.ModelLike,
     lower::MOI.ModelLike,
     lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
-    lower_only::Dict{MOI.VariableIndex,MOI.VariableIndex}
+    lower_only::Dict{MOI.VariableIndex,MOI.VariableIndex},
+    check_MIPMIP::Bool = false
 )
     model = MOI.FileFormats.MPS.Model()
     upper_to_model_link = MOI.copy_to(model, upper)
@@ -41,7 +42,16 @@ function _build_single_model(
     lower_objective = MOI.Utilities.map_indices(lower_objective) do x
         return upper_to_model_link[lower_to_upper_link[x]]
     end
-    #number varibles == inter + binary const
+
+    # Testing if the model is MIP-MIP or not. 
+    if check_MIPMIP
+        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
+        all_var = MOI.get(model, MOI.NumberOfVariables())
+        if int_var != all_var
+            throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
+        end
+    end
+
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
 end
@@ -204,7 +214,7 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
-            _build_single_model(model)
+            _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)
         _write_auxillary_file(
             new_model,

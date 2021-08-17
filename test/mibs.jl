@@ -152,7 +152,7 @@ function test_basic_example_6_integer_in_lower_level()
     @variable(Upper(model), ya[i=1:I])                          #7 variables
     @variable(Upper(model), yb[i=1:I], Int)                     #7 variables
     @variable(Upper(model), z, Int)                             #1 variable
-    @variable(Lower(model), x[i=1:I])                   #7 variables
+    @variable(Lower(model), x[i=1:I])                           #7 variables
     @objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
     @constraint(Upper(model), ca, z <= 1)                       #1 LessThan
     @constraint(Upper(model), cb, z >= 0)                       #1 GreaterThan
