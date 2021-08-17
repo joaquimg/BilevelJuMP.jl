@@ -219,8 +219,9 @@ This function returns a `NamedTuple` with fields:
 * `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
 * `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
 * `all_lower::Dict{String, Float64}`: it has the same structure as the `all_upper` but is defined for lower variables.
+
 !!! warning
-Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
+    Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
 function solve_with_MibS(model::BilevelModel; silent::Bool = true)
     mktempdir() do path
