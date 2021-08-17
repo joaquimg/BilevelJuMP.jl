@@ -149,20 +149,25 @@ function _parse_output(
     Dict_Lower_Value = Dict()
     Dict_Upper_Name = Dict()
     Dict_Upper_Value = Dict()
+    Dict_Upper_IndexToModel = Dict()
+    Dict_Lower_IndexToModel = Dict()
+    Dict_All = Dict()
 
     for (x, y) in MOI.enumerate(all_var)
         nameofvar = MOI.get(new_model, MOI.VariableName(), y)
         if y in lower_variables
             Dict_Lower_Name[CntD] = nameofvar
             Dict_Lower_Value[nameofvar] = 0
+            Dict_Lower_IndexToModel[CntD] = y
             CntD = CntD + 1
         else
             Dict_Upper_Name[CntU] = nameofvar  
             Dict_Upper_Value[nameofvar] = 0
+            Dict_Upper_IndexToModel[CntU] = y
             CntU = CntU + 1
         end
+        Dict_All[y] = 0
     end
-
 
 
     for line in lines
@@ -188,10 +193,14 @@ function _parse_output(
             upper[column] = value
             nameofvar = Dict_Upper_Name[column]
             Dict_Upper_Value[nameofvar] = value
+            indexofvar = Dict_Upper_IndexToModel[column]
+            Dict_All[indexofvar] = value
         else
             lower[column] = value
             nameofvar = Dict_Lower_Name[column]
             Dict_Lower_Value[nameofvar] = value
+            indexofvar = Dict_Lower_IndexToModel[column]
+            Dict_All[indexofvar] = value
         end
     end
 
@@ -201,7 +210,8 @@ function _parse_output(
         nonzero_upper = upper,
         nonzero_lower = lower,
         all_upper = Dict_Upper_Value,
-        all_lower = Dict_Lower_Value
+        all_lower = Dict_Lower_Value,
+        all_var = Dict_All
     )
 end
 
@@ -219,6 +229,7 @@ This function returns a `NamedTuple` with fields:
 * `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
 * `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
 * `all_lower::Dict{String, Float64}`: it has the same structure as the `all_upper` but is defined for lower variables.
+* `all_var::Dict{MOI.VariableIndex, Float64}`: it contains information on all variables (upper and lower) in the format of `MOI.VariableIndex` and their output values. 
 
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
