@@ -209,6 +209,29 @@ end
 # fails on ,...
 # outputs
 
+"""
+    solve_with_MibS(
+                    model::BilevelModel; 
+                    silent::Bool = true)
+
+## Inputs
+Inputs of the function are consist of one `model` with the data structure of MathOptInterface and `silent` which is an attribute for MibS solver to show the details of the solution or not (`true` value has been considered to hide the information). 
+
+## Outputs
+For the output, we have multiple values, which are:
+* `status`: if the problem is feasible and has optimal value(s), it returns `true`.
+* `objective`: it is the objective value (cost) of the bilevel problem
+* `nonzero_upper`: it returns `dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here the order of the variables is based on their order of appearance in the MPS file.
+* `nonzero_lower`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
+* `all_upper`: it returns all the upper variables, including zero and non-zero variables. For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
+* `all_lower`: it has the same structure as the `all_upper` but is defined for lower variables.
+
+
+## Note
+Currently, `MibS` is designed to solve only MIP-MIP problems. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
+
+"""
+
 function solve_with_MibS(model::BilevelModel; silent::Bool = true)
     mktempdir() do path
         mps_filename = joinpath(path, "model.mps")
@@ -225,7 +248,7 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
             aux_filename,
         )
         output = _call_mibs(mps_filename, aux_filename)
-        if silent
+        if !silent
             println(output)
         end
         return _parse_output(output, new_model, variables)
