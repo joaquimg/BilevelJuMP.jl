@@ -13,23 +13,25 @@ y \in \mathbb{Z}\\\]</p><pre><code class="language-julia">using BilevelJuMP
 using JuMP
 using Test
 
-model = BilevelModel()
-@variable(Upper(model), x, Int)
-@variable(Lower(model), y, Int)
-@objective(Upper(model), Min, -3x - 7y)
-@constraints(Upper(model), begin
+model = BilevelModel()</code></pre><pre class="documenter-example-output">A JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.NoMode{Float64}
+No solver attached</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x, Int)
+
+#Lower level variables
+@variable(Lower(model), y, Int)</code></pre><p class="math-container">\[ y \]</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, -3x - 7y)</code></pre><p class="math-container">\[ -3 x - 7 y \]</p><p>Upper constraints</p><pre><code class="language-julia">@constraints(Upper(model), begin
     u1, -3x + 2y &lt;= 12
     u2, x + 2y &lt;= 20
     u3, x &lt;= 10
-end)
-@objective(Lower(model), Min, y)
-@constraint(Lower(model), l1,  2x -  y &lt;= 7)
+end)</code></pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, y)</code></pre><p class="math-container">\[ y \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), l1,  2x -  y &lt;= 7)
 @constraint(Lower(model), l2, -2x +  4y &lt;= 16)
-@constraint(Lower(model), l3, y &lt;= 5)
-solution = BilevelJuMP.solve_with_MibS(model, silent = true)
-@test solution.status == true
+@constraint(Lower(model), l3, y &lt;= 5)</code></pre><p>l3 : $ y \leq 5.0 $</p><p>Using MibS Solver</p><pre><code class="language-julia">solution = BilevelJuMP.solve_with_MibS(model, silent = true)</code></pre><pre class="documenter-example-output">(status = true, objective = -53.0, nonzero_upper = Dict(0 =&gt; 6.0), nonzero_lower = Dict(0 =&gt; 5.0), all_upper = Dict{Any, Any}(&quot;x&quot; =&gt; 6.0), all_lower = Dict{Any, Any}(&quot;y&quot; =&gt; 5.0), all_var = Dict{Any, Any}(MathOptInterface.VariableIndex(2) =&gt; 5.0, MathOptInterface.VariableIndex(1) =&gt; 6.0))</pre><p>Auto testing</p><pre><code class="language-julia">@test solution.status == true
 @test solution.objective ≈ -53
 @test solution.nonzero_upper == Dict(0 =&gt; 6.0)
 @test solution.nonzero_lower == Dict(0 =&gt; 5.0)
 @test solution.all_upper[&quot;x&quot;] == 6.0
-@test solution.all_lower[&quot;y&quot;] == 5.0</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/MibS_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example5/">« Foundations of Bilevel Programming: Example 5</a><a class="docs-footer-nextpage" href="../PHTP_example1/">Foundations of Bilevel Programming: Example 6 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 17 August 2021 20:56">Tuesday 17 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@test solution.all_lower[&quot;y&quot;] == 5.0</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/MibS_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example5/">« Foundations of Bilevel Programming: Example 5</a><a class="docs-footer-nextpage" href="../PHTP_example1/">Foundations of Bilevel Programming: Example 6 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 18 August 2021 21:43">Wednesday 18 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
