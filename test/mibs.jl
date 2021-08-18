@@ -336,7 +336,6 @@ function test_Writing_MibS_input_v6()
 end
 
 
-
 end  # module
 
 TestJuMPInput.runtests()

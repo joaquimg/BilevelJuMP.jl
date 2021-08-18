@@ -43,9 +43,11 @@ function _build_single_model(
         return upper_to_model_link[lower_to_upper_link[x]]
     end
 
+    
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
         int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
+        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.ZeroOne}())
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
             throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
