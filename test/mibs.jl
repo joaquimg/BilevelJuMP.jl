@@ -337,6 +337,34 @@ end
 
 
 
+function test_Writing_MibS_input_v7()
+    model = BilevelModel()
+    @variable(Upper(model), x, Bin)
+    @variable(Upper(model), z, Bin)
+    @variable(Lower(model), y, Bin)
+    @objective(Upper(model), Min, -x - 10y + z)
+    @constraint(Upper(model), u1,  25x +  2z <= 30)
+    @constraint(Upper(model), u2,  z <= 6)
+    @constraint(Upper(model), u3,  z >= 2)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1,  -25z +  20y <= 30)
+    @constraint(Lower(model), l2,  z +  2y <= 10)
+    @constraint(Lower(model), l3,  2z -  y <= 15)
+    @constraint(Lower(model), l4, -2z -  10y <= -15)
+    solution = BilevelJuMP.solve_with_MibS(model, silent = true)
+    @test solution.status == true
+    @test solution.objective ≈ -19
+    #@test solution.nonzero_upper == Dict(0 => 2.0)
+    #@test solution.nonzero_upper == Dict(0 => 1.0)
+    #@test solution.nonzero_lower == Dict(0 => 2.0)
+    @test solution.all_upper["x"] == 1
+    @test solution.all_upper["z"] == 2
+    @test solution.all_lower["y"] == 2
+    return
+end
+
+
+
 end  # module
 
 TestJuMPInput.runtests()
