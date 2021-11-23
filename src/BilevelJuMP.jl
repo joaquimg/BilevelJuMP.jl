@@ -7,6 +7,7 @@ using JuMP
 using Dualization
 using LinearAlgebra
 using IntervalArithmetic
+using SparseArrays
 
 export
 BilevelModel,
@@ -26,5 +27,6 @@ include("jump_print.jl")
 include("jump_attributes.jl")
 include("jump_nlp.jl")
 include("jump_input.jl")
+include("bilinear_linearization.jl")
 
 end
