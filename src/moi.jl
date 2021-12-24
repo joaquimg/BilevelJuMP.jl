@@ -282,6 +282,24 @@ function build_bilevel(
     linearize_bilinear_upper_terms::Bool = false
     )
 
+#= arguments from jump.jl
+mode = model.mode
+copy_names = model.copy_names
+pass_start = model.pass_start
+
+using Dualization
+dual_problem = Dualization.dualize(lower,
+               dual_names = Dualization.DualNames("dual_","dual_"),
+               variable_parameters = lower_var_indices_of_upper_vars,
+               ignore_objective = BilevelJuMP.ignore_dual_objective(mode))
+
+BilevelJuMP.handle_lower_objective_sense(lower)
+
+BilevelJuMP.append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
+
+BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
+=#
+
     # Start with an empty problem
     m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), MOIU.AUTOMATIC)
 
@@ -304,7 +322,7 @@ function build_bilevel(
     # key are from src, value are from dest
     upper_to_m_idxmap = MOIU.default_copy_to(m, upper, copy_names)
     if copy_names
-        pass_names(m, upper, upper_to_m_idxmap)
+        BilevelJuMP.pass_names(m, upper, upper_to_m_idxmap)
     end
 
     #=
@@ -330,9 +348,9 @@ function build_bilevel(
     end
 
     # append the second level primal
-    append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
+    BilevelJuMP.append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
     if copy_names
-        pass_names(m, lower, lower_to_m_idxmap)
+        BilevelJuMP.pass_names(m, lower, lower_to_m_idxmap)
     end
 
     #=
@@ -370,9 +388,9 @@ function build_bilevel(
     end
 
     # append the second level dual
-    append_to(m, lower_dual, lower_dual_idxmap, copy_names)
+    BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     if copy_names
-        pass_names(m, lower_dual, lower_dual_idxmap)
+        BilevelJuMP.pass_names(m, lower_dual, lower_dual_idxmap)
     end
 
     #=
