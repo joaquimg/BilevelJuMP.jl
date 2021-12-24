@@ -272,15 +272,18 @@ function build_bilevel(
     upper::MOI.ModelLike, lower::MOI.ModelLike,
     upper_to_lower_var_indices::Dict{VI,VI}, lower_var_indices_of_upper_vars::Vector{VI},
     mode,
-    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
+    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}(),
+    V=nothing,
+    w=nothing,
+    yu=nothing,
+    yl=nothing;
     copy_names::Bool = false,
     pass_start::Bool = false,
     linearize_bilinear_upper_terms::Bool = false
     )
 
     # Start with an empty problem
-    moi_mode = MOIU.AUTOMATIC
-    m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), moi_mode)
+    m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), MOIU.AUTOMATIC)
 
     #=
         Initialize Lower DUAL level model
@@ -290,6 +293,7 @@ function build_bilevel(
         dual_names = Dualization.DualNames("dual_","dual_"),
         variable_parameters = lower_var_indices_of_upper_vars,
         ignore_objective = ignore_dual_objective(mode))
+    
     lower_dual = dual_problem.dual_model
     lower_primal_dual_map = dual_problem.primal_dual_map
 
@@ -352,7 +356,7 @@ function build_bilevel(
     for (lower_primal_var_key, lower_dual_quad_slack_val) in lower_primal_dual_map.primal_var_dual_quad_slack
         lower_dual_idxmap[lower_dual_quad_slack_val] = lower_to_m_idxmap[lower_primal_var_key]
     end
-    # and to upper level variables which are lower level parameters
+    # and to upper level variables (which are lower level parameters)
     for (lower_primal_param_key, lower_dual_param_val) in lower_primal_dual_map.primal_parameter
         lower_dual_idxmap[lower_dual_param_val] = lower_to_m_idxmap[lower_primal_param_key]
     end
@@ -446,19 +450,6 @@ function build_bilevel(
         if isempty(A_N)
             @info("No bilinear products of lower level dual and primal variables found in upper level objective.")
         else
-            eq_con_indices = MOI.get(lower, MOI.ListOfConstraintIndices{
-                    MOI.ScalarAffineFunction{Float64}, 
-                    MOI.EqualTo{Float64}
-            }())
-
-            V, w = get_coef_matrix_and_rhs_vec(lower, eq_con_indices)
-            for lower_var_index in lower_var_indices_of_upper_vars
-                if !(nnz(V[:, lower_var_index.value]) == 0)
-                    @warn("Lower level constraint contains upper level variable: cannot linearize bilinear product in upper level.")
-                    # TODO assert conditions on upper variables in lower constraints
-                end
-            end
-
             AB_N = Int[]
 
             # check if the set AB_N = {n in A_N : ∃ m ∈ M s.t. B_mn ≠ 0} is empty or not
@@ -483,11 +474,22 @@ function build_bilevel(
             linearizations = Vector{MOI.ScalarAffineTerm}()
 
             for (upper_var, lower_con) in upper_var_lower_ctr
-                j = lower_con.value
+                # upper_var = upper_var_lower_ctr.keys[1]
+                # lower_con = upper_var_lower_ctr.vals[1]
+                j = lower_con.value  # TODO do these j values align with values in V from _standard_form_matrix?
                 n = bilinear_upper_dual_to_lower_primal[upper_var].value
+                # n needs to be adjusted for new V from _standard_form_matrix, or just replace x cols with zeros?
 
-                rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+                rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
                 # rows is set J_j, cols is set N_n
+                # TODO if rows contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem
+                    # can check this condition based on number of constraints in model.lower ?
+
+                # # Check Condition 1
+                # for m ∈ upper_level_var_indices_in_V
+                # if V[j,m] != 0 
+                #     @warn("Lower level constraint in set J_j contains upper level variable: cannot linearize bilinear product in upper level.")
+                # end end
 
                 # TODO Condtions 1, 2', 3, and 4 (see paper Algorithm 3)
                 A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
@@ -495,26 +497,26 @@ function build_bilevel(
                 p = A_jn / V_jn
                 for r in rows
                     push!(linearizations,
-                        MOI.ScalarAffineTerm(p*w[r], upper_to_m_idxmap[upper_var])
+                        MOI.ScalarAffineTerm(p*w[r], upper_to_m_idxmap[upper_var])  
                     )
+                    # second term should be dual of lower_con (actually index of dual in m, but user may not have declared dual_of)
                 end
 
                 # TODO assert that lower level constraints in upper_var_lower_ctr are linear
                 if !isempty(AB_N)
                     cols = setdiff(cols, A_N)
                 end
-
+                num_vars = MOI.get(lower, MOI.NumberOfVariables())
                 for c in cols
+                    if c > num_vars continue end  # TODO do we need to add slack variables?
                     lower_var = MOI.VariableIndex(c)
                     # lower primal * lower cost
-                    lower_var_cost_coef = get_coef(lower_var, lower_obj_terms)
+                    lower_var_cost_coef = BilevelJuMP.get_coef(lower_var, lower_obj_terms)
                     push!(linearizations,
                         MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
                     )
                     # variable bound * dual variable
-                    low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var)
-                    # BUG IS HERE!! need dual var of bounds, not lower_var
-                    # can use lower_primal_dual_map.primal_con_dual_var ?
+                    low_bound, upp_bound = yl[c], yu[c] #MOIU.get_bounds(lower, Float64, lower_var)
 
                     low_dual, upp_dual = nothing, nothing
                     for (ci, vi) in lower_primal_dual_map.primal_con_dual_var
@@ -537,6 +539,7 @@ function build_bilevel(
                     if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
                         push!(linearizations, MOI.ScalarAffineTerm(-p*upp_bound, lower_dual_idxmap[upp_dual]))
                     end
+
                 end
             end
 
@@ -555,6 +558,7 @@ function build_bilevel(
                 MOI.set(m, MOI.ObjectiveFunction{MOI.ScalarAffineFunction}(), new_objective)
             # else  # objective stays quadratic
             #     TODO
+            # TODO store original UL objective? why doesn't new objective value equal the old one for conejo test? something to do with slack variables added to the problem?
             end
         end
     end
