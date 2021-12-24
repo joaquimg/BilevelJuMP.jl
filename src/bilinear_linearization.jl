@@ -286,7 +286,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     For each SingleVariable GreaterThan{Float64} or LessThan{Float64} we fill in the bounds
     yl and yu
     =#
-    yl = nothing
+    yl = -Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.SingleVariable, MOI.GreaterThan{Float64}) in con_types
 
 		singleVar_gt_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -297,7 +297,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 		yl = get_coef_matrix_and_rhs_vec(m, singleVar_gt_indices)
 	end
 	
-    yu = nothing
+    yu = Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.SingleVariable, MOI.LessThan{Float64}) in con_types
 
 		singleVar_lt_indices = MOI.get(m, MOI.ListOfConstraintIndices{
