@@ -239,7 +239,7 @@ optimize!(model)
 
 optimizer = Gurobi.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
-
+bounds = true
 @variable(Upper(model), x, start = 50)
 if bounds
     @variable(Lower(model), -1 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
@@ -267,8 +267,8 @@ end
 
 @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
-
 optimize!(model)
+
 
 @test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
 # TODO why doesn't objective_value match the Upper objective value?
