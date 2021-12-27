@@ -133,7 +133,7 @@ function get_coef_matrix_and_rhs_vec(m,
 	)
 	nrows = length(constraint_indices)
 	E = spzeros(nrows, MOI.get(m, MOI.NumberOfVariables()))
-	f = spzeros(nrows)
+	f = -Inf*ones(nrows)
 
 	for (r, ci) in enumerate(constraint_indices)
 		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
@@ -189,7 +189,7 @@ function get_coef_matrix_and_rhs_vec(m,
 	)
 	nrows = length(constraint_indices)
 	C = spzeros(nrows, MOI.get(m, MOI.NumberOfVariables()))
-	d = spzeros(nrows)
+	d = Inf*ones(nrows)
 	for (r, ci) in enumerate(constraint_indices)
 		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
 		for term in con_func.terms
@@ -238,7 +238,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 	nvars = MOI.get(m, MOI.NumberOfVariables())
 	con_types = MOI.get(m, MOI.ListOfConstraints())
 
-    n_equality_cons = 0
+    n_equality_cons = 0  # A[x;y] = b
 	if (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}) in con_types
 
 		eq_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -268,7 +268,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
     For each ScalarAffineFunction ≥ or ≤ Float64 we add a slack variable and make the constraint
     an EqualTo{Float64}
     =#
-    n_lessthan_cons = 0
+    n_lessthan_cons = 0  # C[x;y] ≤ d
 	if (MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}) in con_types
 
 		lt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -276,12 +276,12 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 			MOI.LessThan{Float64}
 		}());
 
-		C, d = get_coef_matrix_and_rhs_vec(m, lt_con_indices)
+		C, d = BilevelJuMP.get_coef_matrix_and_rhs_vec(m, lt_con_indices)
 	else
 		C, d = spzeros(0, nvars), spzeros(0)
 	end
 	
-    n_greaterthan_cons = 0
+    n_greaterthan_cons = 0  # E[x;y] ≥ f
 	if (MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}) in con_types
 
 		gt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -289,7 +289,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 			MOI.GreaterThan{Float64}
 		}());
 
-		E, f = get_coef_matrix_and_rhs_vec(m, gt_con_indices)
+		E, f = BilevelJuMP.get_coef_matrix_and_rhs_vec(m, gt_con_indices)
 	else
 		E, f = spzeros(0, nvars), spzeros(0)
 	end
@@ -306,7 +306,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 			MOI.GreaterThan{Float64}
 		}());
 
-		yl = get_coef_matrix_and_rhs_vec(m, singleVar_gt_indices)
+		yl = BilevelJuMP.get_coef_matrix_and_rhs_vec(m, singleVar_gt_indices)
 	end
 	
     yu = Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
@@ -489,8 +489,6 @@ function linear_terms_for_empty_AB(
         w,
         yl,
         yu,
-        A_N,
-        AB_N,
         bilinear_upper_dual_to_quad_term,
         upper_to_m_idxmap,
         lower_obj_terms,
@@ -504,7 +502,7 @@ function linear_terms_for_empty_AB(
         j = lower_con.value
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
 
-        J_j, N_n = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+        J_j, N_n = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
         # TODO if J_j contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem
             # can check this condition based on number of constraints in model.lower ?
 
@@ -570,7 +568,6 @@ function linear_terms_for_non_empty_AB(
         yl,
         yu,
         A_N,
-        AB_N,
         bilinear_upper_dual_to_quad_term,
         upper_to_m_idxmap,
         lower_obj_terms,
@@ -581,23 +578,14 @@ function linear_terms_for_non_empty_AB(
     linearizations = Vector{MOI.ScalarAffineTerm}()
 
     for (upper_var, lower_con) in upper_var_lower_ctr
-        # upper_var = upper_var_lower_ctr.keys[1]
-        # lower_con = upper_var_lower_ctr.vals[1]
         j = lower_con.value
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
 
-        rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+        rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         # rows is set J_j, cols is set N_n
         # TODO if rows contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem
             # can check this condition based on number of constraints in model.lower ?
 
-        # # Check Condition 1
-        # for m ∈ upper_level_var_indices_in_V
-        # if V[j,m] != 0 
-        #     @warn("Lower level constraint in set J_j contains upper level variable: cannot linearize bilinear product in upper level.")
-        # end end
-
-        # TODO Condtions 1, 2', 3, and 4 (see paper Algorithm 3)
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]
         p = A_jn / V_jn
@@ -609,9 +597,7 @@ function linear_terms_for_non_empty_AB(
         end
 
         # TODO assert that lower level constraints in upper_var_lower_ctr are linear
-        if !isempty(AB_N)
-            cols = setdiff(cols, A_N)
-        end
+        cols = setdiff(cols, A_N)
         num_vars = MOI.get(lower, MOI.NumberOfVariables())
         for c in cols
             if c > num_vars continue end  # TODO do we need to add slack variables?
@@ -649,5 +635,5 @@ function linear_terms_for_non_empty_AB(
         end
     end
 
-return linearizations
+    return linearizations
 end

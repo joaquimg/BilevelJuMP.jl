@@ -337,7 +337,7 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     handle_lower_objective_sense(lower)
 
     # cache and delete lower objective
-    if !ignore_dual_objective(mode)
+    if !BilevelJuMP.ignore_dual_objective(mode)
         # get primal obj
         tp_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
         @assert tp_primal_obj !== nothing
@@ -404,24 +404,22 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
         Check if Upper bilinear terms of the form Upper primal * Lower dual exist, and can be linearized
     =#
     # TODO implement for bilinear products in constraints (only checking upper objective so far)
-    
-    bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
-    A_N = Int[]  # set of lower level variable indices that are in upper bilinear terms
 
     if linearize_bilinear_upper_terms && 
         MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
         !isempty(upper_var_lower_ctr)
 
         linearize = true
+        bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
         A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
-            check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
+            BilevelJuMP.check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
 
         if isempty(A_N)
             @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
             linearize = false
         else
-            AB_N, B, lower_obj_terms, lower_obj_type_handled = get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
+            AB_N, B, lower_obj_terms, lower_obj_type_handled = BilevelJuMP.get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
             if !lower_obj_type_handled
                 @warn("Linearizing bilinear terms does not handle lower level objective type $(MOI.get(lower, MOI.ObjectiveFunctionType())). Skipping linearization process.")
                 linearize = false
@@ -492,8 +490,6 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
                         w,
                         yl,
                         yu,
-                        A_N,
-                        AB_N,
                         bilinear_upper_dual_to_quad_term,
                         upper_to_m_idxmap,
                         lower_obj_terms,
@@ -577,7 +573,6 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
                         yl,
                         yu,
                         A_N,
-                        AB_N,
                         bilinear_upper_dual_to_quad_term,
                         upper_to_m_idxmap,
                         lower_obj_terms,
