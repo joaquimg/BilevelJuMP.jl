@@ -2268,6 +2268,45 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
 end
 
+"""
+    jump_conejo2016_linearize(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+
+Test linearization of bilinear terms in upper objective of the form lower dual * lower primal.
+NOTE: lower model must be in standard form
+"""
+function jump_conejo2016_linearize(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+
+    atol = config.atol
+    start = config.start_value
+
+    MOI.empty!(optimizer)
+    model = BilevelModel(()->optimizer, mode = mode, linearize_bilinear_upper_terms=true)
+    BilevelJuMP.set_copy_names(model)
+
+    @variable(Upper(model), 0 <= x <= 250, start = 50)
+    @variable(Lower(model), 0 <= y[i=1:3] <= [300, 150, 100][i], start = [50, 150, 0][i])
+    @variable(Lower(model), 300 >= s >= 0)
+    
+    @objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
+    
+    @constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
+    @constraint(Lower(model), b2, y[1] - x + s == 0)
+    @variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
+    
+    @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
+    
+    optimize!(model)    
+
+    primal_status(model)
+    termination_status(model)
+
+    @test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
+    @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
+    @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
+    @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
+    @test MOI.get(model.solver, MOI.ObjectiveFunctionType()) == MathOptInterface.ScalarAffineFunction{Float64}
+end
+
 #=
     Bruno Fanzeres PhD thesis Robust Strategic Bidding in Auction-Based Markets.
 =#

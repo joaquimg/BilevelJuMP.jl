@@ -232,12 +232,9 @@ optimize!(model)
 optimizer = Gurobi.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
 # set_optimizer_attribute(model, "NonConvex", 2)
-@variable(Upper(model), x, start = 50)
+@variable(Upper(model), 0 <= x <= 250, start = 50)
 @variable(Lower(model), 0 <= y[i=1:3] <= [300, 150, 100][i], start = [50, 150, 0][i])
 @variable(Lower(model), 300 >= s >= 0)
-
-@constraint(Upper(model), lb0, x >= 0)
-@constraint(Upper(model), ub0, x <= 250)
 
 @objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
 
