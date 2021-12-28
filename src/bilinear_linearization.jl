@@ -531,30 +531,20 @@ function linear_terms_for_empty_AB(
                 MOI.ScalarAffineTerm(-A_jn / V_jn * lower_var_cost_coef, lower_to_m_idxmap[lower_var])
             )
             # variable bound * dual variable
-            low_bound, upp_bound = yl[n_prime], yu[n_prime] #MOIU.get_bounds(lower, Float64, lower_var)
+            low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var) # yl[n_prime], yu[n_prime] #
+            lo_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.GreaterThan{Float64}}(lower_var.value)
+            up_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.LessThan{Float64}}(lower_var.value)
+            low_dual = get(lower_primal_dual_map.primal_con_dual_var, lo_bound_index, [nothing])[1]
+            upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
-            low_dual, upp_dual = nothing, nothing
-            for (ci, vi) in lower_primal_dual_map.primal_con_dual_var
-                if typeof(ci).parameters[1] == MOI.SingleVariable 
-                    cf = MOI.get(lower, MOI.ConstraintFunction(), ci)
-                    if cf.variable == lower_var
-                        cs = MOI.get(lower, MOI.ConstraintSet(), ci)
-                        if typeof(cs) == MOI.LessThan{Float64}
-                            upp_dual = vi[1]
-                        elseif typeof(cs) == MOI.GreaterThan{Float64}
-                            low_dual = vi[1]
-                        end
-                    end
-                end
-            end
-
+            # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
             if low_bound != -Inf && !isnothing(low_dual)
-                push!(linearizations, MOI.ScalarAffineTerm(A_jn / V_jn * low_bound, lower_dual_idxmap[low_dual]))
+                push!(linearizations, MOI.ScalarAffineTerm(-A_jn / V_jn * low_bound, lower_dual_idxmap[low_dual]))
             end
             if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
-                push!(linearizations, MOI.ScalarAffineTerm(-A_jn / V_jn * upp_bound, lower_dual_idxmap[upp_dual]))
+                push!(linearizations, MOI.ScalarAffineTerm( A_jn / V_jn * upp_bound, lower_dual_idxmap[upp_dual]))
             end
-            # TODO need to add lower bound of zero for the dual (μ) variables?
+
         end
     end
 
@@ -614,28 +604,18 @@ function linear_terms_for_non_empty_AB(
                 MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
             )
             # variable bound * dual variable
-            low_bound, upp_bound = yl[c], yu[c] #MOIU.get_bounds(lower, Float64, lower_var)
+            low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var) # yl[n_prime], yu[n_prime] #
+            lo_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.GreaterThan{Float64}}(lower_var.value)
+            up_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.LessThan{Float64}}(lower_var.value)
+            low_dual = get(lower_primal_dual_map.primal_con_dual_var, lo_bound_index, [nothing])[1]
+            upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
-            low_dual, upp_dual = nothing, nothing
-            for (ci, vi) in lower_primal_dual_map.primal_con_dual_var
-                if typeof(ci).parameters[1] == MOI.SingleVariable 
-                    cf = MOI.get(lower, MOI.ConstraintFunction(), ci)
-                    if cf.variable == lower_var
-                        cs = MOI.get(lower, MOI.ConstraintSet(), ci)
-                        if typeof(cs) == MOI.LessThan{Float64}
-                            low_dual = vi[1]
-                        elseif typeof(cs) == MOI.GreaterThan{Float64}
-                            upp_dual = vi[1]
-                        end
-                    end
-                end
-            end
-
+            # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
             if low_bound != -Inf && !isnothing(low_dual)
-                push!(linearizations, MOI.ScalarAffineTerm(p*low_bound, lower_dual_idxmap[low_dual]))
+                push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
             end
             if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
-                push!(linearizations, MOI.ScalarAffineTerm(-p*upp_bound, lower_dual_idxmap[upp_dual]))
+                push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
             end
 
         end

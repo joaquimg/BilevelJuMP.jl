@@ -311,6 +311,8 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     #=
         Initialize Lower DUAL level model
     =#
+    # TODO if linearizing bilinear terms the lower dual model must be built using standard form!
+    #   can test this by passing in standard form lower level
     # dualize the second level
     dual_problem = Dualization.dualize(lower,
         dual_names = Dualization.DualNames("dual_","dual_"),
