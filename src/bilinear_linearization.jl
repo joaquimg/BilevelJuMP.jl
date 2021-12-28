@@ -497,6 +497,7 @@ function linear_terms_for_empty_AB(
         lower_dual_idxmap
     )
     linearizations = Vector{MOI.ScalarAffineTerm}()
+    con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
 
     for (upper_var, lower_con) in upper_var_lower_ctr
         j = lower_con.value
@@ -510,10 +511,12 @@ function linear_terms_for_empty_AB(
         V_jn = V[j,n]
         
         for j_prime in J_j
+            lower_con_index = con_type(j_prime)
+            lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
+
             push!(linearizations,
-                MOI.ScalarAffineTerm(A_jn / V_jn * w[j_prime], upper_to_m_idxmap[upper_var])  
+                MOI.ScalarAffineTerm(A_jn / V_jn * w[j_prime], lower_dual_idxmap[lower_dual_var])  
             )
-            # TODO second term should be dual of lower_con (actually index of dual in m, but user may not have declared dual_of)
         end
 
         # TODO assert that lower level constraints in upper_var_lower_ctr are linear
@@ -537,9 +540,9 @@ function linear_terms_for_empty_AB(
                     if cf.variable == lower_var
                         cs = MOI.get(lower, MOI.ConstraintSet(), ci)
                         if typeof(cs) == MOI.LessThan{Float64}
-                            low_dual = vi[1]
-                        elseif typeof(cs) == MOI.GreaterThan{Float64}
                             upp_dual = vi[1]
+                        elseif typeof(cs) == MOI.GreaterThan{Float64}
+                            low_dual = vi[1]
                         end
                     end
                 end
@@ -551,7 +554,7 @@ function linear_terms_for_empty_AB(
             if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
                 push!(linearizations, MOI.ScalarAffineTerm(-A_jn / V_jn * upp_bound, lower_dual_idxmap[upp_dual]))
             end
-
+            # TODO need to add lower bound of zero for the dual (μ) variables?
         end
     end
 
@@ -576,6 +579,7 @@ function linear_terms_for_non_empty_AB(
         lower_dual_idxmap
     )
     linearizations = Vector{MOI.ScalarAffineTerm}()
+    con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
 
     for (upper_var, lower_con) in upper_var_lower_ctr
         j = lower_con.value
@@ -583,17 +587,19 @@ function linear_terms_for_non_empty_AB(
 
         rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         # rows is set J_j, cols is set N_n
-        # TODO if rows contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem
+        # TODO if rows contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem ?
             # can check this condition based on number of constraints in model.lower ?
 
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]
         p = A_jn / V_jn
         for r in rows
+            lower_con_index = con_type(r)
+            lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
+
             push!(linearizations,
-                MOI.ScalarAffineTerm(p*w[r], upper_to_m_idxmap[upper_var])  
+                MOI.ScalarAffineTerm(p*w[r], lower_dual_idxmap[lower_dual_var])  
             )
-            # second term should be dual of lower_con (actually index of dual in m, but user may not have declared dual_of)
         end
 
         # TODO assert that lower level constraints in upper_var_lower_ctr are linear

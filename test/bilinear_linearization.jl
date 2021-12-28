@@ -212,7 +212,6 @@ end
 
 @constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
 @constraint(Lower(model), ub1, y[1] <= x)
-# this problem violates condition 1? Ujm = 0 ∀ j ∈ J_U, ∀ m ∈ M
 @constraint(Lower(model), ub2, y[2] <= 150)
 @constraint(Lower(model), ub3, y[3] <= 100)
 @constraint(Lower(model), lb[i=1:3], y[i] >= 0)
@@ -231,6 +230,16 @@ optimize!(model)
 @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
 @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
 @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+
+
+
+#=
+w/o y[1] <= x solution is: 
+0 objective value y = [200, 0, 0], lambda = 10, x = 0
+but according to linearized solution, could have lower objective value with lambda = 20,
+but lamda is marginal cost of violating equality y[1] + y[2] + y[3] == 200, i.e. cost of y[1]
+=#
 
 #= 
         or with linearization:
@@ -255,9 +264,9 @@ end
 
 @constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
 @constraint(Lower(model), ub1, y[1] <= x)
-# this problem violates condition 1? Ujm = 0 ∀ j ∈ J_U, ∀ m ∈ M
 @constraint(Lower(model), ub2, y[2] <= 150)
 @constraint(Lower(model), ub3, y[3] <= 100)
+@constraint(Lower(model), ub4, y[3] <= 300)
 @constraint(Lower(model), lb[i=1:3], y[i] >= 0)
 if bounds
     @variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
@@ -267,12 +276,242 @@ end
 
 @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
+BilevelJuMP.set_dual_lower_bound(ub4, 0)
+BilevelJuMP.set_dual_lower_bound(ub3, 0)
+BilevelJuMP.set_dual_lower_bound(ub2, 0)
+BilevelJuMP.set_dual_lower_bound(ub1, 0)
+for cref in lb
+    BilevelJuMP.set_dual_lower_bound(cref, 0)
+end
+
 optimize!(model)
 
 
-@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
-# TODO why doesn't objective_value match the Upper objective value?
-# @test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
 @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
 @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
 @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+
+# TODO why doesn't objective_value match the Upper objective value?
+# @test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
+# has to do with variables at bounds? y[1] = x = 50, y[2] = 150 (its UB)
+# yes it seems related to dual variables for variable bounds, if I set the mu variables to >= 0 then the objective_value matches the non linear result:
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == objective_value(model)
+#=
+julia> (objective_value(model) + 190_000)/8760
+-450.0
+
+# view the linearized objective function:
+julia> MOI.get(model.solver, MOI.ObjectiveFunction{MOI.get(model.solver, MOI.ObjectiveFunctionType())}())
+MathOptInterface.ScalarAffineFunction{Float64}(MathOptInterface.ScalarAffineTerm{Float64}[MathOptInterface.ScalarAffineTerm{Float64}(1.314e6, MathOptInterface.VariableIndex(8)), MathOptInterface.ScalarAffineTerm{Float64}(876000.0, MathOptInterface.VariableIndex(20)), MathOptInterface.ScalarAffineTerm{Float64}(87600.0, MathOptInterface.VariableIndex(25)), MathOptInterface.ScalarAffineTerm{Float64}(105120.0, MathOptInterface.VariableIndex(26)), MathOptInterface.ScalarAffineTerm{Float64}(131400.0, MathOptInterface.VariableIndex(27)), MathOptInterface.ScalarAffineTerm{Float64}(-1.752e6, MathOptInterface.VariableIndex(28)), MathOptInterface.ScalarAffineTerm{Float64}(40000.0, MathOptInterface.VariableIndex(29))], 0.0)
+
+all variable indices: 8, 20, 25, 26, 27, 28, 29
+7 total: x, y[1], λ, y[2], y[3], μ_up[y2], μ_up[y3]  (μ_lo's get multiplied by zero lower bounds)
+
+# check the value of a term in the linearized objective function: 
+it appears that variable 29 is "x"
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(29))
+50.0
+(coef is 40,000)
+
+# probably 28 is lambda
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(28))
+15.0
+A_jn * w[j] = -8760*200 = -1.752e6
+
+25 <-> y[1]
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(25))
+50.0
+coef is 8760 *10
+
+26 <-> y[2]
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(26))
+150.0
+A_jn / V_jn * c_n = 8760 / 1 * 12 = 105120
+
+
+rest of values are zero, which indicates that issue with mismatched objective values is not with value of duals in objective, but with coefficient(s)
+objective value is off by -450*8760, but all of the coefs look good,
+so maybe missing a term? maybe μ ⟂ (y - y_up) etc is not being held s.t. μ takes non zero value?
+
+possible mu indices: 8, 20, 27
+
+since 8760*150 = 1.314e6 MathOptInterface.VariableIndex(8) is probably the upper dual of y[2]
+similarly since 8760*100 = 876000 MathOptInterface.VariableIndex(20) is probably the upper dual of y[3]
+
+by process of elimination 
+27 <-> y[3] = 0
+and its coef should be 15*8760 = 131400
+
+all coefficients check out
+
+Nothing left to do but check the explicit linearization w/KKT:
+=#
+#=
+the linearized single level model requires converting the y[1] ≤ x constraint to an equality, which
+makes Ux + Vy = w:
+
+[0; -1] x + [1 1 1 0; 1 0 0 1] [y; s] = [200; 0]
+
+The KKT model is:
+
+    ∇f_y + V^T λ + C^T μ = 0
+    Ux + Vy = w
+    Cy ≤ d
+    where:
+    y = [y[1], y[2], y[3], s]
+    ∇f_y = [10; 12; 15; 0]  (last entry for s, the slack variable)
+    V = [1 1 1 0; 1 0 0 1]
+    C = [[1 1 1 1]; [-1 -1 -1 -1]]
+=#
+
+
+
+model = JuMP.Model(Gurobi.Optimizer)
+set_optimizer_attribute(model, "MIPGap", 1e-2)
+
+@variable(model, 0 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
+@variable(model, 0 <= x <= 250, start = 50)
+@variable(model, 0 <= lambda <= 20, start = 15)
+
+mu_up_bound = 10
+mu_lo_bound = 0  # changing to negative lower bound gives correct lambda, but still wrong solution according to bilinear solution
+@variables(model, begin
+    mu_up_bound >= mu_1_up >= mu_lo_bound
+    mu_up_bound >= mu_2_up >= mu_lo_bound
+    mu_up_bound >= mu_3_up >= mu_lo_bound
+    mu_up_bound >= mu_1_lo >= mu_lo_bound
+    mu_up_bound >= mu_2_lo >= mu_lo_bound
+    mu_up_bound >= mu_3_lo >= mu_lo_bound
+    mu_up_bound >= mu_s_lo >= mu_lo_bound
+    mu_up_bound >= mu_s_up >= mu_lo_bound
+    mu_up_bound >= s >= mu_lo_bound
+    lambda2
+end)
+
+@objective(model, Min, 40_000x + 87600*y[1] -8760*( lambda*200 - 12*y[2] - 15*y[3] - mu_2_up*150 - mu_3_up*100))
+
+@constraint(model, b, y[1] + y[2] + y[3] == 200)
+@constraint(model, ub1, y[1] - x + s == 0)  # remove this constraint here and in bilinear problem and get same results: 0 obj val, x=0, y[1]=200, y[2]=y[3]=0, lambda=10
+@constraint(model, ub2, y[2] <= 150)
+@constraint(model, ub3, y[3] <= 100)
+
+#= 
+    ∇f_y + V^T λ + C^T μ = 0
+=#
+@constraints(model, begin
+    10 - lambda - lambda2 + mu_1_up == mu_1_lo 
+    12 - lambda + mu_2_up == mu_2_lo  # want mu_2_up = 3 s.t. lambda = 15
+    15 - lambda + mu_3_up == mu_3_lo
+    0 - lambda2 + mu_s_up == mu_s_lo
+end)
+# if mu_1_up and mu_2_up are non zero then y[2] and y[3] would have to be at their upper bounds (150 and 100), but that's not possible given that y[3] >= 0 and their sum must be 200
+# so try removing some complementary slackness to match bilinear solution
+@constraint(model, [y[1]-300, mu_1_up] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [y[2]-150, mu_2_up] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [y[3]-100, mu_3_up] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [y[1], mu_1_lo] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [y[2], mu_2_lo] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [y[3], mu_3_lo] in MOI.SOS1([1.0, 2.0]))
+@constraint(model, [s, mu_s_lo] in MOI.SOS1([1.0, 2.0]))
+# seems like maybe the mu variables are not constrained to be positive in BilevelJuMP ? have to add these constraints manually?
+
+optimize!(model)
+
+# check the linearization: (passes, which indicates that there is a bug in BilevelJuMP or Dualization)
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == objective_value(model)
+
+@test value(x) ≈ 50 atol=1e-3 rtol=1e-2
+@test value(y[1]) ≈ 50 atol=1e-3 rtol=1e-2
+@test value(y[2]) ≈ 150 atol=1e-3 rtol=1e-2
+@test value(y[3]) ≈ 0 atol=1e-3 rtol=1e-2
+@test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
+@test value(mu_2_up) ≈ 3 atol=1e-3 rtol=1e-2
+
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+
+#=
+issue is that LL KKT model does not have the standard form (with slack variables), this might imply that we have to pass the standard form model to Dualization
+test this hypothesis by passing in standard form LL model, then try creating LL model using standard_form method
+=#
+
+
+optimizer = Gurobi.Optimizer()
+model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
+@variable(Upper(model), x, start = 50)
+@variable(Lower(model), -1 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
+@variable(Lower(model), 300 >= s >= 0)
+
+@constraint(Upper(model), lb0, x >= 0)
+@constraint(Upper(model), ub0, x <= 250)
+
+@objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
+
+@constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
+@constraint(Lower(model), b2, y[1] - x + s == 0)
+@constraint(Lower(model), ub2, y[2] <= 150)
+@constraint(Lower(model), ub3, y[3] <= 100)
+@constraint(Lower(model), ub4, y[3] <= 300)
+@constraint(Lower(model), lb[i=1:3], y[i] >= 0)
+@variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
+
+
+@objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
+
+# BilevelJuMP.set_dual_lower_bound(ub4, 0)
+# BilevelJuMP.set_dual_lower_bound(ub3, 0)
+# BilevelJuMP.set_dual_lower_bound(ub2, 0)
+# for cref in lb
+#     BilevelJuMP.set_dual_lower_bound(cref, 0)
+# end
+
+optimize!(model)
+
+
+@test value(x) ≈ 50 atol=1e-3 rtol=1e-2
+@test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
+@test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ -190000.0 atol=1e-3 rtol=1e-2
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ objective_value(model) atol=1e-3 rtol=1e-2
+
+#=
+
+
+correct variable values but incorrect objective function
+
+    all linearizations:
+julia> push!(linearizations, MOI.ScalarAffineTerm(-A_jn / V_jn * upp_bound, lower_dual_idxmap[upp_dual]))
+7-element Vector{MathOptInterface.ScalarAffineTerm}:
+ MathOptInterface.ScalarAffineTerm{Float64}(-1.752e6, MathOptInterface.VariableIndex(6))
+ MathOptInterface.ScalarAffineTerm{Float64}(87600.0, MathOptInterface.VariableIndex(2))
+ MathOptInterface.ScalarAffineTerm{Float64}(-0.0, MathOptInterface.VariableIndex(10))
+ MathOptInterface.ScalarAffineTerm{Float64}(2.628e6, MathOptInterface.VariableIndex(17))
+ MathOptInterface.ScalarAffineTerm{Float64}(131400.0, MathOptInterface.VariableIndex(4))
+ MathOptInterface.ScalarAffineTerm{Float64}(-0.0, MathOptInterface.VariableIndex(12))
+ MathOptInterface.ScalarAffineTerm{Float64}(876000.0, MathOptInterface.VariableIndex(19))
+
+MOI.get(model.solver, MOI.ObjectiveFunction{MOI.get(model.solver, MOI.ObjectiveFunctionType())}())
+MathOptInterface.ScalarAffineFunction{Float64}(MathOptInterface.ScalarAffineTerm{Float64}[
+    MathOptInterface.ScalarAffineTerm{Float64}(1.314e6, MathOptInterface.VariableIndex(12)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(876000.0, MathOptInterface.VariableIndex(24)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(87600.0, MathOptInterface.VariableIndex(29)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(105120.0, MathOptInterface.VariableIndex(30)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(131400.0, MathOptInterface.VariableIndex(31)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(-1.752e6, MathOptInterface.VariableIndex(33)), 
+    MathOptInterface.ScalarAffineTerm{Float64}(40000.0, MathOptInterface.VariableIndex(34))], 0.0)
+
+
+Using wrong indices ?
+
+objective value is STILL off by -450*8760, which is mu_2_up * it's coefs (3*150*-8760)
+so probably not getting right variable index for mu_2_up (and possibly others)
+
+MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(6))
+5.000000000235845  maybe lambda2 ?
+
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(35)) # last variable index is 35
+-5.000000000235845
+
+julia> MOI.get(model.solver, MOI.VariablePrimal(), MathOptInterface.VariableIndex(8))
+-3.0000000002358496  maybe mu_2_up (both have sign changes)
+=#
