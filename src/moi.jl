@@ -272,10 +272,7 @@ function build_bilevel(
     upper::MOI.ModelLike, lower::MOI.ModelLike,
     upper_to_lower_var_indices::Dict{VI,VI}, lower_var_indices_of_upper_vars::Vector{VI},
     mode,
-    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}(),
-    U=nothing,
-    V=nothing,
-    w=nothing;
+    upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
     copy_names::Bool = false,
     pass_start::Bool = false,
     linearize_bilinear_upper_terms::Bool = false
@@ -288,7 +285,7 @@ function build_bilevel(
         Initialize Lower DUAL level model
     =#
     # TODO if linearizing bilinear terms the lower dual model must be built using standard form!
-    #   can test this by passing in standard form lower level
+    #   (for now requiring that lower model is in standard form)
     # dualize the second level
     dual_problem = Dualization.dualize(lower,
         dual_names = Dualization.DualNames("dual_","dual_"),
@@ -386,7 +383,7 @@ function build_bilevel(
     if linearize_bilinear_upper_terms 
         if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
             !isempty(upper_var_lower_ctr)
-
+            
             linearize = true
             # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
             lower_con_types = Set(MOI.get(lower, MOI.ListOfConstraints()))
@@ -421,6 +418,7 @@ function build_bilevel(
         end
 
         if linearize
+            U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
             upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
             linearizations = nothing
             m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
@@ -514,6 +512,7 @@ function build_bilevel(
                 cvb = collect(values(bilinear_upper_quad_term_to_m_quad_term))
                 new_objective = deepcopy(m_objective)
                 if cvb == quadratic_terms  # TODO needs to be Set comparison?
+                    @info("Replacing bilinear lower dual * lower primal terms in upper objective with linear terms.")
                     new_objective = MOI.ScalarAffineFunction{Float64}(
                         append!(affine_terms, linearizations),
                         c

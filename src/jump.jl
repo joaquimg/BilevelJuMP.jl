@@ -503,8 +503,7 @@ function JuMP.optimize!(model::BilevelModel;
     end
 
     t0 = time()
-    # should all of these index links be built for the standard form lower model?
-    # (can they be built for it?) Yes they should, which implies that when linearizing bilinear terms everything related to the lower model changes, incl. upper_to_lower_link for example
+    
     lower_var_indices_of_upper_vars = JuMP.index.(
         collect(values(model.upper_to_lower_link)))
     upper_to_lower_var_indices = BilevelJuMP.convert_indices(model.link)
@@ -513,13 +512,8 @@ function JuMP.optimize!(model::BilevelModel;
     # build bound for FortunyAmatMcCarlMode
     BilevelJuMP.build_bounds!(model, mode)
 
-    U, V, w = nothing, nothing, nothing
-    if model.linearize_bilinear_upper_terms
-        U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
-    end
-    
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
-        build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr, U, V, w, 
+        build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr,
             copy_names = model.copy_names, pass_start = model.pass_start, 
             linearize_bilinear_upper_terms = model.linearize_bilinear_upper_terms)
 

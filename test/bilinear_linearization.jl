@@ -12,7 +12,7 @@ using SparseArrays
 using LinearAlgebra
 
 
-## TODO automate tests, test that objective is affine after linearization
+## TODO automate tests
 
 cder = 1
 clmp = 1
@@ -21,7 +21,7 @@ d1 = 1
 d2 = 2
 
 
-# MILP Program
+# MILP Program (bilinear terms in upper and lower objectives get linearized)
 model = BilevelModel(
     Gurobi.Optimizer, 
     mode = BilevelJuMP.SOS1Mode(), 
@@ -33,15 +33,9 @@ model = BilevelModel(
 end)
 
 @variables(Lower(model), begin
-    10 >= ye
-    10 >= yi
-    10 >= yder
-end)
-
-@constraints(Lower(model), begin
-    ye >= 0
-    yi >= 0
-    yder >= 0
+    10 >= ye >= 0
+    10 >= yi >= 0
+    10 >= yder >= 0
 end)
 
 @objective(Lower(model), Min, cder * yder + ci * yi - xe * ye)
@@ -63,6 +57,7 @@ optimize!(model)
 @test value(yder) ≈ 1.0
 @test value(x0) ≈ 2.0
 
+@test MOI.get(model.solver, MOI.ObjectiveFunctionType()) == MathOptInterface.ScalarAffineFunction{Float64}
 
 # MIQP
 model2 = BilevelModel(Gurobi.Optimizer, mode = BilevelJuMP.SOS1Mode())
@@ -103,10 +98,8 @@ optimize!(model2)
 @test value(x0) ≈ 2.0
 
 
-
-
 #= 
-        explicit KKT LL with bilinear UL:
+        explicit KKT LL with linearized UL:
 =# 
 
 model = JuMP.Model(Gurobi.Optimizer)
@@ -230,27 +223,18 @@ optimize!(model)
 @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
 @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
 @test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+@test MOI.get(model.solver, MOI.ObjectiveFunctionType()) == MathOptInterface.ScalarQuadraticFunction{Float64}
 
-#=
- lower model has to be in standard form (only equality constraints and variable bounds in variable declarations). TODO is to convert to standard form before passing to Dualization ?
-=# 
 
-#= 
-        or with linearization:
-=#
 
+# standard form jump_conejo2016
 
 optimizer = Gurobi.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
-set_optimizer_attribute(model, "NonConvex", 2)
-bounds=true
+# set_optimizer_attribute(model, "NonConvex", 2)
 @variable(Upper(model), x, start = 50)
-if bounds
-    @variable(Lower(model), -1 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
-else
-    @variable(Lower(model), y[i=1:3], start = [50, 150, 0][i])
-end
-# 2 and 3 are lower only
+@variable(Lower(model), 0 <= y[i=1:3] <= [300, 150, 100][i], start = [50, 150, 0][i])
+@variable(Lower(model), 300 >= s >= 0)
 
 @constraint(Upper(model), lb0, x >= 0)
 @constraint(Upper(model), ub0, x <= 250)
@@ -258,32 +242,20 @@ end
 @objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
 
 @constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
-@constraint(Lower(model), ub1, y[1] <= x)
-@constraint(Lower(model), ub2, y[2] <= 150)
-@constraint(Lower(model), ub3, y[3] <= 100)
-@constraint(Lower(model), lb[i=1:3], y[i] >= 0)
-if bounds
-    @variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
-else
-    @variable(Upper(model), lambda, DualOf(b), start = 15)
-end
+@constraint(Lower(model), b2, y[1] - x + s == 0)
+@variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
 
 @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
 optimize!(model)
 
-@test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
 @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
 @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
 @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
-@test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ -190000.0 atol=1e-3 rtol=1e-2
+@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ objective_value(model) atol=1e-3 rtol=1e-2
+@test MOI.get(model.solver, MOI.ObjectiveFunctionType()) == MathOptInterface.ScalarAffineFunction{Float64}
 
-
-
-#=
-above test does not pass because lower problem is not in standard form.
-tests below show that the solution is correct when the lower level problem is in standard form.
-=#
 
 #=
 the linearized single level model requires converting the y[1] ≤ x constraint to an equality, which
@@ -365,55 +337,3 @@ optimize!(model)
 @test value(mu_2_up) ≈ 3 atol=1e-3 rtol=1e-2
 
 @test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
-
-#=
-issue is that LL KKT model does not have the standard form (with slack variables), this might imply that we have to pass the standard form model to Dualization
-test this hypothesis by passing in standard form LL model, then try creating LL model using standard_form method
-=#
-
-# standard form jump_conejo2016
-optimizer = Gurobi.Optimizer()
-model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
-# set_optimizer_attribute(model, "NonConvex", 2)
-@variable(Upper(model), x, start = 50)
-@variable(Lower(model), 0 <= y[i=1:3] <= [300, 150, 100][i], start = [50, 150, 0][i])
-@variable(Lower(model), 300 >= s >= 0)
-
-@constraint(Upper(model), lb0, x >= 0)
-@constraint(Upper(model), ub0, x <= 250)
-
-@objective(Lower(model), Min, 10y[1] + 12y[2] + 15y[3])
-
-@constraint(Lower(model), b, y[1] + y[2] + y[3] == 200)
-@constraint(Lower(model), b2, y[1] - x + s == 0)
-@variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
-
-
-@objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
-
-optimize!(model)
-
-
-@test value(x) ≈ 50 atol=1e-3 rtol=1e-2
-@test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
-@test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
-@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ -190000.0 atol=1e-3 rtol=1e-2
-@test value(40_000x + 8760*(10y[1]-lambda*y[1])) ≈ objective_value(model) atol=1e-3 rtol=1e-2
-
-#=
-
-julia> MOI.get(model.solver, MOI.ObjectiveFunction{MOI.get(model.solver, MOI.ObjectiveFunctionType())}())
-MathOptInterface.ScalarAffineFunction{Float64}(MathOptInterface.ScalarAffineTerm{Float64}[
-    MathOptInterface.ScalarAffineTerm{Float64}(-1.314e6, MathOptInterface.VariableIndex(2)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(-876000.0, MathOptInterface.VariableIndex(14)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(87600.0, MathOptInterface.VariableIndex(17)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(105120.0, MathOptInterface.VariableIndex(18)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(131400.0, MathOptInterface.VariableIndex(19)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(-1.752e6, MathOptInterface.VariableIndex(21)), 
-    MathOptInterface.ScalarAffineTerm{Float64}(40000.0, MathOptInterface.VariableIndex(22))], 0.0)
-
-
-x  * 40000 + y[1] * 87600 -  λ * 1752000    +  y[2] * 105120 + mu_2_up * 1314000
-50 * 40000 +  50  * 87600 + 15 * (-1.752e6) + 150.0 * 105120  + (-3)   * (-1.314e6)
-
-=#
