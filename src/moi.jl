@@ -275,35 +275,11 @@ function build_bilevel(
     upper_var_lower_ctr::Dict{VI,CI} = Dict{VI,CI}(),
     U=nothing,
     V=nothing,
-    w=nothing,
-    yu=nothing,
-    yl=nothing;
+    w=nothing;
     copy_names::Bool = false,
     pass_start::Bool = false,
     linearize_bilinear_upper_terms::Bool = false
     )
-
-#= arguments from jump.jl
-
-NOTE upper_var_lower_ctr only contains variables declared with DualOf(lower_con)
-
-
-mode = model.mode
-copy_names = model.copy_names
-pass_start = model.pass_start
-
-using Dualization
-dual_problem = Dualization.dualize(lower,
-               dual_names = Dualization.DualNames("dual_","dual_"),
-               variable_parameters = lower_var_indices_of_upper_vars,
-               ignore_objective = BilevelJuMP.ignore_dual_objective(mode))
-
-BilevelJuMP.handle_lower_objective_sense(lower)
-
-BilevelJuMP.append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
-
-BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
-=#
 
     # Start with an empty problem
     m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), MOIU.AUTOMATIC)
@@ -320,7 +296,7 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
         ignore_objective = ignore_dual_objective(mode))
     
     lower_dual = dual_problem.dual_model
-    lower_primal_dual_map = dual_problem.primal_dual_map
+    lower_primal_dual_map = dual_problem.primal_dual_map;
 
     #=
         Pass Upper level model
@@ -428,6 +404,9 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
             end
         end
 
+        # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
+
+        # mv more into bilinear_linearization.jl
         if linearize
             upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
             linearizations = nothing
@@ -490,8 +469,6 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
                         bilinear_upper_dual_to_lower_primal,
                         V,
                         w,
-                        yl,
-                        yu,
                         bilinear_upper_dual_to_quad_term,
                         upper_to_m_idxmap,
                         lower_obj_terms,
@@ -572,11 +549,8 @@ BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
                         bilinear_upper_dual_to_lower_primal,
                         V,
                         w,
-                        yl,
-                        yu,
                         A_N,
                         bilinear_upper_dual_to_quad_term,
-                        upper_to_m_idxmap,
                         lower_obj_terms,
                         lower_to_m_idxmap,
                         lower_primal_dual_map,

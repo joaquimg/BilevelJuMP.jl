@@ -225,16 +225,15 @@ end
 
 """
 
-    given Dx + Ey = f, Px + Qy ≤ r, Sx + Ty ≥ u
+    given A[x:y] = b, C[x;y] ≤ d, E[x;y] ≥ f
     collect all of y bounds into 
     yl ≤ y ≤ yu
     and put all inequality constraints into equalities with slack variables s:
-    Ux + V [y; s] = [w; b]
+    Ux + V [y; s] = [b; d; f]
 
     NOTE: U and V are sparse arrays with columns for all variables in model s.t. that variable indices line up
-	maybe also return Model built in standard form
 """
-function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_var_lower_ctr=nothing)
+function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	nvars = MOI.get(m, MOI.NumberOfVariables())
 	con_types = MOI.get(m, MOI.ListOfConstraints())
 
@@ -252,17 +251,9 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 		A, b = spzeros(0, nvars), spzeros(0)
 	end
     # U = part of A for upper_var_indices
-    # V = rest of A, but how to map new variable indices to LL variable indices?
-    # do the indices get set by the order in which variables are added? so when we build the standard form model does adding y first make y the first N variables?
-    # if so, then we have to map those indices to the columns in A / the indices in LL model
+    # V = rest of A
 	# TODO SingleVariable, EqualTo 
     # TODO what is best way to map variable indices in the standard form model to the LL model?
-    #=
-    Maybe best approach is to build single matrix A[x;y] = b s.t. A's columns match LL model variable indices,
-    then split A into U and V while creating variable index map.
-    This approach requires adding columns to A for the slack variables, so those columns should start at nvars+1
-    =#
-	
 
     #=
     For each ScalarAffineFunction ≥ or ≤ Float64 we add a slack variable and make the constraint
@@ -320,6 +311,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
 		yu = get_coef_matrix_and_rhs_vec(m, singleVar_lt_indices)
 	end
 
+    # remove rows from C that only apply to one variable by moving them to the bounds in yu
     rows_to_remove = Int[]
     for r in 1:size(C,1)
         if length(findall(!iszero, C[r, :])) == 1  # only one non-zero value in row
@@ -336,6 +328,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
     d = d[setdiff(1:end, rows_to_remove)]
     n_lessthan_cons = size(C,1)
 
+    # remove rows from E that only apply to one variable by moving them to the bounds in yl
     rows_to_remove = Int[]
     for r in 1:size(E,1)
         if length(findall(!iszero, E[r, :])) == 1  # only one non-zero value in row
@@ -370,7 +363,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
     V[n_equality_cons+n_lessthan_cons+1 : n_equality_cons+n_greaterthan_cons+n_lessthan_cons, 
       n_vars+n_lessthan_cons+1 : n_vars+n_greaterthan_cons+n_lessthan_cons] = Matrix(-I, n_greaterthan_cons, n_greaterthan_cons)
 
-    # zero out the columns in V for upper level variables
+    # zero out the columns in V for upper level variables and build U
     U = spzeros(size(V,1), size(V,2)) # coefficients of UL variables
     for col in upper_var_indices
         U[:,col.value] = copy(V[:, col.value])
@@ -378,8 +371,9 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}(), upper_v
     end
 
     w = [b; d; f]
-    return U, V, w, yu, yl, n_equality_cons, C, E
+    return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
+    # TODO build standard form model before Dualization?
 end
 
 
@@ -487,8 +481,6 @@ function linear_terms_for_empty_AB(
         bilinear_upper_dual_to_lower_primal,
         V,
         w,
-        yl,
-        yu,
         bilinear_upper_dual_to_quad_term,
         upper_to_m_idxmap,
         lower_obj_terms,
@@ -504,8 +496,6 @@ function linear_terms_for_empty_AB(
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
 
         J_j, N_n = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
-        # TODO if J_j contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem
-            # can check this condition based on number of constraints in model.lower ?
 
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]
@@ -558,11 +548,8 @@ function linear_terms_for_non_empty_AB(
         bilinear_upper_dual_to_lower_primal,
         V,
         w,
-        yl,
-        yu,
         A_N,
         bilinear_upper_dual_to_quad_term,
-        upper_to_m_idxmap,
         lower_obj_terms,
         lower_to_m_idxmap,
         lower_primal_dual_map,
@@ -577,8 +564,6 @@ function linear_terms_for_non_empty_AB(
 
         rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         # rows is set J_j, cols is set N_n
-        # TODO if rows contains indices of constraints that were added to standardize the lower level then we have to add the dual variable of those constraints to the UL problem ?
-            # can check this condition based on number of constraints in model.lower ?
 
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]

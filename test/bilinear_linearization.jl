@@ -12,7 +12,7 @@ using SparseArrays
 using LinearAlgebra
 
 
-## proposal Example
+## TODO automate tests, test that objective is affine after linearization
 
 cder = 1
 clmp = 1

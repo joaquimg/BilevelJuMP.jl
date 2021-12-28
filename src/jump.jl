@@ -513,9 +513,10 @@ function JuMP.optimize!(model::BilevelModel;
     # build bound for FortunyAmatMcCarlMode
     BilevelJuMP.build_bounds!(model, mode)
 
-    U, V, w, yu, yl, n_equality_cons, C, E = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+    # TODO rm unused variables here and in other support functions
+    U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
-        build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr, U, V, w, yu, yl,
+        build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr, U, V, w, 
             copy_names = model.copy_names, pass_start = model.pass_start, 
             linearize_bilinear_upper_terms = model.linearize_bilinear_upper_terms)
 
