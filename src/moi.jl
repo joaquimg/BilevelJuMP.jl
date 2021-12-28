@@ -302,7 +302,7 @@ function build_bilevel(
     # key are from src, value are from dest
     upper_to_m_idxmap = MOIU.default_copy_to(m, upper, copy_names)
     if copy_names
-        BilevelJuMP.pass_names(m, upper, upper_to_m_idxmap)
+        pass_names(m, upper, upper_to_m_idxmap)
     end
 
     #=
@@ -330,9 +330,9 @@ function build_bilevel(
     end
 
     # append the second level primal
-    BilevelJuMP.append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
+    append_to(m, lower, lower_to_m_idxmap, copy_names, allow_single_bounds = true)
     if copy_names
-        BilevelJuMP.pass_names(m, lower, lower_to_m_idxmap)
+        pass_names(m, lower, lower_to_m_idxmap)
     end
 
     #=
@@ -370,9 +370,9 @@ function build_bilevel(
     end
 
     # append the second level dual
-    BilevelJuMP.append_to(m, lower_dual, lower_dual_idxmap, copy_names)
+    append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     if copy_names
-        BilevelJuMP.pass_names(m, lower_dual, lower_dual_idxmap)
+        pass_names(m, lower_dual, lower_dual_idxmap)
     end
 
     #=
@@ -418,7 +418,7 @@ function build_bilevel(
         end
 
         if linearize
-            U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+            U, V, w = standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
             upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
             linearizations = nothing
             m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
@@ -444,7 +444,7 @@ function build_bilevel(
             for (upper_var, lower_con) in upper_var_lower_ctr
                 j = lower_con.value
                 n = bilinear_upper_dual_to_lower_primal[upper_var].value
-                rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+                rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
                 push!(J_U, rows...)
                 push!(N_U, cols...)
             end

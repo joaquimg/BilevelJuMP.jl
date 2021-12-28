@@ -506,11 +506,11 @@ function JuMP.optimize!(model::BilevelModel;
     
     lower_var_indices_of_upper_vars = JuMP.index.(
         collect(values(model.upper_to_lower_link)))
-    upper_to_lower_var_indices = BilevelJuMP.convert_indices(model.link)
-    upper_var_lower_ctr = BilevelJuMP.index2(model.upper_var_to_lower_ctr_link)
+    upper_to_lower_var_indices = convert_indices(model.link)
+    upper_var_lower_ctr = index2(model.upper_var_to_lower_ctr_link)
 
     # build bound for FortunyAmatMcCarlMode
-    BilevelJuMP.build_bounds!(model, mode)
+    build_bounds!(model, mode)
 
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
         build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr,
