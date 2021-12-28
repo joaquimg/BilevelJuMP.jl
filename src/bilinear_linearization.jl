@@ -1,3 +1,9 @@
+#=
+Methods in this file are for supporting the linearization of bilinear products of lower dual and lower primal variables in the upper level problem. Details can be found in http://www.optimization-online.org/DB_HTML/2021/08/8561.html
+
+TODO: update paper reference once published
+=#
+
 """
     non_zero_idxs_except_one(v::AbstractVector, idx::Int)
 
