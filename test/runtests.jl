@@ -339,6 +339,7 @@ end
 @testset "equilibrium" begin
     for solver in solvers_nlp
         jump_conejo2016(solver.opt, solver.mode)
+        jump_conejo2016_linearize(solver.opt, solver.mode, config)
         jump_fanzeres2017(solver.opt, solver.mode)
         # jump_eq_price(solver.opt, solver.mode)
     end
