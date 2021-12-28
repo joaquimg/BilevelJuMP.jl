@@ -223,7 +223,6 @@ end
 
 @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
-
 optimize!(model)
 
 @test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
@@ -243,7 +242,8 @@ optimize!(model)
 
 optimizer = Gurobi.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
-bounds = true
+set_optimizer_attribute(model, "NonConvex", 2)
+bounds=true
 @variable(Upper(model), x, start = 50)
 if bounds
     @variable(Lower(model), -1 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
@@ -261,7 +261,6 @@ end
 @constraint(Lower(model), ub1, y[1] <= x)
 @constraint(Lower(model), ub2, y[2] <= 150)
 @constraint(Lower(model), ub3, y[3] <= 100)
-@constraint(Lower(model), ub4, y[3] <= 300)
 @constraint(Lower(model), lb[i=1:3], y[i] >= 0)
 if bounds
     @variable(Upper(model), 0 <= lambda <= 20, DualOf(b), start = 15)
@@ -271,21 +270,15 @@ end
 
 @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
-BilevelJuMP.set_dual_lower_bound(ub4, 0)
-BilevelJuMP.set_dual_lower_bound(ub3, 0)
-BilevelJuMP.set_dual_lower_bound(ub2, 0)
-BilevelJuMP.set_dual_lower_bound(ub1, 0)
-for cref in lb
-    BilevelJuMP.set_dual_lower_bound(cref, 0)
-end
-
 optimize!(model)
 
-
+@test objective_value(model) ≈ -190_000 atol=1e-1 rtol=1e-2
 @test value(x) ≈ 50 atol=1e-3 rtol=1e-2
 @test value.(y) ≈ [50, 150, 0] atol=1e-3 rtol=1e-2
 @test value(lambda) ≈ 15 atol=1e-3 rtol=1e-2
 @test value(40_000x + 8760*(10y[1]-lambda*y[1])) == -190000.0
+
+
 
 #=
 above test does not pass because lower problem is not in standard form.
@@ -378,7 +371,7 @@ issue is that LL KKT model does not have the standard form (with slack variables
 test this hypothesis by passing in standard form LL model, then try creating LL model using standard_form method
 =#
 
-
+# standard form jump_conejo2016
 optimizer = Gurobi.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
 # set_optimizer_attribute(model, "NonConvex", 2)

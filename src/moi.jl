@@ -383,34 +383,48 @@ function build_bilevel(
     =#
     # TODO implement for bilinear products in constraints (only checking upper objective so far)
 
-    if linearize_bilinear_upper_terms && 
-        MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
-        !isempty(upper_var_lower_ctr)
+    if linearize_bilinear_upper_terms 
+        if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
+            !isempty(upper_var_lower_ctr)
 
-        linearize = true
-        bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
+            linearize = true
+            # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
+            lower_con_types = Set(MOI.get(lower, MOI.ListOfConstraints()))
+            standard_form_con_types = Set([
+                (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
+                (MOI.SingleVariable, MOI.GreaterThan{Float64}),
+                (MOI.SingleVariable, MOI.LessThan{Float64})
+            ])
 
-        A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
-            BilevelJuMP.check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
-
-        if isempty(A_N)
-            @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
-            linearize = false
-        else
-            AB_N, B, lower_obj_terms, lower_obj_type_handled = BilevelJuMP.get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
-            if !lower_obj_type_handled
-                @warn("Linearizing bilinear terms does not handle lower level objective type $(MOI.get(lower, MOI.ObjectiveFunctionType())). Skipping linearization process.")
+            if !(issubset(lower_con_types, standard_form_con_types))
                 linearize = false
+                @warn("The lower model must be in standard form to linearize bilinear terms, i.e. the constraint types must be a subset of $(standard_form_con_types). Skipping linearization process.")
+            else
+                A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
+                    check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
+
+                if isempty(A_N)
+                    @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
+                    linearize = false
+                else
+                    AB_N, B, lower_obj_terms, lower_obj_type_handled = 
+                        get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
+                    if !lower_obj_type_handled
+                        @warn("Linearizing bilinear terms does not handle lower level objective type $(MOI.get(lower, MOI.ObjectiveFunctionType())). Skipping linearization process.")
+                        linearize = false
+                    end
+                end
             end
+        else
+            @warn("Upper objective must be quadratic and there must lower dual variables in the upper model to linearize bilinear terms. Skipping linearization process.")
+            linearize = false
         end
 
-        # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
-
-        # mv more into bilinear_linearization.jl
         if linearize
             upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
             linearizations = nothing
             m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
+            bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
             for term in m_objective.quadratic_terms
                 mset = Set([term.variable_index_1, term.variable_index_2])
@@ -427,9 +441,6 @@ function build_bilevel(
 
             # TODO check for integer x * continuous y, for now assuming continuous x conditions
 
-            #= 
-                Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
-            =#
             J_U = Int[]
             N_U = Int[]
             for (upper_var, lower_con) in upper_var_lower_ctr
@@ -439,30 +450,15 @@ function build_bilevel(
                 push!(J_U, rows...)
                 push!(N_U, cols...)
             end
-
+            #= 
+                Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
+            =#
             if isempty(AB_N)
                 @debug("set AB_N is empty")
-                # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
-                met_condition_1 = true
-                for j in J_U, m in 1:size(U,2)
-                    if U[j,m] ≠ 0
-                        met_condition_1 = false
-                        @debug("Condition 1 not met.")
-                        break
-                    end
-                end
 
-                # Condition 2: B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U
-                met_condition_2 = true
-                for m in 1:size(U,1), n in N_U
-                    if B[m,n] ≠ 0
-                        met_condition_2 = false
-                        @debug("Condition 2 not met.")
-                        break
-                    end
-                end
+                conditions_passed = check_empty_AB_N_conditions(J_U, U, N_U, B)
 
-                if met_condition_1 && met_condition_2
+                if conditions_passed
                     linearizations = linear_terms_for_empty_AB(
                         lower,
                         upper_var_lower_ctr,
@@ -470,7 +466,6 @@ function build_bilevel(
                         V,
                         w,
                         bilinear_upper_dual_to_quad_term,
-                        upper_to_m_idxmap,
                         lower_obj_terms,
                         lower_to_m_idxmap,
                         lower_primal_dual_map,
@@ -481,68 +476,13 @@ function build_bilevel(
                 end
             else  # AB_N is not empty
                 @debug("set AB_N is NOT empty")
-                # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
-                met_condition_1 = true
-                for j in J_U, m in 1:size(U,2)
-                    if U[j,m] ≠ 0
-                        met_condition_1 = false
-                        @debug("Condition 1 not met.")
-                        break
-                    end
-                end
 
-                # Condition 2': B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U \ A_N
-                met_condition_2 = true
-                for m in 1:size(U,2), n in setdiff(N_U, A_N)
-                    if B[m,n] ≠ 0
-                        met_condition_2 = false
-                        @debug("Condition 2' not met.")
-                        break
-                    end
-                end
-
-                # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
-                met_condition_3 = true
-                for n in A_N
-                    j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-                    # upper_var_index = lower_to_upper_var_indices[MOI.VariableIndex(n)]
-                    # j = upper_var_lower_ctr[upper_var_index].value # upper_var_lower_ctr is for upper indices of lambdas (lower duals), but we are using upper index of y in lambda*y
-                    J_j, N_n = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
-                    if !(issubset(setdiff(A_N, n), N_n))
-                        met_condition_3 = false
-                        @debug("Condition 3 not met.")
-                        break
-                    end
-                end
-
-                # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
-                met_condition_4 = true
-                # Condition 5: A_jn = p V_jn = ∀ (j,n) ∈ A (p is proportionality constant)
-                met_condition_5 = true
-                J = 1:size(V,1)
-                p = nothing
-                for (upper_var, lower_con) in upper_var_lower_ctr
-                    j = lower_con.value
-                    n = bilinear_upper_dual_to_lower_primal[upper_var].value
-                    for j_prime in setdiff(J, j)
-                        if V[j_prime, n] ≠ 0
-                            met_condition_4 = false
-                            @debug("Condition 4 not met.")
-                            break
-                        end
-                    end
-
-                    A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
-                    V_jn = V[j,n]
-                    if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
-                        met_condition_5 = false
-                        @debug("Condition 5 not met.")
-                    end
-                    p = A_jn / V_jn
-                end
-
-                if met_condition_1 && met_condition_2 && met_condition_3 && met_condition_4 && 
-                    met_condition_5
+                conditions_passed = check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, 
+                    lower_primal_var_to_lower_con, upper_var_lower_ctr,
+                     bilinear_upper_dual_to_quad_term, 
+                     bilinear_upper_dual_to_lower_primal)
+                
+                if conditions_passed
                     linearizations = linear_terms_for_non_empty_AB(
                         lower,
                         upper_var_lower_ctr,
@@ -579,58 +519,11 @@ function build_bilevel(
                         c
                     )
                     MOI.set(m, MOI.ObjectiveFunction{MOI.ScalarAffineFunction}(), new_objective)
-                # else  # objective stays quadratic
-                #     TODO
-                # TODO store original UL objective? why doesn't new objective value equal the old one for conejo test? something to do with slack variables added to the problem?
                 end
             end
 
         end # if linearize
-    end  # if linearize_bilinear_upper_terms && ...
-
-
-
-
-    # TODO check Condition 5
-
-
-
-    # NEXT replace quadratic term in UL (or m ?) with the linearization
-
-
-
-    # stdform = JuMP._standard_form_matrix(model.lower);
-
-    # J,N = size(stdform.A)
-
-    # julia> MOI.get(model.upper, MOI.VariableName(), model.var_upper[upper_obj_func_quad_terms[1].variable_index_2.value])
-    #     "ye"
-
-
-    # moi_link2 from jump.jl is upper_var_lower_ctr:
-    # julia> moi_link2
-    #     Dict{MathOptInterface.VariableIndex, MathOptInterface.ConstraintIndex} with 1 entry:
-    #     VariableIndex(6) => ConstraintIndex{ScalarAffineFunction{Float64}, EqualTo{Float64}}(1)
-
-    # which comes from model.upper_var_to_lower_ctr_link
-    #  Dict{AbstractVariableRef, ConstraintRef} with 1 entry:
-    #   lambda => loadbal : -ye + yi + yder = 1.0
-
-    # julia> model.var_upper
-    #     Dict{Int64, AbstractVariableRef} with 6 entries:
-    #     5 => yder
-    #     4 => yi
-    #     6 => lambda  <---------------
-    #     2 => xe
-    #     3 => ye
-    #     1 => x0
-
-    # julia> model.lower_to_upper_link
-    #   Dict{AbstractVariableRef, AbstractVariableRef} with 3 entries:
-    #   yi   => yi
-    #   yder => yder
-    #   ye   => ye
-
+    end  # if linearize_bilinear_upper_terms
 
     #=
         Additional Optimiality conditions (to complete the KKT)

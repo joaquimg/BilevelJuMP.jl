@@ -11,11 +11,14 @@ function non_zero_idxs_except_one(v::AbstractVector, idx::Int)
     return idxs
 end
 
+
 """
+    recursive_col_search(A::AbstractArray, row::Int, col::Int, rows::Vector{Int}, cols::Vector{Int})
+
 Given a row, col in an array A find all the connected rows and cols starting with searching col, 
 where "connected" rows and cols are those with non-zero values.
 Search is stopped if any redundant rows or cols are added to the output arrays 
-    (which indicates that there is a loop in the connections).
+(which indicates that there is a loop in the connections).
 """
 function recursive_col_search(A::AbstractArray, row::Int, col::Int, 
     rows::Vector{Int}, cols::Vector{Int})
@@ -40,6 +43,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     end
     return rows, cols
 end
+
 
 """
     find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st_col_check=false)
@@ -224,14 +228,21 @@ end
 
 
 """
+    standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
-    given A[x:y] = b, C[x;y] ≤ d, E[x;y] ≥ f
-    collect all of y bounds into 
+Given:
+    
+    A[x:y] = b, C[x;y] ≤ d, E[x;y] ≥ f
+
+collect all of y bounds into:
+
     yl ≤ y ≤ yu
-    and put all inequality constraints into equalities with slack variables s:
+
+and put all inequality constraints into equalities with slack variables s:
+
     Ux + V [y; s] = [b; d; f]
 
-    NOTE: U and V are sparse arrays with columns for all variables in model s.t. that variable indices line up
+NOTE: U and V are sparse arrays with columns for all variables in model s.t. that variable indices line up
 """
 function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	nvars = MOI.get(m, MOI.NumberOfVariables())
@@ -378,6 +389,7 @@ end
 
 
 """
+    check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
 
 Construct the set A_N, which is the indices of lower level variables in the upper level 
 objective of the form λ^T A y, where λ are the dual variables of lower level equality constraints and
@@ -482,7 +494,6 @@ function linear_terms_for_empty_AB(
         V,
         w,
         bilinear_upper_dual_to_quad_term,
-        upper_to_m_idxmap,
         lower_obj_terms,
         lower_to_m_idxmap,
         lower_primal_dual_map,
@@ -607,4 +618,115 @@ function linear_terms_for_non_empty_AB(
     end
 
     return linearizations
+end
+
+
+"""
+    check_empty_AB_N_conditions(J_U, U, N_U, B)
+
+Check two required conditions for linearizing bilinear terms in UL of the form λj * yn when there
+    are no xm*yn in the LL objective (when AB_N is empty set).
+"""
+function check_empty_AB_N_conditions(J_U, U, N_U, B)
+    # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
+    met_condition_1 = true
+    for j in J_U, m in 1:size(U,2)
+        if U[j,m] ≠ 0
+            met_condition_1 = false
+            @debug("Condition 1 not met.")
+            break
+        end
+    end
+
+    # Condition 2: B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U
+    met_condition_2 = true
+    for m in 1:size(U,1), n in N_U
+        if B[m,n] ≠ 0
+            met_condition_2 = false
+            @debug("Condition 2 not met.")
+            break
+        end
+    end
+
+    if met_condition_1 && met_condition_2
+        return true
+    end
+
+    return false
+end
+
+
+"""
+    check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_var_to_lower_con, 
+        upper_var_lower_ctr, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal)
+
+Check five required conditions for linearizing bilinear terms in UL of the form λj * yn when there
+    are xm*yn in the LL objective (when AB_N is not empty).
+"""
+function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_var_to_lower_con, 
+    upper_var_lower_ctr, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal)
+    # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
+    met_condition_1 = true
+    for j in J_U, m in 1:size(U,2)
+        if U[j,m] ≠ 0
+            met_condition_1 = false
+            @debug("Condition 1 not met.")
+            break
+        end
+    end
+
+    # Condition 2': B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U \ A_N
+    met_condition_2 = true
+    for m in 1:size(U,2), n in setdiff(N_U, A_N)
+        if B[m,n] ≠ 0
+            met_condition_2 = false
+            @debug("Condition 2' not met.")
+            break
+        end
+    end
+
+    # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
+    met_condition_3 = true
+    for n in A_N
+        j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
+        J_j, N_n = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        if !(issubset(setdiff(A_N, n), N_n))
+            met_condition_3 = false
+            @debug("Condition 3 not met.")
+            break
+        end
+    end
+
+    # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
+    met_condition_4 = true
+    # Condition 5: A_jn = p V_jn = ∀ (j,n) ∈ A (p is proportionality constant)
+    met_condition_5 = true
+    J = 1:size(V,1)
+    p = nothing
+    for (upper_var, lower_con) in upper_var_lower_ctr
+        j = lower_con.value
+        n = bilinear_upper_dual_to_lower_primal[upper_var].value
+        for j_prime in setdiff(J, j)
+            if V[j_prime, n] ≠ 0
+                met_condition_4 = false
+                @debug("Condition 4 not met.")
+                break
+            end
+        end
+
+        A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
+        V_jn = V[j,n]
+        if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
+            met_condition_5 = false
+            @debug("Condition 5 not met.")
+        end
+        p = A_jn / V_jn
+    end
+
+    if met_condition_1 && met_condition_2 && met_condition_3 && met_condition_4 && 
+        met_condition_5
+        return true
+    end
+
+    return false
 end
