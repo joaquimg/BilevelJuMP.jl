@@ -31,7 +31,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     rs = non_zero_idxs_except_one(A[:, col], row)
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
-        @warn("Returning from recursive_col_search due to redundant row! ($rr)")
+        @debug("Returning from recursive_col_search due to redundant row! ($rr)")
         return rows, cols
     end
     push!(rows, rs...)
@@ -39,7 +39,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
         cs = non_zero_idxs_except_one(A[r, :], col)
         if any(c in cols for c in cs)
             cc = intersect(cs, cols)
-            @warn("Returning from recursive_col_search due to redundant column! ($cc)")
+            @debug("Returning from recursive_col_search due to redundant column! ($cc)")
             return rows, cols
         end
         push!(cols, cs...)
