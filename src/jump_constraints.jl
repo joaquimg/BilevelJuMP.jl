@@ -173,6 +173,14 @@ function DualOf(cis::AbstractVector{<:BilevelConstraintRef})
     return [DualOf(ci) for ci in cis]
 end
 
+function DualOf(cis::JuMP.Containers.DenseAxisArray{<:BilevelJuMP.BilevelConstraintRef})
+    out = JuMP.Containers.DenseAxisArray{DualOf}(undef, axes(cis)...)
+    for key in eachindex(cis)
+        out[key] = DualOf(cis[key])
+    end
+    return out
+end
+
 struct DualVariableInfo
     info::JuMP.VariableInfo
     ci::BilevelConstraintRef
@@ -182,6 +190,7 @@ end
 extensions of JuMP for:
 - @variable(model, dual_var_name, DualOf(conref))
 - @variable(model, dual_var_name, DualOf(vector_of_conref))
+- @variable(model, dual_var_name, DualOf(DenseAxisArray_of_conref))
 =#
 function JuMP.build_variable(
         _error::Function,
@@ -192,6 +201,18 @@ function JuMP.build_variable(
     infos = DualVariableInfo[]
     for dual_of in duals
         push!(infos, JuMP.build_variable(_error, info, dual_of))
+    end
+    return infos
+end
+function JuMP.build_variable(
+        _error::Function,
+        info::JuMP.VariableInfo,
+        duals::JuMP.Containers.DenseAxisArray{DualOf};
+        extra_kw_args...,
+    )
+    infos = JuMP.Containers.DenseAxisArray{DualVariableInfo}(undef, axes(duals)...)
+    for key in eachindex(duals)
+        infos[key] = JuMP.build_variable(_error, info, duals[key])
     end
     return infos
 end
@@ -254,6 +275,13 @@ function JuMP.add_variable(inner::UpperModel, dual_infos::AbstractVector{DualVar
     vrefs = BilevelVariableRef[]
     for (i, dual_info) in enumerate(dual_infos)
         push!(vrefs, JuMP.add_variable(inner, dual_info, name*"[$(string(i))]"))
+    end
+    vrefs
+end
+function JuMP.add_variable(inner::UpperModel, dual_infos::JuMP.Containers.DenseAxisArray{DualVariableInfo}, name::String="")
+    vrefs = JuMP.Containers.DenseAxisArray{BilevelVariableRef}(undef, axes(dual_infos)...)
+    for (i, key) in enumerate(eachindex(dual_infos))
+        vrefs[key] = JuMP.add_variable(inner, dual_infos[key], name*"[$(string(i))]")
     end
     vrefs
 end
