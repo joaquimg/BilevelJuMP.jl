@@ -105,6 +105,9 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st
     # step 3 recursive search to find all connections
     for c in cols_to_check
         rows_to_add, cols_to_add, redundant_vals = recursive_col_search(A, row, c, Int[], Int[])
+        if redundant_vals
+            return rows, cols, redundant_vals
+        end
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
     end
@@ -704,6 +707,8 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
         J_j, N_n, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        # NOTE not handling redundant_vals here b/c goal is to first check conditions 
+        # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
             met_condition_3 = false
             @debug("Condition 3 not met.")
