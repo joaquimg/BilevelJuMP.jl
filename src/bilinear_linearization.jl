@@ -20,6 +20,9 @@ function non_zero_idxs_except_one(v::AbstractVector, idx::Int)
 end
 
 
+struct UnderDeterminedException <: Exception end
+
+
 """
     recursive_col_search(A::AbstractArray, row::Int, col::Int, rows::Vector{Int}, cols::Vector{Int})
 
@@ -37,7 +40,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
         @debug("Returning early from recursive_col_search due to redundant row(s)! ($rr)")
-        return rows, cols, true
+        throw(UnderDeterminedException())
     end
     push!(rows, rs...)
     for r in rs
@@ -45,14 +48,14 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
         if any(c in cols for c in cs)
             cc = intersect(cs, cols)
             @debug("Returning early from recursive_col_search due to redundant column(s)! ($cc)")
-            return rows, cols, true
+            throw(UnderDeterminedException())
         end
         push!(cols, cs...)
         for c in cs
             recursive_col_search(A, r, c, rows, cols)
         end
     end
-    return rows, cols, false
+    return rows, cols
 end
 
 
@@ -103,10 +106,16 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st
     cols_to_check = non_zero_idxs_except_one(A[row, :], col)
     cols = copy(cols_to_check)
     # step 3 recursive search to find all connections
+    rows_to_add, cols_to_add = Int[], Int[]
     for c in cols_to_check
-        rows_to_add, cols_to_add, redundant_vals = recursive_col_search(A, row, c, Int[], Int[])
-        if redundant_vals
-            return rows, cols, redundant_vals
+        try
+            rows_to_add, cols_to_add = recursive_col_search(A, row, c, Int[], Int[])
+        catch e
+            if isa(e, UnderDeterminedException)
+                redundant_vals = true
+                break
+            else rethrow(e)
+            end
         end
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
