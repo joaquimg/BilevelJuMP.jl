@@ -1,5 +1,7 @@
 #=
-Methods in this file are for supporting the linearization of bilinear products of lower dual and lower primal variables in the upper level problem. Details can be found in http://www.optimization-online.org/DB_HTML/2021/08/8561.html
+Methods in this file are for supporting the linearization of bilinear products of lower dual and 
+lower primal variables in the upper level problem. 
+Details can be found in http://www.optimization-online.org/DB_HTML/2021/08/8561.html
 
 TODO: update paper reference once published
 =#
@@ -24,30 +26,33 @@ end
 Given a row, col in an array A find all the connected rows and cols starting with searching col, 
 where "connected" rows and cols are those with non-zero values.
 Search is stopped if any redundant rows or cols are added to the output arrays 
-(which indicates that there is a loop in the connections).
+(which indicates that there is a loop in the connections and the system of equations is underdetermined).
+
+Returns Vector{Int}, Vector{Int}, Bool where the Bool indicates successful search (false indicates
+underdertermined system).
 """
 function recursive_col_search(A::AbstractArray, row::Int, col::Int, 
     rows::Vector{Int}, cols::Vector{Int})
     rs = non_zero_idxs_except_one(A[:, col], row)
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
-        @debug("Returning from recursive_col_search due to redundant row! ($rr)")
-        return rows, cols
+        @debug("Returning early from recursive_col_search due to redundant row(s)! ($rr)")
+        return rows, cols, false
     end
     push!(rows, rs...)
     for r in rs
         cs = non_zero_idxs_except_one(A[r, :], col)
         if any(c in cols for c in cs)
             cc = intersect(cs, cols)
-            @debug("Returning from recursive_col_search due to redundant column! ($cc)")
-            return rows, cols
+            @debug("Returning early from recursive_col_search due to redundant column(s)! ($cc)")
+            return rows, cols, false
         end
         push!(cols, cs...)
         for c in cs
             recursive_col_search(A, r, c, rows, cols)
         end
     end
-    return rows, cols
+    return rows, cols, true
 end
 
 
@@ -88,12 +93,9 @@ find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 """
 function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st_col_check=false)
     @assert A[row, col] != 0
-
+    redundant_vals = false
     # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
-    # NOTE: may not want to use this linearization method: if the lower level variable at row,col is
-    # in the lower level objective * an upper level variable then one does not get a linearization
-    # (since the Dk equation has the lower level cost * the lower level variable)
-    if length(findall(!iszero, A[:, col])) == 1 & !skip_1st_col_check
+    if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1
         return [], [col]
     end
     # step 2 add 1st row and any other non-zero columns
@@ -102,13 +104,13 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st
     cols = copy(cols_to_check)
     # step 3 recursive search to find all connections
     for c in cols_to_check
-        rows_to_add, cols_to_add = recursive_col_search(A, row, c, Int[], Int[])
+        rows_to_add, cols_to_add, redundant_vals = recursive_col_search(A, row, c, Int[], Int[])
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
     end
     # sort!(rows)
     # sort!(cols)
-    return rows, cols
+    return rows, cols, redundant_vals
 end
 
 
@@ -512,7 +514,10 @@ function linear_terms_for_empty_AB(
         j = lower_con.value
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
 
-        J_j, N_n = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
+        J_j, N_n, redundant_vals = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
+        if redundant_vals
+            return nothing
+        end
 
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]
@@ -579,8 +584,11 @@ function linear_terms_for_non_empty_AB(
         j = lower_con.value
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
 
-        rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        rows, cols, redundant_vals = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         # rows is set J_j, cols is set N_n
+        if redundant_vals
+            return nothing
+        end
 
         A_jn = bilinear_upper_dual_to_quad_term[upper_var].coefficient
         V_jn = V[j,n]
@@ -695,7 +703,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     met_condition_3 = true
     for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-        J_j, N_n = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        J_j, N_n, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         if !(issubset(setdiff(A_N, n), N_n))
             met_condition_3 = false
             @debug("Condition 3 not met.")

@@ -469,12 +469,14 @@ function build_bilevel(
                         lower_primal_dual_map,
                         lower_dual_idxmap
                     )
+                    if isnothing(linearizations)
+                        @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
+                    end
                 else
                     @warn("Required conditions for linearization not met. Skipping linearization process.")
                 end
             else  # AB_N is not empty
                 @debug("set AB_N is NOT empty")
-
                 conditions_passed = check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, 
                     lower_primal_var_to_lower_con, upper_var_lower_ctr,
                      bilinear_upper_dual_to_quad_term, 
@@ -494,6 +496,9 @@ function build_bilevel(
                         lower_primal_dual_map,
                         lower_dual_idxmap
                     )
+                    if isnothing(linearizations)
+                        @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
+                    end
                 else
                     @warn("Required conditions for linearization not met. Skipping linearization process.")
                 end
