@@ -28,8 +28,8 @@ where "connected" rows and cols are those with non-zero values.
 Search is stopped if any redundant rows or cols are added to the output arrays 
 (which indicates that there is a loop in the connections and the system of equations is underdetermined).
 
-Returns Vector{Int}, Vector{Int}, Bool where the Bool indicates successful search (false indicates
-underdertermined system).
+Returns Vector{Int}, Vector{Int}, Bool where the Bool indicates if redundanct rows or columns were found
+(true indicates underdertermined system).
 """
 function recursive_col_search(A::AbstractArray, row::Int, col::Int, 
     rows::Vector{Int}, cols::Vector{Int})
@@ -37,7 +37,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
         @debug("Returning early from recursive_col_search due to redundant row(s)! ($rr)")
-        return rows, cols, false
+        return rows, cols, true
     end
     push!(rows, rs...)
     for r in rs
@@ -45,14 +45,14 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
         if any(c in cols for c in cs)
             cc = intersect(cs, cols)
             @debug("Returning early from recursive_col_search due to redundant column(s)! ($cc)")
-            return rows, cols, false
+            return rows, cols, true
         end
         push!(cols, cs...)
         for c in cs
             recursive_col_search(A, r, c, rows, cols)
         end
     end
-    return rows, cols, true
+    return rows, cols, false
 end
 
 
