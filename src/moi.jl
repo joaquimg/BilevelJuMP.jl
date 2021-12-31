@@ -516,13 +516,15 @@ function build_bilevel(
                 affine_terms = mobj.affine_terms
                 cvb = collect(values(bilinear_upper_quad_term_to_m_quad_term))
                 new_objective = deepcopy(m_objective)
-                if cvb == quadratic_terms  # TODO needs to be Set comparison?
+                if Set(cvb) == Set(quadratic_terms)
                     @info("Replacing bilinear lower dual * lower primal terms in upper objective with linear terms.")
                     new_objective = MOI.ScalarAffineFunction{Float64}(
                         append!(affine_terms, linearizations),
                         c
                     )
                     MOI.set(m, MOI.ObjectiveFunction{MOI.ScalarAffineFunction}(), new_objective)
+                else
+                    @warn("Unable to linearize bilinear terms due to mis-matched quadratic terms in the upper level and single level models. Skipping linearization process.")
                 end
             end
 
