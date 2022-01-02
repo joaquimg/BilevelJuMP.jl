@@ -441,7 +441,7 @@ function build_bilevel(
 
             J_U = Int[]
             N_U = Int[]
-            for (upper_var, lower_con) in upper_var_lower_ctr
+            for (upper_var, lower_con) in upper_var_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
                 j = lower_con.value
                 n = bilinear_upper_dual_to_lower_primal[upper_var].value
                 rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
@@ -477,12 +477,23 @@ function build_bilevel(
                 end
             else  # AB_N is not empty
                 @debug("set AB_N is NOT empty")
-                conditions_passed = check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, 
-                    lower_primal_var_to_lower_con, upper_var_lower_ctr,
-                     bilinear_upper_dual_to_quad_term, 
-                     bilinear_upper_dual_to_lower_primal)
                 
-                if conditions_passed
+                # TODO input flag for checking for blocks? (to save time)
+                Vs, Us, A_Ns, rows, cols = find_blocks(V, U, A_N, upper_var_indices=lower_var_indices_of_upper_vars)
+
+                conditions_passed = Bool[]
+                for (n, Vblock) in enumerate(Vs)
+                    J_U_block = intersect(J_U, rows[n])
+                    N_U_block = intersect(N_U, cols[n])
+                    check = check_non_empty_AB_N_conditions(
+                        J_U_block, Us[n], N_U_block, A_Ns[n], B, Vblock, 
+                        lower_primal_var_to_lower_con, upper_var_lower_ctr,
+                        bilinear_upper_dual_to_quad_term, 
+                        bilinear_upper_dual_to_lower_primal)
+                    push!(conditions_passed, check)
+                end
+                
+                if all(conditions_passed)
                     linearizations = linear_terms_for_non_empty_AB(
                         lower,
                         upper_var_lower_ctr,

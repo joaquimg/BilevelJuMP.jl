@@ -94,7 +94,10 @@ setblock!(V, ones(3,1), 2, 4)
 find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 ([1, 4, 5, 6, 2, 3], [4, 7, 10, 11, 8, 12, 2, 5, 9, 13, 3, 6])
 """
-function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st_col_check=false)
+function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
+    skip_1st_col_check=false,
+    check_column_of_row=false,
+    )
     @assert A[row, col] != 0
     redundant_vals = false
     # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
@@ -103,7 +106,11 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st
     end
     # step 2 add 1st row and any other non-zero columns
     rows = [row]
-    cols_to_check = non_zero_idxs_except_one(A[row, :], col)
+    if check_column_of_row
+        cols_to_check = findall(!iszero, A[row, :])
+    else
+        cols_to_check = non_zero_idxs_except_one(A[row, :], col)
+    end
     cols = copy(cols_to_check)
     # step 3 recursive search to find all connections
     rows_to_add, cols_to_add = Int[], Int[]
@@ -734,6 +741,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     for (upper_var, lower_con) in upper_var_lower_ctr
         j = lower_con.value
         n = bilinear_upper_dual_to_lower_primal[upper_var].value
+        if !(n in A_N) continue end  # TODO can we pass in a better set to loop over?
         for j_prime in setdiff(J, j)
             if V[j_prime, n] ≠ 0
                 met_condition_4 = false
@@ -747,6 +755,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
         if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
             met_condition_5 = false
             @debug("Condition 5 not met.")
+            # TODO condition should be applied seperately to seperable LL models
         end
         p = A_jn / V_jn
     end
@@ -757,4 +766,64 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     end
 
     return false
+end
+
+
+"""
+
+TODO doc string
+For example, given:
+
+V = | 1 0 0 1 0 0 |
+    | 0 1 0 0 1 0 |
+    | 0 1 0 0 1 0 |
+
+rows = [
+    [1], [2,3]
+]
+cols = [
+    [1, 4], [2,5]
+]
+
+NOTE that rows/cols with all zeros are not included in the return values.
+"""
+function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real}, A_N::AbstractVector{<:Int}; upper_var_indices=Vector{MOI.VariableIndex}())
+    num_blocks = 0
+    rows, cols = Vector[], Vector[]
+    rows_connected = Int[]
+    # starting with first row, find all connected values. If all rows are connected then only one block. Else, search the remaining unconnected rows until all rows are accounted for.
+    nrows, ncols = size(V)
+    UV = U + V
+    for r in 1:nrows
+        if r in rows_connected continue end
+        c = findfirst(!iszero, UV[r,:])
+        if !isnothing(c)
+            num_blocks += 1
+            rs, cs, redundant_vals = find_connected_rows_cols(UV, r, c; skip_1st_col_check=true, check_column_of_row=true)
+            # not worried about redundant_vals here; it is checked when forming linearizations
+            push!(rows, rs)
+            push!(cols, cs)
+            push!(rows_connected, rs...)
+        end
+    end
+    if num_blocks <= 1
+        return [V]
+    end
+
+    Vs = AbstractMatrix[]
+    Us = AbstractMatrix[]
+    A_Ns = AbstractVector[]
+    for n in 1:num_blocks
+        push!(Vs, spzeros(nrows, ncols))
+        push!(Us, spzeros(nrows, ncols))
+        push!(A_Ns, intersect(A_N, cols[n]))
+        for r in rows[n]
+            Vs[n][r, :] = V[r, :]
+        end
+        for col in upper_var_indices
+            Vs[n][:,col.value] = spzeros(nrows, 1)
+            Us[n][:,col.value] = U[:, col.value]
+        end
+    end
+    return Vs, Us, A_Ns, rows, cols
 end
