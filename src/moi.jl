@@ -443,6 +443,7 @@ function build_bilevel(
             N_U = Int[]
             for (upper_var, lower_con) in upper_var_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
                 j = lower_con.value
+                if !(n in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
                 n = bilinear_upper_dual_to_lower_primal[upper_var].value
                 rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
                 push!(J_U, rows...)
