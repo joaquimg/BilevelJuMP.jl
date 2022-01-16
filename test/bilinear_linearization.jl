@@ -10,6 +10,9 @@ const MOI = MathOptInterface
 using JuMP
 using SparseArrays
 using LinearAlgebra
+using Logging
+global_logger(ConsoleLogger(stderr, Logging.Debug))
+
 
 
 ## TODO automate tests

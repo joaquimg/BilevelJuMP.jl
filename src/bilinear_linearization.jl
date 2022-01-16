@@ -806,8 +806,9 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real}, A_N::
             push!(rows_connected, rs...)
         end
     end
+    @debug("Found $(num_blocks) block(s) in V.")
     if num_blocks <= 1
-        return [V]
+        return [V], [U], [A_N], [rows], [cols]
     end
 
     Vs = AbstractMatrix[]
