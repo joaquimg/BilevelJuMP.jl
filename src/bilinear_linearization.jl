@@ -811,13 +811,14 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real}, A_N::
         return [V], [U], [A_N], [rows], [cols]
     end
 
-    Vs = AbstractMatrix[]
-    Us = AbstractMatrix[]
-    A_Ns = AbstractVector[]
-    for n in 1:num_blocks
-        push!(Vs, spzeros(nrows, ncols))
-        push!(Us, spzeros(nrows, ncols))
-        push!(A_Ns, intersect(A_N, cols[n]))
+    t0 = time()
+    Vs = Vector{Matrix{Float64}}(undef, num_blocks)
+    Us = Vector{Matrix{Float64}}(undef, num_blocks)
+    A_Ns = Vector{Vector{Float64}}(undef, num_blocks)
+    for n in 1:num_blocks  # time suck is here, can skip blocks w/o association w/bilinear terms?
+        Vs[n] = spzeros(nrows, ncols)
+        Us[n] = spzeros(nrows, ncols)
+        A_Ns[n] = intersect(A_N, cols[n])
         for r in rows[n]
             Vs[n][r, :] = V[r, :]
         end
