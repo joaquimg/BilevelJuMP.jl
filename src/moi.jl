@@ -480,19 +480,24 @@ function build_bilevel(
                 @debug("set AB_N is NOT empty")
                 
                 # TODO input flag for checking for blocks? (to save time)
-                Vs, Us, A_Ns, rows, cols = find_blocks(V, U, A_N, upper_var_indices=lower_var_indices_of_upper_vars)
+                num_blocks, rows, cols = find_blocks(V, U, A_N, upper_var_indices=lower_var_indices_of_upper_vars)
 
                 conditions_passed = Bool[]
-                for (n, Vblock) in enumerate(Vs)
-                    J_U_block = intersect(J_U, rows[n])
-                    N_U_block = intersect(N_U, cols[n])
+                nrows, ncols = size(V)
+                for n in 1:num_blocks
+                    # TODO can skip blocks that are not linked to bilinear terms?
+                    Vblock = spzeros(nrows, ncols)
+                    Vblock[rows[n],:] = V[rows[n],:]
                     check = check_non_empty_AB_N_conditions(
-                        J_U_block, Us[n], N_U_block, A_Ns[n], B, Vblock, 
+                        intersect(J_U, rows[n]), U, intersect(N_U, cols[n]), intersect(A_N, cols[n]), B, Vblock, 
                         lower_primal_var_to_lower_con, upper_var_lower_ctr,
                         bilinear_upper_dual_to_quad_term, 
                         bilinear_upper_dual_to_lower_primal)
                     push!(conditions_passed, check)
                 end
+                # recover memory
+                rows, cols = nothing, nothing
+                @debug("Done looping over V blocks")
                 
                 if all(conditions_passed)
                     linearizations = linear_terms_for_non_empty_AB(

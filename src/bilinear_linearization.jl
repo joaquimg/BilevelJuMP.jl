@@ -807,25 +807,5 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real}, A_N::
         end
     end
     @debug("Found $(num_blocks) block(s) in V.")
-    if num_blocks <= 1
-        return [V], [U], [A_N], [rows], [cols]
-    end
-
-    t0 = time()
-    Vs = Vector{Matrix{Float64}}(undef, num_blocks)
-    Us = Vector{Matrix{Float64}}(undef, num_blocks)
-    A_Ns = Vector{Vector{Float64}}(undef, num_blocks)
-    for n in 1:num_blocks  # time suck is here, can skip blocks w/o association w/bilinear terms?
-        Vs[n] = spzeros(nrows, ncols)
-        Us[n] = spzeros(nrows, ncols)
-        A_Ns[n] = intersect(A_N, cols[n])
-        for r in rows[n]
-            Vs[n][r, :] = V[r, :]
-        end
-        for col in upper_var_indices
-            Vs[n][:,col.value] = spzeros(nrows, 1)
-            Us[n][:,col.value] = U[:, col.value]
-        end
-    end
-    return Vs, Us, A_Ns, rows, cols
+    return num_blocks, rows, cols
 end
