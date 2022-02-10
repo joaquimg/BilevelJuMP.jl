@@ -22,7 +22,7 @@ function _build_single_model(
     upper_to_model_link = MOI.copy_to(model, upper)
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
     lower_constraints = Vector{MOI.ConstraintIndex}()
-    for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
+    for (F, S) in MOI.get(lower, MOI.ListOfConstraintTypesPresent())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
             lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
@@ -46,8 +46,8 @@ function _build_single_model(
     
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
-        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
-        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.ZeroOne}())
+        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}())
+        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.ZeroOne}())
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
             throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
@@ -94,8 +94,8 @@ function _write_auxillary_file(
         x => 0.0 for x in lower_variables
     )
     for term in lower_objective.terms
-        if haskey(obj_coefficients, term.variable_index)
-            obj_coefficients[term.variable_index] += term.coefficient
+        if haskey(obj_coefficients, term.variable)
+            obj_coefficients[term.variable] += term.coefficient
         end
     end
     open(aux_filename, "w") do io

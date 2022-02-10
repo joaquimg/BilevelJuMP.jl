@@ -19,7 +19,6 @@ function BilevelConstraintRef(model, idx)
     raw = raw_ref(model, idx)
     return JuMP.ConstraintRef(model, idx, raw.shape)
 end
-JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 level(cref::BilevelConstraintRef) = cref.model.ctr_info[cref.index].level
 function JuMP.add_constraint(::BilevelModel, ::JuMP.AbstractConstraint, ::String="")
     error(
