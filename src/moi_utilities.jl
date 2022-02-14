@@ -6,7 +6,7 @@ function pass_names(dest, src, map)
             MOI.set(dest, MOI.VariableName(), map[vi], name)
         end
     end
-    for (F,S) in MOI.get(src, MOI.ListOfConstraints())
+    for (F,S) in MOI.get(src, MOI.ListOfConstraintTypesPresent())
         for con in MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
             name = MOI.get(src, MOI.ConstraintName(), con)
             if name != ""

@@ -13,7 +13,7 @@ MibS_jll = "118347d2-e127-56b9-9933-6abf9cc1adc1"
 
 [compat]
 Cbc = "0.9.1"
-Dualization = "= 0.4"
+Dualization = "0.4"
 IntervalArithmetic = "< 0.18.0"
 JuMP = "0.22"
 MathOptInterface = "0.10"

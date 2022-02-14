@@ -297,7 +297,7 @@ function build_bilevel(
     =#
 
     # key are from src, value are from dest
-    upper_idxmap = MOIU.default_copy_to(m, upper, copy_names)
+    upper_idxmap = MOIU.default_copy_to(m, upper)
     if copy_names
         pass_names(m, upper, upper_idxmap)
     end
@@ -455,7 +455,7 @@ function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where T where {F,S}
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement,
-    idxmap_primal, idxmap_dual, pass_start::Bool) where T
+    idxmap_primal, idxmap_dual, copy_names, pass_start::Bool) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable

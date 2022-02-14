@@ -507,7 +507,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
         build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2,
-            pass_start = model.pass_start)
+            copy_names = model.copy_names, pass_start = model.pass_start)
 
     # pass lower level dual variables info (start, upper, lower)
     for (idx, info) in model.ctr_info
