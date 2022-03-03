@@ -51,9 +51,9 @@ solvers_fa2 = OptModeType[] # explicit big-M at 100
 solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
-include("solvers/scip.jl")
+# include("solvers/scip.jl")
+include("solvers/cbc.jl")
 # DONE
-# include("solvers/cbc.jl")
 # include("solvers/gurobi.jl")
 # include("solvers/xpress.jl")
 # include("solvers/knitro.jl")
