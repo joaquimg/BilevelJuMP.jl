@@ -67,7 +67,7 @@ The main drawback of this method is that one must provide bounds for all primal
 and dual variables. However, if the bounds are good, this method can be more
 efficient than the previous. Bound hints to compute the big-Ms can be passed
 with the methods: `set_primal_(upper\lower)_bound_hint(variable, bound)`, for primals;
-and `set_dual_(upper\lower)_bound(constraint, bound)` for duals.
+and `set_dual_(upper\lower)_bound_hint(constraint, bound)` for duals.
 We can also call `FortunyAmatMcCarlMode(primal_big_M = vp, dual_big_M = vd)`,
 where `vp` and `vd` are, repspectively, the big M fallback values for primal
 and dual variables, these are used when some variables have no given bounds,

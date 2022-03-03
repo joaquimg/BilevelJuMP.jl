@@ -46,6 +46,7 @@ solvers_quad = OptModeType[]
 solvers_bin_exp = OptModeType[]
 solvers_sos_quad = OptModeType[]
 solvers_nlp = OptModeType[]
+solvers_nlp_sum = OptModeType[]
 solvers_nlp_sd = OptModeType[]
 solvers_nlp_sd_e = OptModeType[]
 solvers_nlp_sd_i = OptModeType[]
@@ -54,7 +55,7 @@ solvers_sos_quad_bin = OptModeType[]
 solvers_fa_quad_bin = OptModeType[]
 solvers_fa_quad_bin_mixed = OptModeType[]
 solvers_fa = OptModeType[]
-solvers_fa2 = OptModeType[]
+solvers_fa2 = OptModeType[] # explicit big-M at 100
 solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
@@ -127,7 +128,7 @@ end
         jump_05(solver.opt, solver.mode)
         jump_3SAT(solver.opt, solver.mode, CONFIG_3)
         jump_06(solver.opt, solver.mode)
-        jump_06_sv(solver.opt, solver.mode)
+        jump_06_sv(solver.opt, solver.mode) # fail in Ipopt
         jump_07(solver.opt, solver.mode, CONFIG_2)
         jump_08(solver.opt, solver.mode, CONFIG_3_start)
         jump_09a(solver.opt, solver.mode)
@@ -270,8 +271,14 @@ end
     end
 end
 
+@testset "Sum aggregation_group" begin
+    for solver in solvers_nlp_sum
+        jump_01_sum_agg(solver.opt)
+    end
+end
+
 @testset "Princeton Handbook Quadratic" begin
-    for solver in solvers_nlp
+    for solver in vcat(solvers_nlp, solvers_nlp_sum)
         jump_HTP_quad01(solver.opt, solver.mode)
         jump_HTP_quad02(solver.opt, solver.mode)
         jump_HTP_quad04(solver.opt, solver.mode, CONFIG_3)
@@ -280,11 +287,12 @@ end
         # jump_HTP_quad06b(solver.opt, solver.mode) # TODO weird results
         jump_HTP_quad07(solver.opt, solver.mode)
         jump_HTP_quad08(solver.opt, solver.mode) # not PSD
+        jump_HTP_quad09(solver.opt, solver.mode)
     end
     for solver in solvers_nlp
         jump_HTP_quad03(solver.opt, solver.mode)
-        jump_HTP_quad09(solver.opt, solver.mode)
     end
+
     for solver in solvers_sos_quad
         jump_HTP_quad01(solver.opt, solver.mode, CONFIG_5)
         jump_HTP_quad02(solver.opt, solver.mode)

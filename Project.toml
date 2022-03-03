@@ -11,10 +11,10 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 
 [compat]
-Dualization = "0.3.4"
+Dualization = "< 0.3.5"
 IntervalArithmetic = "< 0.18.0"
 JuMP = "0.21.7"
-MathOptInterface = "0.9.21"
+MathOptInterface = "< 0.10"
 julia = "1"
 
 [extras]

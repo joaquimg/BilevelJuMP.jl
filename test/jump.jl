@@ -47,8 +47,8 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
     if config.bound_hint
         for cref in [c1, c2, c3, c4]
-            BilevelJuMP.set_dual_upper_bound(cref, 10)
-            BilevelJuMP.set_dual_lower_bound(cref, -10)
+            BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
+            BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
         end
         BilevelJuMP.set_primal_lower_bound_hint(x, -1)
         BilevelJuMP.set_primal_lower_bound_hint(y, -1)
@@ -154,8 +154,8 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     if config.bound_hint
         for cref in [c1, c2, c3, c4, c5, c6]
-            BilevelJuMP.set_dual_upper_bound(cref, 10)
-            BilevelJuMP.set_dual_lower_bound(cref, -10)
+            BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
+            BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
         end
         BilevelJuMP.set_primal_upper_bound_hint(y, 10)
         BilevelJuMP.set_primal_lower_bound_hint(y, -1)
@@ -252,8 +252,8 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
 
     if config.bound_hint
         for c in [l1, l2, l3, l4]
-            BilevelJuMP.set_dual_upper_bound(c, 15)
-            BilevelJuMP.set_dual_lower_bound(c, -15)
+            BilevelJuMP.set_dual_upper_bound_hint(c, 15)
+            BilevelJuMP.set_dual_lower_bound_hint(c, -15)
         end
         BilevelJuMP.set_primal_lower_bound_hint(x, -10)
         BilevelJuMP.set_primal_upper_bound_hint(x, 6)
@@ -643,6 +643,9 @@ function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = C
     @constraint(Lower(model), 3x + -2y <= 4) # signs are wrong in some versions of the book
     if !sv
         @constraint(Lower(model), y >= 0)
+    # else
+    #     @constraint(Lower(model), y == 4)
+    #     @constraint(Lower(model), x == 4)
     end
 
     optimize!(model)
@@ -2401,8 +2404,8 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Upper(model), soc_up, x in SecondOrderCone())
     @constraint(Lower(model), soc_lw, y in SecondOrderCone())
     if bounds
-        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5., 5.])
-        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5., 5.])
+        BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5., 5.])
+        BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5., 5.])
         # bounds defined in the upper level are not dualized
         for i in 1:3
             @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
@@ -2439,8 +2442,9 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
 
-    @variable(Upper(model), x)
-    @variable(Lower(model), y[i=1:2])
+    @variable(Upper(model), x, start = 6)
+    vals = [2, 0]
+    @variable(Lower(model), y[i=1:2], start = vals[i])
 
     @objective(Upper(model), Min, x + 3(y[1] -y[2]))
     if bounds
@@ -2464,15 +2468,15 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     end
 
     if bounds
-        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
-        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])
+        BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
+        BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])
         # require lower bounds
         for con in [con1, con3]
-            BilevelJuMP.set_dual_lower_bound(con, -15)
+            BilevelJuMP.set_dual_lower_bound_hint(con, -15)
         end
         # require upper bounds
         for con in [lb_y_1, lb_y_2, con2]
-            BilevelJuMP.set_dual_upper_bound(con, +15)
+            BilevelJuMP.set_dual_upper_bound_hint(con, +15)
         end
         # bounds defined in the upper level are not dualized
         for i in 1:2
@@ -2523,15 +2527,15 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     end
 
     if bounds
-        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
-        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])
+        BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
+        BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])
         # require lower bounds
         for con in [con2, con3, con5]
-            BilevelJuMP.set_dual_lower_bound(con, -15)
+            BilevelJuMP.set_dual_lower_bound_hint(con, -15)
         end
         # require upper bounds
         for con in [con1, con4]
-            BilevelJuMP.set_dual_upper_bound(con, +15)
+            BilevelJuMP.set_dual_upper_bound_hint(con, +15)
         end
         # bounds defined in the upper level are not dualized
         for i in 1:2
@@ -2581,15 +2585,15 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     end
 
     if bounds
-        BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5., 5.])
-        BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5., 5.])
+        BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5., 5.])
+        BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5., 5.])
         # require lower bounds
         for con in [a, c]
-            BilevelJuMP.set_dual_lower_bound(con, -15)
+            BilevelJuMP.set_dual_lower_bound_hint(con, -15)
         end
         # require upper bounds
         for con in [b]
-            BilevelJuMP.set_dual_upper_bound(con, +15)
+            BilevelJuMP.set_dual_upper_bound_hint(con, +15)
         end
         # bounds defined in the upper level are not dualized
         for i in 1:3
@@ -2675,7 +2679,10 @@ function jump_01_mixed(optimizer, config = Config())
     atol = config.atol
 
     MOI.empty!(optimizer)
-    model = BilevelModel(()->optimizer, mode = BilevelJuMP.MixedMode(default = BilevelJuMP.FortunyAmatMcCarlMode()))
+    model = BilevelModel(
+        ()->optimizer,
+        mode = BilevelJuMP.MixedMode(
+            default = BilevelJuMP.FortunyAmatMcCarlMode()))
     BilevelJuMP.set_copy_names(model)
 
     @variable(Upper(model), x >= 0)
@@ -2702,8 +2709,8 @@ function jump_01_mixed(optimizer, config = Config())
 
     # if config.bound_hint
     #     for cref in [c1, c2, c3, c4]
-    #         BilevelJuMP.set_dual_upper_bound(cref, 10)
-    #         BilevelJuMP.set_dual_lower_bound(cref, -10)
+    #         BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
+    #         BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
     #     end
     #     BilevelJuMP.set_primal_lower_bound_hint(x, -1)
     #     BilevelJuMP.set_primal_lower_bound_hint(y, -1)
@@ -2724,6 +2731,83 @@ function jump_01_mixed(optimizer, config = Config())
 
     # @test dual(c1) ≈ [0] atol=atol #NLP fail
     @test dual(c2) ≈ [0] atol=atol
+    # @test dual(c3) ≈ [0] atol=atol
+    # @test dual(c4) ≈ [1] atol=atol #NLP fail
+
+end
+
+function jump_01_sum_agg(optimizer, config = Config())
+
+    atol = config.atol
+
+    # config.bound_hint = true
+
+    # min -4x -3y
+    # s.t.
+    # y = argmin_y y
+    #      2x + y <= 4
+    #       x +2y <= 4
+    #       x     >= 0
+    #           y >= 0
+    #      2x + y <= 8 (loose)
+    #       x +2y <= 8 (loose)
+    #
+    # sol: x = 2, y = 0
+    # obj_upper = -8
+    # obj_lower =  0
+
+    atol = config.atol
+
+    MOI.empty!(optimizer)
+    model = BilevelModel(
+        ()->optimizer,
+        mode = BilevelJuMP.MixedMode(
+            default = BilevelJuMP.ProductMode(1e-9, aggregation_group = 1)))
+    BilevelJuMP.set_copy_names(model)
+
+    @variable(Upper(model), x >= 0)
+    @variable(Lower(model), y >= 0)
+
+    @objective(Upper(model), Min, -4x -3y)
+
+    @objective(Lower(model), Min, y)
+
+    @constraints(Lower(model), begin
+        c1a, 2x+y <= 4
+        c2a, x+2y <= 4
+        c1b, 2x+y <= 8
+        c2b, x+2y <= 8
+    end)
+
+    BilevelJuMP.set_mode(c1a, BilevelJuMP.ProductMode(1e-9, aggregation_group = 2))
+    BilevelJuMP.set_mode(c1b, BilevelJuMP.ProductMode(1e-9, aggregation_group = 2))
+    BilevelJuMP.set_mode(c2a, BilevelJuMP.ProductMode(1e-9, aggregation_group = 3))
+    BilevelJuMP.set_mode(c2b, BilevelJuMP.ProductMode(1e-9, aggregation_group = 3))
+
+    # if config.bound_hint
+    #     for cref in [c1, c2, c3, c4]
+    #         BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
+    #         BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
+    #     end
+    #     BilevelJuMP.set_primal_lower_bound_hint(x, -1)
+    #     BilevelJuMP.set_primal_lower_bound_hint(y, -1)
+    #     BilevelJuMP.set_primal_upper_bound_hint(x, 5)
+    #     BilevelJuMP.set_primal_upper_bound_hint(y, 5)
+    # end
+
+    optimize!(model)
+
+    primal_status(model)
+
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+
+    @test objective_value(model) ≈ -8 atol=atol
+
+    @test value(x) ≈  2 atol=atol
+    @test value(y) ≈  0 atol=atol
+
+    # @test dual(c1) ≈ [0] atol=atol #NLP fail
+    @test dual(c2a) ≈ [0] atol=atol
     # @test dual(c3) ≈ [0] atol=atol
     # @test dual(c4) ≈ [1] atol=atol #NLP fail
 
