@@ -24,6 +24,7 @@
 using BilevelJuMP
 using JuMP
 using Test
+using MibS_jll
 
 model = BilevelModel()
 
@@ -59,7 +60,7 @@ end)
 @constraint(Lower(model), l3, y <= 5)
 
 # Using MibS Solver
-solution = BilevelJuMP.solve_with_MibS(model, silent = true)
+solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
 
 # Auto testing
 @test solution.status == true

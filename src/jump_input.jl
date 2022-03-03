@@ -1,4 +1,4 @@
-using MibS_jll
+# functionality for calling the MibS solver
 
 function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
     upper = JuMP.backend(model.upper)
@@ -115,9 +115,9 @@ function _write_auxillary_file(
     return
 end
 
-function _call_mibs(mps_filename, aux_filename)
+function _call_mibs(mps_filename, aux_filename, mibs_call)
     io = IOBuffer()
-    MibS_jll.mibs() do exe
+    mibs_call() do exe
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
@@ -218,10 +218,11 @@ function _parse_output(
 end
 
 """
-    solve_with_MibS(model::BilevelModel; silent::Bool = true)
+    solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true)
 
 ## Inputs
-* `model::BilevelModel`:  the model to optimize
+* `model::BilevelModel`: the model to optimize
+* `mibs_call`: shoul be `MibS_jll.mibs` remember to `import MibS_jll` before.
 * `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
 ## Outputs
 This function returns a `NamedTuple` with fields:
@@ -236,7 +237,7 @@ This function returns a `NamedTuple` with fields:
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-function solve_with_MibS(model::BilevelModel; silent::Bool = true)
+function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true)
     mktempdir() do path
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
@@ -251,7 +252,7 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
             sense,
             aux_filename,
         )
-        output = _call_mibs(mps_filename, aux_filename)
+        output = _call_mibs(mps_filename, aux_filename, mibs_call)
         if !silent
             println(output)
         end

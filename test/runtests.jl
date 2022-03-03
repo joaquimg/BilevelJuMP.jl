@@ -1,15 +1,7 @@
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
-# using MathOptFormat
-
 
 const MOI  = MathOptInterface
-const MOIU = MathOptInterface.Utilities
-const MOIB = MathOptInterface.Bridges
-const MOIT = MathOptInterface.Test
-
-# TODO
-# add JUMPExtension test
 
 struct Config
     atol::Float64
