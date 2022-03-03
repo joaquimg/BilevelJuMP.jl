@@ -78,6 +78,7 @@ include("solvers/scip.jl")
 include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
+include("mibs.jl")
 include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
