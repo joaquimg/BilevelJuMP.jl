@@ -116,8 +116,8 @@ function _write_auxillary_file(
 end
 
 function _call_mibs(mps_filename, aux_filename, mibs_call)
-    io = IOBuffer()
-    write(io, "\n BilevelJuMP Calling MibS \n")
+    io = "mibs_outout.txt"
+    # write(io, "\n BilevelJuMP Calling MibS \n")
     io_err = IOBuffer()
     mibs_call() do exe
         run(
@@ -133,7 +133,7 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
     if length(err) > 0
         error(err)
     end
-    seekstart(io)
+    # seekstart(io)
     return read(io, String)
 end
 
