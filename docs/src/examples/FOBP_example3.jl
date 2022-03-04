@@ -91,9 +91,9 @@ JuMP.set_start_value.(ya, 1)
 JuMP.set_start_value.(yb, 0)
 JuMP.set_start_value(z, 1)
 for i in 1:I
-    JuMP.set_dual_start_value_hint.(b1, 0)
-    JuMP.set_dual_start_value_hint.(b2, 0)
-    JuMP.set_dual_start_value_hint.(b3, -1)
+    JuMP.set_dual_start_value.(b1, 0)
+    JuMP.set_dual_start_value.(b2, 0)
+    JuMP.set_dual_start_value.(b3, -1)
 end
 
 
