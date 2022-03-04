@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example 10 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../manual/">Manual</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../DTMP_example1/">Example 8</a></li><li><a class="tocitem" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1</a></li><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Example 2</a></li><li><a class="tocitem" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example 5</a></li><li><a class="tocitem" href="../MibS_example1/">Example on MibS</a></li><li><a class="tocitem" href="../MibS_example2/">Example 2 on MibS</a></li><li><a class="tocitem" href="../PHTP_example1/">Foundations of Bilevel Programming: Example 6</a></li><li><a class="tocitem" href="../PHTP_example2/">Example 7</a></li><li class="is-active"><a class="tocitem" href>Example 10</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Example 10</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example 10</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Example-10"><a class="docs-heading-anchor" href="#Example-10">Example 10</a><a id="Example-10-1"></a><a class="docs-heading-anchor-permalink" href="#Example-10" title="Permalink"></a></h1><p>This example is from The models of bilevel programming with lower level second-order cone programs (<a href="https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168">url</a> or <a href="https://core.ac.uk/download/pdf/81261904.pdf">url</a>) SOCBLP stands for bilevel programming problem with lower level second-order cone program Bold point(s): Using second-order cone in the lower level problem</p><p>Model of the problem First level</p><p class="math-container">\[\min x + 3(y_1-y_2),\\
+\notag s.t.\\
+2 \leq x \leq 6,\\\]</p><p>Second level</p><p class="math-container">\[\min - y_1 + y_2,\\
+\notag s.t.\\
+y_1 - y_2 \leq  8,\\
+4y_1 - 4y_2 \geq  8,\\
+2y_1 - 2y_2 \leq  12,\\
+y_1 \geq 0,\\
+y_2 \geq 0,\\
+y \in K^2\\\]</p><p>Here, <span>$K^2$</span> is second order cone and it represents:</p><p class="math-container">\[y \in \{y=(y_1,y_2)\in \mathbb{R}\times \mathbb{R}:y_1 \geq ||y_2||_2\}\\\]</p><pre><code class="language-julia">using BilevelJuMP
+using Ipopt
+using JuMP
+using Test
+
+
+
+model = BilevelModel(() -&gt; MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer()), mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">A JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
+Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
+
+
+#Lower level variables
+@variable(Lower(model), y[i=1:2])</code></pre><pre class="documenter-example-output">2-element Vector{BilevelJuMP.BilevelVariableRef}:
+ y[1]
+ y[2]</pre><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, x + 3(y[1] -y[2]))</code></pre><p class="math-container">\[ x + 3 y_{1} - 3 y_{2} \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), x &gt;= 2)
+@constraint(Upper(model), x &lt;= 6)</code></pre><p class="math-container">\[ x \leq 6.0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, - (y[1] - y[2]))</code></pre><p class="math-container">\[ -y_{1} + y_{2} \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), lb_y_1, y[1] &gt;= 0)
+@constraint(Lower(model), lb_y_2, y[2] &gt;= 0)
+@constraint(Lower(model), con1, x +  (y[1] - y[2]) &lt;=  8)
+@constraint(Lower(model), con2, x + 4(y[1] - y[2]) &gt;=  8)
+@constraint(Lower(model), con3, x + 2(y[1] - y[2]) &lt;= 12)
+@constraint(Lower(model), soc_lw, y in SecondOrderCone())</code></pre><p>soc<em>lw : $ [y</em>{1}, y_{2}] \in \text{MathOptInterface.SecondOrderCone(2)} $</p><p>Defining bounds</p><pre><code class="language-julia">BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
+BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+ -5.0
+ -5.0</pre><p>require lower bounds</p><pre><code class="language-julia">for con in [con1, con3]
+    BilevelJuMP.set_dual_lower_bound_hint(con, -15)
+end</code></pre><p>require upper bounds</p><pre><code class="language-julia">for con in [lb_y_1, lb_y_2, con2]
+    BilevelJuMP.set_dual_upper_bound_hint(con, +15)
+end</code></pre><p>bounds defined in the upper level are not dualized</p><pre><code class="language-julia">for i in 1:2
+    @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
+    @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
+end</code></pre><p>Now we can solve the problem and verify the solution again that reported by</p><pre><code class="language-julia">optimize!(model)
+primal_status(model)
+termination_status(model)
+
+value.(y)
+
+@test objective_value(model) ≈ 12  atol=1e-1
+@test value(x) ≈ 6 atol=1e-3
+@test value(y[2]) &gt;= 0 - 1e-3
+@test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example2/">« Example 7</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 4 March 2022 21:29">Friday 4 March 2022</span>. Using Julia version 1.6.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
