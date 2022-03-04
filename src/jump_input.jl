@@ -117,13 +117,20 @@ end
 
 function _call_mibs(mps_filename, aux_filename, mibs_call)
     io = IOBuffer()
+    io_err = IOBuffer()
     mibs_call() do exe
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
                 stdout = io,
+                stderr = io_err,
             )
         )
+    end
+    seekstart(io_err)
+    err = read(io_err, String)
+    if length(err) > 0
+        error(err)
     end
     seekstart(io)
     return read(io, String)
