@@ -122,7 +122,7 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
-                stdout = io,
+                # stdout = io,
                 stderr = io_err,
             )
         )
