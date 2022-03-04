@@ -117,12 +117,13 @@ end
 
 function _call_mibs(mps_filename, aux_filename, mibs_call)
     io = IOBuffer()
+    write(io, "\n BilevelJuMP Calling MibS \n")
     io_err = IOBuffer()
     mibs_call() do exe
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
-                # stdout = io,
+                stdout = io,
                 stderr = io_err,
             )
         )
