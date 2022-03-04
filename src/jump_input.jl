@@ -116,9 +116,13 @@ function _write_auxillary_file(
 end
 
 function _call_mibs(mps_filename, aux_filename, mibs_call)
-    io = "mibs_outout.txt"
+    #=
+    MibS fail randomly in win ci if io = IOBuffer()
+    writing to file has shown to be more robust
+    =#
+    io = "mibs_output.txt"
     # write(io, "\n BilevelJuMP Calling MibS \n")
-    io_err = IOBuffer()
+    io_err = "mibs_errors.txt"
     mibs_call() do exe
         run(
             pipeline(
@@ -128,7 +132,7 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
             )
         )
     end
-    seekstart(io_err)
+    # seekstart(io_err)
     err = read(io_err, String)
     if length(err) > 0
         error(err)
@@ -246,8 +250,7 @@ This function returns a `NamedTuple` with fields:
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
 function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = false)
-    # mktempdir() do path
-    begin
+    mktempdir() do path
         path = pwd()
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
