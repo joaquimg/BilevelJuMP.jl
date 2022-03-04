@@ -1,4 +1,5 @@
 using Pkg
+Pkg.add(name="Xpress", version="0.13.2")
 Pkg.build("Xpress")
 using Xpress
 using QuadraticToBinary
