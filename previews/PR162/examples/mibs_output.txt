@@ -72,11 +72,11 @@ Alps0267I Number of nodes branched:                 17
 Alps0268I Number of nodes pruned before processing: 0
 Alps0270I Number of nodes left:                     0
 Alps0272I Tree depth: 9
-Alps0274I Search CPU time: 0.03 seconds
-Alps0278I Search wall-clock time: 0.03 seconds
-Blis0040I Checking feasibility took 0.0106 seconds
-Blis0053I Called MIBS cut generator 42 times, generated 21 cuts, CPU time 0.0005 seconds, current strategy 3
-Blis0063I Called Rounding heuristic 84 times, found 0 solutions, CPU time 0.0005 seconds, current strategy 2
+Alps0274I Search CPU time: 0.02 seconds
+Alps0278I Search wall-clock time: 0.01 seconds
+Blis0040I Checking feasibility took 0.0039 seconds
+Blis0053I Called MIBS cut generator 42 times, generated 21 cuts, CPU time 0.0002 seconds, current strategy 3
+Blis0063I Called Rounding heuristic 84 times, found 0 solutions, CPU time 0.0002 seconds, current strategy 2
 Blis0058I Relative optimality gap is 0.00%
 ============================================
 Optimal solution:
@@ -85,6 +85,6 @@ x[0] = 6
 y[0] = 5
 Number of problems (VF) solved = 12
 Number of problems (UB) solved = 0
-Time for solving problem (VF) = 0.00753188
+Time for solving problem (VF) = 0.00268316
 Time for solving problem (UB) = 0
 ============================================
