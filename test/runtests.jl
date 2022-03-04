@@ -53,7 +53,9 @@ solvers_complements = OptModeType[]
 include("solvers/ipopt.jl")
 # include("solvers/scip.jl")
 # include("solvers/cbc.jl")
-if Sys.iswindows() #&& get(ENV, "SECRET_XPRS_WIN_8110", "") != ""
+if Sys.iswindows() && (
+    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" || get(ENV, "XPRESSDIR", "") != "")
+    @info "Running Xpress in Tests"
     include("solvers/xpress.jl")
 end
 # DONE
