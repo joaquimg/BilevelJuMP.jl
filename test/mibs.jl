@@ -211,7 +211,7 @@ function test_Writing_MibS_input_v1()
     @constraint(Lower(model), l2, 4x +  y >= 8)
     @constraint(Lower(model), l3, 2x +  y <= 13)
     @constraint(Lower(model), l4, 2x - 7y <= 0)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = false, verbose_file = true)
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)

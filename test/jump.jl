@@ -2814,7 +2814,7 @@ function jump_01_sum_agg(optimizer, config = Config())
 
     primal_status(model)
 
-    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
+    @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
     @test objective_value(model) ≈ -8 atol=atol
 
