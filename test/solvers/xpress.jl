@@ -1,3 +1,5 @@
+using Pkg
+Pkg.build("Xpress")
 using Xpress
 using QuadraticToBinary
 
