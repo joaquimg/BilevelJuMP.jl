@@ -52,10 +52,12 @@ solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
 # include("solvers/scip.jl")
-include("solvers/cbc.jl")
+# include("solvers/cbc.jl")
+if Sys.iswindows() && get(ENV, "SECRET_XPRS_WIN_8110", "") != ""
+    include("solvers/xpress.jl")
+end
 # DONE
 # include("solvers/gurobi.jl")
-# include("solvers/xpress.jl")
 # include("solvers/knitro.jl")
 # include("solvers/gams.jl")
 # include("solvers/couenne.jl")
@@ -70,10 +72,12 @@ include("solvers/cbc.jl")
 include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
-include("mibs.jl")
 include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
+@testset "MibS" begin
+    include("mibs.jl")
+end
 
 @testset "nlp" begin
     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
@@ -142,7 +146,7 @@ end
         jump_05(solver.opt, solver.mode)#
         jump_3SAT(solver.opt, solver.mode)
         jump_06(solver.opt, solver.mode)#
-        jump_06_sv(solver.opt, solver.mode)
+        jump_06_sv(solver.opt, solver.mode, CONFIG_4)
         jump_07(solver.opt, solver.mode)#
         jump_08(solver.opt, solver.mode)#
         jump_09a(solver.opt, solver.mode) # fail on cbc positive SOS
@@ -203,7 +207,7 @@ end
 @testset "JuMP quad" begin
     for solver in solvers_quad
         jump_quad_01_a(solver.opt, solver.mode)
-        jump_quad_01_b(solver.opt, solver.mode)
+        jump_quad_01_b(solver.opt, solver.mode, CONFIG_4)
         jump_quad_01_c(solver.opt, solver.mode)
         jump_13_quad(solver.opt, solver.mode)
     end
@@ -277,7 +281,7 @@ end
         jump_HTP_quad04(solver.opt, solver.mode, CONFIG_3)
         jump_HTP_quad05(solver.opt, solver.mode)
         jump_HTP_quad06(solver.opt, solver.mode, CONFIG_3)
-        # jump_HTP_quad06b(solver.opt, solver.mode) # TODO weird results
+        # jump_HTP_quad06b(solver.opt, solver.mode)
         jump_HTP_quad07(solver.opt, solver.mode)
         jump_HTP_quad08(solver.opt, solver.mode) # not PSD
         jump_HTP_quad09(solver.opt, solver.mode)
@@ -287,14 +291,14 @@ end
     end
 
     for solver in solvers_sos_quad
-        jump_HTP_quad01(solver.opt, solver.mode, CONFIG_5)
+        jump_HTP_quad01(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_quad02(solver.opt, solver.mode)
         jump_HTP_quad04(solver.opt, solver.mode)
         jump_HTP_quad05(solver.opt, solver.mode)
         jump_HTP_quad06(solver.opt, solver.mode)
-        jump_HTP_quad06b(solver.opt, solver.mode)
-        jump_HTP_quad07(solver.opt, solver.mode)
-        jump_HTP_quad08(solver.opt, solver.mode) # not PSD
+        jump_HTP_quad06b(solver.opt, solver.mode, CONFIG_4)
+        jump_HTP_quad07(solver.opt, solver.mode, CONFIG_4)
+        # jump_HTP_quad08(solver.opt, solver.mode) # not PSD
     end
     for solver in solvers_sos
         jump_HTP_quad03(solver.opt, solver.mode)
