@@ -238,7 +238,9 @@ This function returns a `NamedTuple` with fields:
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
 function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = false)
-    mktempdir() do path
+    # mktempdir() do path
+    begin
+        path = pwd()
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
@@ -253,10 +255,18 @@ function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, ve
             aux_filename,
         )
         if verbose_file
+            @show mps_filename
             print(read(mps_filename, String))
+            @show aux_filename
             print(read(aux_filename, String))
         end
         output = _call_mibs(mps_filename, aux_filename, mibs_call)
+        if verbose_file
+            print("MibS done")
+        end
+        if length(output) == 0
+            error("MibS failed to return")
+        end
         if !silent
             println(output)
         end
