@@ -1,4 +1,4 @@
-using MibS_jll
+# functionality for calling the MibS solver
 
 function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
     upper = JuMP.backend(model.upper)
@@ -115,17 +115,29 @@ function _write_auxillary_file(
     return
 end
 
-function _call_mibs(mps_filename, aux_filename)
-    io = IOBuffer()
-    MibS_jll.mibs() do exe
+function _call_mibs(mps_filename, aux_filename, mibs_call)
+    #=
+    MibS fail randomly in win ci if io = IOBuffer()
+    writing to file has shown to be more robust
+    =#
+    io = "mibs_output.txt"
+    # write(io, "\n BilevelJuMP Calling MibS \n")
+    io_err = "mibs_errors.txt"
+    mibs_call() do exe
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
                 stdout = io,
+                stderr = io_err,
             )
         )
     end
-    seekstart(io)
+    # seekstart(io_err)
+    err = read(io_err, String)
+    if length(err) > 0
+        error(err)
+    end
+    # seekstart(io)
     return read(io, String)
 end
 
@@ -218,10 +230,11 @@ function _parse_output(
 end
 
 """
-    solve_with_MibS(model::BilevelModel; silent::Bool = true)
+    solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true)
 
 ## Inputs
-* `model::BilevelModel`:  the model to optimize
+* `model::BilevelModel`: the model to optimize
+* `mibs_call`: shoul be `MibS_jll.mibs` remember to `import MibS_jll` before.
 * `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
 ## Outputs
 This function returns a `NamedTuple` with fields:
@@ -236,8 +249,9 @@ This function returns a `NamedTuple` with fields:
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-function solve_with_MibS(model::BilevelModel; silent::Bool = true)
+function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = false)
     mktempdir() do path
+        path = pwd()
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
@@ -251,7 +265,19 @@ function solve_with_MibS(model::BilevelModel; silent::Bool = true)
             sense,
             aux_filename,
         )
-        output = _call_mibs(mps_filename, aux_filename)
+        if verbose_file
+            @show mps_filename
+            print(read(mps_filename, String))
+            @show aux_filename
+            print(read(aux_filename, String))
+        end
+        output = _call_mibs(mps_filename, aux_filename, mibs_call)
+        if verbose_file
+            print("MibS done")
+        end
+        if length(output) == 0
+            error("MibS failed to return")
+        end
         if !silent
             println(output)
         end

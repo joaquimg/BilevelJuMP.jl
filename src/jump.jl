@@ -509,6 +509,7 @@ function JuMP.optimize!(model::BilevelModel;
     upper_to_lower_var_indices = convert_indices(model.link)
     upper_var_lower_ctr = index2(model.upper_var_to_lower_ctr_link)
 
+    reset!(mode) # cleaup cached data
     # build bound for FortunyAmatMcCarlMode
     build_bounds!(model, mode)
 
@@ -517,10 +518,13 @@ function JuMP.optimize!(model::BilevelModel;
             copy_names = model.copy_names, pass_start = model.pass_start, 
             linearize_bilinear_upper_terms = model.linearize_bilinear_upper_terms)
 
-    # pass lower level dual variables info (start, upper, lower)
+    # pass additional info (hints - not actual problem data)
+    # for lower level dual variables (start, upper hint, lower hint)
     for (idx, info) in model.ctr_info
         if haskey(model.ctr_lower, idx)
             ctr = model.ctr_lower[idx]
+            # this fails for vector-constrained variables due dualization 0.3.5
+            # because of constrained variables that change the dual
             pre_duals = lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
             duals = map(x->lower_dual_to_sblm[x], pre_duals)
             pass_dual_info(single_blm, duals, info)
@@ -585,6 +589,8 @@ function JuMP.optimize!(model::BilevelModel;
 
     model.solve_time = time() - t1
 
+    reset!(mode)
+
     return nothing
 end
 
@@ -641,10 +647,13 @@ end
 
 # Bounds
 
-function build_bounds!(::BilevelModel, ::AbstractBilevelSolverMode{T}) where T
+function build_bounds!(::BilevelModel, ::AbstractBilevelSolverMode)
     return nothing
 end
-function build_bounds!(model::BilevelModel, mode::AbstractBoundedMode{T}) where T
+function build_bounds!(model::BilevelModel, mode::FortunyAmatMcCarlMode)
+    return _build_bounds!(model, mode.cache)
+end
+function build_bounds!(model::BilevelModel, mode::MixedMode)
     return _build_bounds!(model, mode.cache)
 end
 function _build_bounds!(model::BilevelModel, mode::ComplementBoundCache)
@@ -794,6 +803,7 @@ function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where T
     error("Cant set StrongDualityMode in a specific constraint")
 end
 
+# mode for variable bounds
 function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where T
     bm = vi.model
     check_mixed_mode(bm.mode)
