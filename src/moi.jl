@@ -205,7 +205,7 @@ function build_full_map!(mode,
     upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap, lower_primal_dual_map)
     return nothing
 end
-function build_full_map!(mode::AbstractBoundedMode,
+function build_full_map!(mode::FortunyAmatMcCarlMode,
         upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap, lower_primal_dual_map)
     _build_bound_map!(mode.cache,
         upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap, lower_primal_dual_map)
