@@ -401,7 +401,7 @@ function build_bilevel(
     # lower level dual variable -> upper level variable
     # and the reverse map
     bilinear_upper_primal_lower_dual = MOIU.IndexMap()
-    for (upper_var, lower_con) in upper_var_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr
         var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
         lower_dual_idxmap[var] = upper_to_m_idxmap[upper_var]
         bilinear_upper_primal_lower_dual[upper_to_m_idxmap[upper_var]] = var
@@ -420,7 +420,7 @@ function build_bilevel(
 
     if linearize_bilinear_upper_terms 
         if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
-            !isempty(upper_var_lower_ctr)
+            !isempty(upper_var_to_lower_ctr)
             
             linearize = true
             # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
@@ -436,7 +436,7 @@ function build_bilevel(
                 @warn("The lower model must be in standard form to linearize bilinear terms, i.e. the constraint types must be a subset of $(standard_form_con_types). Skipping linearization process.")
             else
                 A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
-                    check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_lower_ctr)
+                    check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
 
                 if isempty(A_N)
                     @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
@@ -479,7 +479,7 @@ function build_bilevel(
 
             J_U = Int[]
             N_U = Int[]
-            for (upper_var, lower_con) in upper_var_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+            for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
                 j = lower_con.value
                 n = bilinear_upper_dual_to_lower_primal[upper_var].value
                 if !(n in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
@@ -498,7 +498,7 @@ function build_bilevel(
                 if conditions_passed
                     linearizations = linear_terms_for_empty_AB(
                         lower,
-                        upper_var_lower_ctr,
+                        upper_var_to_lower_ctr,
                         bilinear_upper_dual_to_lower_primal,
                         V,
                         w,
@@ -528,7 +528,7 @@ function build_bilevel(
                     Vblock[rows[n],:] = V[rows[n],:]
                     check = check_non_empty_AB_N_conditions(
                         intersect(J_U, rows[n]), U, intersect(N_U, cols[n]), intersect(A_N, cols[n]), B, Vblock, 
-                        lower_primal_var_to_lower_con, upper_var_lower_ctr,
+                        lower_primal_var_to_lower_con, upper_var_to_lower_ctr,
                         bilinear_upper_dual_to_quad_term, 
                         bilinear_upper_dual_to_lower_primal)
                     push!(conditions_passed, check)
@@ -540,7 +540,7 @@ function build_bilevel(
                 if all(conditions_passed)
                     linearizations = linear_terms_for_non_empty_AB(
                         lower,
-                        upper_var_lower_ctr,
+                        upper_var_to_lower_ctr,
                         bilinear_upper_dual_to_lower_primal,
                         V,
                         w,
