@@ -290,8 +290,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
     # U = part of A for upper_var_indices
     # V = rest of A
-	# TODO SingleVariable, EqualTo 
-    # TODO what is best way to map variable indices in the standard form model to the LL model?
 
     #=
     For each ScalarAffineFunction ≥ or ≤ Float64 we add a slack variable and make the constraint
@@ -411,7 +409,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     w = [b; d; f]
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
-    # TODO build standard form model before Dualization?
 end
 
 
@@ -755,7 +752,6 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
         if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
             met_condition_5 = false
             @debug("Condition 5 not met.")
-            # TODO condition should be applied seperately to seperable LL models
         end
         p = A_jn / V_jn
     end
@@ -770,11 +766,13 @@ end
 
 
 """
+    find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
 
-TODO doc string
+Find the blocks in the joint matrix [U V]
+
 For example, given:
 
-V = | 1 0 0 1 0 0 |
+[U U] = | 1 0 0 1 0 0 |
     | 0 1 0 0 1 0 |
     | 0 1 0 0 1 0 |
 
@@ -787,12 +785,14 @@ cols = [
 
 NOTE that rows/cols with all zeros are not included in the return values.
 """
-function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real}, A_N::AbstractVector{<:Int}; upper_var_indices=Vector{MOI.VariableIndex}())
+function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
     num_blocks = 0
     rows, cols = Vector[], Vector[]
     rows_connected = Int[]
-    # starting with first row, find all connected values. If all rows are connected then only one block. Else, search the remaining unconnected rows until all rows are accounted for.
-    nrows, ncols = size(V)
+    # starting with first row of V, find all connected values. 
+    # If all rows are connected then there is only one block. 
+    # Else, search the remaining unconnected rows until all rows are accounted for.
+    nrows = size(V,1)
     UV = U + V
     for r in 1:nrows
         if r in rows_connected continue end

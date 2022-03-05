@@ -518,7 +518,7 @@ function build_bilevel(
                 @debug("set AB_N is NOT empty")
                 
                 # TODO input flag for checking for blocks? (to save time)
-                num_blocks, rows, cols = find_blocks(V, U, A_N, upper_var_indices=lower_var_indices_of_upper_vars)
+                num_blocks, rows, cols = find_blocks(V, U)
 
                 conditions_passed = Bool[]
                 nrows, ncols = size(V)
