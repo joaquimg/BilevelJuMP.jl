@@ -92,26 +92,27 @@ end
 function JuMP.dual_start_value(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.index].start
 end
-function set_dual_upper_bound(cref::BilevelConstraintRef, value::T) where T<:Number
+
+function set_dual_upper_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Number
     cref.model.ctr_info[cref.index].upper = value
 end
-function set_dual_upper_bound(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+function set_dual_upper_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].upper
     @assert length(array) == length(value)
     copyto!(array, value)
 end
-function get_dual_upper_bound(cref::BilevelConstraintRef)
+function get_dual_upper_bound_hint(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.index].upper
 end
-function set_dual_lower_bound(cref::BilevelConstraintRef, value::T) where T<:Number
+function set_dual_lower_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Number
     cref.model.ctr_info[cref.index].lower = value
 end
-function set_dual_lower_bound(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
+function set_dual_lower_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].lower
     @assert length(array) == length(value)
     copyto!(array, value)
 end
-function get_dual_lower_bound(cref::BilevelConstraintRef)
+function get_dual_lower_bound_hint(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.index].lower
 end
 
@@ -187,12 +188,12 @@ function JuMP.build_variable(
     end
 
     if info.has_lb
-        set_dual_lower_bound(dual_of.ci, info.lower_bound)
+        set_dual_lower_bound_hint(dual_of.ci, info.lower_bound)
         # info.has_lb = false
         # info.lower_bound = NaN
     end
     if info.has_ub
-        set_dual_upper_bound(dual_of.ci, info.upper_bound)
+        set_dual_upper_bound_hint(dual_of.ci, info.upper_bound)
         # info.has_ub = false
         # info.upper_bound = NaN
     end

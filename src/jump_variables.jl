@@ -152,20 +152,20 @@ end
 
 function JuMP.has_lower_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        return !isnan(get_dual_lower_bound(get_constrain_ref(vref)))
+        return !isnan(get_dual_lower_bound_hint(get_constrain_ref(vref)))
     end
     JuMP.has_lower_bound(jump_var_ref(vref))
 end
 function JuMP.lower_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        return get_dual_lower_bound(get_constrain_ref(vref))
+        return get_dual_lower_bound_hint(get_constrain_ref(vref))
     end
     # @assert !JuMP.is_fixed(vref)
     JuMP.lower_bound(jump_var_ref(vref))
 end
 function JuMP.set_lower_bound(vref::BilevelVariableRef, lower::Number)
     if mylevel(vref) == DUAL_OF_LOWER
-        set_dual_lower_bound(get_constrain_ref(vref), lower)
+        set_dual_lower_bound_hint(get_constrain_ref(vref), lower)
         return
     end
     JuMP.set_lower_bound(jump_var_ref(vref), lower)
@@ -173,7 +173,7 @@ function JuMP.set_lower_bound(vref::BilevelVariableRef, lower::Number)
 end
 function JuMP.delete_lower_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        set_dual_lower_bound(get_constrain_ref(vref), NaN)
+        set_dual_lower_bound_hint(get_constrain_ref(vref), NaN)
         return
     end
     JuMP.delete_lower_bound(jump_var_ref(vref))
@@ -181,20 +181,20 @@ function JuMP.delete_lower_bound(vref::BilevelVariableRef)
 end
 function JuMP.has_upper_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        return !isnan(get_dual_upper_bound(get_constrain_ref(vref)))
+        return !isnan(get_dual_upper_bound_hint(get_constrain_ref(vref)))
     end
     JuMP.has_upper_bound(jump_var_ref(vref))
 end
 function JuMP.upper_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        return get_dual_upper_bound(get_constrain_ref(vref))
+        return get_dual_upper_bound_hint(get_constrain_ref(vref))
     end
     # @assert !JuMP.is_fixed(vref)
     JuMP.upper_bound(jump_var_ref(vref))
 end
 function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
     if mylevel(vref) == DUAL_OF_LOWER
-        set_dual_upper_bound(get_constrain_ref(vref), upper)
+        set_dual_upper_bound_hint(get_constrain_ref(vref), upper)
         return
     end
     JuMP.set_upper_bound(jump_var_ref(vref), upper)
@@ -202,7 +202,7 @@ function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
 end
 function JuMP.delete_upper_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
-        set_dual_upper_bound(get_constrain_ref(vref), NaN)
+        set_dual_upper_bound_hint(get_constrain_ref(vref), NaN)
         return
     end
     JuMP.delete_upper_bound(jump_var_ref(vref))
