@@ -21,7 +21,7 @@ Variables: 0
 Upper Constraints: 0
 Lower Constraints: 0
 Bilevel Model
-Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false)
+Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
 Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
 
 
@@ -34,13 +34,13 @@ Solver name: Ipopt</pre><p>First we need to create all of the variables in the u
 @constraint(Lower(model), con1, x +  (y[1] - y[2]) &lt;=  8)
 @constraint(Lower(model), con2, x + 4(y[1] - y[2]) &gt;=  8)
 @constraint(Lower(model), con3, x + 2(y[1] - y[2]) &lt;= 12)
-@constraint(Lower(model), soc_lw, y in SecondOrderCone())</code></pre><p>soc<em>lw : $ [y</em>{1}, y_{2}] \in \text{MathOptInterface.SecondOrderCone(2)} $</p><p>Defining bounds</p><pre><code class="language-julia">BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
-BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+@constraint(Lower(model), soc_lw, y in SecondOrderCone())</code></pre><p>soc<em>lw : $ [y</em>{1}, y_{2}] \in \text{MathOptInterface.SecondOrderCone(2)} $</p><p>Defining bounds</p><pre><code class="language-julia">BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
+BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
  -5.0
  -5.0</pre><p>require lower bounds</p><pre><code class="language-julia">for con in [con1, con3]
-    BilevelJuMP.set_dual_lower_bound(con, -15)
+    BilevelJuMP.set_dual_lower_bound_hint(con, -15)
 end</code></pre><p>require upper bounds</p><pre><code class="language-julia">for con in [lb_y_1, lb_y_2, con2]
-    BilevelJuMP.set_dual_upper_bound(con, +15)
+    BilevelJuMP.set_dual_upper_bound_hint(con, +15)
 end</code></pre><p>bounds defined in the upper level are not dualized</p><pre><code class="language-julia">for i in 1:2
     @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
     @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
@@ -53,4 +53,4 @@ value.(y)
 @test objective_value(model) ≈ 12  atol=1e-1
 @test value(x) ≈ 6 atol=1e-3
 @test value(y[2]) &gt;= 0 - 1e-3
-@test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example2/">« Example 7</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 November 2021 19:04">Friday 5 November 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example2/">« Example 7</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 5 March 2022 18:11">Saturday 5 March 2022</span>. Using Julia version 1.6.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

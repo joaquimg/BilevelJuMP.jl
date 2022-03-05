@@ -69,15 +69,15 @@ model = BilevelModel(() -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ip
 @constraint(Lower(model), soc_lw, y in SecondOrderCone())
 
 # Defining bounds
-BilevelJuMP.set_dual_upper_bound(soc_lw, +[5., 5.])
-BilevelJuMP.set_dual_lower_bound(soc_lw, -[5., 5.])
+BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
+BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])
 # require lower bounds
 for con in [con1, con3]
-    BilevelJuMP.set_dual_lower_bound(con, -15)
+    BilevelJuMP.set_dual_lower_bound_hint(con, -15)
 end
 # require upper bounds
 for con in [lb_y_1, lb_y_2, con2]
-    BilevelJuMP.set_dual_upper_bound(con, +15)
+    BilevelJuMP.set_dual_upper_bound_hint(con, +15)
 end
 # bounds defined in the upper level are not dualized
 for i in 1:2

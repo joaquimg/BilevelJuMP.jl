@@ -66,8 +66,8 @@ end)
 # In this example, we know the duals on the lower constraints are in
 # the set `[-15, 15]`:
 for c in [l1, l2, l3, l4]
-    BilevelJuMP.set_dual_upper_bound(c, 15)
-    BilevelJuMP.set_dual_lower_bound(c, -15)
+    BilevelJuMP.set_dual_upper_bound_hint(c, 15)
+    BilevelJuMP.set_dual_lower_bound_hint(c, -15)
 end
 
 # While we think the primal variables are in `[-10, 6]` for `x` and `[-1, 9]`
