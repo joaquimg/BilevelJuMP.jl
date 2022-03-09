@@ -809,3 +809,201 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
     @debug("Found $(num_blocks) block(s) in V.")
     return num_blocks, rows, cols
 end
+
+
+"""
+    main_linearization(
+        lower, 
+        upper, 
+        upper_var_to_lower_ctr, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        lower_to_m_idxmap, 
+        lower_primal_dual_map, 
+        lower_dual_idxmap
+    )
+
+The main logic for linearizing bilinear terms of lower level dual and primal variables in the upper
+level model.
+"""
+function main_linearization(
+        m,
+        lower, 
+        upper, 
+        upper_var_to_lower_ctr, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        lower_to_m_idxmap, 
+        upper_to_m_idxmap,
+        lower_primal_dual_map, 
+        lower_dual_idxmap
+    )
+
+    if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
+        !isempty(upper_var_to_lower_ctr)
+
+        @assert MOI.get(upper, MOI.ObjectiveSense()) == MOI.MIN_SENSE
+        @assert MOI.get(lower, MOI.ObjectiveSense()) == MOI.MIN_SENSE
+        # TODO switch signs with MAX sense
+        
+        linearize = true
+        # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
+        lower_con_types = Set(MOI.get(lower, MOI.ListOfConstraints()))
+        standard_form_con_types = Set([
+            (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
+            (MOI.SingleVariable, MOI.GreaterThan{Float64}),
+            (MOI.SingleVariable, MOI.LessThan{Float64})
+        ])
+
+        if !(issubset(lower_con_types, standard_form_con_types))
+            linearize = false
+            @warn("The lower model must be in standard form to linearize bilinear terms, i.e. the constraint types must be a subset of $(standard_form_con_types). Skipping linearization process.")
+        else
+            A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
+                check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
+
+            if isempty(A_N)
+                @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
+                linearize = false
+            else
+                AB_N, B, lower_obj_terms, lower_obj_type_handled = 
+                    get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
+                if !lower_obj_type_handled
+                    @warn("Linearizing bilinear terms does not handle lower level objective type $(MOI.get(lower, MOI.ObjectiveFunctionType())). Skipping linearization process.")
+                    linearize = false
+                end
+            end
+        end
+    else
+        @warn("Upper objective must be quadratic and there must lower dual variables in the upper model to linearize bilinear terms. Skipping linearization process.")
+        linearize = false
+    end
+
+    if linearize
+        U, V, w = standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+        upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
+        linearizations = nothing
+        m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
+        bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
+
+        for term in m_objective.quadratic_terms
+            mset = Set([term.variable_index_1, term.variable_index_2])
+            for upper_term in upper_obj_func_quad_terms
+                uset = Set([
+                    upper_to_m_idxmap[upper_term.variable_index_1],
+                    upper_to_m_idxmap[upper_term.variable_index_2]
+                ])
+                if uset == mset
+                    bilinear_upper_quad_term_to_m_quad_term[upper_term] = term
+                end
+            end
+        end
+
+        # TODO check for integer x * continuous y, for now assuming continuous x conditions
+
+        J_U = Int[]
+        N_U = Int[]
+        for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+            j = lower_con.value
+            n = bilinear_upper_dual_to_lower_primal[upper_var].value
+            if !(n in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
+            rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+            push!(J_U, rows...)
+            push!(N_U, cols...)
+        end
+        #= 
+            Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
+        =#
+        if isempty(AB_N)
+            @debug("set AB_N is empty")
+
+            conditions_passed = check_empty_AB_N_conditions(J_U, U, N_U, B)
+
+            if conditions_passed
+                linearizations = linear_terms_for_empty_AB(
+                    lower,
+                    upper_var_to_lower_ctr,
+                    bilinear_upper_dual_to_lower_primal,
+                    V,
+                    w,
+                    bilinear_upper_dual_to_quad_term,
+                    lower_obj_terms,
+                    lower_to_m_idxmap,
+                    lower_primal_dual_map,
+                    lower_dual_idxmap
+                )
+                if isnothing(linearizations)
+                    @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
+                end
+            else
+                @warn("Required conditions for linearization not met. Skipping linearization process.")
+            end
+        else  # AB_N is not empty
+            @debug("set AB_N is NOT empty")
+            
+            # TODO input flag for checking for blocks? (to save time)
+            num_blocks, rows, cols = find_blocks(V, U)
+
+            conditions_passed = Bool[]
+            nrows, ncols = size(V)
+            for n in 1:num_blocks
+                # TODO can skip blocks that are not linked to bilinear terms?
+                Vblock = spzeros(nrows, ncols)
+                Vblock[rows[n],:] = V[rows[n],:]
+                check = check_non_empty_AB_N_conditions(
+                    intersect(J_U, rows[n]), U, intersect(N_U, cols[n]), intersect(A_N, cols[n]), B, Vblock, 
+                    lower_primal_var_to_lower_con, upper_var_to_lower_ctr,
+                    bilinear_upper_dual_to_quad_term, 
+                    bilinear_upper_dual_to_lower_primal)
+                push!(conditions_passed, check)
+            end
+            # recover memory
+            rows, cols = nothing, nothing
+            @debug("Done looping over V blocks")
+            
+            if all(conditions_passed)
+                linearizations = linear_terms_for_non_empty_AB(
+                    lower,
+                    upper_var_to_lower_ctr,
+                    bilinear_upper_dual_to_lower_primal,
+                    V,
+                    w,
+                    A_N,
+                    bilinear_upper_dual_to_quad_term,
+                    lower_obj_terms,
+                    lower_to_m_idxmap,
+                    lower_primal_dual_map,
+                    lower_dual_idxmap
+                )
+                if isnothing(linearizations)
+                    @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
+                end
+            else
+                @warn("Required conditions for linearization not met. Skipping linearization process.")
+            end
+
+        end
+
+        # LINEARIZATION
+
+        if !(isnothing(linearizations))
+            # set m's objective by replacing quadratic terms with linearizations
+            mobj = deepcopy(m_objective)
+            quadratic_terms = mobj.quadratic_terms  # TODO keep quadratic terms that have not been linearized
+            c = mobj.constant
+            affine_terms = mobj.affine_terms
+            cvb = collect(values(bilinear_upper_quad_term_to_m_quad_term))
+            new_objective = deepcopy(m_objective)
+            if Set(cvb) == Set(quadratic_terms)
+                @debug("Replacing bilinear lower dual * lower primal terms in upper objective with linear terms.")
+                new_objective = MOI.ScalarAffineFunction{Float64}(
+                    append!(affine_terms, linearizations),
+                    c
+                )
+                MOI.set(m, MOI.ObjectiveFunction{MOI.ScalarAffineFunction}(), new_objective)
+            else
+                @warn("Unable to linearize bilinear terms due to mis-matched quadratic terms in the upper level and single level models. Skipping linearization process.")
+            end
+        end
+    end # if linearize
+end
