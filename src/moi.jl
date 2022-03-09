@@ -421,6 +421,10 @@ function build_bilevel(
     if linearize_bilinear_upper_terms 
         if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
             !isempty(upper_var_to_lower_ctr)
+
+            @assert MOI.get(upper, MOI.ObjectiveSense()) == MOI.MIN_SENSE
+            @assert MOI.get(lower, MOI.ObjectiveSense()) == MOI.MIN_SENSE
+            # TODO switch signs with MAX sense
             
             linearize = true
             # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
@@ -561,7 +565,6 @@ function build_bilevel(
             end
 
             # LINEARIZATION
-            # TODO switch signs with MAX sense?
 
             if !(isnothing(linearizations))
                 # set m's objective by replacing quadratic terms with linearizations
