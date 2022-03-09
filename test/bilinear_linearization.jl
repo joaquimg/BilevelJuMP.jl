@@ -3,7 +3,8 @@ using BilevelJuMP
 # using Ipopt
 # using Cbc
 # using CPLEX
-using Gurobi
+using Xpress
+# using Xpress
 using MathOptInterface
 using Test
 const MOI = MathOptInterface
@@ -26,7 +27,7 @@ d2 = 2
 
 # MILP Program (bilinear terms in upper and lower objectives get linearized)
 model = BilevelModel(
-    Gurobi.Optimizer, 
+    Xpress.Optimizer, 
     mode = BilevelJuMP.SOS1Mode(), 
     linearize_bilinear_upper_terms=true
 )
@@ -63,7 +64,7 @@ optimize!(model)
 @test MOI.get(model.solver, MOI.ObjectiveFunctionType()) == MathOptInterface.ScalarAffineFunction{Float64}
 
 # MIQP
-model2 = BilevelModel(Gurobi.Optimizer, mode = BilevelJuMP.SOS1Mode())
+model2 = BilevelModel(Xpress.Optimizer, mode = BilevelJuMP.SOS1Mode())
 @variables(Upper(model2), begin
     10 >= x0 >= 0
     10 >= xe >= 0
@@ -105,7 +106,7 @@ optimize!(model2)
         explicit KKT LL with linearized UL:
 =# 
 
-model = JuMP.Model(Gurobi.Optimizer)
+model = JuMP.Model(Xpress.Optimizer)
 set_optimizer_attribute(model, "NonConvex", 2)
 set_optimizer_attribute(model, "MIPGap", 1e-2)
 
@@ -158,37 +159,12 @@ optimize!(model)
 @test value(yder) ≈ 1.0
 @test value(x0) ≈ 2.0
 
-#=
-BilevelJuMP model indicates that it has only 4 SOS1 constraints:
-julia> println(model.solver.model)
-    sense  : minimize
-    number of variables             = 12
-    number of linear constraints    = 8
-    number of quadratic constraints = 0
-    number of sos constraints       = 4
-    number of non-zero coeffs       = 19
-    number of non-zero qp objective terms  = 1
-    number of non-zero qp constraint terms = 0
-
-So I assumed that it is not modeling the lower mu SOS1 constraints, ran Gurobi NLP again, and get
-the result that matches BilevelJuMP solution (UL cost 0, LL cost 3)
-
-So it seems that BilevelJuMP (actually it _is_ Dualization.jl dual_problem.primal_dual_map in BilevelJuMP moi.jl)
- is not including the complementary constraints for lower bounds of zero 
-(but is including the dual variables for lower bounds of zero in the dual constraints, which results in the odd solution of UL cost 0, LL cost 3)
-
-Bug in v 0.3.5 of Dualization.jl see https://github.com/jump-dev/Dualization.jl/issues/123 and address by checking out master branch of BilevelJuMP (Done)
-=# 
-
-
-
-
 
 #= 
         test jump_conejo2016 without linearization
 =#
 
-optimizer = Gurobi.Optimizer()
+optimizer = Xpress.Optimizer()
 model = BilevelModel(()->optimizer)
 set_optimizer_attribute(model, "NonConvex", 2)
 
@@ -232,7 +208,7 @@ optimize!(model)
 
 # standard form jump_conejo2016
 
-optimizer = Gurobi.Optimizer()
+optimizer = Xpress.Optimizer()
 model = BilevelModel(()->optimizer, linearize_bilinear_upper_terms=true)
 # set_optimizer_attribute(model, "NonConvex", 2)
 @variable(Upper(model), 0 <= x <= 250, start = 50)
@@ -275,7 +251,7 @@ The KKT model is:
     C = [[1 1 1 1]; [-1 -1 -1 -1]]
 =#
 
-model = JuMP.Model(Gurobi.Optimizer)
+model = JuMP.Model(Xpress.Optimizer)
 set_optimizer_attribute(model, "MIPGap", 1e-2)
 
 @variable(model, 0 <= y[i=1:3] <= 300, start = [50, 150, 0][i])
