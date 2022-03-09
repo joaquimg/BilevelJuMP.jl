@@ -572,7 +572,7 @@ function build_bilevel(
                 cvb = collect(values(bilinear_upper_quad_term_to_m_quad_term))
                 new_objective = deepcopy(m_objective)
                 if Set(cvb) == Set(quadratic_terms)
-                    @info("Replacing bilinear lower dual * lower primal terms in upper objective with linear terms.")
+                    @debug("Replacing bilinear lower dual * lower primal terms in upper objective with linear terms.")
                     new_objective = MOI.ScalarAffineFunction{Float64}(
                         append!(affine_terms, linearizations),
                         c
