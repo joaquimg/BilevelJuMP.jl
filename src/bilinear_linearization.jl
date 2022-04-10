@@ -875,7 +875,7 @@ function main_linearization(
             end
         end
     else
-        @warn("Upper objective must be quadratic and there must lower dual variables in the upper model to linearize bilinear terms. Skipping linearization process.")
+        @debug("Upper objective must be quadratic and there must lower dual variables in the upper model to linearize bilinear terms. Skipping linearization process.")
         linearize = false
     end
 
