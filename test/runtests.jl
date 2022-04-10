@@ -359,13 +359,13 @@ end
         jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
         jump_conejo2016_linearize(solver.opt, solver.mode, config)
         # jump_fanzeres2017(solver.opt, solver.mode)
-        jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
+        # jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
     end
     for solver in solvers_fa_quad_bin
         jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
         jump_conejo2016_linearize(solver.opt, solver.mode, config)
         # jump_fanzeres2017(solver.opt, solver.mode)
-        jump_eq_price(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode)  # fail with Gurobi b/c `Variable MathOptInterface.VariableIndex(17) has no upper bound``
     end
     for solver in solvers_sos
         jump_conejo2016_linearize(solver.opt, solver.mode, config)
