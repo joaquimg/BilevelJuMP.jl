@@ -75,6 +75,7 @@ include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
 include("jump_nlp.jl")
+include("bilinear_linearization.jl")
 
 @testset "BilevelJuMP tests" begin
 @testset "MibS" begin
@@ -395,6 +396,10 @@ end
         @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
         @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
     end
+end
+
+@testset "bilinear_linearization" begin
+    test_recursive_col_search()
 end
 
 end
