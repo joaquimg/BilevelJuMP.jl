@@ -56,11 +56,11 @@ function bilinear_linearization(optimizer, mode = BilevelJuMP.SOS1Mode(), config
     ci = 1
     d1 = 1
     d2 = 2
-
+    MOI.empty!(optimizer)
     # MILP Program (bilinear terms in upper and lower objectives get linearized)
     model = BilevelModel(
-        optimzer, 
-        mode, 
+        ()->optimizer, 
+        mode = mode, 
         linearize_bilinear_upper_terms=true
     )
     @variables(Upper(model), begin
