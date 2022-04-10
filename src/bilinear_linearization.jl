@@ -663,7 +663,7 @@ function check_empty_AB_N_conditions(J_U, U, N_U, B)
     for j in J_U, m in 1:size(U,2)
         if U[j,m] ≠ 0
             met_condition_1 = false
-            @debug("Condition 1 not met.")
+            @warn("Condition 1 not met: at least one connected lower constraint contains upper level variables.")
             break
         end
     end
@@ -673,7 +673,7 @@ function check_empty_AB_N_conditions(J_U, U, N_U, B)
     for m in 1:size(U,1), n in N_U
         if B[m,n] ≠ 0
             met_condition_2 = false
-            @debug("Condition 2 not met.")
+            @warn("Condition 2 not met: at least one connected lower variable is multiplied with an upper variable in the lower constraints.")
             break
         end
     end
@@ -700,7 +700,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     for j in J_U, m in 1:size(U,2)
         if U[j,m] ≠ 0
             met_condition_1 = false
-            @debug("Condition 1 not met.")
+            @warn("Condition 1 not met: at least one connected lower constraint contains upper level variables.")
             break
         end
     end
@@ -710,7 +710,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     for m in 1:size(U,2), n in setdiff(N_U, A_N)
         if B[m,n] ≠ 0
             met_condition_2 = false
-            @debug("Condition 2' not met.")
+            @warn("Condition 2' not met: at least one connected lower variable (that is not in the upper objective with a lower dual) is multiplied with an upper variable in the lower objective.")
             break
         end
     end
@@ -724,7 +724,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
         # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
             met_condition_3 = false
-            @debug("Condition 3 not met.")
+            @warn("Condition 3 not met: at least one lower variable from the upper objective bilinear terms is not connected to the other lower variables in the upper bilinear terms.")
             break
         end
     end
@@ -742,7 +742,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
         for j_prime in setdiff(J, j)
             if V[j_prime, n] ≠ 0
                 met_condition_4 = false
-                @debug("Condition 4 not met.")
+                @warn("Condition 4 not met: at least one lower variable from the upper objective bilinear terms is in more than one lower constraint.")
                 break
             end
         end
@@ -751,7 +751,7 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
         V_jn = V[j,n]
         if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
             met_condition_5 = false
-            @debug("Condition 5 not met.")
+            @warn("Condition 5 not met: at least one of the upper objective bilinear coefficients is not proportional to the coefficient in the lower level constraint.")
         end
         p = A_jn / V_jn
     end
