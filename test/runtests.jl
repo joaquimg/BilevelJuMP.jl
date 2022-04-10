@@ -400,6 +400,10 @@ end
 
 @testset "bilinear_linearization" begin
     test_recursive_col_search()
+    test_find_connected_rows_cols()
+    for solver in solvers_sos
+        bilinear_linearization(solver.opt, solver.mode)
+    end
 end
 
 end
