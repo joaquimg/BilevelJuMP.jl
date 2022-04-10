@@ -863,7 +863,7 @@ function main_linearization(
                 check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
 
             if isempty(A_N)
-                @warn("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
+                @debug("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
                 linearize = false
             else
                 AB_N, B, lower_obj_terms, lower_obj_type_handled = 
