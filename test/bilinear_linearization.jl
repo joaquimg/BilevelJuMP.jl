@@ -12,9 +12,40 @@ function test_recursive_col_search()
     A = ones(2,2)
     try
         BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[])
-    catch e
+    catch e  # redundant rows
         @test typeof(e) == BilevelJuMP.UnderDeterminedException
     end
+    A[1,2] = 0
+    try
+        BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[2])
+    catch e  # redundant cols
+        @test typeof(e) == BilevelJuMP.UnderDeterminedException
+    end
+end
+
+function test_find_connected_rows_cols()
+    A = Matrix{Float64}([
+        [1  0];
+        [0  1]
+    ])
+    rows, cols, redundant_vals = BilevelJuMP.find_connected_rows_cols(A, 1, 1; 
+        skip_1st_col_check=false, check_column_of_row=false
+    )
+    @test isempty(rows)
+    @test cols == [1]
+    @test redundant_vals == false
+
+    A[2,1] = 1
+    rows, cols, redundant_vals = BilevelJuMP.find_connected_rows_cols(A, 1, 1; 
+        skip_1st_col_check=false, check_column_of_row=true
+    )
+    @test rows == cols
+
+    A = ones(2,2)
+    rows, cols, redundant_vals = BilevelJuMP.find_connected_rows_cols(A, 1, 1; 
+        skip_1st_col_check=false, check_column_of_row=false
+    )
+    @test redundant_vals == true
 end
 
 

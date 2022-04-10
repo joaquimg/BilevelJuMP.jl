@@ -102,7 +102,7 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
     redundant_vals = false
     # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
     if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1
-        return [], [col]
+        return [], [col], redundant_vals
     end
     # step 2 add 1st row and any other non-zero columns
     rows = [row]
