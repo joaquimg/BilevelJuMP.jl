@@ -403,6 +403,7 @@ end
     test_find_connected_rows_cols()
     for solver in solvers_sos
         simple_linearization(solver.opt, solver.mode)
+        failing_conditions_non_empty_AB_N(solver.opt, solver.mode)
     end
 end
 
