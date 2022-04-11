@@ -303,16 +303,15 @@ function set_with_zero(set)
     return MOI.copy(set)
 end
 
-function build_bilevel(
+
+function build_maps(
     upper::MOI.ModelLike, 
     lower::MOI.ModelLike,
     upper_to_lower_var_indices::Dict{VI,VI}, 
     lower_var_indices_of_upper_vars::Vector{VI},
     mode,
-    upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
-    copy_names::Bool = false,
-    pass_start::Bool = false,
-    linearize_bilinear_upper_terms::Bool = false
+    upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}(),
+    copy_names::Bool = false
     )
 
     # Start with an empty problem
@@ -349,16 +348,6 @@ function build_bilevel(
 
     handle_lower_objective_sense(lower)
 
-    # cache and delete lower objective
-    if !BilevelJuMP.ignore_dual_objective(mode)
-        # get primal obj
-        type_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
-        @assert type_primal_obj !== nothing
-        lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
-        # deepcopy and delete dual obj
-        # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
-    end
-
     # initialize map to lower level model
     lower_to_m_idxmap = MOIU.IndexMap()
     lower_to_upper_var_indices = Dict{MOI.VariableIndex, MOI.VariableIndex}()
@@ -377,16 +366,6 @@ function build_bilevel(
         Pass Dual of Lower level model
     =#
 
-    # initialize map to lower level model
-    if !ignore_dual_objective(mode)
-        # get dual obj
-        tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
-        @assert tp_dual_obj !== nothing
-        lower_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunction{tp_dual_obj}())
-        # delete dual obj
-        # MOI.set(lower_dual, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
-    end
-
     # initialize map from lower level dual variables to m indices
     lower_dual_idxmap = MOIU.IndexMap()
     # for lower level QP's there are lower dual variables that are tied to:
@@ -399,18 +378,53 @@ function build_bilevel(
         lower_dual_idxmap[lower_dual_param_val] = lower_to_m_idxmap[lower_primal_param_key]
     end
     # lower level dual variable -> upper level variable
-    # and the reverse map
-    bilinear_upper_primal_lower_dual = MOIU.IndexMap()
     for (upper_var, lower_con) in upper_var_to_lower_ctr
         var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
         lower_dual_idxmap[var] = upper_to_m_idxmap[upper_var]
-        bilinear_upper_primal_lower_dual[upper_to_m_idxmap[upper_var]] = var
     end
 
     # append the second level dual
     append_to(m, lower_dual, lower_dual_idxmap, copy_names)
     if copy_names
         pass_names(m, lower_dual, lower_dual_idxmap)
+    end
+    return m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap
+end
+
+function build_bilevel(
+    upper::MOI.ModelLike, 
+    lower::MOI.ModelLike,
+    upper_to_lower_var_indices::Dict{VI,VI}, 
+    lower_var_indices_of_upper_vars::Vector{VI},
+    mode,
+    upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
+    copy_names::Bool = false,
+    pass_start::Bool = false,
+    linearize_bilinear_upper_terms::Bool = false
+    )
+
+    m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = build_maps(
+        upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, 
+        upper_var_to_lower_ctr, copy_names)
+
+    # cache and delete lower objective
+    if !BilevelJuMP.ignore_dual_objective(mode)
+        # get primal obj
+        type_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
+        @assert type_primal_obj !== nothing
+        lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
+        # deepcopy and delete dual obj
+        # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
+    end
+
+    # initialize map to lower level model
+    if !ignore_dual_objective(mode)
+        # get dual obj
+        tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
+        @assert tp_dual_obj !== nothing
+        lower_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunction{tp_dual_obj}())
+        # delete dual obj
+        # MOI.set(lower_dual, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
     end
 
     #=
