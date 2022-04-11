@@ -651,6 +651,51 @@ function linear_terms_for_non_empty_AB(
 end
 
 
+function check_condition_1(J_U::AbstractVector{Int}, U::AbstractMatrix)
+    # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
+    met_condition = true
+    for j in J_U, m in 1:size(U,2)
+        if U[j,m] ≠ 0
+            met_condition = false
+            @warn("Condition 1 not met: at least one connected lower constraint contains upper level variables.")
+            break
+        end
+    end
+    met_condition
+end
+
+
+function check_condition_2(N_U::AbstractVector{Int}, U::AbstractMatrix, B::AbstractMatrix)
+    # Condition 2: B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U
+    met_condition = true
+    for m in 1:size(U,1), n in N_U
+        if B[m,n] ≠ 0
+            met_condition = false
+            @warn("Condition 2 not met: at least one connected lower variable is multiplied with an upper variable in the lower constraints.")
+            break
+        end
+    end
+    met_condition
+end
+
+
+function check_condition_2prime(
+    N_U::AbstractVector{Int}, A_N::AbstractVector{Int}, 
+    U::AbstractMatrix, B::AbstractMatrix
+    )
+    # Condition 2': B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U \ A_N
+    met_condition = true
+    for m in 1:size(U,2), n in setdiff(N_U, A_N)
+        if B[m,n] ≠ 0
+            met_condition = false
+            @warn("Condition 2' not met: at least one connected lower variable (that is not in the upper objective with a lower dual) is multiplied with an upper variable in the lower objective.")
+            break
+        end
+    end
+    met_condition
+end
+
+
 """
     check_empty_AB_N_conditions(J_U, U, N_U, B)
 
@@ -659,24 +704,10 @@ Check two required conditions for linearizing bilinear terms in UL of the form �
 """
 function check_empty_AB_N_conditions(J_U, U, N_U, B)
     # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
-    met_condition_1 = true
-    for j in J_U, m in 1:size(U,2)
-        if U[j,m] ≠ 0
-            met_condition_1 = false
-            @warn("Condition 1 not met: at least one connected lower constraint contains upper level variables.")
-            break
-        end
-    end
+    met_condition_1 = check_condition_1(J_U, U)
 
     # Condition 2: B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U
-    met_condition_2 = true
-    for m in 1:size(U,1), n in N_U
-        if B[m,n] ≠ 0
-            met_condition_2 = false
-            @warn("Condition 2 not met: at least one connected lower variable is multiplied with an upper variable in the lower constraints.")
-            break
-        end
-    end
+    met_condition_2 = check_condition_2(N_U, U, B)
 
     if met_condition_1 && met_condition_2
         return true
@@ -696,30 +727,16 @@ Check five required conditions for linearizing bilinear terms in UL of the form 
 function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_var_to_lower_con, 
     upper_var_lower_ctr, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal)
     # Condition 1: U_jm = 0 ∀ j ∈ J_U, ∀ m ∈ M
-    met_condition_1 = true
-    for j in J_U, m in 1:size(U,2)
-        if U[j,m] ≠ 0
-            met_condition_1 = false
-            @warn("Condition 1 not met: at least one connected lower constraint contains upper level variables.")
-            break
-        end
-    end
+    met_condition_1 = check_condition_1(J_U, U)
 
     # Condition 2': B_mn = 0 ∀ m ∈ M, ∀ n ∈ N_U \ A_N
-    met_condition_2 = true
-    for m in 1:size(U,2), n in setdiff(N_U, A_N)
-        if B[m,n] ≠ 0
-            met_condition_2 = false
-            @warn("Condition 2' not met: at least one connected lower variable (that is not in the upper objective with a lower dual) is multiplied with an upper variable in the lower objective.")
-            break
-        end
-    end
+    met_condition_2 = check_condition_2prime(N_U, A_N, U, B)
 
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
     met_condition_3 = true
     for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-        J_j, N_n, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        _, N_n, _ = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
         # NOTE not handling redundant_vals here b/c goal is to first check conditions 
         # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
@@ -811,6 +828,32 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
 end
 
 
+function is_model_in_standard_form(m::MOI.ModelLike)
+    model_con_types = Set(MOI.get(m, MOI.ListOfConstraints()))
+    standard_form_con_types = Set([
+        (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
+        (MOI.SingleVariable, MOI.GreaterThan{Float64}),
+        (MOI.SingleVariable, MOI.LessThan{Float64})
+    ])
+    issubset(model_con_types, standard_form_con_types)
+end
+
+
+function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
+    J_U = Int[]
+    N_U = Int[]
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+        j = lower_con.value
+        n = bilinear_upper_dual_to_lower_primal[upper_var].value
+        if !(upper_var in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
+        rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+        push!(J_U, rows...)
+        push!(N_U, cols...)
+    end
+    J_U, N_U
+end
+
+
 """
     main_linearization(
         lower, 
@@ -848,16 +891,9 @@ function main_linearization(
         
         linearize = true
         # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
-        lower_con_types = Set(MOI.get(lower, MOI.ListOfConstraints()))
-        standard_form_con_types = Set([
-            (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
-            (MOI.SingleVariable, MOI.GreaterThan{Float64}),
-            (MOI.SingleVariable, MOI.LessThan{Float64})
-        ])
-
-        if !(issubset(lower_con_types, standard_form_con_types))
+        if !(is_model_in_standard_form(lower))
             linearize = false
-            @warn("The lower model must be in standard form to linearize bilinear terms, i.e. the constraint types must be a subset of $(standard_form_con_types). Skipping linearization process.")
+            @warn("The lower model must be in standard form to linearize bilinear terms. Skipping linearization process.")
         else
             A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
                 check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
@@ -900,17 +936,7 @@ function main_linearization(
         end
 
         # TODO check for integer x * continuous y, for now assuming continuous x conditions
-
-        J_U = Int[]
-        N_U = Int[]
-        for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
-            j = lower_con.value
-            n = bilinear_upper_dual_to_lower_primal[upper_var].value
-            if !(upper_var in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
-            rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
-            push!(J_U, rows...)
-            push!(N_U, cols...)
-        end
+        J_U, N_U = get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
         #= 
             Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
         =#

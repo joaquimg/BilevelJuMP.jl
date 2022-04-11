@@ -405,7 +405,8 @@ function build_bilevel(
 
     m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = build_maps(
         upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, 
-        upper_var_to_lower_ctr, copy_names)
+        upper_var_to_lower_ctr, copy_names
+    )
 
     # cache and delete lower objective
     if !BilevelJuMP.ignore_dual_objective(mode)
@@ -415,10 +416,7 @@ function build_bilevel(
         lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
         # deepcopy and delete dual obj
         # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
-    end
-
-    # initialize map to lower level model
-    if !ignore_dual_objective(mode)
+        
         # get dual obj
         tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
         @assert tp_dual_obj !== nothing
