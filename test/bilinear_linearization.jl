@@ -102,6 +102,15 @@ end
 """
 make some dummy models that violate the linearization conditions when the set AB_N is non-empty, 
 i.e. when there are xm*yn in the LL objective
+
+
+for local test:
+```julia
+using BilevelJuMP, JuMP, Gurobi, Test
+optimizer = Gurobi.Optimizer()
+mode = BilevelJuMP.SOS1Mode()
+
+```
 """
 function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
 
@@ -132,9 +141,9 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
         10 >= ybad4 >= 0
     end)
 
-    @objective(Lower(model), Min, cder * yder + ci * yi - xe * ye)
+    # condition 2: no connected variables * upper variable in LL obj.
+    @objective(Lower(model), Min, cder * yder + ci * yi - xe * ye + 2*xe*yi)
 
-    
     @constraint(Lower(model), loadbal, yi - ye + yder == d1)
 
     # adding xbad to connected constraint results in Condition 1 not being met
@@ -178,14 +187,21 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     )
     AB_N, B, lower_obj_terms, lower_obj_type_handled = 
     BilevelJuMP.get_lower_obj_coefs_of_upper_times_lower_primals(
-        lower, lower_var_indices_of_upper_vars, A_N
+        lower, lower_var_indices_of_upper_vars, A_N, lower_to_m_idxmap
     )
     U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
     J_U, N_U = BilevelJuMP.get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
     @test !isempty(AB_N)
     num_blocks, rows, cols = BilevelJuMP.find_blocks(V, U)
 
+
+    @test J_U == [1, 2]  # first two lower constraints
+    @test N_U == [5, 6]  # yi, yder
+    @test B[2, 5] == 2
+
     @test !(BilevelJuMP.check_condition_1(J_U, U))
+
+    @test !(BilevelJuMP.check_condition_2prime(N_U, A_N, U, B))
 
     # TODO test rest of conditions are not met
 

@@ -467,11 +467,20 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
 end
 
 
-function get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
+function get_lower_obj_coefs_of_upper_times_lower_primals(
+    lower, 
+    lower_var_indices_of_upper_vars, 
+    A_N, 
+    lower_to_m_idxmap,
+    )
     AB_N = Int[]
     nvars = MOI.get(lower, MOI.NumberOfVariables())
     # B is in LL objective: x^T B y
     B = spzeros(nvars, nvars)
+
+    ks = collect(keys(lower_to_m_idxmap))
+    lower_var_indices = collect(filter(k -> typeof(k)==MOI.VariableIndex , ks))
+    lower_only_vars = setdiff(lower_var_indices, lower_var_indices_of_upper_vars)
 
     # get lower objective terms for finding cost coefficients later
     lower_obj_type = MOI.get(lower, MOI.ObjectiveFunctionType())
@@ -490,18 +499,24 @@ function get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indic
     end
 
     # fill the set AB_N = {n in A_N : ∃ m ∈ M s.t. B_mn ≠ 0} and the B matrix (x^T B y in LL objective)
+    # NOTE B is assumed to index by upper, lower var index (m,n) indices,
+    # (which are not necessarily in the order entered by user).
     if !isnothing(lower_obj_quad_terms)  # check for values in AB_N, 
         for term in lower_obj_quad_terms
             if term.variable_index_1 in lower_var_indices_of_upper_vars # UL var
                 if term.variable_index_2.value in A_N  # LL var
                     push!(AB_N, term.variable_index_2.value)  # AB_N is not empty
+                end
+                if term.variable_index_2 in lower_only_vars
                     B[term.variable_index_1.value, term.variable_index_2.value] = 
                         get_coef(term.variable_index_1, term.variable_index_2, lower_obj_quad_terms)
                 end 
             elseif term.variable_index_2 in lower_var_indices_of_upper_vars  # UL var
                 if term.variable_index_1.value in A_N  # LL var
                     push!(AB_N, term.variable_index_1.value) # AB_N is not empty
-                    B[term.variable_index_1.value, term.variable_index_2.value] = 
+                end
+                if term.variable_index_1 in lower_only_vars
+                    B[term.variable_index_2.value, term.variable_index_1.value] = 
                         get_coef(term.variable_index_1, term.variable_index_2, lower_obj_quad_terms)
                 end 
             end
@@ -903,7 +918,7 @@ function main_linearization(
                 linearize = false
             else
                 AB_N, B, lower_obj_terms, lower_obj_type_handled = 
-                    get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N)
+                    get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N, lower_to_m_idxmap)
                 if !lower_obj_type_handled
                     @warn("Linearizing bilinear terms does not handle lower level objective type $(MOI.get(lower, MOI.ObjectiveFunctionType())). Skipping linearization process.")
                     linearize = false
