@@ -137,16 +137,20 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
         10 >= ye >= 0
         10 >= yi >= 0
         10 >= yder >= 0
-        # 10 >= ydummy >= 0
+        10 >= ybad3 >= 0
         10 >= ybad4 >= 0
+        10 >= ybad5 >= 0
     end)
 
     # condition 2: no connected variables * upper variable in LL obj.
     @objective(Lower(model), Min, cder * yder + ci * yi - xe * ye + 2*xe*yi)
+ 
+    # @objective(Lower(model), Min, cder * yder + ci * yi - xe * ye)
 
-    @constraint(Lower(model), loadbal, yi - ye + yder == d1)
-
-    # adding xbad to connected constraint results in Condition 1 not being met
+    @constraint(Lower(model), loadbal, yi - ye + yder + ybad5 == d1)
+    # need minus sign on ybad5 to meet condition 5
+    
+    # # adding xbad to connected constraint results in Condition 1 not being met
     @constraint(Lower(model), badcon1, yi + xbad1 == d1)
 
     #= 
@@ -155,10 +159,13 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     =#
     @constraint(Lower(model), badcon4, ye + ybad4 == d1)
 
+    # conditon 3: ybad3 is not connected to other yn in bilinear upper obj. terms
+    @constraint(Lower(model), badcon3, ybad3 + xbad1 == d1)
 
     @variable(Upper(model), lambda, DualOf(loadbal))
+    @variable(Upper(model), dummylambda, DualOf(badcon3))
 
-    @objective(Upper(model), Min, clmp * x0 + lambda * ye)
+    @objective(Upper(model), Min, clmp * x0 + lambda * ye + lambda * ybad5 + dummylambda * ybad3)
     @constraint(Upper(model), x0 + ye - yi - d2 == 0)
     @constraint(Upper(model), [ye, yi] in MOI.SOS1([1.0, 2.0]))
 
@@ -194,14 +201,13 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     @test !isempty(AB_N)
     num_blocks, rows, cols = BilevelJuMP.find_blocks(V, U)
 
-
-    @test J_U == [1, 2]  # first two lower constraints
-    @test N_U == [5, 6]  # yi, yder
     @test B[2, 5] == 2
 
     @test !(BilevelJuMP.check_condition_1(J_U, U))
 
     @test !(BilevelJuMP.check_condition_2prime(N_U, A_N, U, B))
+
+    @test !(BilevelJuMP.check_condition_3(A_N, V, lower_primal_var_to_lower_con))
 
     # TODO test rest of conditions are not met
 
