@@ -478,7 +478,7 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
                     else
                         upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_index_1]] = term.coefficient
                     end
-                    if !haskey(upper_dual_to_quad_term, upper_dual_var_idx)
+                    if !haskey(upper_dual_to_lower_primal, upper_dual_var_idx)
                         upper_dual_to_lower_primal[upper_dual_var_idx] = [lower_primal_var_idx]
                     else
                         push!(upper_dual_to_lower_primal[upper_dual_var_idx], lower_primal_var_idx)
