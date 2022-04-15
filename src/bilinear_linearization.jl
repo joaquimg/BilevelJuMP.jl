@@ -781,6 +781,28 @@ function check_condition_4(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_va
 end
 
 
+function check_condition_5(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term)
+    # Condition 5: A_jn = p V_jn ∀ (j,n) ∈ A (p is proportionality constant)
+    met_condition = true
+    p = nothing
+    for (upper_var, lower_con) in upper_var_to_lower_ctr
+        j = lower_con.value
+        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
+            n = lower_var.value
+            if !(n in A_N) continue end  # TODO can we pass in a better set to loop over?
+            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
+            V_jn = V[j,n]
+            if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
+                met_condition = false
+                @warn("Condition 5 not met: at least one of the ratios of the upper objective bilinear coefficient to lower level constraint coefficient is not equal to the other ratios.")
+            end
+            p = A_jn / V_jn
+        end
+    end
+    return met_condition
+end
+
+
 """
     check_empty_AB_N_conditions(J_U, U, N_U, B)
 
@@ -821,24 +843,11 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     met_condition_3 = check_condition_3(A_N, V, lower_primal_var_to_lower_con)
 
     # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
-    met_condition_4 = check_condition_4(A_N, V, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal)
-    # Condition 5: A_jn = p V_jn = ∀ (j,n) ∈ A (p is proportionality constant)
-    met_condition_5 = true
-    p = nothing
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
-        j = lower_con.value
-        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
-            n = lower_var.value
-            if !(n in A_N) continue end  # TODO can we pass in a better set to loop over?
-            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
-            V_jn = V[j,n]
-            if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
-                met_condition_5 = false
-                @warn("Condition 5 not met: at least one of the upper objective bilinear coefficients is not proportional to the coefficient in the lower level constraint.")
-            end
-            p = A_jn / V_jn
-        end
-    end
+    met_condition_4 = check_condition_4(A_N, V, upper_var_to_lower_ctr, 
+        bilinear_upper_dual_to_lower_primal)
+    # Condition 5: A_jn = p V_jn ∀ (j,n) ∈ A (p is proportionality constant)
+    met_condition_5 = check_condition_5(A_N, V, upper_var_to_lower_ctr, 
+        bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term)
 
     if met_condition_1 && met_condition_2 && met_condition_3 && met_condition_4 && 
         met_condition_5
