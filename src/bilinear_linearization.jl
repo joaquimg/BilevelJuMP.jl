@@ -758,6 +758,29 @@ function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_pr
 end
 
 
+function check_condition_4(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal)
+    # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
+    met_condition = true
+    J = 1:size(V,1)
+    for (upper_var, lower_con) in upper_var_to_lower_ctr
+        j = lower_con.value
+        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
+            n = lower_var.value
+            if !(n in A_N) continue end  # TODO can we pass in a better set to loop over?
+            for j_prime in setdiff(J, j)
+                if V[j_prime, n] ≠ 0
+                    met_condition = false
+                    @warn("Condition 4 not met: at least one lower variable from the upper objective bilinear terms is in more than one lower constraint.")
+                    @goto outer_break
+                end
+            end
+        end
+    end
+    @label outer_break
+    return met_condition
+end
+
+
 """
     check_empty_AB_N_conditions(J_U, U, N_U, B)
 
@@ -795,38 +818,18 @@ function check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_va
     met_condition_2 = check_condition_2prime(N_U, A_N, U, B)
 
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
-    met_condition_3 = true
-    for n in A_N
-        j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-        _, N_n, _ = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
-        # NOTE not handling redundant_vals here b/c goal is to first check conditions 
-        # (redundant_vals handled when determining linearizations)
-        if !(issubset(setdiff(A_N, n), N_n))
-            met_condition_3 = false
-            @warn("Condition 3 not met: at least one lower variable from the upper objective bilinear terms is not connected to the other lower variables in the upper bilinear terms.")
-            break
-        end
-    end
+    met_condition_3 = check_condition_3(A_N, V, lower_primal_var_to_lower_con)
 
     # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
-    met_condition_4 = true
+    met_condition_4 = check_condition_4(A_N, V, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal)
     # Condition 5: A_jn = p V_jn = ∀ (j,n) ∈ A (p is proportionality constant)
     met_condition_5 = true
-    J = 1:size(V,1)
     p = nothing
     for (upper_var, lower_con) in upper_var_to_lower_ctr
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
             if !(n in A_N) continue end  # TODO can we pass in a better set to loop over?
-            for j_prime in setdiff(J, j)
-                if V[j_prime, n] ≠ 0
-                    met_condition_4 = false
-                    @warn("Condition 4 not met: at least one lower variable from the upper objective bilinear terms is in more than one lower constraint.")
-                    break
-                end
-            end
-
             A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
             V_jn = V[j,n]
             if !(isnothing(p)) && !(isapprox(p, A_jn / V_jn, atol=1e-5))
