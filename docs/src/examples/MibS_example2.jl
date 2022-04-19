@@ -60,7 +60,7 @@ end)
 @constraint(Lower(model), l3, y <= 5)
 
 # Using MibS Solver
-solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
 
 # Auto testing
 @test solution.status == true
