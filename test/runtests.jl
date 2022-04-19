@@ -1,3 +1,6 @@
+import Pkg
+Pkg.add(url="https://github.com/JuMP-dev/Dualization.jl", rev="jg/stdform")
+
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
 

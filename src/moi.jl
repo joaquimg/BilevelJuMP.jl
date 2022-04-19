@@ -325,7 +325,9 @@ function build_bilevel(
     dual_problem = Dualization.dualize(lower,
         dual_names = DualNames("dual_","dual_"),
         variable_parameters = upper_variables,
-        ignore_objective = ignore_dual_objective(mode))
+        ignore_objective = ignore_dual_objective(mode),
+        consider_constrained_variables = false,
+    )
     # the model
     lower_dual = dual_problem.dual_model
     # the mapping from primal to dual references
