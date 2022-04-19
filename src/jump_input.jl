@@ -124,7 +124,6 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
     # write(io, "\n BilevelJuMP Calling MibS \n")
     io_err = "mibs_errors.txt"
     mibs_call() do exe
-        @show "$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)"
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
@@ -134,12 +133,8 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
         )
     end
     # seekstart(io_err)
-    err = read(io_err, String)
-    if length(err) > 0
-        error(err)
-    end
     # seekstart(io)
-    return read(io, String)
+    return read(io, String), read(io_err, String)
 end
 
 function _parse_output(
@@ -236,7 +231,11 @@ end
 ## Inputs
 * `model::BilevelModel`: the model to optimize
 * `mibs_call`: shoul be `MibS_jll.mibs` remember to `import MibS_jll` before.
-* `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
+* `verbose_results::Bool = false`: controls the verbosity of the solver output.
+If `verbose_results=false`, nothing is printed.
+Set to `true` to display the MibS output.
+* `verbose_file::Bool = false`: Writes MibS input files to screen.
+* `keep_files::Bool = false`: Saves MibS input files to pwd().
 ## Outputs
 This function returns a `NamedTuple` with fields:
 * `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
@@ -250,13 +249,18 @@ This function returns a `NamedTuple` with fields:
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = true)
-    path = pwd()
-    # mktempdir() do _path
-    begin
-        #path = pwd()
-        @show mps_filename = joinpath(path, "model.mps")
-        @show aux_filename = joinpath(path, "model.aux")
+function solve_with_MibS(
+    model::BilevelModel,
+    mibs_call;
+    verbose_results::Bool = false,
+    verbose_files::Bool = false,
+    debug_file_prefix = "",
+    keep_files::Bool = false,
+)
+    orig_path = pwd()
+    mktempdir() do path
+        mps_filename = joinpath(path, "model.mps")
+        aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
             _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)
@@ -268,20 +272,41 @@ function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, ve
             sense,
             aux_filename,
         )
-        if verbose_file
+        if verbose_files
             @show mps_filename
             print(read(mps_filename, String))
             @show aux_filename
             print(read(aux_filename, String))
         end
-        output = _call_mibs(mps_filename, aux_filename, mibs_call)
-        if verbose_file
-            print("MibS done")
+        output, err = _call_mibs(mps_filename, aux_filename, mibs_call)
+        if length(err) > 0 || keep_files
+            mps_db = joinpath(orig_path, debug_file_prefix * "model.mps")
+            aux_db = joinpath(orig_path, debug_file_prefix * "model.aux")
+            try
+                cp(mps_filename, mps_db, force = true)
+            catch e
+                println("BilevelJuMP failed to write debug file $mps_db: with $e")
+            end
+            try
+                cp(aux_filename, aux_db, force = true)
+            catch e
+                println("BilevelJuMP failed to write debug file $aux_db: with $e")
+            end
+        end
+        if length(err) > 0
+            mibs_error =
+            "MibS returned:\n\n" *
+            "$err\n\n" *
+            "MibS input files can be found at:\n" *
+            "* $mps_db\n" *
+            "* $aux_db\n\n" *
+            "Please include these files if you open an issue.\n"
+            error(mibs_error)
         end
         if length(output) == 0
             error("MibS failed to return")
         end
-        if !silent
+        if verbose_results
             println(output)
         end
         return _parse_output(output, new_model, variables)
