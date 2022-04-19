@@ -42,7 +42,7 @@ function test_basic_example_1()
     x = lower_variables[1]
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(-1.0, x)],0.0)
     @test lower_sense == MOI.MIN_SENSE
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = false)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
@@ -211,7 +211,7 @@ function test_Writing_MibS_input_v1()
     @constraint(Lower(model), l2, 4x +  y >= 8)
     @constraint(Lower(model), l3, 2x +  y <= 13)
     @constraint(Lower(model), l4, 2x - 7y <= 0)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = false, verbose_file = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, verbose_files = true)
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
@@ -233,7 +233,7 @@ function test_Writing_MibS_input_v2()
     @constraint(Lower(model), l1,  2x -  y <= 7)
     @constraint(Lower(model), l2, -2x +  4y <= 16)
     @constraint(Lower(model), l3, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -53
     @test solution.nonzero_upper == Dict(0 => 6.0)
@@ -255,7 +255,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -22
     @test solution.nonzero_upper == Dict(0 => 2.0)
@@ -273,7 +273,7 @@ function test_Writing_MibS_input_v4()
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -22
     @test solution.nonzero_upper == Dict(0 => 2.0)
@@ -297,7 +297,7 @@ function test_Writing_MibS_input_v5()
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -19
     #@test solution.nonzero_upper == Dict(0 => 1.0)
@@ -324,7 +324,7 @@ function test_Writing_MibS_input_v6()
     @constraint(Lower(model), l2,  z +  2y <= 10)
     @constraint(Lower(model), l3,  2z -  y <= 15)
     @constraint(Lower(model), l4, -2z -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -19
     #@test solution.nonzero_upper == Dict(0 => 2.0)
