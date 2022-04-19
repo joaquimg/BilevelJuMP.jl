@@ -23,6 +23,7 @@ end
 
 config = Config()
 CONFIG_1 = Config(atol = 1e-1, rtol = 1e-2)
+CONFIG_1_start = Config(atol = 1e-1, rtol = 1e-1, start_value = true)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
@@ -56,11 +57,11 @@ solvers_complements = OptModeType[]
 include("solvers/ipopt.jl")
 # include("solvers/scip.jl")
 # include("solvers/cbc.jl")
-if Sys.iswindows() && (
-    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" || get(ENV, "XPRESSDIR", "") != "")
-    @info "Running Xpress in Tests"
-    include("solvers/xpress.jl")
-end
+# if Sys.iswindows() && (
+#     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" || get(ENV, "XPRESSDIR", "") != "")
+#     @info "Running Xpress in Tests"
+#     include("solvers/xpress.jl")
+# end
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
@@ -74,16 +75,16 @@ end
 # include("solvers/juniper.jl") # require NLP from JuMP
 # include("solvers/path.jl") # require LCP method
 
-include("moi.jl")
-include("jump.jl")
-include("jump_unit.jl")
-include("jump_nlp.jl")
+# include("moi.jl")
+# include("jump.jl")
+# include("jump_unit.jl")
+# include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
 @testset "MibS" begin
     include("mibs.jl")
 end
-
+error(1123)
 @testset "nlp" begin
     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
@@ -220,7 +221,7 @@ end
 
 @testset "Princeton Handbook Linear" begin
     for solver in vcat(solvers_nlp, solvers_nlp_sd)
-        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
+        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_1_start)
         # jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin03(solver.opt, solver.mode)
         jump_HTP_lin03_vec(solver.opt, solver.mode)

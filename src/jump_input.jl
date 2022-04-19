@@ -22,7 +22,7 @@ function _build_single_model(
     upper_to_model_link = MOI.copy_to(model, upper)
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
     lower_constraints = Vector{MOI.ConstraintIndex}()
-    for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
+    for (F, S) in MOI.get(lower, MOI.ListOfConstraintTypesPresent())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
             lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
@@ -46,8 +46,8 @@ function _build_single_model(
     
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
-        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
-        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.ZeroOne}())
+        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}())
+        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.ZeroOne}())
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
             throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
@@ -94,8 +94,8 @@ function _write_auxillary_file(
         x => 0.0 for x in lower_variables
     )
     for term in lower_objective.terms
-        if haskey(obj_coefficients, term.variable_index)
-            obj_coefficients[term.variable_index] += term.coefficient
+        if haskey(obj_coefficients, term.variable)
+            obj_coefficients[term.variable] += term.coefficient
         end
     end
     open(aux_filename, "w") do io
@@ -124,6 +124,7 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
     # write(io, "\n BilevelJuMP Calling MibS \n")
     io_err = "mibs_errors.txt"
     mibs_call() do exe
+        @show "$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)"
         run(
             pipeline(
                 `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
@@ -249,11 +250,13 @@ This function returns a `NamedTuple` with fields:
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = false)
-    mktempdir() do path
-        path = pwd()
-        mps_filename = joinpath(path, "model.mps")
-        aux_filename = joinpath(path, "model.aux")
+function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = true)
+    path = pwd()
+    # mktempdir() do _path
+    begin
+        #path = pwd()
+        @show mps_filename = joinpath(path, "model.mps")
+        @show aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
             _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)

@@ -10,6 +10,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
-Ipopt = ">=0.6.5"
-SCIP = ">=0.9.8"
-MibS_jll = "=1.1.3"

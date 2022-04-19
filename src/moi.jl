@@ -1,4 +1,4 @@
-const SVF = MOI.SingleVariable
+
 const VVF = MOI.VectorOfVariables
 const SAF{T} = MOI.ScalarAffineFunction{T}
 const VAF{T} = MOI.VectorAffineFunction{T}
@@ -273,7 +273,7 @@ function get_canonical_complement(primal_model, map,
     # vector sets have no constant
     # for i in 1:dim
     #     func.constant[i] = Dualization.set_dot(i, set, T) *
-    #         Dualization.get_scalar_term(primal_model, i, ci)
+    #         Dualization.get_scalar_term(primal_model, ci, i)
     # end
     # todo - set dot on function
     con = Complement(true, ci, func, set_with_zero(set), map[ci])
@@ -285,8 +285,8 @@ function get_canonical_complement(primal_model, map,
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
     constant = Dualization.set_dot(1, set, T) *
-        Dualization.get_scalar_term(primal_model, 1, ci)
-    if F == MOI.SingleVariable
+        Dualization.get_scalar_term(primal_model, ci)[]
+    if F == MOI.VariableIndex
         func = MOIU.operate(+, T, func, constant)
     else
         func.constant = constant
@@ -338,7 +338,7 @@ function build_bilevel(
     =#
 
     # keys are from src (upper), values are from dest (m)
-    upper_idxmap = MOIU.default_copy_to(m, upper, copy_names)
+    upper_idxmap = MOIU.default_copy_to(m, upper)
     if copy_names
         pass_names(m, upper, upper_idxmap)
     end
@@ -366,7 +366,7 @@ function build_bilevel(
     end
 
     # append the second level primal
-    append_to(m, lower, lower_idxmap, copy_names, allow_single_bounds = true)
+    append_to(m, lower, lower_idxmap, allow_single_bounds = true)
     if copy_names
         pass_names(m, lower, lower_idxmap)
     end
@@ -403,7 +403,7 @@ function build_bilevel(
     end
 
     # append the second level dual
-    append_to(m, lower_dual, lower_dual_idxmap, copy_names)
+    append_to(m, lower_dual, lower_dual_idxmap)
     if copy_names
         pass_names(m, lower_dual, lower_dual_idxmap)
     end
@@ -555,7 +555,7 @@ end
 
 function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where {
     T,
-    F<:MOI.SingleVariable,
+    F<:MOI.VariableIndex,
     S<:Union{MOI.EqualTo{T}, MOI.LessThan{T}, MOI.GreaterThan{T}}
 }
     # key = map[VI(ci.value)]
@@ -576,7 +576,7 @@ function get_mode(mode::MixedMode{T}, ci::CI{F,S}, map) where {T,F,S}
 end
 
 function add_complement(mode::ComplementMode{T}, m, comp::Complement,
-    idxmap_primal, idxmap_dual, copy_names::Bool, pass_start::Bool) where T
+    idxmap_primal, idxmap_dual, copy_names, pass_start::Bool) where T
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
@@ -591,7 +591,7 @@ function add_complement(mode::ComplementMode{T}, m, comp::Complement,
 
     if with_slack
         slack, slack_in_set = MOI.add_constrained_variable(m, s)
-        new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
+        new_f = MOIU.operate(-, T, f_dest, slack)
         equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
 
         if pass_start
@@ -608,7 +608,7 @@ function add_complement(mode::ComplementMode{T}, m, comp::Complement,
         if copy_names
             nm = MOI.get(m, MOI.VariableName(), dual)
             MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
-            MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+            # MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
             MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
             MOI.set(m, MOI.ConstraintName(), c, "compl_complWslk_($(nm))")
         end
@@ -618,7 +618,7 @@ function add_complement(mode::ComplementMode{T}, m, comp::Complement,
         appush!(out_ctr, equality)
         appush!(out_ctr, c)
     else
-        new_f = MOIU.operate(vcat, T, f_dest, MOI.SingleVariable(dual))
+        new_f = MOIU.operate(vcat, T, f_dest, dual)
 
         c = MOI.add_constraint(m, 
             new_f,
@@ -647,7 +647,7 @@ function add_complement(mode::SOS1Mode{T}, m, comp::Complement,
 
     slack, slack_in_set = MOI.add_constrained_variable(m, s)
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
-    new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
+    new_f = MOIU.operate(-, T, f_dest, slack)
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
 
     dual = idxmap_dual[v]
@@ -658,7 +658,7 @@ function add_complement(mode::SOS1Mode{T}, m, comp::Complement,
     if copy_names
         nm = MOI.get(m, MOI.VariableName(), dual)
         MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
-        MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+        # MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
         MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
         MOI.set(m, MOI.ConstraintName(), c1, "compl_sos1_($(nm))")
     end
@@ -670,7 +670,7 @@ is_equality(set::S) where {S<:MOI.AbstractSet} = false
 is_equality(set::MOI.EqualTo{T}) where T = true
 is_equality(set::MOI.Zeros) = true
 
-only_variable_functions(v::MOI.VariableIndex) = MOI.SingleVariable(v)
+only_variable_functions(v::MOI.VariableIndex) = v
 only_variable_functions(v::Vector{MOI.VariableIndex}) = MOI.VectorOfVariables(v)
 
 nothing_to_nan(val) = ifelse(val === nothing, NaN, val)
@@ -755,7 +755,7 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement,
         if copy_names
             nm = MOI.get(m, MOI.VariableName(), dual)
             MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
-            MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+            # MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
             MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
             if mode.aggregation_group == 0
                 MOI.set(m, MOI.ConstraintName(), c1, "compl_prodWslk_($(nm))")
@@ -829,17 +829,17 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
         MOI.set(m, MOI.VariableName(), vb1, "compl_bin1_($(nm))")
     end
 
-    cb1 = MOI.add_constraint(m, SVF(vb1), MOI.ZeroOne())
+    cb1 = MOI.add_constraint(m, vb1, MOI.ZeroOne())
     if method == ONE_ONE || method == ZERO_ZERO
         # second binary
         vb2 = MOI.add_variable(m)
-        cb2 = MOI.add_constraint(m, SVF(vb2), MOI.ZeroOne())
+        cb2 = MOI.add_constraint(m, vb2, MOI.ZeroOne())
         if copy_names
             MOI.set(m, MOI.VariableName(), vb2, "compl_bin2_($(nm))")
         end
 
         # z1 + z2 == 1
-        fb = MOIU.operate(+, T, SVF(vb1), SVF(vb2))
+        fb = MOIU.operate(+, T, vb1, vb2)
         cb = MOI.add_constraint(m, fb, MOI.EqualTo{T}(one(T)))
         if copy_names
             MOI.set(m, MOI.ConstraintName(), cb, "compl_sum_bin_($(nm))")
@@ -849,8 +849,8 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
     end
 
     pre_f1, pre_s1 = MOIU.normalize_constant(f_dest, MOI.EqualTo(zero(T)))
-    f1 = MOIU.operate(vcat, T, SVF(vb1), pre_f1)
-    f2 = MOIU.operate(vcat, T, SVF(vb2), SVF(dual))
+    f1 = MOIU.operate(vcat, T, vb1, pre_f1)
+    f2 = MOIU.operate(vcat, T, vb2, dual)
 
     if pass_start
         val = MOIU.eval_variables(
@@ -862,22 +862,22 @@ function add_complement(mode::IndicatorMode{T}, m, comp::Complement,
     end
 
     if method == ONE_ONE
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(pre_s1)
-        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
+        s1 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(pre_s1)
+        s2 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
             MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 0.0, 1.0))
         end
     elseif method == ZERO_ZERO
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(pre_s1)
-        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+        s1 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(pre_s1)
+        s2 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 0.0, 1.0))
             MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 1.0, 0.0))
         end
     else
-        s1 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ONE}(pre_s1)
-        s2 = MOI.IndicatorSet{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
+        s1 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(pre_s1)
+        s2 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
         end
@@ -949,7 +949,7 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
     end
 
     if mode.with_slack
-        new_f = MOIU.operate(-, T, f_dest, MOI.SingleVariable(slack))
+        new_f = MOIU.operate(-, T, f_dest, slack)
         equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), slack, val)
@@ -1000,13 +1000,13 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
 
     c1 = MOIU.normalize_and_add_constraint(m, f1, s2)
     c2 = MOIU.normalize_and_add_constraint(m, f2, s2)
-    c3 = MOI.add_constraint(m, MOI.SingleVariable(bin), MOI.ZeroOne())
+    c3 = MOI.add_constraint(m, bin, MOI.ZeroOne())
 
     if copy_names
         nm = MOI.get(m, MOI.VariableName(), dual)
         if mode.with_slack
             MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
-            MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
+            # MOI.set(m, MOI.ConstraintName(), slack_in_set, "bound_slk_($(nm))")
             MOI.set(m, MOI.ConstraintName(), equality, "eq_slk_($(nm))")
         end
         MOI.set(m, MOI.VariableName(), bin, "bin_($(nm))")
