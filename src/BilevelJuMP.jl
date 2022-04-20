@@ -6,7 +6,6 @@ const MOIU = MathOptInterface.Utilities
 using JuMP
 using Dualization
 using LinearAlgebra
-using IntervalArithmetic
 
 export
 BilevelModel,
@@ -15,6 +14,7 @@ DualOf, BilevelAffExpr, BilevelQuadExpr
 
 @enum Level LOWER_BOTH UPPER_BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
 
+include("intervals.jl")
 include("moi.jl")
 include("moi_utilities.jl")
 
