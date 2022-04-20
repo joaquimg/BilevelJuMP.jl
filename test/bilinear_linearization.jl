@@ -302,11 +302,11 @@ end
 # bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
 # for term in m_objective.quadratic_terms
-#     mset = Set([term.variable_index_1, term.variable_index_2])
+#     mset = Set([term.variable_1, term.variable_2])
 #     for upper_term in upper_obj_func_quad_terms
 #         uset = Set([
-#             upper_to_m_idxmap[upper_term.variable_index_1],
-#             upper_to_m_idxmap[upper_term.variable_index_2]
+#             upper_to_m_idxmap[upper_term.variable_1],
+#             upper_to_m_idxmap[upper_term.variable_2]
 #         ])
 #         if uset == mset
 #             bilinear_upper_quad_term_to_m_quad_term[upper_term] = term

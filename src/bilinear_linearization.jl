@@ -147,7 +147,7 @@ end
 function get_coef(var1::MOI.VariableIndex, var2::MOI.VariableIndex, sqts::Vector{MOI.ScalarQuadraticTerm{R}}) where R <: Real
     coef = 0
     for sqft in sqts
-        if var1 == sqft.variable_index_1 && var2 == sqft.variable_index_2
+        if var1 == sqft.variable_1 && var2 == sqft.variable_2
             coef = sqft.coefficient
         end
     end
@@ -440,21 +440,21 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
 
         for term in upper_obj_func_quad_terms
 
-            if upper_dual_var_idx == term.variable_index_1
-                if term.variable_index_2 in values(upper_to_lower_var_indices)
-                    lower_primal_var_idx = upper_to_lower_var_indices[term.variable_index_2]
+            if upper_dual_var_idx == term.variable_1
+                if term.variable_2 in values(upper_to_lower_var_indices)
+                    lower_primal_var_idx = upper_to_lower_var_indices[term.variable_2]
                     push!(A_N, lower_primal_var_idx.value)
-                    # upper_primal_to_lower_primal[term.variable_index_2] = lower_primal_var_idx
+                    # upper_primal_to_lower_primal[term.variable_2] = lower_primal_var_idx
                     # upper_dual_to_quad_term[upper_dual_var_idx] = [term]  # will overwrite entry if upper_dual is multiplied by more than one lower variable in the upper objective, needs to list of pairs, muliple cases here
                     # upper_dual_to_quad_term is only used to find A_jn, the coefs in the upper obj of lambda_j and yn, could instead make matrix 
-                    # upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_index_2]] = term.coefficient, which changes to variable_index_1 in elseif below
+                    # upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_2]] = term.coefficient, which changes to variable_1 in elseif below
                     if !haskey(upper_dual_to_quad_term, upper_dual_var_idx)
                         upper_dual_to_quad_term[upper_dual_var_idx] = Dict(
-                            upper_to_lower_var_indices[term.variable_index_2] => term.coefficient
+                            upper_to_lower_var_indices[term.variable_2] => term.coefficient
 
                         )
                     else
-                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_index_2]] = term.coefficient
+                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_2]] = term.coefficient
                     end
                     if !haskey(upper_dual_to_lower_primal, upper_dual_var_idx)
                         upper_dual_to_lower_primal[upper_dual_var_idx] = [lower_primal_var_idx]
@@ -465,18 +465,18 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
                     lower_primal_var_to_lower_con[lower_primal_var_idx] = upper_var_to_lower_ctr[upper_dual_var_idx]
                 end
 
-            elseif upper_dual_var_idx == term.variable_index_2
-                if term.variable_index_1 in values(upper_to_lower_var_indices)
-                    lower_primal_var_idx = upper_to_lower_var_indices[term.variable_index_1]
+            elseif upper_dual_var_idx == term.variable_2
+                if term.variable_1 in values(upper_to_lower_var_indices)
+                    lower_primal_var_idx = upper_to_lower_var_indices[term.variable_1]
                     push!(A_N, lower_primal_var_idx.value)
-                    # upper_primal_to_lower_primal[term.variable_index_1] = lower_primal_var_idx
+                    # upper_primal_to_lower_primal[term.variable_1] = lower_primal_var_idx
                     if !haskey(upper_dual_to_quad_term, upper_dual_var_idx)
                         upper_dual_to_quad_term[upper_dual_var_idx] = Dict(
-                            upper_to_lower_var_indices[term.variable_index_1] => term.coefficient
+                            upper_to_lower_var_indices[term.variable_1] => term.coefficient
 
                         )
                     else
-                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_index_1]] = term.coefficient
+                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_1]] = term.coefficient
                     end
                     if !haskey(upper_dual_to_lower_primal, upper_dual_var_idx)
                         upper_dual_to_lower_primal[upper_dual_var_idx] = [lower_primal_var_idx]
@@ -530,21 +530,21 @@ function get_lower_obj_coefs_of_upper_times_lower_primals(
     # (which are not necessarily in the order entered by user).
     if !isnothing(lower_obj_quad_terms)  # check for values in AB_N, 
         for term in lower_obj_quad_terms
-            if term.variable_index_1 in lower_var_indices_of_upper_vars # UL var
-                if term.variable_index_2.value in A_N  # LL var
-                    push!(AB_N, term.variable_index_2.value)  # AB_N is not empty
+            if term.variable_1 in lower_var_indices_of_upper_vars # UL var
+                if term.variable_2.value in A_N  # LL var
+                    push!(AB_N, term.variable_2.value)  # AB_N is not empty
                 end
-                if term.variable_index_2 in lower_only_vars
-                    B[term.variable_index_1.value, term.variable_index_2.value] = 
-                        get_coef(term.variable_index_1, term.variable_index_2, lower_obj_quad_terms)
+                if term.variable_2 in lower_only_vars
+                    B[term.variable_1.value, term.variable_2.value] = 
+                        get_coef(term.variable_1, term.variable_2, lower_obj_quad_terms)
                 end 
-            elseif term.variable_index_2 in lower_var_indices_of_upper_vars  # UL var
-                if term.variable_index_1.value in A_N  # LL var
-                    push!(AB_N, term.variable_index_1.value) # AB_N is not empty
+            elseif term.variable_2 in lower_var_indices_of_upper_vars  # UL var
+                if term.variable_1.value in A_N  # LL var
+                    push!(AB_N, term.variable_1.value) # AB_N is not empty
                 end
-                if term.variable_index_1 in lower_only_vars
-                    B[term.variable_index_2.value, term.variable_index_1.value] = 
-                        get_coef(term.variable_index_1, term.variable_index_2, lower_obj_quad_terms)
+                if term.variable_1 in lower_only_vars
+                    B[term.variable_2.value, term.variable_1.value] = 
+                        get_coef(term.variable_1, term.variable_2, lower_obj_quad_terms)
                 end 
             end
         end
@@ -1001,11 +1001,11 @@ function main_linearization(
         bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
         for term in m_objective.quadratic_terms
-            mset = Set([term.variable_index_1, term.variable_index_2])
+            mset = Set([term.variable_1, term.variable_2])
             for upper_term in upper_obj_func_quad_terms
                 uset = Set([
-                    upper_to_m_idxmap[upper_term.variable_index_1],
-                    upper_to_m_idxmap[upper_term.variable_index_2]
+                    upper_to_m_idxmap[upper_term.variable_1],
+                    upper_to_m_idxmap[upper_term.variable_2]
                 ])
                 if uset == mset
                     bilinear_upper_quad_term_to_m_quad_term[upper_term] = term
