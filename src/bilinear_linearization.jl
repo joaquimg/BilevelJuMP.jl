@@ -96,7 +96,7 @@ find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 """
 function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
     skip_1st_col_check=false,
-    check_column_of_row=false,
+    finding_blocks=false,
     )
     @assert A[row, col] != 0 "Linearization is undefined when the dual variable is not associated with the primal variable."
     redundant_vals = false
@@ -106,7 +106,7 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
     end
     # step 2 add 1st row and any other non-zero columns
     rows = [row]
-    if check_column_of_row
+    if finding_blocks
         cols_to_check = findall(!iszero, A[row, :])
     else
         cols_to_check = non_zero_idxs_except_one(A[row, :], col)
@@ -119,7 +119,16 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
             rows_to_add, cols_to_add = recursive_col_search(A, row, c, Int[], Int[])
         catch e
             if isa(e, UnderDeterminedException)
-                redundant_vals = true
+                if finding_blocks  # then we still need to add the connected rows and cols
+                    for r in non_zero_idxs_except_one(A[:, c], row)
+                        push!(rows, r)
+                        push!(cols, findall(!iszero, A[r, :])...)
+                    end
+                    unique!(rows)
+                    unique!(cols)
+                else
+                    redundant_vals = true
+                end
                 break
             else rethrow(e)
             end
@@ -715,7 +724,7 @@ function check_condition_2(N_U::AbstractVector{Int}, U::AbstractMatrix, B::Abstr
     for m in 1:size(U,1), n in N_U
         if B[m,n] ≠ 0
             met_condition = false
-            @warn("Condition 2 not met: at least one connected lower variable is multiplied with an upper variable in the lower constraints.")
+            @warn("Condition 2 not met: at least one connected lower variable is multiplied with an upper variable in the lower objective.")
             break
         end
     end
@@ -865,9 +874,9 @@ Find the blocks in the joint matrix [U V]
 
 For example, given:
 
-[U U] = | 1 0 0 1 0 0 |
-    | 0 1 0 0 1 0 |
-    | 0 1 0 0 1 0 |
+[U V] = | 1 0 0 1 0 0 |
+        | 0 1 0 0 1 0 |
+        | 0 1 0 0 1 0 |
 
 rows = [
     [1], [2,3]
@@ -892,7 +901,7 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
         c = findfirst(!iszero, UV[r,:])
         if !isnothing(c)
             num_blocks += 1
-            rs, cs, redundant_vals = find_connected_rows_cols(UV, r, c; skip_1st_col_check=true, check_column_of_row=true)
+            rs, cs = find_connected_rows_cols(UV, r, c; skip_1st_col_check=true, finding_blocks=true)
             # not worried about redundant_vals here; it is checked when forming linearizations
             push!(rows, rs)
             push!(cols, cs)
