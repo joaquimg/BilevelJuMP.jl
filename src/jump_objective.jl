@@ -6,6 +6,10 @@ function JuMP.set_objective(m::InnerBilevelModel, sense::MOI.OptimizationSense,
     level_f = replace_variables(f, bilevel_model(m), mylevel_var_list(m), level(m))
     JuMP.set_objective(mylevel_model(m), sense, level_f)
 end
+function JuMP.set_objective(m::InnerBilevelModel, sense::MOI.OptimizationSense,
+    f::Real)
+    JuMP.set_objective(mylevel_model(m), sense, f)
+end
 JuMP.objective_sense(m::InnerBilevelModel) = JuMP.objective_sense(mylevel_model(m))
 function JuMP.objective_function_type(m::InnerBilevelModel)
     tp = JuMP.objective_function_type(mylevel_model(m))

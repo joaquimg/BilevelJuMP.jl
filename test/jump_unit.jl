@@ -27,10 +27,19 @@ function jump_objective()
     @test JuMP.objective_function(Upper(model), tp) == ex1
 
     @test JuMP.objective_sense(model) == MOI.MIN_SENSE
+
     @test_throws ErrorException JuMP.relative_gap(model)
     @test_throws ErrorException JuMP.dual_objective_value(model)
     @test_throws ErrorException JuMP.objective_bound(model)
     @test_throws ErrorException JuMP.set_objective(model, MOI.MAX_SENSE, x)
+
+    @objective(Lower(model), Min, 0)
+    tp = JuMP.objective_function_type(Lower(model))
+    @test JuMP.objective_function(Lower(model), tp) == 0
+
+    @objective(Upper(model), Min, 0.0)
+    tp = JuMP.objective_function_type(Upper(model))
+    @test JuMP.objective_function(Upper(model), tp) == 0
 
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
