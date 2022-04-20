@@ -907,18 +907,18 @@ function get_bounds(var, map, fallback_bound = Inf)
         # TODO deal with precision and performance
         lower = ifelse(info.lower != -Inf, info.lower, -fallback_bound)
         upper = ifelse(info.upper != +Inf, info.upper, +fallback_bound)
-        return IntervalArithmetic.interval(lower, upper)
+        return Interval(lower, upper)
     elseif 0.0 <= fallback_bound <= Inf
-        return IntervalArithmetic.interval(-fallback_bound, fallback_bound)
+        return Interval(-fallback_bound, fallback_bound)
     else
         error("variable $var has no finite bounds defined")
     end
 end
 
-function set_bound(inter::IntervalArithmetic.Interval, ::LT{T}) where T
+function set_bound(inter::Interval, ::LT{T}) where T
     return inter.hi
 end
-function set_bound(inter::IntervalArithmetic.Interval, ::GT{T}) where T
+function set_bound(inter::Interval, ::GT{T}) where T
     return inter.lo
 end
 
