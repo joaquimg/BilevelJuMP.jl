@@ -205,16 +205,18 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
 
     @test B[2, 5] == 2
 
-    @test !(BilevelJuMP.check_condition_1(J_U, U))
-
-    @test !(BilevelJuMP.check_condition_2prime(N_U, A_N, U, B))
-
-    @test !(BilevelJuMP.check_condition_3(A_N, V, lower_primal_var_to_lower_con))
-
-    @test !(BilevelJuMP.check_condition_4(A_N, V, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal))
-
-    @test !(BilevelJuMP.check_condition_5(A_N, V, upper_var_to_lower_ctr, 
-        bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term))
+    # have to have function calls outside of @test for codecov to consider them tested?
+    con1 = BilevelJuMP.check_condition_1(J_U, U)
+    @test !(con1)
+    con2 = BilevelJuMP.check_condition_2prime(N_U, A_N, U, B)
+    @test !(con2)
+    con3 = BilevelJuMP.check_condition_3(A_N, V, lower_primal_var_to_lower_con)
+    @test !(con3)
+    con4 = BilevelJuMP.check_condition_4(A_N, V, upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal)
+    @test !(con4)
+    con5 = BilevelJuMP.check_condition_5(A_N, V, upper_var_to_lower_ctr, 
+    bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term)
+    @test !(con5)
 
 end
 
