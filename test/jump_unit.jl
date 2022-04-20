@@ -615,6 +615,6 @@ function constraint_dualof()
 
     @constraint(Lower(model), ctrs[i in 1:2], y == 0)
 
-    @test_throws DualOf(ctrs)
+    @test_throws ErrorException DualOf(ctrs)
 
 end
