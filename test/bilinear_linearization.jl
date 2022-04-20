@@ -322,24 +322,3 @@ function test_get_coef_matrix_and_rhs_vec()
     @test A == [2 3.0]
     @test b == [4.0]
 end
-
-
-function get_coef_matrix_and_rhs_vec(m, 
-	constraint_indices::Array{
-		MOI.ConstraintIndex{
-			MOI.ScalarAffineFunction{Float64}, 
-			MOI.LessThan{Float64}},
-		1}
-	)
-	nrows = length(constraint_indices)
-	C = spzeros(nrows, MOI.get(m, MOI.NumberOfVariables()))
-	d = Inf*ones(nrows)
-	for (r, ci) in enumerate(constraint_indices)
-		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
-		for term in con_func.terms
-			C[r, term.variable.value] = term.coefficient
-		end
-		d[r] = MOI.get(m, MOI.ConstraintSet(), ci).upper
-	end
-	return C, d
-end
