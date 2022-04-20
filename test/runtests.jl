@@ -404,6 +404,7 @@ end
 @testset "bilinear_linearization" begin
     test_recursive_col_search()
     test_find_connected_rows_cols()
+    test_get_coef_matrix_and_rhs_vec()
     for solver in solvers
         failing_conditions_non_empty_AB_N(solver.opt, solver.mode)
         failing_conditions_empty_AB_N(solver.opt, solver.mode)

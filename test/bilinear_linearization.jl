@@ -221,7 +221,6 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
 end
 
 
-
 function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     
     cder = 1    
@@ -305,4 +304,42 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test cols == [[3, 4, 5, 6, 7]]
     @test !BilevelJuMP.check_empty_AB_N_conditions(J_U, U, N_U, B)
     @test_throws BilevelJuMP.UnderDeterminedException BilevelJuMP.recursive_col_search(U+V, 1, 3, Int[], Int[])
+end
+
+function test_get_coef_matrix_and_rhs_vec()
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Lower(model), 2x + 3y <= 4)
+    lower = JuMP.backend(model.lower)
+    con_indices = MOI.get(lower, MOI.ListOfConstraintIndices{
+        MOI.ScalarAffineFunction{Float64}, 
+        MOI.LessThan{Float64}
+    }())
+    A, b = BilevelJuMP.get_coef_matrix_and_rhs_vec(lower, con_indices)
+    @test A == [2 3.0]
+    @test b == [4.0]
+end
+
+
+function get_coef_matrix_and_rhs_vec(m, 
+	constraint_indices::Array{
+		MOI.ConstraintIndex{
+			MOI.ScalarAffineFunction{Float64}, 
+			MOI.LessThan{Float64}},
+		1}
+	)
+	nrows = length(constraint_indices)
+	C = spzeros(nrows, MOI.get(m, MOI.NumberOfVariables()))
+	d = Inf*ones(nrows)
+	for (r, ci) in enumerate(constraint_indices)
+		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
+		for term in con_func.terms
+			C[r, term.variable.value] = term.coefficient
+		end
+		d[r] = MOI.get(m, MOI.ConstraintSet(), ci).upper
+	end
+	return C, d
 end
