@@ -282,8 +282,8 @@ end
 # lower_con_types = Set(MOI.get(lower, MOI.ListOfConstraints()))
 # standard_form_con_types = Set([
 #     (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
-#     (MOI.SingleVariable, MOI.GreaterThan{Float64}),
-#     (MOI.SingleVariable, MOI.LessThan{Float64})
+#     (MOI.VariableIndex, MOI.GreaterThan{Float64}),
+#     (MOI.VariableIndex, MOI.LessThan{Float64})
 # ])
 
 

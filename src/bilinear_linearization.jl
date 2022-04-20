@@ -181,7 +181,7 @@ end
 function get_coef_matrix_and_rhs_vec(m, 
 	constraint_indices::Array{
 		MOI.ConstraintIndex{
-			MOI.SingleVariable, 
+			MOI.VariableIndex, 
 			MOI.GreaterThan{Float64}
 		}, 1}
 	)
@@ -197,7 +197,7 @@ end
 
 function get_coef_matrix_and_rhs_vec(m, 
 	constraint_indices::Array{MOI.ConstraintIndex{
-			MOI.SingleVariable, 
+			MOI.VariableIndex, 
 			MOI.LessThan{Float64}},
 		1}
 	)
@@ -326,10 +326,10 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     yl and yu
     =#
     yl = -Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
-	if (MOI.SingleVariable, MOI.GreaterThan{Float64}) in con_types
+	if (MOI.VariableIndex, MOI.GreaterThan{Float64}) in con_types
 
 		singleVar_gt_indices = MOI.get(m, MOI.ListOfConstraintIndices{
-			MOI.SingleVariable, 
+			MOI.VariableIndex, 
 			MOI.GreaterThan{Float64}
 		}());
 
@@ -337,10 +337,10 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
 	
     yu = Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
-	if (MOI.SingleVariable, MOI.LessThan{Float64}) in con_types
+	if (MOI.VariableIndex, MOI.LessThan{Float64}) in con_types
 
 		singleVar_lt_indices = MOI.get(m, MOI.ListOfConstraintIndices{
-			MOI.SingleVariable, 
+			MOI.VariableIndex, 
 			MOI.LessThan{Float64}
 		}());
 
@@ -603,8 +603,8 @@ function linear_terms_for_empty_AB(
                 )
                 # variable bound * dual variable
                 low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var) # yl[n_prime], yu[n_prime] #
-                lo_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.GreaterThan{Float64}}(lower_var.value)
-                up_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.LessThan{Float64}}(lower_var.value)
+                lo_bound_index = MOI.ConstraintIndex{MOI.VariableIndex, MOI.GreaterThan{Float64}}(lower_var.value)
+                up_bound_index = MOI.ConstraintIndex{MOI.VariableIndex, MOI.LessThan{Float64}}(lower_var.value)
                 low_dual = get(lower_primal_dual_map.primal_con_dual_var, lo_bound_index, [nothing])[1]
                 upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
@@ -675,8 +675,8 @@ function linear_terms_for_non_empty_AB(
                 )
                 # variable bound * dual variable
                 low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var) # yl[n_prime], yu[n_prime] #
-                lo_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.GreaterThan{Float64}}(lower_var.value)
-                up_bound_index = MOI.ConstraintIndex{MOI.SingleVariable, MOI.LessThan{Float64}}(lower_var.value)
+                lo_bound_index = MOI.ConstraintIndex{MOI.VariableIndex, MOI.GreaterThan{Float64}}(lower_var.value)
+                up_bound_index = MOI.ConstraintIndex{MOI.VariableIndex, MOI.LessThan{Float64}}(lower_var.value)
                 low_dual = get(lower_primal_dual_map.primal_con_dual_var, lo_bound_index, [nothing])[1]
                 upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
@@ -908,8 +908,8 @@ function is_model_in_standard_form(m::MOI.ModelLike)
     model_con_types = Set(MOI.get(m, MOI.ListOfConstraints()))
     standard_form_con_types = Set([
         (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
-        (MOI.SingleVariable, MOI.GreaterThan{Float64}),
-        (MOI.SingleVariable, MOI.LessThan{Float64})
+        (MOI.VariableIndex, MOI.GreaterThan{Float64}),
+        (MOI.VariableIndex, MOI.LessThan{Float64})
     ])
     issubset(model_con_types, standard_form_con_types)
 end

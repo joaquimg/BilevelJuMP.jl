@@ -359,7 +359,7 @@ function build_maps(
     end
 
     # append the second level primal
-    append_to(m, lower, lower_idxmap, allow_single_bounds = true)
+    append_to(m, lower, lower_to_m_idxmap, allow_single_bounds = true)
     if copy_names
         pass_names(m, lower, lower_to_m_idxmap)
     end
