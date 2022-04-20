@@ -402,9 +402,12 @@ end
 @testset "bilinear_linearization" begin
     test_recursive_col_search()
     test_find_connected_rows_cols()
+    for solver in solvers
+        failing_conditions_non_empty_AB_N(solver.opt, solver.mode)
+        failing_conditions_empty_AB_N(solver.opt, solver.mode)
+    end
     for solver in solvers_sos
         simple_linearization(solver.opt, solver.mode)
-        failing_conditions_non_empty_AB_N(solver.opt, solver.mode)
     end
 end
 
