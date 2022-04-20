@@ -34,7 +34,7 @@ function jump_objective()
 
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
-    @test_throws ErrorException JuMP.objective_function(model, MOI.SingleVariable)
+    @test_throws ErrorException JuMP.objective_function(model, MOI.VariableIndex)
 
     @test_throws ErrorException JuMP.optimize!(Upper(model))
 
@@ -119,8 +119,6 @@ function jump_variables()
     @test x === copy(x)
     @test JuMP.isequal_canonical(x, copy(x))
     @test !JuMP.isequal_canonical(x, y)
-
-    @test JuMP.variable_type(model) == BilevelJuMP.BilevelVariableRef
 
     @test JuMP.is_valid(model, x)
 end

@@ -7,7 +7,10 @@ using MibS_jll
 
 function runtests()
     for name in names(@__MODULE__, all = true)
+        # if startswith("$(name)", "test_")
         if startswith("$(name)", "test_")
+
+            
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
             end
@@ -16,6 +19,7 @@ function runtests()
 end
 
 function test_basic_example_1()
+    # using JuMP, BilevelJuMP, MibS_jll
     model = BilevelModel()
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)
@@ -38,11 +42,15 @@ function test_basic_example_1()
     @test length(lower_constraints) == (4 + 0)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (2 + 3)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (2 + 1)
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == 3
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == 3
     x = lower_variables[1]
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(-1.0, x)],0.0)
     @test lower_sense == MOI.MIN_SENSE
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs,
+        verbose_results = true,
+        verbose_files = true,
+        keep_files = true,
+    )
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
@@ -92,7 +100,7 @@ function test_basic_example_4()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0)
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (0 + 0)
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (0 + 0)
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return
@@ -140,7 +148,7 @@ function test_basic_example_5_integer_in_lower_level()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14) # GreaterThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7) # LessThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0) # EqualTo
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (0 + 7) # number of constraints for integer represantation of the variables
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (0 + 7) # number of constraints for integer represantation of the variables
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return
@@ -188,7 +196,7 @@ function test_basic_example_6_integer_in_lower_level()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14) # GreaterThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7) # LessThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0) # EqualTo
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (8 + 0) # number of constraints for integer represantation of the variables
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (8 + 0) # number of constraints for integer represantation of the variables
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return

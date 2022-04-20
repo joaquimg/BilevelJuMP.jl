@@ -1,7 +1,7 @@
 name = "BilevelJuMP"
 uuid = "485130c0-026e-11ea-0f1a-6992cd14145c"
 authors = ["Joaquim Garcia <joaquimgarcia@psr-inc.com>, guilhermebodin <guilherme.b.moraes@gmail.com>"]
-version = "0.4.2"
+version = "0.5.0"
 
 [deps]
 Dualization = "191a621a-6537-11e9-281d-650236a99e60"
@@ -11,8 +11,8 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 
 [compat]
-Dualization = "= 0.3.4"
+Dualization = "0.5.4"
 IntervalArithmetic = "< 0.18.0"
-JuMP = "0.21.7"
-MathOptInterface = "< 0.10"
-julia = "1"
+JuMP = "1.0"
+MathOptInterface = "1.0"
+julia = "1.6"

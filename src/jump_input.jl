@@ -22,7 +22,7 @@ function _build_single_model(
     upper_to_model_link = MOI.copy_to(model, upper)
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
     lower_constraints = Vector{MOI.ConstraintIndex}()
-    for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
+    for (F, S) in MOI.get(lower, MOI.ListOfConstraintTypesPresent())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
             lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
@@ -46,8 +46,8 @@ function _build_single_model(
     
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
-        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
-        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.ZeroOne}())
+        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}())
+        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.ZeroOne}())
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
             throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
@@ -55,7 +55,36 @@ function _build_single_model(
     end
 
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
+
+    #=
+    temp fix: while mibs does not support mps with obj sense
+    =#
+    if MOI.get(upper, MOI.ObjectiveSense()) == MOI.MAX_SENSE
+        MOI.set(upper, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+        upper_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
+        upper_objective = MOI.get(
+            upper,
+            MOI.ObjectiveFunction{upper_obj_type}(),
+        )
+        fixed_upper_obj = MOIU.operate(-, Float64, upper_objective)
+        MOI.set(
+            upper,
+            MOI.ObjectiveFunction{typeof(fixed_upper_obj)}(),
+            fixed_upper_obj,
+        )
+    end
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
+end
+
+function _fix_moi_mps(file)
+    lines = readlines(file)
+    open(file, "w") do io
+        println(io, lines[1])
+        for i in 3:length(lines)
+            println(io, lines[i])
+        end
+    end
+    return
 end
 
 function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
@@ -94,8 +123,8 @@ function _write_auxillary_file(
         x => 0.0 for x in lower_variables
     )
     for term in lower_objective.terms
-        if haskey(obj_coefficients, term.variable_index)
-            obj_coefficients[term.variable_index] += term.coefficient
+        if haskey(obj_coefficients, term.variable)
+            obj_coefficients[term.variable] += term.coefficient
         end
     end
     open(aux_filename, "w") do io
@@ -264,6 +293,7 @@ function solve_with_MibS(
         new_model, variables, objective, constraints, sense  =
             _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)
+        _fix_moi_mps(mps_filename)
         _write_auxillary_file(
             new_model,
             variables,

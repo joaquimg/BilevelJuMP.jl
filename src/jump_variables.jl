@@ -42,7 +42,6 @@ Base.:(==)(v::BilevelVariableRef, w::BilevelVariableRef) =
     v.model === w.model && v.idx == w.idx && v.level == w.level
 JuMP.owner_model(v::BilevelVariableRef) = v.model
 JuMP.isequal_canonical(v::BilevelVariableRef, w::BilevelVariableRef) = v == w
-JuMP.variable_type(::AbstractBilevelModel) = BilevelVariableRef
 # add in both levels
 function JuMP.add_variable(inner::InnerBilevelModel, v::JuMP.AbstractVariable, name::String="")
     m = bilevel_model(inner)
