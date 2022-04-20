@@ -101,6 +101,7 @@ end
     jump_no_cb()
     constraint_unit()
     constraint_dualof()
+    constraint_hints()
     for solver in solvers_unit
         invalid_lower_objective(solver.opt, solver.mode)
         jump_display_solver(solver.opt, solver.mode)

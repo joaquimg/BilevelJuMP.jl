@@ -627,3 +627,20 @@ function constraint_dualof()
     @test_throws ErrorException DualOf(ctrs)
 
 end
+
+function constraint_hints()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Lower(model), lin, y == 0)
+    @constraint(Lower(model), soc, [y, x] in SecondOrderCone())
+
+
+    @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(lin, [1])
+    @test_throws ErrorException BilevelJuMP.set_dual_upper_bound_hint(soc, 1)
+    @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(soc, [1])
+
+end
