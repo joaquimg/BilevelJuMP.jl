@@ -216,18 +216,6 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     @test !(BilevelJuMP.check_condition_5(A_N, V, upper_var_to_lower_ctr, 
         bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term))
 
-    # TODO test rest of conditions are not met
-
-    # optimize!(model)
-    # TODO need Xpress test for this code to run (then see if codecov shows the conditions being covered)
-    # TODO break linearization code into more functions that can be tested in place of the optimize! pipeline
-
-    # try
-    #     optimize!(model)
-    # catch e
-    #     # will fail in Gurobi b/c ERROR: Gurobi Error 10020: Q matrix is not positive semi-definite (PSD)
-    # end
-
 end
 
 
