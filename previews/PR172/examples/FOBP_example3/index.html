@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Foundations of Bilevel Programming: Example 3 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../manual/">Manual</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../DTMP_example1/">Example 8</a></li><li><a class="tocitem" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1</a></li><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Example 2</a></li><li class="is-active"><a class="tocitem" href>Foundations of Bilevel Programming: Example 3</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example 5</a></li><li><a class="tocitem" href="../MibS_example1/">Example on MibS</a></li><li><a class="tocitem" href="../MibS_example2/">Example 2 on MibS</a></li><li><a class="tocitem" href="../PHTP_example1/">Foundations of Bilevel Programming: Example 6</a></li><li><a class="tocitem" href="../PHTP_example2/">Example 7</a></li><li><a class="tocitem" href="../SOCBLP_example1/">Example 10</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Foundations of Bilevel Programming: Example 3</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Foundations of Bilevel Programming: Example 3</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Foundations-of-Bilevel-Programming:-Example-3"><a class="docs-heading-anchor" href="#Foundations-of-Bilevel-Programming:-Example-3">Foundations of Bilevel Programming: Example 3</a><a id="Foundations-of-Bilevel-Programming:-Example-3-1"></a><a class="docs-heading-anchor-permalink" href="#Foundations-of-Bilevel-Programming:-Example-3" title="Permalink"></a></h1><p>This example is from the book <em>Foundations of Bilevel Programming</em> by Stephan Dempe, Chapter 3.7, Page 59. <a href="https://www.springer.com/gp/book/9781402006319">url</a></p><p>Model of the problem</p><p>First level</p><p class="math-container">\[\min \sum_{i\in I} x_i - z,\\
+\notag s.t.\\
+y^a_i\geq 0, \forall i \in I,\\
+y^a_i\leq 1, \forall i \in I,\\
+y^b_i\geq 0, \forall i \in I,\\
+y^b_i\leq 1, \forall i \in I,\\
+y^a_i + y^b_i = 1, \forall i \in I,\\
+z\geq 0,\\
+z\leq 1,\\
+y^a_1 + y^a_2 + y^a_3 \geq z,\\
+-y^b_1 - y^b_4 + y^a_3 \geq z,\\
+y^b_7 - y^b_6 + y^a_4 \geq z,\\
+y^a_5 + y^a_6 + y^a_7 \geq z.\\\]</p><p>Second level</p><p class="math-container">\[\min -\sum_{i\in I}x_i,\\
+\notag s.t.\\
+\sum x_i \geq 0,\\
+x_i \leq y^a_i, \forall i\in I,\\
+x_i \leq y^b_i, \forall i\in I,\\
+I = \{1,...,7\}\]</p><pre><code class="language-julia">using BilevelJuMP
+using Ipopt
+using JuMP
+using Test
+
+model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
+Solver name: Ipopt</pre><p>Global variables</p><pre><code class="language-julia">I = 7 # maximum literals
+clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
+atol = 1e-6</code></pre><pre class="documenter-example-output">1.0e-6</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), ya[i=1:I])
+@variable(Upper(model), yb[i=1:I])
+@variable(Upper(model), z)
+
+
+#Lower level variables
+@variable(Lower(model), x[i=1:I])</code></pre><pre class="documenter-example-output">7-element Vector{BilevelJuMP.BilevelVariableRef}:
+ x[1]
+ x[2]
+ x[3]
+ x[4]
+ x[5]
+ x[6]
+ x[7]</pre><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)</code></pre><p class="math-container">\[ x_{1} + x_{2} + x_{3} + x_{4} + x_{5} + x_{6} + x_{7} - z \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), ca, z &lt;= 1)
+@constraint(Upper(model), cb, z &gt;= 0)
+@constraint(Upper(model), c1[i=1:I], ya[i] &gt;= 0)
+@constraint(Upper(model), c2[i=1:I], ya[i] &lt;= 1)
+@constraint(Upper(model), c3[i=1:I], yb[i] &gt;= 0)
+@constraint(Upper(model), c4[i=1:I], yb[i] &lt;= 1)
+@constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+ c5[1] : ya[1] + yb[1] = 1.0
+ c5[2] : ya[2] + yb[2] = 1.0
+ c5[3] : ya[3] + yb[3] = 1.0
+ c5[4] : ya[4] + yb[4] = 1.0
+ c5[5] : ya[5] + yb[5] = 1.0
+ c5[6] : ya[6] + yb[6] = 1.0
+ c5[7] : ya[7] + yb[7] = 1.0</pre><p>for c in clauses</p><pre><code class="language-julia">@constraint(Upper(model), cc[k in eachindex(clauses)], sum(i &gt; 0 ? ya[i] : yb[-i] for i in clauses[k]) &gt;= z)</code></pre><pre class="documenter-example-output">4-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+ cc[1] : ya[1] + ya[2] + ya[3] - z ≥ 0.0
+ cc[2] : ya[3] + yb[1] + yb[4] - z ≥ 0.0
+ cc[3] : ya[4] + ya[7] + yb[6] - z ≥ 0.0
+ cc[4] : ya[5] + ya[6] + ya[7] - z ≥ 0.0</pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -sum(x[i] for i in 1:I))</code></pre><p class="math-container">\[ -x_{1} - x_{2} - x_{3} - x_{4} - x_{5} - x_{6} - x_{7} \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), b1[i=1:I], x[i] &gt;= 0)
+@constraint(Lower(model), b2[i=1:I], x[i] &lt;= ya[i])
+@constraint(Lower(model), b3[i=1:I], x[i] &lt;= yb[i])</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+ b3[1] : -yb[1] + x[1] ≤ 0.0
+ b3[2] : -yb[2] + x[2] ≤ 0.0
+ b3[3] : -yb[3] + x[3] ≤ 0.0
+ b3[4] : -yb[4] + x[4] ≤ 0.0
+ b3[5] : -yb[5] + x[5] ≤ 0.0
+ b3[6] : -yb[6] + x[6] ≤ 0.0
+ b3[7] : -yb[7] + x[7] ≤ 0.0</pre><p>Initial Starting conditions</p><pre><code class="language-julia">JuMP.set_start_value.(x, 0)
+JuMP.set_start_value.(ya, 1)
+JuMP.set_start_value.(yb, 0)
+JuMP.set_start_value(z, 1)
+for i in 1:I
+    JuMP.set_dual_start_value.(b1, 0)
+    JuMP.set_dual_start_value.(b2, 0)
+    JuMP.set_dual_start_value.(b3, -1)
+end</code></pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)
+primal_status(model)
+termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><p>Auto testing</p><pre><code class="language-julia">@test objective_value(model) ≈ -1 atol=atol
+@test value.(x) ≈ zeros(I) atol=atol
+@test value.(ya) ≈ ones(I) atol=atol
+@test value.(yb) ≈ zeros(I) atol=atol
+@test value(z) ≈ 1 atol=atol</code></pre><pre class="documenter-example-output">Test Passed</pre><p>@show dual.(b1) #≈ 6 atol=atol @show dual.(b2) #≈ 2 atol=atol @show dual.(b3) #≈ 2 atol=atol</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Example 2</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 20 April 2022 03:07">Wednesday 20 April 2022</span>. Using Julia version 1.6.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
