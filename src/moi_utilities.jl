@@ -40,7 +40,7 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap,
     # The `NLPBlock` assumes that the order of variables does not change (#849)
     if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
         error("NLP models are not supported.")
-        # constraint_types = MOI.get(src, MOI.ListOfConstraints())
+        # constraint_types = MOI.get(src, MOI.ListOfConstraintTypesPresent())
         # single_variable_types = [S for (F, S) in constraint_types
         #                          if F == MOI.VariableIndex]
         # vector_of_variables_types = [S for (F, S) in constraint_types

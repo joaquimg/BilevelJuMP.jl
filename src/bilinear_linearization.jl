@@ -273,7 +273,7 @@ NOTE: U and V are sparse arrays with columns for all variables in model s.t. tha
 """
 function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	nvars = MOI.get(m, MOI.NumberOfVariables())
-	con_types = MOI.get(m, MOI.ListOfConstraints())
+	con_types = MOI.get(m, MOI.ListOfConstraintTypesPresent())
 
     n_equality_cons = 0  # A[x;y] = b
 	if (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}) in con_types
@@ -905,7 +905,7 @@ end
 
 
 function is_model_in_standard_form(m::MOI.ModelLike)
-    model_con_types = Set(MOI.get(m, MOI.ListOfConstraints()))
+    model_con_types = Set(MOI.get(m, MOI.ListOfConstraintTypesPresent()))
     standard_form_con_types = Set([
         (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}),
         (MOI.VariableIndex, MOI.GreaterThan{Float64}),
