@@ -304,4 +304,5 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test rows == [[1, 2]]
     @test cols == [[3, 4, 5, 6, 7]]
     @test !BilevelJuMP.check_empty_AB_N_conditions(J_U, U, N_U, B)
+    @test_throws BilevelJuMP.UnderDeterminedException BilevelJuMP.recursive_col_search(U+V, 1, 3, Int[], Int[])
 end
