@@ -189,7 +189,7 @@ function get_coef_matrix_and_rhs_vec(m,
 
 	for ci in constraint_indices
 		var_index = MOI.get(m, MOI.ConstraintFunction(), ci)
-		f[var_index.variable.value] = MOI.get(m, MOI.ConstraintSet(), ci).lower
+		f[var_index.value] = MOI.get(m, MOI.ConstraintSet(), ci).lower
 	end
 	return f
 end
@@ -205,7 +205,7 @@ function get_coef_matrix_and_rhs_vec(m,
 
 	for ci in constraint_indices
 		var_index = MOI.get(m, MOI.ConstraintFunction(), ci)
-		d[var_index.variable.value] = MOI.get(m, MOI.ConstraintSet(), ci).upper
+		d[var_index.value] = MOI.get(m, MOI.ConstraintSet(), ci).upper
 	end
 	return d
 end
