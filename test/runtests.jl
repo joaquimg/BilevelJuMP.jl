@@ -130,7 +130,7 @@ end
         jump_05(solver.opt, solver.mode)
         jump_3SAT(solver.opt, solver.mode, CONFIG_3)
         jump_06(solver.opt, solver.mode)
-        jump_06_sv(solver.opt, solver.mode, CONFIG_4) # fail in Ipopt
+        # jump_06_sv(solver.opt, solver.mode, CONFIG_4) # fail in Ipopt
         jump_07(solver.opt, solver.mode, CONFIG_2)
         jump_08(solver.opt, solver.mode, CONFIG_3_start)
         jump_09a(solver.opt, solver.mode)
