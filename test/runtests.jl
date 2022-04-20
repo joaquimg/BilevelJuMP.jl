@@ -1,6 +1,3 @@
-import Pkg
-Pkg.add(url="https://github.com/JuMP-dev/Dualization.jl", rev="jg/stdform")
-
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
 
@@ -57,11 +54,11 @@ solvers_complements = OptModeType[]
 include("solvers/ipopt.jl")
 # include("solvers/scip.jl")
 # include("solvers/cbc.jl")
-# if Sys.iswindows() && (
-#     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" || get(ENV, "XPRESSDIR", "") != "")
-#     @info "Running Xpress in Tests"
-#     include("solvers/xpress.jl")
-# end
+if Sys.iswindows() && (
+    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" || get(ENV, "XPRESSDIR", "") != "")
+    @info "Running Xpress in Tests"
+    include("solvers/xpress.jl")
+end
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
@@ -75,16 +72,16 @@ include("solvers/ipopt.jl")
 # include("solvers/juniper.jl") # require NLP from JuMP
 # include("solvers/path.jl") # require LCP method
 
-# include("moi.jl")
-# include("jump.jl")
-# include("jump_unit.jl")
-# include("jump_nlp.jl")
+include("moi.jl")
+include("jump.jl")
+include("jump_unit.jl")
+include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
 @testset "MibS" begin
     include("mibs.jl")
 end
-error(1123)
+
 @testset "nlp" begin
     jump_nlp_01(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))
     jump_nlp_02(IPO_OPT, mode = BilevelJuMP.ProductMode(1e-8))

@@ -55,7 +55,36 @@ function _build_single_model(
     end
 
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
+
+    #=
+    temp fix: while mibs does not support mps with obj sense
+    =#
+    if MOI.get(upper, MOI.ObjectiveSense()) == MOI.MAX_SENSE
+        MOI.set(upper, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+        upper_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
+        upper_objective = MOI.get(
+            upper,
+            MOI.ObjectiveFunction{upper_obj_type}(),
+        )
+        fixed_upper_obj = MOIU.operate(-, Float64, upper_objective)
+        MOI.set(
+            upper,
+            MOI.ObjectiveFunction{typeof(fixed_upper_obj)}(),
+            fixed_upper_obj,
+        )
+    end
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
+end
+
+function _fix_moi_mps(file)
+    lines = readlines(file)
+    open(file, "w") do io
+        println(io, lines[1])
+        for i in 3:length(lines)
+            println(io, lines[i])
+        end
+    end
+    return
 end
 
 function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
@@ -264,6 +293,7 @@ function solve_with_MibS(
         new_model, variables, objective, constraints, sense  =
             _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)
+        _fix_moi_mps(mps_filename)
         _write_auxillary_file(
             new_model,
             variables,

@@ -8,7 +8,7 @@ using MibS_jll
 function runtests()
     for name in names(@__MODULE__, all = true)
         # if startswith("$(name)", "test_")
-        if startswith("$(name)", "test_basic_example_1")
+        if startswith("$(name)", "test_")
 
             
             @testset "$(name)" begin
@@ -46,7 +46,11 @@ function test_basic_example_1()
     x = lower_variables[1]
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(-1.0, x)],0.0)
     @test lower_sense == MOI.MIN_SENSE
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs,
+        verbose_results = true,
+        verbose_files = true,
+        keep_files = true,
+    )
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
