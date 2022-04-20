@@ -605,3 +605,16 @@ function constraint_unit()
     JuMP.delete(model, ctrl)
     @test isempty(JuMP.list_of_constraint_types(Lower(model)))
 end
+
+function constraint_dualof()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Lower(model), ctrs[i in 1:2], y == 0)
+
+    @test_throws DualOf(ctrs)
+
+end
