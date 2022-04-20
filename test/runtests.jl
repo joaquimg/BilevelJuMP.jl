@@ -20,6 +20,7 @@ end
 
 config = Config()
 CONFIG_1 = Config(atol = 1e-1, rtol = 1e-2)
+CONFIG_1_start = Config(atol = 1e-1, rtol = 1e-1, start_value = true)
 CONFIG_2 = Config(atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(atol = 1e-3, rtol = 1e-3, start_value = true)
@@ -218,7 +219,7 @@ end
 
 @testset "Princeton Handbook Linear" begin
     for solver in vcat(solvers_nlp, solvers_nlp_sd)
-        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
+        jump_HTP_lin01(solver.opt, solver.mode, CONFIG_1_start)
         # jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
         jump_HTP_lin03(solver.opt, solver.mode)
         jump_HTP_lin03_vec(solver.opt, solver.mode)

@@ -7,7 +7,10 @@ using MibS_jll
 
 function runtests()
     for name in names(@__MODULE__, all = true)
+        # if startswith("$(name)", "test_")
         if startswith("$(name)", "test_")
+
+            
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
             end
@@ -16,6 +19,7 @@ function runtests()
 end
 
 function test_basic_example_1()
+    # using JuMP, BilevelJuMP, MibS_jll
     model = BilevelModel()
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)
@@ -38,11 +42,15 @@ function test_basic_example_1()
     @test length(lower_constraints) == (4 + 0)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (2 + 3)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (2 + 1)
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == 3
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == 3
     x = lower_variables[1]
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(-1.0, x)],0.0)
     @test lower_sense == MOI.MIN_SENSE
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = false)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs,
+        verbose_results = true,
+        verbose_files = true,
+        keep_files = true,
+    )
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
@@ -92,7 +100,7 @@ function test_basic_example_4()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7)
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0)
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (0 + 0)
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (0 + 0)
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return
@@ -140,7 +148,7 @@ function test_basic_example_5_integer_in_lower_level()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14) # GreaterThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7) # LessThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0) # EqualTo
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (0 + 7) # number of constraints for integer represantation of the variables
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (0 + 7) # number of constraints for integer represantation of the variables
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return
@@ -188,7 +196,7 @@ function test_basic_example_6_integer_in_lower_level()
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.LessThan{Float64}}()) == (15 + 14) # GreaterThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.GreaterThan{Float64}}()) == (19 + 7) # LessThan
     @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()) == (7 + 0) # EqualTo
-    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}()) == (8 + 0) # number of constraints for integer represantation of the variables
+    @test MOI.get(new_model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}()) == (8 + 0) # number of constraints for integer represantation of the variables
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm(1.0, x) for x in lower_variables],0.0)
     @test lower_sense == MOI.MAX_SENSE
     return
@@ -211,7 +219,7 @@ function test_Writing_MibS_input_v1()
     @constraint(Lower(model), l2, 4x +  y >= 8)
     @constraint(Lower(model), l3, 2x +  y <= 13)
     @constraint(Lower(model), l4, 2x - 7y <= 0)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = false, verbose_file = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, verbose_files = true)
     @test solution.status == true
     @test solution.objective ≈ 8
     @test solution.nonzero_upper == Dict(0 => 8)
@@ -233,7 +241,7 @@ function test_Writing_MibS_input_v2()
     @constraint(Lower(model), l1,  2x -  y <= 7)
     @constraint(Lower(model), l2, -2x +  4y <= 16)
     @constraint(Lower(model), l3, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -53
     @test solution.nonzero_upper == Dict(0 => 6.0)
@@ -255,7 +263,7 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -22
     @test solution.nonzero_upper == Dict(0 => 2.0)
@@ -273,7 +281,7 @@ function test_Writing_MibS_input_v4()
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -22
     @test solution.nonzero_upper == Dict(0 => 2.0)
@@ -297,7 +305,7 @@ function test_Writing_MibS_input_v5()
     @constraint(Lower(model), l2,  x +  2y <= 10)
     @constraint(Lower(model), l3,  2x -  y <= 15)
     @constraint(Lower(model), l4, -2x -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -19
     #@test solution.nonzero_upper == Dict(0 => 1.0)
@@ -324,7 +332,7 @@ function test_Writing_MibS_input_v6()
     @constraint(Lower(model), l2,  z +  2y <= 10)
     @constraint(Lower(model), l3,  2z -  y <= 15)
     @constraint(Lower(model), l4, -2z -  10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs, silent = true)
+    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
     @test solution.status == true
     @test solution.objective ≈ -19
     #@test solution.nonzero_upper == Dict(0 => 2.0)

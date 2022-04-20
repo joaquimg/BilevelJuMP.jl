@@ -158,17 +158,14 @@ mutable struct BilevelModel <: AbstractBilevelModel
     end
 end
 function BilevelModel(optimizer_constructor;
-    mode::AbstractBilevelSolverMode = SOS1Mode(),
-    bridge_constraints::Bool=true,
-    with_names=true,
-    linearize_bilinear_upper_terms=false)
+        mode::AbstractBilevelSolverMode = SOS1Mode(),
+        add_bridges::Bool=true,
+        linearize_bilinear_upper_terms=false
+    )
     bm = BilevelModel()
-    bm.copy_names=with_names
     bm.linearize_bilinear_upper_terms = linearize_bilinear_upper_terms
     set_mode(bm, mode)
-    JuMP.set_optimizer(bm, optimizer_constructor;
-        bridge_constraints=bridge_constraints,
-        with_names=with_names)
+    JuMP.set_optimizer(bm, optimizer_constructor; add_bridges=add_bridges)
     return bm
 end
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
@@ -545,7 +542,7 @@ function JuMP.optimize!(model::BilevelModel;
         print_lp(single_blm, bilevel_prob, file_format)
     end
 
-    sblm_to_solver = MOI.copy_to(solver, single_blm, copy_names = model.copy_names_to_solver)
+    sblm_to_solver = MOI.copy_to(solver, single_blm)
     
     if _has_nlp_data(model.upper)
         # NLP requires an upstream jump model
@@ -598,14 +595,14 @@ end
 
 function pass_primal_info(single_blm, primal, info::BilevelVariableInfo)
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{SVF,LT{Float64}}(primal.value))
+        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(primal.value))
         MOI.add_constraint(single_blm,
-            SVF(primal), LT{Float64}(info.upper))
+            primal, LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{SVF,GT{Float64}}(primal.value))
+        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(primal.value))
         MOI.add_constraint(single_blm,
-            SVF(primal), GT{Float64}(info.lower))
+            primal, GT{Float64}(info.lower))
     end
     return
 end
@@ -615,14 +612,14 @@ function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Float64})
         MOI.set(single_blm, MOI.VariablePrimalStart(), dual[], info.start)
     end
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{SVF,LT{Float64}}(dual[].value))
+        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[].value))
         MOI.add_constraint(single_blm,
-            SVF(dual[]), LT{Float64}(info.upper))
+            dual[], LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{SVF,GT{Float64}}(dual[].value))
+        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[].value))
         MOI.add_constraint(single_blm,
-            SVF(dual[]), GT{Float64}(info.lower))
+            dual[], GT{Float64}(info.lower))
     end
     return
 end
@@ -632,14 +629,14 @@ function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Vector{Flo
             MOI.set(single_blm, MOI.VariablePrimalStart(), dual[i], info.start[i])
         end
         if !isnan(info.upper[i]) &&
-            !MOI.is_valid(single_blm, CI{SVF,LT{Float64}}(dual[i].value))
+            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[i].value))
             MOI.add_constraint(single_blm,
-                SVF(dual[i]), LT{Float64}(info.upper[i]))
+                dual[i], LT{Float64}(info.upper[i]))
         end
         if !isnan(info.lower[i]) &&
-            !MOI.is_valid(single_blm, CI{SVF,GT{Float64}}(dual[i].value))
+            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[i].value))
             MOI.add_constraint(single_blm,
-                SVF(dual[i]), MOI.GreaterThan{Float64}(info.lower[i]))
+                dual[i], MOI.GreaterThan{Float64}(info.lower[i]))
         end
     end
     return
@@ -733,13 +730,12 @@ function _check_solver(bm::BilevelModel)
 end
 
 function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
-    bridge_constraints::Bool=true, with_names=true)
+    add_bridges::Bool=true)
     # error_if_direct_mode(model, :set_optimizer)
-    if bridge_constraints
-        # We set `with_names=false` because the names are handled by the first
-        # caching optimizer. If `default_copy_to` without names is supported,
+    if add_bridges
+        # If `default_copy_to` without names is supported,
         # no need for a second cache.
-        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64, with_names=with_names)
+        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64)
         # for bridge_type in model.bridge_types
         #     _moi_add_bridge(optimizer, bridge_type)
         # end

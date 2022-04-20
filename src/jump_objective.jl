@@ -78,7 +78,8 @@ end
 function lower_objective_value(model::BilevelModel; result::Int = 1)
     f = JuMP.objective_function(Lower(model))
     # Evaluate the lower objective expression
-    return JuMP.value(f, v -> JuMP.value(v, result = result))
+    return JuMP.value(f, result = result)
+    # return JuMP.value(v -> JuMP.value(v, result = result), f)
     # return JuMP.value(v -> inner_ref_to_value(Lower(model), v), f)
 end
 

@@ -22,7 +22,7 @@ function _build_single_model(
     upper_to_model_link = MOI.copy_to(model, upper)
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
     lower_constraints = Vector{MOI.ConstraintIndex}()
-    for (F, S) in MOI.get(lower, MOI.ListOfConstraints())
+    for (F, S) in MOI.get(lower, MOI.ListOfConstraintTypesPresent())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
             lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
@@ -46,8 +46,8 @@ function _build_single_model(
     
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
-        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.Integer}())
-        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.SingleVariable, MOI.ZeroOne}())
+        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}())
+        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.ZeroOne}())
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
             throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
@@ -55,7 +55,36 @@ function _build_single_model(
     end
 
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
+
+    #=
+    temp fix: while mibs does not support mps with obj sense
+    =#
+    if MOI.get(upper, MOI.ObjectiveSense()) == MOI.MAX_SENSE
+        MOI.set(upper, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+        upper_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
+        upper_objective = MOI.get(
+            upper,
+            MOI.ObjectiveFunction{upper_obj_type}(),
+        )
+        fixed_upper_obj = MOIU.operate(-, Float64, upper_objective)
+        MOI.set(
+            upper,
+            MOI.ObjectiveFunction{typeof(fixed_upper_obj)}(),
+            fixed_upper_obj,
+        )
+    end
     return model, lower_variables, lower_objective, lower_constraints, lower_sense
+end
+
+function _fix_moi_mps(file)
+    lines = readlines(file)
+    open(file, "w") do io
+        println(io, lines[1])
+        for i in 3:length(lines)
+            println(io, lines[i])
+        end
+    end
+    return
 end
 
 function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
@@ -94,8 +123,8 @@ function _write_auxillary_file(
         x => 0.0 for x in lower_variables
     )
     for term in lower_objective.terms
-        if haskey(obj_coefficients, term.variable_index)
-            obj_coefficients[term.variable_index] += term.coefficient
+        if haskey(obj_coefficients, term.variable)
+            obj_coefficients[term.variable] += term.coefficient
         end
     end
     open(aux_filename, "w") do io
@@ -133,12 +162,8 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
         )
     end
     # seekstart(io_err)
-    err = read(io_err, String)
-    if length(err) > 0
-        error(err)
-    end
     # seekstart(io)
-    return read(io, String)
+    return read(io, String), read(io_err, String)
 end
 
 function _parse_output(
@@ -230,12 +255,16 @@ function _parse_output(
 end
 
 """
-    solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true)
+    solve_with_MibS(model::BilevelModel, mibs_call; kwargs...)
 
 ## Inputs
 * `model::BilevelModel`: the model to optimize
 * `mibs_call`: shoul be `MibS_jll.mibs` remember to `import MibS_jll` before.
-* `silent::Bool = true`: controls the verbosity of the solver. If `silent`, nothing is printed. Set to `false` to display the MibS output.
+* `verbose_results::Bool = false`: controls the verbosity of the solver output.
+If `verbose_results=false`, nothing is printed.
+Set to `true` to display the MibS output.
+* `verbose_file::Bool = false`: Writes MibS input files to screen.
+* `keep_files::Bool = false`: Saves MibS input files to pwd().
 ## Outputs
 This function returns a `NamedTuple` with fields:
 * `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
@@ -249,14 +278,22 @@ This function returns a `NamedTuple` with fields:
 !!! warning
     Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
 """
-function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, verbose_file::Bool = false)
+function solve_with_MibS(
+    model::BilevelModel,
+    mibs_call;
+    verbose_results::Bool = false,
+    verbose_files::Bool = false,
+    debug_file_prefix = "",
+    keep_files::Bool = false,
+)
+    orig_path = pwd()
     mktempdir() do path
-        path = pwd()
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense  =
             _build_single_model(model, true)
         MOI.write_to_file(new_model, mps_filename)
+        _fix_moi_mps(mps_filename)
         _write_auxillary_file(
             new_model,
             variables,
@@ -265,20 +302,41 @@ function solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true, ve
             sense,
             aux_filename,
         )
-        if verbose_file
+        if verbose_files
             @show mps_filename
             print(read(mps_filename, String))
             @show aux_filename
             print(read(aux_filename, String))
         end
-        output = _call_mibs(mps_filename, aux_filename, mibs_call)
-        if verbose_file
-            print("MibS done")
+        output, err = _call_mibs(mps_filename, aux_filename, mibs_call)
+        if length(err) > 0 || keep_files
+            mps_db = joinpath(orig_path, debug_file_prefix * "model.mps")
+            aux_db = joinpath(orig_path, debug_file_prefix * "model.aux")
+            try
+                cp(mps_filename, mps_db, force = true)
+            catch e
+                println("BilevelJuMP failed to write debug file $mps_db: with $e")
+            end
+            try
+                cp(aux_filename, aux_db, force = true)
+            catch e
+                println("BilevelJuMP failed to write debug file $aux_db: with $e")
+            end
+        end
+        if length(err) > 0
+            mibs_error =
+            "MibS returned:\n\n" *
+            "$err\n\n" *
+            "MibS input files can be found at:\n" *
+            "* $mps_db\n" *
+            "* $aux_db\n\n" *
+            "Please include these files if you open an issue.\n"
+            error(mibs_error)
         end
         if length(output) == 0
             error("MibS failed to return")
         end
-        if !silent
+        if verbose_results
             println(output)
         end
         return _parse_output(output, new_model, variables)

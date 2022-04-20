@@ -19,7 +19,6 @@ function BilevelConstraintRef(model, idx)
     raw = raw_ref(model, idx)
     return JuMP.ConstraintRef(model, idx, raw.shape)
 end
-JuMP.constraint_type(::AbstractBilevelModel) = BilevelConstraintRef
 level(cref::BilevelConstraintRef) = cref.model.ctr_info[cref.index].level
 function JuMP.add_constraint(::BilevelModel, ::JuMP.AbstractConstraint, ::String="")
     error(
@@ -43,7 +42,9 @@ function JuMP.add_constraint(m::InnerBilevelModel, c::Union{JuMP.ScalarConstrain
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
     mylevel_ctr_list(m)[cref.index] = level_cref
     blm.ctr_info[cref.index] = empty_info(level(m), c)
-    JuMP.set_name(cref, name)
+    if !(F <: BilevelJuMP.BilevelVariableRef)
+        JuMP.set_name(cref, name)
+    end
     blm.ctr_upper_rev = nothing
     blm.ctr_lower_rev = nothing
     cref
