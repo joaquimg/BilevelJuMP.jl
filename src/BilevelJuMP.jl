@@ -25,6 +25,6 @@ include("jump_objective.jl")
 include("jump_print.jl")
 include("jump_attributes.jl")
 include("jump_nlp.jl")
-include("jump_input.jl")
+include("mibs.jl")
 
 end
