@@ -82,12 +82,31 @@ function empty_info(level, c::JuMP.VectorConstraint{F,S}) where {F,S}
     return BilevelConstraintInfo{Vector{Float64}}(level, MOI.dimension(c.set))
 end
 
+function _assert_dim(cref, array::Vector, value::Vector)
+    if length(array) != length(value)
+        error("For the Vector constraint {$(cref)}, expected a Vector of length = $(length(array)) and got a Vector of length = $(length(value))")
+    end
+    return
+end
+function _assert_dim(cref, array::Vector, value::Number)
+    error("For the Vector constraint {$(cref)}, expected a Vector (of length = $(length(array))) and got the scalar $value")
+    return
+end
+function _assert_dim(cref, array::Number, value::Number)
+    return
+end
+function _assert_dim(cref, array::Number, value::Vector)
+    error("For the Scalar constraint {$(cref)}, expected a Scalar and got the Vector $(value)")
+    return
+end
+
 function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where T<:Number
+    _assert_dim(cref, cref.model.ctr_info[cref.index].start, value)
     cref.model.ctr_info[cref.index].start = value
 end
 function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].start
-    @assert length(array) == length(value)
+    _assert_dim(cref, array, value)
     copyto!(array, value)
 end
 function JuMP.dual_start_value(cref::BilevelConstraintRef)
@@ -95,22 +114,24 @@ function JuMP.dual_start_value(cref::BilevelConstraintRef)
 end
 
 function set_dual_upper_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Number
+    _assert_dim(cref, cref.model.ctr_info[cref.index].upper, value)
     cref.model.ctr_info[cref.index].upper = value
 end
 function set_dual_upper_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].upper
-    @assert length(array) == length(value)
+    _assert_dim(cref, array, value)
     copyto!(array, value)
 end
 function get_dual_upper_bound_hint(cref::BilevelConstraintRef)
     cref.model.ctr_info[cref.index].upper
 end
 function set_dual_lower_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Number
+    _assert_dim(cref, cref.model.ctr_info[cref.index].lower, value)
     cref.model.ctr_info[cref.index].lower = value
 end
 function set_dual_lower_bound_hint(cref::BilevelConstraintRef, value::T) where T<:Vector{S} where S
     array = cref.model.ctr_info[cref.index].lower
-    @assert length(array) == length(value)
+    _assert_dim(cref, array, value)
     copyto!(array, value)
 end
 function get_dual_lower_bound_hint(cref::BilevelConstraintRef)
@@ -169,6 +190,19 @@ end
 
 struct DualOf
     ci::BilevelConstraintRef
+end
+function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
+    error(
+        "If you are trying to do something like:\n" *
+        "@constraint(Lower(m), my_constraint_vector[t in 1:T], ...)\n" *
+        "@variable(Upper(m), my_variable[1:N], " *
+        "DualOf(my_constraint_vector))\n" *
+        "Either do:\n" *
+        "@variable(Upper(m), my_variable[t=1:N], " *
+        "DualOf(my_constraint_vector[t]))\n" *
+        "Or use anonynous variables:\n" *
+        "@variable(Upper(m), variable_type = DualOf(my_constraint_vector[t]))"
+    )
 end
 struct DualVariableInfo
     info::JuMP.VariableInfo
