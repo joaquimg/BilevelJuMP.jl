@@ -255,7 +255,7 @@ function _parse_output(
 end
 
 """
-    solve_with_MibS(model::BilevelModel, mibs_call; silent::Bool = true)
+    solve_with_MibS(model::BilevelModel, mibs_call; kwargs...)
 
 ## Inputs
 * `model::BilevelModel`: the model to optimize
