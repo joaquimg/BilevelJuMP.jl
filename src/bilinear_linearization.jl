@@ -136,7 +136,7 @@ end
 function get_coef(var::MOI.VariableIndex, safts::Vector{MOI.ScalarAffineTerm{R}}) where R <: Real
     coef = 0
     for saft in safts
-        if var == saft.variable_index
+        if var == saft.variable
             coef = saft.coefficient
         end
     end
@@ -169,7 +169,7 @@ function get_coef_matrix_and_rhs_vec(m,
 	for (r, ci) in enumerate(constraint_indices)
 		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
 		for term in con_func.terms
-			E[r, term.variable_index.value] = term.coefficient
+			E[r, term.variable.value] = term.coefficient
 		end
 		f[r] = MOI.get(m, MOI.ConstraintSet(), ci).lower
 	end
@@ -224,7 +224,7 @@ function get_coef_matrix_and_rhs_vec(m,
 	for (r, ci) in enumerate(constraint_indices)
 		con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
 		for term in con_func.terms
-			C[r, term.variable_index.value] = term.coefficient
+			C[r, term.variable.value] = term.coefficient
 		end
 		d[r] = MOI.get(m, MOI.ConstraintSet(), ci).upper
 	end
@@ -246,7 +246,7 @@ function get_coef_matrix_and_rhs_vec(m,
         con_func = MOI.get(m, MOI.ConstraintFunction(), ci)
         con_set = MOI.get(m, MOI.ConstraintSet(), ci)
         for term in con_func.terms
-            V[r, term.variable_index.value] = term.coefficient
+            V[r, term.variable.value] = term.coefficient
         end
         w[r] = con_set.value
     end
