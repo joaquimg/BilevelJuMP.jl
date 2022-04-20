@@ -27,10 +27,19 @@ function jump_objective()
     @test JuMP.objective_function(Upper(model), tp) == ex1
 
     @test JuMP.objective_sense(model) == MOI.MIN_SENSE
+
     @test_throws ErrorException JuMP.relative_gap(model)
     @test_throws ErrorException JuMP.dual_objective_value(model)
     @test_throws ErrorException JuMP.objective_bound(model)
     @test_throws ErrorException JuMP.set_objective(model, MOI.MAX_SENSE, x)
+
+    @objective(Lower(model), Min, 0)
+    tp = JuMP.objective_function_type(Lower(model))
+    @test JuMP.objective_function(Lower(model), tp) == 0
+
+    @objective(Upper(model), Min, 0.0)
+    tp = JuMP.objective_function_type(Upper(model))
+    @test JuMP.objective_function(Upper(model), tp) == 0
 
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
@@ -604,4 +613,34 @@ function constraint_unit()
     @test !isempty(JuMP.list_of_constraint_types(Lower(model)))
     JuMP.delete(model, ctrl)
     @test isempty(JuMP.list_of_constraint_types(Lower(model)))
+end
+
+function constraint_dualof()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Lower(model), ctrs[i in 1:2], y == 0)
+
+    @test_throws ErrorException DualOf(ctrs)
+
+end
+
+function constraint_hints()
+
+    model = BilevelModel()
+
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+
+    @constraint(Lower(model), lin, y == 0)
+    @constraint(Lower(model), soc, [y, x] in SecondOrderCone())
+
+
+    @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(lin, [1])
+    @test_throws ErrorException BilevelJuMP.set_dual_upper_bound_hint(soc, 1)
+    @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(soc, [1])
+
 end

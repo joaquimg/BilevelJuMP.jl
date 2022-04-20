@@ -23,9 +23,9 @@ The currently available methods are based on re-writing the problem using the KK
 ## Example
 
 ```julia
-using JuMP, BilevelJuMP, Cbc
+using JuMP, BilevelJuMP, SCIP
 
-model = BilevelModel(Cbc.Optimizer, mode = BilevelJuMP.SOS1Mode())
+model = BilevelModel(SCIP.Optimizer, mode = BilevelJuMP.SOS1Mode())
 
 @variable(Lower(model), x)
 @variable(Upper(model), y)
@@ -102,11 +102,11 @@ Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(SOLVER)
 BilevelModel(Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
 ```
 
-However, this might lead to some solver not supporting certain functionality like Cbc.
+However, this might lead to some solver not supporting certain functionality like SCIP.
 In this case we need to:
 
 ```julia
-SOLVER = Cbc.Optimizer()
+SOLVER = SCIP.Optimizer()
 CACHED_SOLVER = MOI.Utilities.CachingOptimizer(
     MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()), SOLVER)
 Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(CACHED_SOLVER)
@@ -145,4 +145,14 @@ In this case we need to add a special, non-standard bridge, to Ipopt as follows:
 IPO_OPT = Ipopt.Optimizer(print_level=0)
 IPO = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(IPO_OPT)
 BilevelModel(()->IPO, mode = BilevelJuMP.ProductMode(1e-5))
+```
+
+## Troubleshooting
+
+* Cbc has known bugs in its SOS1 constraints, so `BilevelJuMP.SOS1Mode` might
+not work properly with Cbc.
+
+* For anonymous variables with `DualOf` use:
+```julia
+@variable(Upper(model, variable_type = DualOf(my_lower_constraint))
 ```
