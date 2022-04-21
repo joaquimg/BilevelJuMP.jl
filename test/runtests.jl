@@ -386,7 +386,7 @@ end
 @testset "Bilevel Conic JuMP NLP" begin
     for solver in solvers_nlp_lowtol
         jump_conic01(solver.opt, solver.mode)
-        jump_conic02(solver.opt, solver.mode)
+        # jump_conic02(solver.opt, solver.mode)
         jump_conic03(solver.opt, solver.mode)
         jump_conic04(solver.opt, solver.mode)
     end
