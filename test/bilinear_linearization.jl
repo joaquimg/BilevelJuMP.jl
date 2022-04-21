@@ -326,6 +326,7 @@ function test_get_coef_matrix_and_rhs_vec()
     @variable(Lower(model), y)
 
     @constraint(Lower(model), 2x + 3y <= 4)
+    @constraint(Lower(model), 5x + 6y >= 7)
     lower = JuMP.backend(model.lower)
     con_indices = MOI.get(lower, MOI.ListOfConstraintIndices{
         MOI.ScalarAffineFunction{Float64}, 
@@ -334,4 +335,12 @@ function test_get_coef_matrix_and_rhs_vec()
     A, b = BilevelJuMP.get_coef_matrix_and_rhs_vec(lower, con_indices)
     @test A == [2 3.0]
     @test b == [4.0]
+
+    con_indices = MOI.get(lower, MOI.ListOfConstraintIndices{
+        MOI.ScalarAffineFunction{Float64}, 
+        MOI.GreaterThan{Float64}
+    }())
+    A, b = BilevelJuMP.get_coef_matrix_and_rhs_vec(lower, con_indices)
+    @test A == [5 6.0]
+    @test b == [7.0]
 end
