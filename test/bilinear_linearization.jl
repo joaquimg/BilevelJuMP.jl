@@ -217,7 +217,19 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     con5 = BilevelJuMP.check_condition_5(A_N, V, upper_var_to_lower_ctr, 
     bilinear_upper_dual_to_lower_primal, bilinear_upper_dual_to_quad_term)
     @test !(con5)
-
+    
+    main_linearization(
+        m,
+        lower, 
+        upper, 
+        upper_var_to_lower_ctr, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        lower_to_m_idxmap, 
+        upper_to_m_idxmap,
+        lower_primal_dual_map, 
+        lower_dual_idxmap
+    )
 end
 
 
