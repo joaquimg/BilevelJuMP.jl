@@ -615,7 +615,7 @@ function constraint_unit()
     @test isempty(JuMP.list_of_constraint_types(Lower(model)))
 end
 
-function dualof_vector_constraint()
+function constraint_dualof()
 
     model = BilevelModel()
 
@@ -623,8 +623,8 @@ function dualof_vector_constraint()
     @variable(Lower(model), y)
 
     @constraint(Lower(model), ctrs[i in 1:2], y == 0)
-    duals = DualOf(ctrs)
-    @test length(duals) == 2
+
+    @test_throws ErrorException DualOf(ctrs)
 
 end
 

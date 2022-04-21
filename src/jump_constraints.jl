@@ -191,6 +191,19 @@ end
 struct DualOf
     ci::BilevelConstraintRef
 end
+function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
+    error(
+        "If you are trying to do something like:\n" *
+        "@constraint(Lower(m), my_constraint_vector[t in 1:T], ...)\n" *
+        "@variable(Upper(m), my_variable[1:N], " *
+        "DualOf(my_constraint_vector))\n" *
+        "Either do:\n" *
+        "@variable(Upper(m), my_variable[t=1:N], " *
+        "DualOf(my_constraint_vector[t]))\n" *
+        "Or use anonynous variables:\n" *
+        "@variable(Upper(m), variable_type = DualOf(my_constraint_vector[t]))"
+    )
+end
 struct DualVariableInfo
     info::JuMP.VariableInfo
     ci::BilevelConstraintRef
