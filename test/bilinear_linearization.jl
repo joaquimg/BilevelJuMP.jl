@@ -253,8 +253,6 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     @objective(Lower(model), Min, cder * yder + ci * yi)
     @constraint(Lower(model), loadbal, yi - ye + yder + xbad1 == d1)
     @constraint(Lower(model), badcon1, ye + ybad4 + xbad1 == d1)
-    # to reach more code
-    @constraint((Lower(model)), ybad4 <= ye)
 
     @variable(Upper(model), lambda, DualOf(loadbal))
 
@@ -300,6 +298,10 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     @test cols == [[3, 4, 5, 6, 7]]
     @test !BilevelJuMP.check_empty_AB_N_conditions(J_U, U, N_U, B)
     @test_throws BilevelJuMP.UnderDeterminedException BilevelJuMP.recursive_col_search(U+V, 1, 3, Int[], Int[])
+
+    # to reach more code
+    @constraint((Lower(model)), ybad4 <= ye)
+    U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
 end
 
 function test_get_coef_matrix_and_rhs_vec()
