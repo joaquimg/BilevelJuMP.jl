@@ -112,7 +112,7 @@ mode = BilevelJuMP.SOS1Mode()
 
 ```
 """
-function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
+function failing_conditions_non_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
 
     cder = 1    
     clmp = 1
@@ -120,13 +120,9 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     d1 = 1
     d2 = 2
 
-    MOI.empty!(optimizer)
-
-    model = BilevelModel(
-        ()->optimizer, 
-        mode = mode, 
-        linearize_bilinear_upper_terms=true
-    )
+    model = BilevelModel()
+    model.linearize_bilinear_upper_terms = true
+    
     @variables(Upper(model), begin
         10 >= x0 >= 0
         10 >= xe >= 0
@@ -233,10 +229,24 @@ function failing_conditions_non_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mod
     check_false = BilevelJuMP.check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_var_to_lower_con, 
     upper_var_to_lower_ctr, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal)
     @test check_false == false
+    linearizations = 
+    BilevelJuMP.linear_terms_for_non_empty_AB(
+        lower,
+        upper_var_to_lower_ctr,
+        bilinear_upper_dual_to_lower_primal,
+        V,
+        w,
+        A_N,
+        bilinear_upper_dual_to_quad_term,
+        lower_obj_terms,
+        lower_to_m_idxmap,
+        lower_primal_dual_map,
+        lower_dual_idxmap
+    )
 end
 
 
-function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
+function failing_conditions_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
     
     cder = 1    
     clmp = 1
@@ -244,13 +254,8 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     d1 = 1
     d2 = 2
 
-    MOI.empty!(optimizer)
-
-    model = BilevelModel(
-        ()->optimizer, 
-        mode = mode, 
-        linearize_bilinear_upper_terms=true
-    )
+    model = BilevelModel()
+    model.linearize_bilinear_upper_terms = true
 
     @variables(Upper(model), begin
         10 >= x0 >= 0
@@ -316,7 +321,11 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
 
     # to reach more code
     @constraint((Lower(model)), ybad4 <= ye)
+    @constraint((Lower(model)), yder >= ye)
+    @constraint((Lower(model)), ybad4 <= 2)
+    @constraint((Lower(model)), yder >= 1)
     U, V, w = BilevelJuMP.standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+
 end
 
 function test_get_coef_matrix_and_rhs_vec()
