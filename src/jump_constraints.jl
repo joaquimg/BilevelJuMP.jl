@@ -191,39 +191,16 @@ end
 struct DualOf
     ci::BilevelConstraintRef
 end
-
-function DualOf(cis::AbstractVector{<:BilevelConstraintRef})
-    return [DualOf(ci) for ci in cis]
-end
-
 struct DualVariableInfo
     info::JuMP.VariableInfo
     ci::BilevelConstraintRef
 end
-
-#=
-extensions of JuMP for:
-- @variable(model, dual_var_name, DualOf(conref))
-- @variable(model, dual_var_name, DualOf(vector_of_conref))
-=#
 function JuMP.build_variable(
-        _error::Function,
-        info::JuMP.VariableInfo,
-        duals::AbstractVector{DualOf};
-        extra_kw_args...,
-    )
-    infos = DualVariableInfo[]
-    for dual_of in duals
-        push!(infos, JuMP.build_variable(_error, info, dual_of))
-    end
-    return infos
-end
-function JuMP.build_variable(
-        _error::Function,
-        info::JuMP.VariableInfo,
-        dual_of::DualOf;
-        extra_kw_args...,
-    )
+    _error::Function,
+    info::JuMP.VariableInfo,
+    dual_of::DualOf;
+    extra_kw_args...,
+)
 
     if level(dual_of.ci) != LOWER_ONLY
         error("Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level")
@@ -261,6 +238,7 @@ function JuMP.build_variable(
     )
 end
 function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name::String="")
+    # TODO vector version
     m = bilevel_model(inner)
     m.last_variable_index += 1
     vref = BilevelVariableRef(m, m.last_variable_index, DUAL_OF_LOWER)
@@ -272,13 +250,6 @@ function JuMP.add_variable(inner::UpperModel, dual_info::DualVariableInfo, name:
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
     vref
-end
-function JuMP.add_variable(inner::UpperModel, dual_infos::AbstractVector{DualVariableInfo}, name::String="")
-    vrefs = BilevelVariableRef[]
-    for (i, dual_info) in enumerate(dual_infos)
-        push!(vrefs, JuMP.add_variable(inner, dual_info, name*"[$(string(i))]"))
-    end
-    vrefs
 end
 
 function get_constrain_ref(vref::BilevelVariableRef)
