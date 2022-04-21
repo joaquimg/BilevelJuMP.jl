@@ -251,21 +251,17 @@ function failing_conditions_empty_AB_N(optimizer, mode = BilevelJuMP.SOS1Mode())
     end)
 
     @objective(Lower(model), Min, cder * yder + ci * yi)
-
-
     @constraint(Lower(model), loadbal, yi - ye + yder + xbad1 == d1)
-
-
     @constraint(Lower(model), badcon1, ye + ybad4 + xbad1 == d1)
+    # to reach more code
+    @constraint((Lower(model)), ybad4 <= ye)
+
     @variable(Upper(model), lambda, DualOf(loadbal))
 
     @objective(Upper(model), Min, clmp * x0 + lambda * ye)
-
-
     @constraint(Upper(model), x0 + ye - yi - d2 == 0)
-
-
     @constraint(Upper(model), [ye, yi] in MOI.SOS1([1.0, 2.0]))
+
 
     # code from JuMP.optimize! in src/jump.jl
     upper = JuMP.backend(model.upper)
