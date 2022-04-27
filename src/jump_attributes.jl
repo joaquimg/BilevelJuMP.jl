@@ -7,7 +7,7 @@ end
 
 function JuMP.set_optimizer_attribute(bm::BilevelModel, name::String, value)
     _check_solver(bm)
-    return JuMP.set_optimizer_attribute(bm, MOI.RawParameter(name), value)
+    return JuMP.set_optimizer_attribute(bm, MOI.RawOptimizerAttribute(name), value)
 end
 function JuMP.set_optimizer_attribute(
     bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute, value
@@ -23,7 +23,7 @@ end
 
 function JuMP.get_optimizer_attribute(bm::BilevelModel, name::String)
     _check_solver(bm)
-    return JuMP.get_optimizer_attribute(bm.solver, MOI.RawParameter(name))
+    return JuMP.get_optimizer_attribute(bm.solver, MOI.RawOptimizerAttribute(name))
 end
 function JuMP.get_optimizer_attribute(
     bm::BilevelModel, attr::MOI.AbstractOptimizerAttribute
