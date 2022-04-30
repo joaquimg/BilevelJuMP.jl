@@ -79,6 +79,8 @@ NLP (Ipopt, KNITRO) solvers or even MIP solvers with the aid of binary
 expansions
 (see [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl)).
 Note that binary expansions require variables to have upper and lower bounds.
+Also, note that the `Gurobi` solver supports products, but requires [setting the
+`"NonConvex"` options](https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd).
 
 Finally, one can use `BilevelJuMP.MixedMode(default = mode)` where `mode` is one
 of the other modes described above. With this method it is possible to set
@@ -89,7 +91,7 @@ reformulation which add the constraint enforcing primal dual equality. The optio
 is `BilevelJuMP.StrongDualityMode(eps)` where `eps` is the tolance on the enforcing
 constraint.
 
-### Note on [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl)
+### Note on QuadraticToBinary
 
 [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl) is a
 package that converts quadratic terms in constraints and objective. To do so
@@ -99,7 +101,7 @@ directly to the solver itself. For many solvers it is enough to use:
 ```julia
 SOLVER = Xpress.Optimizer()
 Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(SOLVER)
-BilevelModel(Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
+BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
 ```
 
 However, this might lead to some solver not supporting certain functionality like SCIP.
@@ -155,4 +157,15 @@ not work properly with Cbc.
 * For anonymous variables with `DualOf` use:
 ```julia
 @variable(Upper(model, variable_type = DualOf(my_lower_constraint))
+```
+
+* Nonconvex/nonconcave/nonpsd objective/constraint error in a MIP solver.
+See section on
+[`QuadraticToBinary.jl`](#note-on-quadratictobinary)
+or if you are using
+[`Gurobi`](https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd)
+use:
+```julia
+model = BilevelModel(Gurobi.Optimizer, mode = BilevelJuMP.SOS1Mode()) #or other mode
+set_optimizer_attribute(model, "NonConvex", 2)
 ```
