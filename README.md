@@ -88,7 +88,7 @@ complementarity reformulations per constraint with `BilevelJuMP.set_mode(ctr, mo
 
 An alternative to complementarity constraint reformulation is the Strong Duality
 reformulation which add the constraint enforcing primal dual equality. The option
-is `BilevelJuMP.StrongDualityMode(eps)` where `eps` is the tolance on the enforcing
+is `BilevelJuMP.StrongDualityMode(eps)` where `eps` is the tolerance on the enforcing
 constraint.
 
 ### Note on QuadraticToBinary
