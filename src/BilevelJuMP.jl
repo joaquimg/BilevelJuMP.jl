@@ -7,6 +7,7 @@ using JuMP
 using Dualization
 using LinearAlgebra
 using SparseArrays
+using PushVectors
 
 export
 BilevelModel,

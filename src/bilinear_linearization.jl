@@ -4,6 +4,8 @@ lower primal variables in the upper level problem.
 Details can be found in https://ieeexplore.ieee.org/abstract/document/9729553
 =#
 
+PushVectors.finish!(v::AbstractVector) = v
+
 """
     non_zero_idxs_except_one(v::AbstractVector, idx::Int)
 
@@ -22,7 +24,7 @@ struct UnderDeterminedException <: Exception end
 
 
 """
-    recursive_col_search(A::AbstractArray, row::Int, col::Int, rows::Vector{Int}, cols::Vector{Int})
+    recursive_col_search(A::AbstractArray, row::Int, col::Int, rows::AbstractVector{Int}, cols::AbstractVector{Int})
 
 Given a row, col in an array A find all the connected rows and cols starting with searching col, 
 where "connected" rows and cols are those with non-zero values.
@@ -33,7 +35,7 @@ Returns Vector{Int}, Vector{Int}, Bool where the Bool indicates if redundanct ro
 (true indicates underdertermined system).
 """
 function recursive_col_search(A::AbstractArray, row::Int, col::Int, 
-    rows::Vector{Int}, cols::Vector{Int})
+    rows::AbstractVector{Int}, cols::AbstractVector{Int})
     rs = non_zero_idxs_except_one(A[:, col], row)
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
@@ -53,7 +55,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
             recursive_col_search(A, r, c, rows, cols)
         end
     end
-    return rows, cols
+    return finish!(rows), finish!(cols)
 end
 
 
@@ -96,25 +98,29 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
     skip_1st_col_check=false,
     finding_blocks=false,
     )
-    @assert A[row, col] != 0 "Linearization is undefined when the dual variable is not associated with the primal variable."
+    if A[row, col] == 0 
+        throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
+    end
     redundant_vals = false
     # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
     if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1
         return [], [col], redundant_vals
     end
     # step 2 add 1st row and any other non-zero columns
-    rows = [row]
+    rows = PushVector{Int}()
+    push!(rows, row)
     if finding_blocks
         cols_to_check = findall(!iszero, A[row, :])
     else
         cols_to_check = non_zero_idxs_except_one(A[row, :], col)
     end
-    cols = copy(cols_to_check)
+    cols = PushVector{Int}()
+    push!(cols, cols_to_check...)
     # step 3 recursive search to find all connections
     rows_to_add, cols_to_add = Int[], Int[]
     for c in cols_to_check
         try
-            rows_to_add, cols_to_add = recursive_col_search(A, row, c, Int[], Int[])
+            rows_to_add, cols_to_add = recursive_col_search(A, row, c, PushVector{Int}(), PushVector{Int}())
         catch e
             if isa(e, UnderDeterminedException)
                 if finding_blocks  # then we still need to add the connected rows and cols
@@ -122,8 +128,8 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
                         push!(rows, r)
                         push!(cols, findall(!iszero, A[r, :])...)
                     end
-                    unique!(rows)
-                    unique!(cols)
+                    rows = unique(rows)  # unique! does not work with PushVector
+                    cols = unique(cols)
                 else
                     redundant_vals = true
                 end
@@ -134,9 +140,8 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
     end
-    # sort!(rows)
-    # sort!(cols)
-    return rows, cols, redundant_vals
+    
+    return finish!(rows), finish!(cols), redundant_vals
 end
 
 
@@ -408,7 +413,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     # zero out the columns in V for upper level variables and build U
     U = spzeros(size(V,1), size(V,2)) # coefficients of UL variables
-    for col in upper_var_indices
+    Threads.@threads for col in upper_var_indices  # Thread
         U[:,col.value] = copy(V[:, col.value])
         V[:,col.value] = spzeros(size(V,1), 1)
     end
@@ -433,71 +438,73 @@ the upper variable index (of the lower dual variable):
 
 """
 function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
-    A_N = Int[]
-    upper_dual_to_quad_term = Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}()
+    nt = Threads.nthreads()
+    A_N = repeat([PushVector{Int}()], nt)
+    upper_dual_to_quad_term = repeat([Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}()], nt)
     # upper_primal_to_lower_primal = Dict{BilevelJuMP.VI, BilevelJuMP.VI}()
-    upper_dual_to_lower_primal = Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}()
-    lower_primal_var_to_lower_con = Dict{BilevelJuMP.VI, BilevelJuMP.CI}()
+    upper_dual_to_lower_primal = repeat([Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}()], nt)
+    lower_primal_var_to_lower_con = repeat([Dict{BilevelJuMP.VI, BilevelJuMP.CI}()], nt)
 
     UL_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
     upper_obj_func_quad_terms = MOI.get(
         upper, MOI.ObjectiveFunction{UL_obj_type}()).quadratic_terms
 
-    for upper_dual_var_idx in keys(upper_var_to_lower_ctr)
-
+    Threads.@threads for upper_dual_var_idx in collect(eachindex(upper_var_to_lower_ctr))
+        id = Threads.threadid()
         for term in upper_obj_func_quad_terms
 
             if upper_dual_var_idx == term.variable_1
                 if term.variable_2 in values(upper_to_lower_var_indices)
                     lower_primal_var_idx = upper_to_lower_var_indices[term.variable_2]
-                    push!(A_N, lower_primal_var_idx.value)
+                    push!(A_N[id], lower_primal_var_idx.value)
                     # upper_primal_to_lower_primal[term.variable_2] = lower_primal_var_idx
                     # upper_dual_to_quad_term[upper_dual_var_idx] = [term]  # will overwrite entry if upper_dual is multiplied by more than one lower variable in the upper objective, needs to list of pairs, muliple cases here
                     # upper_dual_to_quad_term is only used to find A_jn, the coefs in the upper obj of lambda_j and yn, could instead make matrix 
                     # upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_2]] = term.coefficient, which changes to variable_1 in elseif below
-                    if !haskey(upper_dual_to_quad_term, upper_dual_var_idx)
-                        upper_dual_to_quad_term[upper_dual_var_idx] = Dict(
+                    if !haskey(upper_dual_to_quad_term[id], upper_dual_var_idx)
+                        upper_dual_to_quad_term[id][upper_dual_var_idx] = Dict(
                             upper_to_lower_var_indices[term.variable_2] => term.coefficient
 
                         )
                     else
-                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_2]] = term.coefficient
+                        upper_dual_to_quad_term[id][upper_dual_var_idx][upper_to_lower_var_indices[term.variable_2]] = term.coefficient
                     end
-                    if !haskey(upper_dual_to_lower_primal, upper_dual_var_idx)
-                        upper_dual_to_lower_primal[upper_dual_var_idx] = [lower_primal_var_idx]
+                    if !haskey(upper_dual_to_lower_primal[id], upper_dual_var_idx)
+                        upper_dual_to_lower_primal[id][upper_dual_var_idx] = [lower_primal_var_idx]
                     else
-                        push!(upper_dual_to_lower_primal[upper_dual_var_idx], lower_primal_var_idx)
+                        push!(upper_dual_to_lower_primal[id][upper_dual_var_idx], lower_primal_var_idx)
                     end
-                    # upper_dual_to_lower_primal[upper_dual_var_idx] = lower_primal_var_idx
-                    lower_primal_var_to_lower_con[lower_primal_var_idx] = upper_var_to_lower_ctr[upper_dual_var_idx]
+                    lower_primal_var_to_lower_con[id][lower_primal_var_idx] = upper_var_to_lower_ctr[upper_dual_var_idx]
                 end
 
             elseif upper_dual_var_idx == term.variable_2
                 if term.variable_1 in values(upper_to_lower_var_indices)
                     lower_primal_var_idx = upper_to_lower_var_indices[term.variable_1]
-                    push!(A_N, lower_primal_var_idx.value)
+                    push!(A_N[id], lower_primal_var_idx.value)
                     # upper_primal_to_lower_primal[term.variable_1] = lower_primal_var_idx
-                    if !haskey(upper_dual_to_quad_term, upper_dual_var_idx)
-                        upper_dual_to_quad_term[upper_dual_var_idx] = Dict(
+                    if !haskey(upper_dual_to_quad_term[id], upper_dual_var_idx)
+                        upper_dual_to_quad_term[id][upper_dual_var_idx] = Dict(
                             upper_to_lower_var_indices[term.variable_1] => term.coefficient
 
                         )
                     else
-                        upper_dual_to_quad_term[upper_dual_var_idx][upper_to_lower_var_indices[term.variable_1]] = term.coefficient
+                        upper_dual_to_quad_term[id][upper_dual_var_idx][upper_to_lower_var_indices[term.variable_1]] = term.coefficient
                     end
-                    if !haskey(upper_dual_to_lower_primal, upper_dual_var_idx)
-                        upper_dual_to_lower_primal[upper_dual_var_idx] = [lower_primal_var_idx]
+                    if !haskey(upper_dual_to_lower_primal[id], upper_dual_var_idx)
+                        upper_dual_to_lower_primal[id][upper_dual_var_idx] = [lower_primal_var_idx]
                     else
-                        push!(upper_dual_to_lower_primal[upper_dual_var_idx], lower_primal_var_idx)
+                        push!(upper_dual_to_lower_primal[id][upper_dual_var_idx], lower_primal_var_idx)
                     end
-                    # upper_dual_to_lower_primal[upper_dual_var_idx] = lower_primal_var_idx
-                    lower_primal_var_to_lower_con[lower_primal_var_idx] = upper_var_to_lower_ctr[upper_dual_var_idx]
+                    lower_primal_var_to_lower_con[id][lower_primal_var_idx] = upper_var_to_lower_ctr[upper_dual_var_idx]
                 end
             end
         end
     end
 
-    return A_N, upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
+    upper_dual_to_quad_term = mergewith(merge, upper_dual_to_quad_term...)
+    upper_dual_to_lower_primal = mergewith(vcat, upper_dual_to_lower_primal...)
+    lower_primal_var_to_lower_con = merge(lower_primal_var_to_lower_con...)
+    return vcat(finish!.(A_N)...), upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
 end
 
 
@@ -580,7 +587,7 @@ function linear_terms_for_empty_AB(
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
 
-            J_j, N_n, redundant_vals = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
+            J_j, N_n, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
             if redundant_vals
                 return nothing
             end
@@ -886,16 +893,19 @@ cols = [
 NOTE that rows/cols with all zeros are not included in the return values.
 """
 function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
+
+    # have to create nthreads arrays and then combine them at the end (to be thread safe)
     num_blocks = 0
-    rows, cols = Vector[], Vector[]
-    rows_connected = Int[]
+    rows, cols = PushVector{Vector}(), PushVector{Vector}()
+    rows_connected = PushVector{Int}()
+
     # starting with first row of V, find all connected values. 
     # If all rows are connected then there is only one block. 
     # Else, search the remaining unconnected rows until all rows are accounted for.
     nrows = size(V,1)
     UV = U + V
     for r in 1:nrows
-        if r in rows_connected continue end
+        if r in rows_connected continue end  # cannot multithread this for loop b/c of this check
         c = findfirst(!iszero, UV[r,:])
         if !isnothing(c)
             num_blocks += 1
@@ -907,7 +917,7 @@ function find_blocks(V::AbstractMatrix{<:Real}, U::AbstractMatrix{<:Real})
         end
     end
     @debug("Found $(num_blocks) block(s) in V.")
-    return num_blocks, rows, cols
+    return num_blocks, finish!(rows), finish!(cols)
 end
 
 
@@ -923,19 +933,27 @@ end
 
 
 function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
-    J_U = Int[]
-    N_U = Int[]
-    for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+
+    # have to create nthreads arrays and then combine them at the end (to be thread safe)
+    J_Us = Vector{PushVector{Int}}()
+    N_Us = Vector{PushVector{Int}}()
+    for _ in 1:Threads.nthreads()
+        push!(J_Us, PushVector{Int}())
+        push!(N_Us, PushVector{Int}())
+    end
+
+    Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+        lower_con = upper_var_to_lower_ctr[upper_var]
         if !(upper_var in keys(bilinear_upper_dual_to_lower_primal)) continue end  # user defined DualOf but did not use it in UL objective
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
-            rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
-            push!(J_U, rows...)
-            push!(N_U, cols...)
+            rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+            push!(J_Us[Threads.threadid()], rows...)
+            push!(N_Us[Threads.threadid()], cols...)
         end
     end
-    unique(J_U), unique(N_U)
+    return unique(vcat(finish!.(J_Us)...)), unique(vcat(finish!.(N_Us)...))
 end
 
 

@@ -9,18 +9,11 @@ bilinear and linearized problem.
 
 
 function test_recursive_col_search()
-    A = ones(2,2)
-    try
-        BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[])
-    catch e  # redundant rows
-        @test typeof(e) == BilevelJuMP.UnderDeterminedException
-    end
-    A[1,2] = 0
-    try
-        BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[2])
-    catch e  # redundant cols
-        @test typeof(e) == BilevelJuMP.UnderDeterminedException
-    end
+    A = ones(2,2)  # redundant rows
+    @test_throws BilevelJuMP.UnderDeterminedException BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[])
+    
+    A[1,2] = 0  # redundant cols
+    @test_throws BilevelJuMP.UnderDeterminedException BilevelJuMP.recursive_col_search(A, 1, 1, Int[], Int[2])
 end
 
 
