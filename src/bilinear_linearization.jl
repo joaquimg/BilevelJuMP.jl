@@ -288,6 +288,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	con_types = MOI.get(m, MOI.ListOfConstraintTypesPresent())
 
     n_equality_cons = 0  # A[x;y] = b
+
+    @info """starting A,b at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}) in con_types
 
 		eq_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -308,6 +310,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     an EqualTo{Float64}
     =#
     n_lessthan_cons = 0  # C[x;y] ≤ d
+
+    @info """starting C,d at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}) in con_types
 
 		lt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -321,6 +325,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
 	
     n_greaterthan_cons = 0  # E[x;y] ≥ f
+
+    @info """starting E,t at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}) in con_types
 
 		gt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -337,6 +343,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     For each SingleVariable GreaterThan{Float64} or LessThan{Float64} we fill in the bounds
     yl and yu
     =#
+
+    @info """starting yl at $(Dates.format(now(), "HH:MM:SS"))"""
     yl = -Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.VariableIndex, MOI.GreaterThan{Float64}) in con_types
 
@@ -348,6 +356,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 		yl = BilevelJuMP.get_coef_matrix_and_rhs_vec(m, singleVar_gt_indices)
 	end
 	
+    @info """starting yu at $(Dates.format(now(), "HH:MM:SS"))"""
     yu = Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.VariableIndex, MOI.LessThan{Float64}) in con_types
 
@@ -360,6 +369,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
 
     # remove rows from C that only apply to one variable by moving them to the bounds in yu
+
+    @info """starting remove rows from C at $(Dates.format(now(), "HH:MM:SS"))"""
     rows_to_remove = Int[]
     for r in 1:size(C,1)
         if length(findall(!iszero, C[r, :])) == 1  # only one non-zero value in row
@@ -377,6 +388,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     n_lessthan_cons = size(C,1)
 
     # remove rows from E that only apply to one variable by moving them to the bounds in yl
+
+    @info """starting remove rows from E at $(Dates.format(now(), "HH:MM:SS"))"""
     rows_to_remove = Int[]
     for r in 1:size(E,1)
         if length(findall(!iszero, E[r, :])) == 1  # only one non-zero value in row
@@ -399,6 +412,8 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
               | C  I    |
               | E     I |
     =#
+
+    @info """starting build V at $(Dates.format(now(), "HH:MM:SS"))"""
     n_vars = size(A,2)
     V = spzeros(n_equality_cons + n_greaterthan_cons + n_lessthan_cons, 
                 n_vars + n_greaterthan_cons + n_lessthan_cons)
@@ -416,9 +431,12 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     Threads.@threads for col in upper_var_indices  # Thread
         U[:,col.value] = copy(V[:, col.value])
         V[:,col.value] = spzeros(size(V,1), 1)
+
+    @info """starting build U,V loop at $(Dates.format(now(), "HH:MM:SS"))"""
     end
 
     w = [b; d; f]
+    @info """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
 end
