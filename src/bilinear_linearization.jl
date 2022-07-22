@@ -400,23 +400,42 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
               | E     I |
     =#
     n_vars = size(A,2)
-    V = spzeros(n_equality_cons + n_greaterthan_cons + n_lessthan_cons, 
-                n_vars + n_greaterthan_cons + n_lessthan_cons)
+    n_rows_V = n_equality_cons + n_greaterthan_cons + n_lessthan_cons
+    n_cols_V = n_vars + n_greaterthan_cons + n_lessthan_cons
+    V = spzeros(n_rows_V, n_cols_V)
     V[1:n_equality_cons, 1:n_vars] = A
+    GC.gc()
 
     V[n_equality_cons+1 : n_equality_cons+n_lessthan_cons, 1 : n_vars] = C
+    GC.gc()
     V[n_equality_cons+1 : n_equality_cons+n_lessthan_cons, n_vars+1 : n_vars+n_lessthan_cons] = Matrix(I, n_lessthan_cons, n_lessthan_cons)
+    GC.gc()
 
     V[n_equality_cons+n_lessthan_cons+1 : n_equality_cons+n_greaterthan_cons+n_lessthan_cons, 1:n_vars] = E
+    GC.gc()
     V[n_equality_cons+n_lessthan_cons+1 : n_equality_cons+n_greaterthan_cons+n_lessthan_cons, 
       n_vars+n_lessthan_cons+1 : n_vars+n_greaterthan_cons+n_lessthan_cons] = Matrix(-I, n_greaterthan_cons, n_greaterthan_cons)
+    GC.gc()
 
     # zero out the columns in V for upper level variables and build U
-    U = spzeros(size(V,1), size(V,2)) # coefficients of UL variables
-    Threads.@threads for col in upper_var_indices  # Thread
-        U[:,col.value] = copy(V[:, col.value])
-        V[:,col.value] = spzeros(size(V,1), 1)
+    rows, cols, vals = findnz(V)
+    Urows = PushVector{Int}()
+    Ucols = PushVector{Int}()
+    Uvals = PushVector{Float64}()
+
+    for col in upper_var_indices
+        indices_to_mv = findall(i->i==col.value, cols)
+        push!(Urows, [rows[i] for i in indices_to_mv]...)
+        push!(Ucols, [cols[i] for i in indices_to_mv]...)
+        push!(Uvals, [vals[i] for i in indices_to_mv]...)
+        deleteat!(rows, indices_to_mv)
+        deleteat!(cols, indices_to_mv)
+        deleteat!(vals, indices_to_mv)
     end
+    GC.gc()
+
+    V = sparse(rows, cols, vals, n_rows_V, n_cols_V)
+    U = sparse(finish!(Urows), finish!(Ucols), finish!(Uvals), n_rows_V, n_cols_V)
 
     w = [b; d; f]
     return U, V, w # , yu, yl, n_equality_cons, C, E
