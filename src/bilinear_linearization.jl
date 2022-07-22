@@ -435,7 +435,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     # zero out the columns in V for upper level variables and build U
 
     @info """starting build U,V loop at $(Dates.format(now(), "HH:MM:SS"))"""
-
     rows, cols, vals = findnz(V)
     Urows = PushVector{Int}()
     Ucols = PushVector{Int}()
