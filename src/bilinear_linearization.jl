@@ -139,6 +139,7 @@ find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
         end
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
+        GC.gc()
     end
     
     return finish!(rows), finish!(cols), redundant_vals
