@@ -94,7 +94,7 @@ setblock!(V, ones(3,1), 2, 4)
 find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 ([1, 4, 5, 6, 2, 3], [4, 7, 10, 11, 8, 12, 2, 5, 9, 13, 3, 6])
 """
-function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
+@memoize function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
     )

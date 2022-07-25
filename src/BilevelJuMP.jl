@@ -8,6 +8,7 @@ using Dualization
 using LinearAlgebra
 using SparseArrays
 using PushVectors
+using Memoize
 
 export
 BilevelModel,
