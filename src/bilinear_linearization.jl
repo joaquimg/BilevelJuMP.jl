@@ -989,7 +989,6 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
             push!(J_Us[Threads.threadid()], rows...)
             push!(N_Us[Threads.threadid()], cols...)
         end
-        GC.gc()
     end
     return unique(vcat(finish!.(J_Us)...)), unique(vcat(finish!.(N_Us)...))
 end
