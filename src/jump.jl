@@ -508,8 +508,10 @@ function JuMP.optimize!(model::BilevelModel;
 
     reset!(mode) # cleaup cached data
     # build bound for FortunyAmatMcCarlMode
+    @info """starting build_bounds! at $(Dates.format(now(), "HH:MM:SS"))"""
     build_bounds!(model, mode)
 
+    @info """starting build_bilevel at $(Dates.format(now(), "HH:MM:SS"))"""
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
         build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr,
             copy_names = model.copy_names, pass_start = model.pass_start, 
