@@ -139,7 +139,6 @@ find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
         end
         push!(rows, rows_to_add...)
         push!(cols, cols_to_add...)
-        GC.gc()
     end
     
     return finish!(rows), finish!(cols), redundant_vals
@@ -986,7 +985,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
-            rows, cols = BilevelJuMP.find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+            rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
             push!(J_Us[Threads.threadid()], rows...)
             push!(N_Us[Threads.threadid()], cols...)
         end
