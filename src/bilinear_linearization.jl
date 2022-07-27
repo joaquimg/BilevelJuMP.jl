@@ -59,6 +59,36 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
 end
 
 
+function recursive_col_search_expr(row::Int, col::Int, rows::AbstractVector{Int}, cols::AbstractVector{Int})
+    rs = non_zero_idxs_except_one(globalV[:, col], row)
+    if any(r in rows for r in rs)
+        rr = intersect(rs, rows)
+        @debug("Returning early from recursive_col_search_expr due to redundant row(s)! ($rr)")
+        throw(UnderDeterminedException())
+    end
+    push!(rows, rs...)
+    for r in rs
+        cs = non_zero_idxs_except_one(globalV[r, :], col)
+        if any(c in cols for c in cs)
+            cc = intersect(cs, cols)
+            @debug("Returning early from recursive_col_search_expr due to redundant column(s)! ($cc)")
+            throw(UnderDeterminedException())
+        end
+        push!(cols, cs...)
+        for c in cs
+            return :($(recursive_col_search_expr(r, c, rows, cols)))
+        end
+    end
+    return :($(finish!(rows), finish!(cols)))
+end
+
+
+@generated function recursive_col_search_gen(::Type{Val{r}}, ::Type{Val{c}}) where {r,c}
+    return recursive_col_search_expr(r, c, PushVector{Int}(), PushVector{Int}())
+end
+
+
+
 """
     find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st_col_check=false)
     
@@ -94,7 +124,109 @@ setblock!(V, ones(3,1), 2, 4)
 find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 ([1, 4, 5, 6, 2, 3], [4, 7, 10, 11, 8, 12, 2, 5, 9, 13, 3, 6])
 """
-@memoize function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
+@memoize function find_connected_rows_cols_mem(A::AbstractArray, row::Int, col::Int; 
+    skip_1st_col_check=false,
+    finding_blocks=false,
+    )
+    if A[row, col] == 0 
+        throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
+    end
+    redundant_vals = false
+    # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
+    if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1
+        return [], [col], redundant_vals
+    end
+    # step 2 add 1st row and any other non-zero columns
+    rows = PushVector{Int}()
+    push!(rows, row)
+    if finding_blocks
+        cols_to_check = findall(!iszero, A[row, :])
+    else
+        cols_to_check = non_zero_idxs_except_one(A[row, :], col)
+    end
+    cols = PushVector{Int}()
+    push!(cols, cols_to_check...)
+    # step 3 recursive search to find all connections
+    rows_to_add, cols_to_add = Int[], Int[]
+    for c in cols_to_check
+        try
+            rows_to_add, cols_to_add = recursive_col_search(A, row, c, PushVector{Int}(), PushVector{Int}())
+        catch e
+            if isa(e, UnderDeterminedException)
+                if finding_blocks  # then we still need to add the connected rows and cols
+                    for r in non_zero_idxs_except_one(A[:, c], row)
+                        push!(rows, r)
+                        push!(cols, findall(!iszero, A[r, :])...)
+                    end
+                    rows = unique(rows)  # unique! does not work with PushVector
+                    cols = unique(cols)
+                else
+                    redundant_vals = true
+                end
+                break
+            else rethrow(e)
+            end
+        end
+        push!(rows, rows_to_add...)
+        push!(cols, cols_to_add...)
+    end
+    
+    return finish!(rows), finish!(cols), redundant_vals
+end
+
+
+@memoize function find_connected_rows_cols_mem_gen(row::Int, col::Int; 
+    skip_1st_col_check=false,
+    finding_blocks=false,
+    )
+    if globalV[row, col] == 0 
+        throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
+    end
+    redundant_vals = false
+    # step 1 check if all non-zeros in globalV[:, col], if so the dual constraint gives linearization
+    if !skip_1st_col_check && length(findall(!iszero, globalV[:, col])) == 1
+        return [], [col], redundant_vals
+    end
+    # step 2 add 1st row and any other non-zero columns
+    rows = PushVector{Int}()
+    push!(rows, row)
+    if finding_blocks
+        cols_to_check = findall(!iszero, globalV[row, :])
+    else
+        cols_to_check = non_zero_idxs_except_one(globalV[row, :], col)
+    end
+    cols = PushVector{Int}()
+    push!(cols, cols_to_check...)
+    # step 3 recursive search to find all connections
+    rows_to_add, cols_to_add = Int[], Int[]
+    for c in cols_to_check
+        try
+            rows_to_add, cols_to_add = recursive_col_search_gen(Val{row}, Val{c})
+        catch e
+            if isa(e, UnderDeterminedException)
+                if finding_blocks  # then we still need to add the connected rows and cols
+                    for r in non_zero_idxs_except_one(globalV[:, c], row)
+                        push!(rows, r)
+                        push!(cols, findall(!iszero, globalV[r, :])...)
+                    end
+                    rows = unique(rows)  # unique! does not work with PushVector
+                    cols = unique(cols)
+                else
+                    redundant_vals = true
+                end
+                break
+            else rethrow(e)
+            end
+        end
+        push!(rows, rows_to_add...)
+        push!(cols, cols_to_add...)
+    end
+    
+    return finish!(rows), finish!(cols), redundant_vals
+end
+
+
+function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
     )
@@ -456,6 +588,13 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     w = [b; d; f]
     @info """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
+
+    function wrap()
+        eval(:(const globalV = $V))
+    end
+    empty!(memoize_cache(find_connected_rows_cols_mem_gen))
+    redirect_stdio(wrap; stderr=devnull)  # supress warning for module const
+
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
 end
