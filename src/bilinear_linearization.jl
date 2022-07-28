@@ -14,7 +14,7 @@ Return indices of all the non-zero values in v except idx
 function non_zero_idxs_except_one(v::AbstractVector, idx::Int)
     idxs = findall(!iszero, v)
     if !isempty(idxs)
-        deleteat!(idxs, findfirst(x->x==idx, idxs))
+        deleteat!(idxs, findfirst(x->x==idx, idxs))  # findfirst can return nothing
     end
     return idxs
 end
@@ -76,10 +76,10 @@ function recursive_col_search_expr(row::Int, col::Int, rows::AbstractVector{Int}
         end
         push!(cols, cs...)
         for c in cs
-            return :($(recursive_col_search_expr(r, c, rows, cols)))
+            recursive_col_search_expr(r, c, rows, cols)  # only returning the first expression for c in cs
         end
     end
-    return :($(finish!(rows), finish!(cols)))
+    return :(finish!($rows), finish!($cols))
 end
 
 
