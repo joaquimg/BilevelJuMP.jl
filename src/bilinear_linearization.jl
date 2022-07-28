@@ -564,11 +564,20 @@ the upper variable index (of the lower dual variable):
 """
 function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
     nt = Threads.nthreads()
-    A_N = repeat([PushVector{Int}()], nt)
-    upper_dual_to_quad_term = repeat([Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}()], nt)
+
+    A_N = Vector{PushVector{Int}}()
+    upper_dual_to_quad_term = Vector{Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}}()
+    upper_dual_to_lower_primal = Vector{Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}}()
+    lower_primal_var_to_lower_con = Vector{Dict{BilevelJuMP.VI, BilevelJuMP.CI}}()
+
+    for _ in 1:nt
+        push!(A_N, PushVector{Int}())
+        push!(upper_dual_to_quad_term, Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}())
+        push!(upper_dual_to_lower_primal, Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}())
+        push!(lower_primal_var_to_lower_con, Dict{BilevelJuMP.VI, BilevelJuMP.CI}())
+    end
+
     # upper_primal_to_lower_primal = Dict{BilevelJuMP.VI, BilevelJuMP.VI}()
-    upper_dual_to_lower_primal = repeat([Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}()], nt)
-    lower_primal_var_to_lower_con = repeat([Dict{BilevelJuMP.VI, BilevelJuMP.CI}()], nt)
 
     UL_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
     upper_obj_func_quad_terms = MOI.get(
@@ -629,7 +638,7 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
     upper_dual_to_quad_term = mergewith(merge, upper_dual_to_quad_term...)
     upper_dual_to_lower_primal = mergewith(vcat, upper_dual_to_lower_primal...)
     lower_primal_var_to_lower_con = merge(lower_primal_var_to_lower_con...)
-    return vcat(finish!.(A_N)...), upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
+    return unique(vcat(finish!.(A_N)...)), upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
 end
 
 
