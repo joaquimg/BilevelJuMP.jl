@@ -20,6 +20,18 @@ function non_zero_idxs_except_one(v::AbstractVector, idx::Int)
 end
 
 
+# switch input of I,J for finding cs
+function non_zero_idxs_except_one_IJV(I, J, col::Int, idx::Int)
+    rs = PushVector{Int}()
+    for (i,v) in enumerate(J)
+        if v == col && I[i] != idx
+            push!(rs, I[i])
+        end
+    end
+    return rs  # need finish! ?
+end
+
+
 struct UnderDeterminedException <: Exception end
 
 
@@ -58,35 +70,33 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     return finish!(rows), finish!(cols)
 end
 
+# a version of recursive_col_search that works with I,J,vals = findnz(V)
+function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, vals::Vector{<:Real}, row::Int, col::Int, 
+    rows::AbstractVector{Int}, cols::AbstractVector{Int})
 
-function recursive_col_search_expr(row::Int, col::Int, rows::AbstractVector{Int}, cols::AbstractVector{Int})
-    rs = non_zero_idxs_except_one(globalV[:, col], row)
+    rs = non_zero_idxs_except_one_IJV(I, J, col, row)
+    # rs = non_zero_idxs_except_one(A[:, col], row)
     if any(r in rows for r in rs)
         rr = intersect(rs, rows)
-        @debug("Returning early from recursive_col_search_expr due to redundant row(s)! ($rr)")
+        @debug("Returning early from recursive_col_search due to redundant row(s)! ($rr)")
         throw(UnderDeterminedException())
     end
     push!(rows, rs...)
     for r in rs
-        cs = non_zero_idxs_except_one(globalV[r, :], col)
+        cs = non_zero_idxs_except_one_IJV(J, I, r, col)
+        # cs = non_zero_idxs_except_one(A[r, :], col)
         if any(c in cols for c in cs)
             cc = intersect(cs, cols)
-            @debug("Returning early from recursive_col_search_expr due to redundant column(s)! ($cc)")
+            @debug("Returning early from recursive_col_search due to redundant column(s)! ($cc)")
             throw(UnderDeterminedException())
         end
         push!(cols, cs...)
         for c in cs
-            recursive_col_search_expr(r, c, rows, cols)  # only returning the first expression for c in cs
+            recursive_col_search_IJV(I, J, vals, r, c, rows, cols)
         end
     end
-    return :(finish!($rows), finish!($cols))
+    return finish!(rows), finish!(cols)
 end
-
-
-@generated function recursive_col_search_gen(::Type{Val{r}}, ::Type{Val{c}}) where {r,c}
-    return recursive_col_search_expr(r, c, PushVector{Int}(), PushVector{Int}())
-end
-
 
 
 """
@@ -175,54 +185,58 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
 end
 
 
-@memoize function find_connected_rows_cols_globalV(row::Int, col::Int; 
+function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
     )
-    if globalV[row, col] == 0 
-        throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
-    end
-    redundant_vals = false
-    # step 1 check if all non-zeros in globalV[:, col], if so the dual constraint gives linearization
-    if !skip_1st_col_check && length(findall(!iszero, globalV[:, col])) == 1
-        return [], [col], redundant_vals
-    end
-    # step 2 add 1st row and any other non-zero columns
-    rows = PushVector{Int}()
-    push!(rows, row)
-    if finding_blocks
-        cols_to_check = findall(!iszero, globalV[row, :])
-    else
-        cols_to_check = non_zero_idxs_except_one(globalV[row, :], col)
-    end
-    cols = PushVector{Int}()
-    push!(cols, cols_to_check...)
-    # step 3 recursive search to find all connections
-    rows_to_add, cols_to_add = Int[], Int[]
-    for c in cols_to_check
-        try
-            rows_to_add, cols_to_add = recursive_col_search_gen(Val{row}, Val{c})
-        catch e
-            if isa(e, UnderDeterminedException)
-                if finding_blocks  # then we still need to add the connected rows and cols
-                    for r in non_zero_idxs_except_one(globalV[:, c], row)
-                        push!(rows, r)
-                        push!(cols, findall(!iszero, globalV[r, :])...)
-                    end
-                    rows = unique(rows)  # unique! does not work with PushVector
-                    cols = unique(cols)
-                else
-                    redundant_vals = true
-                end
-                break
-            else rethrow(e)
-            end
-        end
-        push!(rows, rows_to_add...)
-        push!(cols, cols_to_add...)
-    end
     
-    return finish!(rows), finish!(cols), redundant_vals
+    if (row, col, skip_1st_col_check, finding_blocks) ∉ keys(cache)
+        if A[row, col] == 0 
+            throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
+        end
+        redundant_vals = false
+        # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
+        if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1  # TODO an IJV method for this?
+            return [], [col], redundant_vals
+        end
+        # step 2 add 1st row and any other non-zero columns
+        rows = Int[]
+        push!(rows, row)
+        if finding_blocks
+            cols_to_check = findall(!iszero, A[row, :])  # TODO an IJV method for this?
+        else
+            cols_to_check = non_zero_idxs_except_one_IJV(J, I, row, col) #non_zero_idxs_except_one(A[row, :], col)
+        end
+        cols = Int[]
+        push!(cols, cols_to_check...)
+        # step 3 recursive search to find all connections
+        rows_to_add, cols_to_add = Int[], Int[]
+        for c in cols_to_check
+            try
+                rows_to_add, cols_to_add = recursive_col_search_IJV(I,J,vals, row, c, Int[], Int[])
+            catch e
+                if isa(e, UnderDeterminedException)
+                    if finding_blocks  # then we still need to add the connected rows and cols
+                        for r in non_zero_idxs_except_one_IJV(I, J, c, row) #non_zero_idxs_except_one(A[:, c], row)
+                            push!(rows, r)
+                            push!(cols, findall(!iszero, A[r, :])...)  # TODO an IJV method for this?
+                        end
+                        rows = unique(rows)  # unique! does not work with PushVector
+                        cols = unique(cols)
+                    else
+                        redundant_vals = true
+                    end
+                    break
+                else rethrow(e)
+                end
+            end
+            push!(rows, rows_to_add...)
+            push!(cols, cols_to_add...)
+        end
+        
+        cache[(row, col, skip_1st_col_check, finding_blocks)] = finish!(rows), finish!(cols), redundant_vals
+    end
+    return cache[(row, col, skip_1st_col_check, finding_blocks)]
 end
 
 
@@ -534,15 +548,10 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     V = sparse(rows, cols, vals, n_rows_V, n_cols_V)
     U = sparse(finish!(Urows), finish!(Ucols), finish!(Uvals), n_rows_V, n_cols_V)
-
+    # every time a new V is created for a problem we need to empty the cache used in find_connected_rows_cols_cached
+    empty!(cache)
     w = [b; d; f]
     @info """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
-
-    function wrap()
-        eval(:(const globalV = $V))
-    end
-    empty!(memoize_cache(find_connected_rows_cols_globalV))
-    redirect_stdio(wrap; stderr=devnull)  # supress warning for module const
 
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
@@ -715,13 +724,14 @@ function linear_terms_for_empty_AB(
     )
     linearizations = Vector{MOI.ScalarAffineTerm}()
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
+    I, J, vals = findnz(V)
 
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # TODO thread
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
 
-            J_j, N_n, redundant_vals = find_connected_rows_cols_globalV(j, n, skip_1st_col_check=false)
+            J_j, N_n, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=false)
             if redundant_vals
                 return nothing
             end
@@ -784,24 +794,33 @@ function linear_terms_for_non_empty_AB(
         lower_primal_dual_map,
         lower_dual_idxmap
     )
-    linearizations = Vector{MOI.ScalarAffineTerm}()
+    linearizations = PushVector{MOI.ScalarAffineTerm}()
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
+    I, J, vals = findnz(V)
 
     for (upper_var, lower_con) in upper_var_to_lower_ctr # TODO Thread
         j = lower_con.value
-        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
-            n = lower_var.value
 
-            rows, cols, redundant_vals = find_connected_rows_cols_globalV(j, n, skip_1st_col_check=true)
+        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
+
+            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
+            if isapprox(A_jn, 0.0; atol=1e-12)
+                continue
+            end
+            n = lower_var.value
+            # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
+            rows, cols, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
             # rows is set J_j, cols is set N_n
             if redundant_vals
                 return nothing
             end
 
-            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
             V_jn = V[j,n]
             p = A_jn / V_jn
             for r in rows
+                if isapprox(w[r], 0.0; atol=1e-12)
+                    continue
+                end
                 lower_con_index = con_type(r)
                 lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
 
@@ -829,17 +848,17 @@ function linear_terms_for_non_empty_AB(
                 upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
                 # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
-                if low_bound != -Inf && !isnothing(low_dual)
+                if low_bound != -Inf && !isapprox(low_bound, 0.0; atol=1e-12) && !isnothing(low_dual)
                     push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
                 end
-                if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
+                if upp_bound != Inf && !isapprox(upp_bound, 0.0; atol=1e-12) && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
                     push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
                 end
             end
         end
     end
 
-    return linearizations
+    return finish!(linearizations)
 end
 
 
@@ -890,10 +909,12 @@ end
 
 function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_primal_var_to_lower_con)
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
+    I, J, vals = findnz(V)
     met_condition = true
     for n in A_N  # TODO Thread?
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-        _, N_n, _ = find_connected_rows_cols_globalV(j, n, skip_1st_col_check=true)
+        # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
+        _, N_n, _ = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
         # NOTE not handling redundant_vals here b/c goal is to first check conditions 
         # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
@@ -910,7 +931,7 @@ function check_condition_4(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_va
     # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
     met_condition = true
     J = 1:size(V,1)
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # thread?
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
@@ -933,7 +954,7 @@ function check_condition_5(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_va
     # Condition 5: A_jn = p V_jn ∀ (j,n) ∈ A (p is proportionality constant)
     met_condition = true
     p = nothing
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # thread?
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
@@ -1075,6 +1096,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         push!(J_Us, PushVector{Int}())
         push!(N_Us, PushVector{Int}())
     end
+    I, J, vals = findnz(V)
 
     Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
         lower_con = upper_var_to_lower_ctr[upper_var]
@@ -1082,7 +1104,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
-            rows, cols = find_connected_rows_cols_globalV(j, n, skip_1st_col_check=!(isempty(AB_N)))
+            rows, cols = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=!(isempty(AB_N)))
             push!(J_Us[Threads.threadid()], rows...)
             push!(N_Us[Threads.threadid()], cols...)
         end
