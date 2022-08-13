@@ -798,7 +798,8 @@ function linear_terms_for_non_empty_AB(
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
     I, J, vals = findnz(V)
 
-    for (upper_var, lower_con) in upper_var_to_lower_ctr # TODO Thread
+    # threading this for loop leads to malloc error "pointer being freed was not allocated"
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
         j = lower_con.value
 
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
@@ -911,7 +912,7 @@ function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_pr
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
     I, J, vals = findnz(V)
     met_condition = true
-    for n in A_N  # TODO Thread?
+    Threads.@threads for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
         # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
         _, N_n, _ = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
