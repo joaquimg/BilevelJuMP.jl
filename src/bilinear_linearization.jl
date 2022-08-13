@@ -3,7 +3,6 @@ Methods in this file are for supporting the linearization of bilinear products o
 lower primal variables in the upper level problem. 
 Details can be found in https://ieeexplore.ieee.org/abstract/document/9729553
 =#
-
 PushVectors.finish!(v::AbstractVector) = v
 
 """
@@ -14,9 +13,21 @@ Return indices of all the non-zero values in v except idx
 function non_zero_idxs_except_one(v::AbstractVector, idx::Int)
     idxs = findall(!iszero, v)
     if !isempty(idxs)
-        deleteat!(idxs, findfirst(x->x==idx, idxs))
+        deleteat!(idxs, findfirst(x->x==idx, idxs))  # findfirst can return nothing
     end
     return idxs
+end
+
+
+# switch input of I,J for finding cs
+function non_zero_idxs_except_one_IJV(I, J, col::Int, idx::Int)
+    rs = PushVector{Int}()
+    for (i,v) in enumerate(J)
+        if v == col && I[i] != idx
+            push!(rs, I[i])
+        end
+    end
+    return rs  # need finish! ?
 end
 
 
@@ -58,6 +69,34 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
     return finish!(rows), finish!(cols)
 end
 
+# a version of recursive_col_search that works with I,J,vals = findnz(V)
+function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, vals::Vector{<:Real}, row::Int, col::Int, 
+    rows::AbstractVector{Int}, cols::AbstractVector{Int})
+
+    rs = non_zero_idxs_except_one_IJV(I, J, col, row)
+    # rs = non_zero_idxs_except_one(A[:, col], row)
+    if any(r in rows for r in rs)
+        rr = intersect(rs, rows)
+        @debug("Returning early from recursive_col_search due to redundant row(s)! ($rr)")
+        throw(UnderDeterminedException())
+    end
+    push!(rows, rs...)
+    for r in rs
+        cs = non_zero_idxs_except_one_IJV(J, I, r, col)
+        # cs = non_zero_idxs_except_one(A[r, :], col)
+        if any(c in cols for c in cs)
+            cc = intersect(cs, cols)
+            @debug("Returning early from recursive_col_search due to redundant column(s)! ($cc)")
+            throw(UnderDeterminedException())
+        end
+        push!(cols, cs...)
+        for c in cs
+            recursive_col_search_IJV(I, J, vals, r, c, rows, cols)
+        end
+    end
+    return finish!(rows), finish!(cols)
+end
+
 
 """
     find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; skip_1st_col_check=false)
@@ -94,7 +133,7 @@ setblock!(V, ones(3,1), 2, 4)
 find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
 ([1, 4, 5, 6, 2, 3], [4, 7, 10, 11, 8, 12, 2, 5, 9, 13, 3, 6])
 """
-@memoize function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
+function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
     )
@@ -142,6 +181,61 @@ find_connected_rows_cols(V, 1, 1; skip_1st_col_check=true)
     end
     
     return finish!(rows), finish!(cols), redundant_vals
+end
+
+
+function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int; 
+    skip_1st_col_check=false,
+    finding_blocks=false,
+    )
+    
+    if (row, col, skip_1st_col_check, finding_blocks) ∉ keys(cache)
+        if A[row, col] == 0 
+            throw(@error("Linearization is undefined when the dual variable is not associated with the primal variable."))
+        end
+        redundant_vals = false
+        # step 1 check if all non-zeros in A[:, col], if so the dual constraint gives linearization
+        if !skip_1st_col_check && length(findall(!iszero, A[:, col])) == 1  # TODO an IJV method for this?
+            return [], [col], redundant_vals
+        end
+        # step 2 add 1st row and any other non-zero columns
+        rows = Int[]
+        push!(rows, row)
+        if finding_blocks
+            cols_to_check = findall(!iszero, A[row, :])  # TODO an IJV method for this?
+        else
+            cols_to_check = non_zero_idxs_except_one_IJV(J, I, row, col) #non_zero_idxs_except_one(A[row, :], col)
+        end
+        cols = Int[]
+        push!(cols, cols_to_check...)
+        # step 3 recursive search to find all connections
+        rows_to_add, cols_to_add = Int[], Int[]
+        for c in cols_to_check
+            try
+                rows_to_add, cols_to_add = recursive_col_search_IJV(I,J,vals, row, c, Int[], Int[])
+            catch e
+                if isa(e, UnderDeterminedException)
+                    if finding_blocks  # then we still need to add the connected rows and cols
+                        for r in non_zero_idxs_except_one_IJV(I, J, c, row) #non_zero_idxs_except_one(A[:, c], row)
+                            push!(rows, r)
+                            push!(cols, findall(!iszero, A[r, :])...)  # TODO an IJV method for this?
+                        end
+                        rows = unique(rows)  # unique! does not work with PushVector
+                        cols = unique(cols)
+                    else
+                        redundant_vals = true
+                    end
+                    break
+                else rethrow(e)
+                end
+            end
+            push!(rows, rows_to_add...)
+            push!(cols, cols_to_add...)
+        end
+        
+        cache[(row, col, skip_1st_col_check, finding_blocks)] = finish!(rows), finish!(cols), redundant_vals
+    end
+    return cache[(row, col, skip_1st_col_check, finding_blocks)]
 end
 
 
@@ -288,6 +382,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	con_types = MOI.get(m, MOI.ListOfConstraintTypesPresent())
 
     n_equality_cons = 0  # A[x;y] = b
+
 	if (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}) in con_types
 
 		eq_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -308,6 +403,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     an EqualTo{Float64}
     =#
     n_lessthan_cons = 0  # C[x;y] ≤ d
+
 	if (MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}) in con_types
 
 		lt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -321,6 +417,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
 	
     n_greaterthan_cons = 0  # E[x;y] ≥ f
+
 	if (MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}) in con_types
 
 		gt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -337,6 +434,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     For each SingleVariable GreaterThan{Float64} or LessThan{Float64} we fill in the bounds
     yl and yu
     =#
+
     yl = -Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.VariableIndex, MOI.GreaterThan{Float64}) in con_types
 
@@ -360,6 +458,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	end
 
     # remove rows from C that only apply to one variable by moving them to the bounds in yu
+
     rows_to_remove = Int[]
     for r in 1:size(C,1)
         if length(findall(!iszero, C[r, :])) == 1  # only one non-zero value in row
@@ -377,6 +476,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     n_lessthan_cons = size(C,1)
 
     # remove rows from E that only apply to one variable by moving them to the bounds in yl
+
     rows_to_remove = Int[]
     for r in 1:size(E,1)
         if length(findall(!iszero, E[r, :])) == 1  # only one non-zero value in row
@@ -399,6 +499,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
               | C  I    |
               | E     I |
     =#
+
     n_vars = size(A,2)
     n_rows_V = n_equality_cons + n_greaterthan_cons + n_lessthan_cons
     n_cols_V = n_vars + n_greaterthan_cons + n_lessthan_cons
@@ -418,6 +519,7 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     GC.gc()
 
     # zero out the columns in V for upper level variables and build U
+
     rows, cols, vals = findnz(V)
     Urows = PushVector{Int}()
     Ucols = PushVector{Int}()
@@ -436,8 +538,10 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     V = sparse(rows, cols, vals, n_rows_V, n_cols_V)
     U = sparse(finish!(Urows), finish!(Ucols), finish!(Uvals), n_rows_V, n_cols_V)
-
+    # every time a new V is created for a problem we need to empty the cache used in find_connected_rows_cols_cached
+    empty!(cache)
     w = [b; d; f]
+
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
 end
@@ -458,11 +562,20 @@ the upper variable index (of the lower dual variable):
 """
 function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
     nt = Threads.nthreads()
-    A_N = repeat([PushVector{Int}()], nt)
-    upper_dual_to_quad_term = repeat([Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}()], nt)
+
+    A_N = Vector{PushVector{Int}}()
+    upper_dual_to_quad_term = Vector{Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}}()
+    upper_dual_to_lower_primal = Vector{Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}}()
+    lower_primal_var_to_lower_con = Vector{Dict{BilevelJuMP.VI, BilevelJuMP.CI}}()
+
+    for _ in 1:nt
+        push!(A_N, PushVector{Int}())
+        push!(upper_dual_to_quad_term, Dict{BilevelJuMP.VI, Dict{BilevelJuMP.VI, Float64}}())
+        push!(upper_dual_to_lower_primal, Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}())
+        push!(lower_primal_var_to_lower_con, Dict{BilevelJuMP.VI, BilevelJuMP.CI}())
+    end
+
     # upper_primal_to_lower_primal = Dict{BilevelJuMP.VI, BilevelJuMP.VI}()
-    upper_dual_to_lower_primal = repeat([Dict{BilevelJuMP.VI, Vector{BilevelJuMP.VI}}()], nt)
-    lower_primal_var_to_lower_con = repeat([Dict{BilevelJuMP.VI, BilevelJuMP.CI}()], nt)
 
     UL_obj_type = MOI.get(upper, MOI.ObjectiveFunctionType())
     upper_obj_func_quad_terms = MOI.get(
@@ -523,7 +636,7 @@ function check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_
     upper_dual_to_quad_term = mergewith(merge, upper_dual_to_quad_term...)
     upper_dual_to_lower_primal = mergewith(vcat, upper_dual_to_lower_primal...)
     lower_primal_var_to_lower_con = merge(lower_primal_var_to_lower_con...)
-    return vcat(finish!.(A_N)...), upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
+    return unique(vcat(finish!.(A_N)...)), upper_dual_to_quad_term, upper_dual_to_lower_primal, lower_primal_var_to_lower_con
 end
 
 
@@ -600,13 +713,14 @@ function linear_terms_for_empty_AB(
     )
     linearizations = Vector{MOI.ScalarAffineTerm}()
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
+    I, J, vals = findnz(V)
 
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # TODO thread
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
 
-            J_j, N_n, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=false)
+            J_j, N_n, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=false)
             if redundant_vals
                 return nothing
             end
@@ -669,24 +783,34 @@ function linear_terms_for_non_empty_AB(
         lower_primal_dual_map,
         lower_dual_idxmap
     )
-    linearizations = Vector{MOI.ScalarAffineTerm}()
+    linearizations = PushVector{MOI.ScalarAffineTerm}()
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
+    I, J, vals = findnz(V)
 
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    # threading this for loop leads to malloc error "pointer being freed was not allocated"
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
         j = lower_con.value
-        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
-            n = lower_var.value
 
-            rows, cols, redundant_vals = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
+
+            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
+            if isapprox(A_jn, 0.0; atol=1e-12)
+                continue
+            end
+            n = lower_var.value
+            # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
+            rows, cols, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
             # rows is set J_j, cols is set N_n
             if redundant_vals
                 return nothing
             end
 
-            A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
             V_jn = V[j,n]
             p = A_jn / V_jn
             for r in rows
+                if isapprox(w[r], 0.0; atol=1e-12)
+                    continue
+                end
                 lower_con_index = con_type(r)
                 lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
 
@@ -714,17 +838,17 @@ function linear_terms_for_non_empty_AB(
                 upp_dual = get(lower_primal_dual_map.primal_con_dual_var, up_bound_index, [nothing])[1]
 
                 # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
-                if low_bound != -Inf && !isnothing(low_dual)
+                if low_bound != -Inf && !isapprox(low_bound, 0.0; atol=1e-12) && !isnothing(low_dual)
                     push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
                 end
-                if upp_bound != Inf && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
+                if upp_bound != Inf && !isapprox(upp_bound, 0.0; atol=1e-12) && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
                     push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
                 end
             end
         end
     end
 
-    return linearizations
+    return finish!(linearizations)
 end
 
 
@@ -775,10 +899,12 @@ end
 
 function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_primal_var_to_lower_con)
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
+    I, J, vals = findnz(V)
     met_condition = true
-    for n in A_N
+    Threads.@threads for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
-        _, N_n, _ = find_connected_rows_cols(V, j, n, skip_1st_col_check=true)
+        # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
+        _, N_n, _ = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
         # NOTE not handling redundant_vals here b/c goal is to first check conditions 
         # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
@@ -795,7 +921,7 @@ function check_condition_4(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_va
     # Condition 4: V_j'n = 0 ∀ j' ∈ J \ {j}, ∀ (j,n) ∈ A
     met_condition = true
     J = 1:size(V,1)
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # thread?
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
@@ -818,7 +944,7 @@ function check_condition_5(A_N::AbstractVector{Int}, V::AbstractMatrix, upper_va
     # Condition 5: A_jn = p V_jn ∀ (j,n) ∈ A (p is proportionality constant)
     met_condition = true
     p = nothing
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
+    for (upper_var, lower_con) in upper_var_to_lower_ctr  # thread?
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
@@ -951,7 +1077,7 @@ function is_model_in_standard_form(m::MOI.ModelLike)
 end
 
 
-function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
+function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N) # TODO rm V arg
 
     # have to create nthreads arrays and then combine them at the end (to be thread safe)
     J_Us = Vector{PushVector{Int}}()
@@ -960,6 +1086,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         push!(J_Us, PushVector{Int}())
         push!(N_Us, PushVector{Int}())
     end
+    I, J, vals = findnz(V)
 
     Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
         lower_con = upper_var_to_lower_ctr[upper_var]
@@ -967,7 +1094,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
-            rows, cols = find_connected_rows_cols(V, j, n, skip_1st_col_check=!(isempty(AB_N)))
+            rows, cols = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=!(isempty(AB_N)))
             push!(J_Us[Threads.threadid()], rows...)
             push!(N_Us[Threads.threadid()], cols...)
         end
@@ -1003,7 +1130,7 @@ function main_linearization(
         lower_primal_dual_map, 
         lower_dual_idxmap
     )
-
+    @debug """starting main linearization at $(Dates.format(now(), "HH:MM:SS"))"""
     if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
         !isempty(upper_var_to_lower_ctr)
 
@@ -1013,17 +1140,20 @@ function main_linearization(
         
         linearize = true
         # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
+
+        @debug """starting is_model_in_standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         if !(is_model_in_standard_form(lower))
             linearize = false
             @warn("The lower model must be in standard form to linearize bilinear terms. Skipping linearization process.")
         else
+            @debug """starting check_upper_objective_for_bilinear_linearization at $(Dates.format(now(), "HH:MM:SS"))"""
             A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
                 check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
-
             if isempty(A_N)
                 @debug("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
                 linearize = false
             else
+                @debug """starting get_lower_obj_coefs_of_upper_times_lower_primals at $(Dates.format(now(), "HH:MM:SS"))"""
                 AB_N, B, lower_obj_terms, lower_obj_type_handled = 
                     get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N, lower_to_m_idxmap)
                 if !lower_obj_type_handled
@@ -1038,12 +1168,15 @@ function main_linearization(
     end
 
     if linearize
+        @debug """starting standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         U, V, w = standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+        @debug """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
         linearizations = nothing
         m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
         bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
+        @debug """starting loop over m_objective.quadratic_terms at $(Dates.format(now(), "HH:MM:SS"))"""
         for term in m_objective.quadratic_terms
             mset = Set([term.variable_1, term.variable_2])
             for upper_term in upper_obj_func_quad_terms
@@ -1058,6 +1191,7 @@ function main_linearization(
         end
 
         # TODO check for integer x * continuous y, for now assuming continuous x conditions
+        @debug """starting get_all_connected_rows_cols at $(Dates.format(now(), "HH:MM:SS"))"""
         J_U, N_U = get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
         #= 
             Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
@@ -1090,10 +1224,14 @@ function main_linearization(
             @debug("set AB_N is NOT empty")
             
             # TODO input flag for checking for blocks? (to save time)
+            
+            @debug """starting find_blocks at $(Dates.format(now(), "HH:MM:SS"))"""
             num_blocks, rows, cols = find_blocks(V, U)
 
             conditions_passed = Bool[]
             nrows, ncols = size(V)
+            
+            @debug """starting condition checks at $(Dates.format(now(), "HH:MM:SS"))"""
             for n in 1:num_blocks
                 # TODO can skip blocks that are not linked to bilinear terms?
                 Vblock = spzeros(nrows, ncols)
@@ -1110,6 +1248,8 @@ function main_linearization(
             @debug("Done looping over V blocks")
             
             if all(conditions_passed)
+
+                @debug """starting linear_terms_for_non_empty_AB at $(Dates.format(now(), "HH:MM:SS"))"""
                 linearizations = linear_terms_for_non_empty_AB(
                     lower,
                     upper_var_to_lower_ctr,
@@ -1135,6 +1275,8 @@ function main_linearization(
         # LINEARIZATION
 
         if !(isnothing(linearizations))
+            
+            @debug """starting linearizations at $(Dates.format(now(), "HH:MM:SS"))"""
             # set m's objective by replacing quadratic terms with linearizations
             mobj = deepcopy(m_objective)
             quadratic_terms = mobj.quadratic_terms  # TODO keep quadratic terms that have not been linearized
@@ -1154,4 +1296,5 @@ function main_linearization(
             end
         end
     end # if linearize
+    @debug """done linearizing at $(Dates.format(now(), "HH:MM:SS"))"""
 end

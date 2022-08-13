@@ -8,7 +8,11 @@ using Dualization
 using LinearAlgebra
 using SparseArrays
 using PushVectors
-using Memoize
+using ThreadSafeDicts
+using Dates
+
+const cache = ThreadSafeDict{Tuple{Int, Int, Bool, Bool}, Tuple{Vector{Int}, Vector{Int}, Bool}}()
+# cache for find_connected_rows_cols_cached, which can take several seconds in large problems
 
 export
 BilevelModel,
