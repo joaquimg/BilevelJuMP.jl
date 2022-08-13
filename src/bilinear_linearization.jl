@@ -3,7 +3,6 @@ Methods in this file are for supporting the linearization of bilinear products o
 lower primal variables in the upper level problem. 
 Details can be found in https://ieeexplore.ieee.org/abstract/document/9729553
 =#
-using Dates
 PushVectors.finish!(v::AbstractVector) = v
 
 """
@@ -384,7 +383,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     n_equality_cons = 0  # A[x;y] = b
 
-    @info """starting A,b at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}) in con_types
 
 		eq_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -406,7 +404,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     =#
     n_lessthan_cons = 0  # C[x;y] ≤ d
 
-    @info """starting C,d at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}) in con_types
 
 		lt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -421,7 +418,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 	
     n_greaterthan_cons = 0  # E[x;y] ≥ f
 
-    @info """starting E,t at $(Dates.format(now(), "HH:MM:SS"))"""
 	if (MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}) in con_types
 
 		gt_con_indices = MOI.get(m, MOI.ListOfConstraintIndices{
@@ -439,7 +435,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     yl and yu
     =#
 
-    @info """starting yl at $(Dates.format(now(), "HH:MM:SS"))"""
     yl = -Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.VariableIndex, MOI.GreaterThan{Float64}) in con_types
 
@@ -451,7 +446,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 		yl = BilevelJuMP.get_coef_matrix_and_rhs_vec(m, singleVar_gt_indices)
 	end
 	
-    @info """starting yu at $(Dates.format(now(), "HH:MM:SS"))"""
     yu = Inf*ones(MOI.get(m, MOI.NumberOfVariables()))
 	if (MOI.VariableIndex, MOI.LessThan{Float64}) in con_types
 
@@ -465,7 +459,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     # remove rows from C that only apply to one variable by moving them to the bounds in yu
 
-    @info """starting remove rows from C at $(Dates.format(now(), "HH:MM:SS"))"""
     rows_to_remove = Int[]
     for r in 1:size(C,1)
         if length(findall(!iszero, C[r, :])) == 1  # only one non-zero value in row
@@ -484,7 +477,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     # remove rows from E that only apply to one variable by moving them to the bounds in yl
 
-    @info """starting remove rows from E at $(Dates.format(now(), "HH:MM:SS"))"""
     rows_to_remove = Int[]
     for r in 1:size(E,1)
         if length(findall(!iszero, E[r, :])) == 1  # only one non-zero value in row
@@ -508,7 +500,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
               | E     I |
     =#
 
-    @info """starting build V at $(Dates.format(now(), "HH:MM:SS"))"""
     n_vars = size(A,2)
     n_rows_V = n_equality_cons + n_greaterthan_cons + n_lessthan_cons
     n_cols_V = n_vars + n_greaterthan_cons + n_lessthan_cons
@@ -529,7 +520,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
 
     # zero out the columns in V for upper level variables and build U
 
-    @info """starting build U,V loop at $(Dates.format(now(), "HH:MM:SS"))"""
     rows, cols, vals = findnz(V)
     Urows = PushVector{Int}()
     Ucols = PushVector{Int}()
@@ -551,7 +541,6 @@ function standard_form(m; upper_var_indices=Vector{MOI.VariableIndex}())
     # every time a new V is created for a problem we need to empty the cache used in find_connected_rows_cols_cached
     empty!(cache)
     w = [b; d; f]
-    @info """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
 
     return U, V, w # , yu, yl, n_equality_cons, C, E
     # TODO use n_equality_cons to check rows from find_connected_rows_cols for values corresponding to constraints with slack variables
@@ -1141,7 +1130,7 @@ function main_linearization(
         lower_primal_dual_map, 
         lower_dual_idxmap
     )
-    @info """starting main linearization at $(Dates.format(now(), "HH:MM:SS"))"""
+    @debug """starting main linearization at $(Dates.format(now(), "HH:MM:SS"))"""
     if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
         !isempty(upper_var_to_lower_ctr)
 
@@ -1152,19 +1141,19 @@ function main_linearization(
         linearize = true
         # check lower constraint types and if not just equality and singlevariable bounds then linearize = false and @warn
 
-        @info """starting is_model_in_standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
+        @debug """starting is_model_in_standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         if !(is_model_in_standard_form(lower))
             linearize = false
             @warn("The lower model must be in standard form to linearize bilinear terms. Skipping linearization process.")
         else
-            @info """starting check_upper_objective_for_bilinear_linearization at $(Dates.format(now(), "HH:MM:SS"))"""
+            @debug """starting check_upper_objective_for_bilinear_linearization at $(Dates.format(now(), "HH:MM:SS"))"""
             A_N, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal, lower_primal_var_to_lower_con = 
                 check_upper_objective_for_bilinear_linearization(upper, upper_to_lower_var_indices, upper_var_to_lower_ctr)
             if isempty(A_N)
                 @debug("No bilinear products of lower level dual and primal variables found in upper level objective. Skipping linearization process.")
                 linearize = false
             else
-                @info """starting get_lower_obj_coefs_of_upper_times_lower_primals at $(Dates.format(now(), "HH:MM:SS"))"""
+                @debug """starting get_lower_obj_coefs_of_upper_times_lower_primals at $(Dates.format(now(), "HH:MM:SS"))"""
                 AB_N, B, lower_obj_terms, lower_obj_type_handled = 
                     get_lower_obj_coefs_of_upper_times_lower_primals(lower, lower_var_indices_of_upper_vars, A_N, lower_to_m_idxmap)
                 if !lower_obj_type_handled
@@ -1179,14 +1168,15 @@ function main_linearization(
     end
 
     if linearize
-        @info """starting standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
+        @debug """starting standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         U, V, w = standard_form(lower, upper_var_indices=lower_var_indices_of_upper_vars)
+        @debug """done standard_form at $(Dates.format(now(), "HH:MM:SS"))"""
         upper_obj_func_quad_terms = MOI.get(upper, MOI.ObjectiveFunction{MOI.get(upper, MOI.ObjectiveFunctionType())}()).quadratic_terms
         linearizations = nothing
         m_objective = MOI.get(m, MOI.ObjectiveFunction{MOI.get(m, MOI.ObjectiveFunctionType())}())
         bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
-        @info """starting loop over m_objective.quadratic_terms at $(Dates.format(now(), "HH:MM:SS"))"""
+        @debug """starting loop over m_objective.quadratic_terms at $(Dates.format(now(), "HH:MM:SS"))"""
         for term in m_objective.quadratic_terms
             mset = Set([term.variable_1, term.variable_2])
             for upper_term in upper_obj_func_quad_terms
@@ -1201,7 +1191,7 @@ function main_linearization(
         end
 
         # TODO check for integer x * continuous y, for now assuming continuous x conditions
-        @info """starting get_all_connected_rows_cols at $(Dates.format(now(), "HH:MM:SS"))"""
+        @debug """starting get_all_connected_rows_cols at $(Dates.format(now(), "HH:MM:SS"))"""
         J_U, N_U = get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
         #= 
             Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
@@ -1235,13 +1225,13 @@ function main_linearization(
             
             # TODO input flag for checking for blocks? (to save time)
             
-            @info """starting find_blocks at $(Dates.format(now(), "HH:MM:SS"))"""
+            @debug """starting find_blocks at $(Dates.format(now(), "HH:MM:SS"))"""
             num_blocks, rows, cols = find_blocks(V, U)
 
             conditions_passed = Bool[]
             nrows, ncols = size(V)
             
-            @info """starting condition checks at $(Dates.format(now(), "HH:MM:SS"))"""
+            @debug """starting condition checks at $(Dates.format(now(), "HH:MM:SS"))"""
             for n in 1:num_blocks
                 # TODO can skip blocks that are not linked to bilinear terms?
                 Vblock = spzeros(nrows, ncols)
@@ -1259,7 +1249,7 @@ function main_linearization(
             
             if all(conditions_passed)
 
-                @info """starting linear_terms_for_non_empty_AB at $(Dates.format(now(), "HH:MM:SS"))"""
+                @debug """starting linear_terms_for_non_empty_AB at $(Dates.format(now(), "HH:MM:SS"))"""
                 linearizations = linear_terms_for_non_empty_AB(
                     lower,
                     upper_var_to_lower_ctr,
@@ -1286,7 +1276,7 @@ function main_linearization(
 
         if !(isnothing(linearizations))
             
-            @info """starting linearizations at $(Dates.format(now(), "HH:MM:SS"))"""
+            @debug """starting linearizations at $(Dates.format(now(), "HH:MM:SS"))"""
             # set m's objective by replacing quadratic terms with linearizations
             mobj = deepcopy(m_objective)
             quadratic_terms = mobj.quadratic_terms  # TODO keep quadratic terms that have not been linearized
@@ -1306,5 +1296,5 @@ function main_linearization(
             end
         end
     end # if linearize
-    @info """done linearizing at $(Dates.format(now(), "HH:MM:SS"))"""
+    @debug """done linearizing at $(Dates.format(now(), "HH:MM:SS"))"""
 end
