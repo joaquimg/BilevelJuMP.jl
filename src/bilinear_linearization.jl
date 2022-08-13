@@ -911,7 +911,6 @@ function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_pr
     # Condition 3: A_N \ n ⊆ N_n ∀ n ∈ A_n
     I, J, vals = findnz(V)
     met_condition = true
-    for n in A_N  # TODO Thread?
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
         # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
         _, N_n, _ = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
