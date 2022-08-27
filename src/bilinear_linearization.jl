@@ -783,12 +783,22 @@ function linear_terms_for_non_empty_AB(
         lower_primal_dual_map,
         lower_dual_idxmap
     )
-    linearizations = PushVector{MOI.ScalarAffineTerm}()
+    nt = Threads.nthreads()
+
+    linearizations = Vector{PushVector{MOI.ScalarAffineTerm}}()
+
+    for _ in 1:nt
+        push!(linearizations, PushVector{MOI.ScalarAffineTerm}())
+    end
+
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
     I, J, vals = findnz(V)
 
     # threading this for loop leads to malloc error "pointer being freed was not allocated"
-    for (upper_var, lower_con) in upper_var_to_lower_ctr  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+    # maybe can thread it when not checking linearization conditions?
+    Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
+        id = Threads.threadid()
+        lower_con = upper_var_to_lower_ctr[upper_var]
         j = lower_con.value
 
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
@@ -814,7 +824,7 @@ function linear_terms_for_non_empty_AB(
                 lower_con_index = con_type(r)
                 lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
 
-                push!(linearizations,
+                push!(linearizations[id],
                     MOI.ScalarAffineTerm(p*w[r], lower_dual_idxmap[lower_dual_var])  
                 )
             end
@@ -827,7 +837,7 @@ function linear_terms_for_non_empty_AB(
                 lower_var = MOI.VariableIndex(c)
                 # lower primal * lower cost
                 lower_var_cost_coef = BilevelJuMP.get_coef(lower_var, lower_obj_terms)
-                push!(linearizations,
+                push!(linearizations[id],
                     MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
                 )
                 # variable bound * dual variable
@@ -839,16 +849,16 @@ function linear_terms_for_non_empty_AB(
 
                 # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
                 if low_bound != -Inf && !isapprox(low_bound, 0.0; atol=1e-12) && !isnothing(low_dual)
-                    push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
+                    push!(linearizations[id], MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
                 end
                 if upp_bound != Inf && !isapprox(upp_bound, 0.0; atol=1e-12) && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
-                    push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
+                    push!(linearizations[id], MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
                 end
             end
         end
     end
 
-    return finish!(linearizations)
+    return vcat(finish!.(linearizations)...)
 end
 
 
