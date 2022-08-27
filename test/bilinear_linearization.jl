@@ -217,7 +217,8 @@ function failing_conditions_non_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
         lower_to_m_idxmap, 
         upper_to_m_idxmap,
         lower_primal_dual_map, 
-        lower_dual_idxmap
+        lower_dual_idxmap,
+        true
     )
     check_false = BilevelJuMP.check_non_empty_AB_N_conditions(J_U, U, N_U, A_N, B, V, lower_primal_var_to_lower_con, 
     upper_var_to_lower_ctr, bilinear_upper_dual_to_quad_term, bilinear_upper_dual_to_lower_primal)
