@@ -393,6 +393,7 @@ function build_maps(
     return m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap
 end
 
+
 function build_bilevel(
     upper::MOI.ModelLike, 
     lower::MOI.ModelLike,
@@ -402,7 +403,8 @@ function build_bilevel(
     upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
     copy_names::Bool = false,
     pass_start::Bool = false,
-    linearize_bilinear_upper_terms::Bool = false
+    linearize_bilinear_upper_terms::Bool = false,
+    check_linearization_conditions::Bool = true
     )
 
     m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = build_maps(
@@ -436,7 +438,8 @@ function build_bilevel(
         main_linearization(
             m, lower, upper, upper_var_to_lower_ctr, upper_to_lower_var_indices, 
             lower_var_indices_of_upper_vars, lower_to_m_idxmap, upper_to_m_idxmap, 
-            lower_primal_dual_map, lower_dual_idxmap
+            lower_primal_dual_map, lower_dual_idxmap,
+            check_linearization_conditions
         )
     end
 

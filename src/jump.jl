@@ -97,6 +97,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     copy_names_to_solver::Bool
     pass_start::Bool
     linearize_bilinear_upper_terms::Bool
+    check_linearization_conditions::Bool
 
     # for completing the JuMP.Model API
     objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
@@ -150,6 +151,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             false,
             true,
             false,
+            true,
             # jump api
             Dict{Symbol, Any}(),
             )
@@ -160,10 +162,12 @@ end
 function BilevelModel(optimizer_constructor;
         mode::AbstractBilevelSolverMode = SOS1Mode(),
         add_bridges::Bool=true,
-        linearize_bilinear_upper_terms=false
+        linearize_bilinear_upper_terms=false,
+        check_linearization_conditions=true
     )
     bm = BilevelModel()
     bm.linearize_bilinear_upper_terms = linearize_bilinear_upper_terms
+    bm.check_linearization_conditions = check_linearization_conditions
     set_mode(bm, mode)
     JuMP.set_optimizer(bm, optimizer_constructor; add_bridges=add_bridges)
     return bm
@@ -514,7 +518,8 @@ function JuMP.optimize!(model::BilevelModel;
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
         build_bilevel(upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, upper_var_lower_ctr,
             copy_names = model.copy_names, pass_start = model.pass_start, 
-            linearize_bilinear_upper_terms = model.linearize_bilinear_upper_terms)
+            linearize_bilinear_upper_terms = model.linearize_bilinear_upper_terms,
+            check_linearization_conditions = model.check_linearization_conditions)
 
     # pass additional info (hints - not actual problem data)
     # for lower level dual variables (start, upper hint, lower hint)

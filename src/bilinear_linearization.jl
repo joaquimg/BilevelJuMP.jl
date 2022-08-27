@@ -1138,7 +1138,8 @@ function main_linearization(
         lower_to_m_idxmap, 
         upper_to_m_idxmap,
         lower_primal_dual_map, 
-        lower_dual_idxmap
+        lower_dual_idxmap,
+        check_linearization_conditions
     )
     @debug """starting main linearization at $(Dates.format(now(), "HH:MM:SS"))"""
     if MOI.get(upper, MOI.ObjectiveFunctionType()) <: MOI.ScalarQuadraticFunction &&
@@ -1201,15 +1202,22 @@ function main_linearization(
         end
 
         # TODO check for integer x * continuous y, for now assuming continuous x conditions
-        @debug """starting get_all_connected_rows_cols at $(Dates.format(now(), "HH:MM:SS"))"""
-        J_U, N_U = get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
+        if check_linearization_conditions
+            @debug """starting get_all_connected_rows_cols at $(Dates.format(now(), "HH:MM:SS"))"""
+            J_U, N_U = get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
+            # J_U and N_U are needed only for checking linearization conditions
+        end
+
         #= 
             Case without x_m * y_n in LL objective for all y_n in A_N (set of bilinear UL objective terms of form λ_j * y_n)
         =#
         if isempty(AB_N)
             @debug("set AB_N is empty")
 
-            conditions_passed = check_empty_AB_N_conditions(J_U, U, N_U, B)
+            conditions_passed = true
+            if check_linearization_conditions
+                conditions_passed = check_empty_AB_N_conditions(J_U, U, N_U, B)
+            end
 
             if conditions_passed
                 linearizations = linear_terms_for_empty_AB(
@@ -1239,23 +1247,28 @@ function main_linearization(
             num_blocks, rows, cols = find_blocks(V, U)
 
             conditions_passed = Bool[]
-            nrows, ncols = size(V)
-            
-            @debug """starting condition checks at $(Dates.format(now(), "HH:MM:SS"))"""
-            for n in 1:num_blocks
-                # TODO can skip blocks that are not linked to bilinear terms?
-                Vblock = spzeros(nrows, ncols)
-                Vblock[rows[n],:] = V[rows[n],:]
-                check = check_non_empty_AB_N_conditions(
-                    intersect(J_U, rows[n]), U, intersect(N_U, cols[n]), intersect(A_N, cols[n]), B, Vblock, 
-                    lower_primal_var_to_lower_con, upper_var_to_lower_ctr,
-                    bilinear_upper_dual_to_quad_term, 
-                    bilinear_upper_dual_to_lower_primal)
-                push!(conditions_passed, check)
+
+            if check_linearization_conditions
+                nrows, ncols = size(V)
+                
+                @debug """starting condition checks at $(Dates.format(now(), "HH:MM:SS"))"""
+                for n in 1:num_blocks
+                    # TODO can skip blocks that are not linked to bilinear terms?
+                    Vblock = spzeros(nrows, ncols)
+                    Vblock[rows[n],:] = V[rows[n],:]
+                    check = check_non_empty_AB_N_conditions(
+                        intersect(J_U, rows[n]), U, intersect(N_U, cols[n]), intersect(A_N, cols[n]), B, Vblock, 
+                        lower_primal_var_to_lower_con, upper_var_to_lower_ctr,
+                        bilinear_upper_dual_to_quad_term, 
+                        bilinear_upper_dual_to_lower_primal)
+                    push!(conditions_passed, check)
+                end
+                # recover memory
+                rows, cols = nothing, nothing
+                @debug("Done looping over V blocks")
+            else
+                push!(conditions_passed, true)
             end
-            # recover memory
-            rows, cols = nothing, nothing
-            @debug("Done looping over V blocks")
             
             if all(conditions_passed)
 
