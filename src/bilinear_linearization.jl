@@ -187,6 +187,7 @@ end
 function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
+    store_cache=true
     )
     
     if (row, col, skip_1st_col_check, finding_blocks) ∉ keys(cache)
@@ -232,7 +233,10 @@ function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int;
             push!(rows, rows_to_add...)
             push!(cols, cols_to_add...)
         end
-        
+        if !store_cache
+            # when not checking linearization conditions, storing in the cache unnecessarily consumes memory
+            return finish!(rows), finish!(cols), redundant_vals
+        end
         cache[(row, col, skip_1st_col_check, finding_blocks)] = finish!(rows), finish!(cols), redundant_vals
     end
     return cache[(row, col, skip_1st_col_check, finding_blocks)]
@@ -781,8 +785,10 @@ function linear_terms_for_non_empty_AB(
         lower_obj_terms,
         lower_to_m_idxmap,
         lower_primal_dual_map,
-        lower_dual_idxmap
+        lower_dual_idxmap,
+        store_cache
     )
+    # TODO add store_cache to empty AB functions
     nt = Threads.nthreads()
 
     linearizations = Vector{PushVector{MOI.ScalarAffineTerm}}()
@@ -809,7 +815,9 @@ function linear_terms_for_non_empty_AB(
             end
             n = lower_var.value
             # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
-            rows, cols, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
+            rows, cols, redundant_vals = find_connected_rows_cols_cached(
+                V, I, J, vals, j, n, skip_1st_col_check=true, store_cache=store_cache
+            )
             # rows is set J_j, cols is set N_n
             if redundant_vals
                 return nothing
@@ -1188,6 +1196,7 @@ function main_linearization(
         bilinear_upper_quad_term_to_m_quad_term = Dict{MOI.ScalarQuadraticTerm, MOI.ScalarQuadraticTerm}()
 
         @debug """starting loop over m_objective.quadratic_terms at $(Dates.format(now(), "HH:MM:SS"))"""
+        # TODO thread or speed this up some how?
         for term in m_objective.quadratic_terms
             mset = Set([term.variable_1, term.variable_2])
             for upper_term in upper_obj_func_quad_terms
@@ -1284,7 +1293,8 @@ function main_linearization(
                     lower_obj_terms,
                     lower_to_m_idxmap,
                     lower_primal_dual_map,
-                    lower_dual_idxmap
+                    lower_dual_idxmap,
+                    check_linearization_conditions
                 )
                 if isnothing(linearizations)
                     @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
