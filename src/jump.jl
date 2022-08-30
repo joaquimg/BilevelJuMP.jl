@@ -579,6 +579,61 @@ function JuMP.optimize!(model::BilevelModel;
 
     MOI.optimize!(solver)
 
+    if isa(mode,ProductMode) && length(mode.IterativeEpsilon) > 0
+
+        println("  Iteration        Temination Status            Primal Status                Objective          Time")
+        if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            println(lpad(0, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
+            for (idx,eps) in enumerate(mode.IterativeEpsilon)
+                for VarIdx in MOI.get(single_blm, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+                    solverVarIdx = sblm_to_solver[VarIdx]
+                    MOI.set(single_blm, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), solverVarIdx))
+                end
+                for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
+                    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+                        solverCtrIdx = sblm_to_solver[CtrIdx]
+                        MOI.set(single_blm, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), solverCtrIdx))
+                    end
+                end
+                for CtrIdx in mode.comp_idx_in_sblm 
+                    MOI.set(single_blm,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
+                end
+                MOI.empty!(solver)
+                model.sblm_to_solver = MOI.copy_to(solver, single_blm)
+                MOI.optimize!(solver)
+                
+                if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+                    println(lpad(idx, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
+                else
+                    println(lpad(idx, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad("---", 25), lpad(round(time()-t0;digits=2),15))
+                    break
+                end
+            end
+        end
+        if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            println(lpad("Termination", 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
+        else
+            println(lpad("Termination", 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad("---", 25), lpad(round(time()-t0;digits=2),15))
+        end
+
+
+        # for (idx,eps) in enumerate(mode.IterativeEpsilon)
+        #     for VarIdx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        #         MOI.set(solver, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), VarIdx))
+        #     end
+        #     for (F, S) in MOI.get(solver, MOI.ListOfConstraintTypesPresent())
+        #         for CtrIdx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
+        #             MOI.set(solver, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), CtrIdx))
+        #         end
+        #     end
+        #     for comp in mode.comp_idx_in_sblm
+        #         CtrIdx = sblm_to_solver[comp]
+        #         MOI.set(solver,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
+        #     end
+        #     MOI.optimize!(solver)
+        # end
+    end
+
     model.solve_time = time() - t1
 
     reset!(mode)

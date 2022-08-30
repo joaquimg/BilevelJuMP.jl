@@ -90,11 +90,14 @@ end
 
 mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
     epsilon::T
+    IterativeEpsilon::Vector{T}
     with_slack::Bool
+    comp_idx_in_sblm::Vector{CI}
     aggregation_group::Int # only useful in mixed mode
     function_cache::Union{Nothing, MOI.AbstractScalarFunction}
     function ProductMode(
         eps::T=zero(Float64);
+        ItEps::Vector{T}=T[],
         with_slack::Bool = false,
         aggregation_group = nothing
     ) where T<:Float64 # Real
@@ -103,7 +106,9 @@ mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
         # positive integers point to their numbers
         return new{Float64}(
             eps,
+            ItEps,
             with_slack,
+            Vector{CI}(),
             aggregation_group === nothing ? 0 : aggregation_group,
             nothing,
             )
@@ -178,6 +183,7 @@ function reset!(mode::FortunyAmatMcCarlMode)
 end
 function reset!(mode::ProductMode)
     mode.function_cache = nothing
+    mode.comp_idx_in_sblm = Vector{CI}()
     return nothing
 end
 function reset!(mode::MixedMode)
@@ -794,6 +800,7 @@ function add_complement(mode::ProductMode{T}, m, comp::Complement,
             add_function_to_cache(mode, new_f)
         end
     end
+    appush!(mode.comp_idx_in_sblm,out_ctr)
     return out_var, out_ctr
 end
 
