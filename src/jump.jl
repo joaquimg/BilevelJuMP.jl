@@ -579,60 +579,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     MOI.optimize!(solver)
 
-    if isa(mode,ProductMode) && length(mode.IterativeEpsilon) > 0
-
-        println("  Iteration        Temination Status            Primal Status                Objective          Time")
-        if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-            println(lpad(0, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
-            for (idx,eps) in enumerate(mode.IterativeEpsilon)
-                for VarIdx in MOI.get(single_blm, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
-                    solverVarIdx = sblm_to_solver[VarIdx]
-                    MOI.set(single_blm, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), solverVarIdx))
-                end
-                for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
-                    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
-                        solverCtrIdx = sblm_to_solver[CtrIdx]
-                        MOI.set(single_blm, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), solverCtrIdx))
-                    end
-                end
-                for CtrIdx in mode.comp_idx_in_sblm 
-                    MOI.set(single_blm,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
-                end
-                MOI.empty!(solver)
-                model.sblm_to_solver = MOI.copy_to(solver, single_blm)
-                MOI.optimize!(solver)
-                
-                if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-                    println(lpad(idx, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
-                else
-                    println(lpad(idx, 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad("---", 25), lpad(round(time()-t0;digits=2),15))
-                    break
-                end
-            end
-        end
-        if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-            println(lpad("Termination", 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad(Printf.@sprintf("%.8e", MOI.get(solver, MOI.ObjectiveValue())), 25), lpad(round(time()-t0;digits=2),15))
-        else
-            println(lpad("Termination", 11),lpad(MOI.get(solver, MOI.TerminationStatus()), 25),lpad(MOI.get(solver, MOI.PrimalStatus()), 25), lpad("---", 25), lpad(round(time()-t0;digits=2),15))
-        end
-
-
-        # for (idx,eps) in enumerate(mode.IterativeEpsilon)
-        #     for VarIdx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
-        #         MOI.set(solver, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), VarIdx))
-        #     end
-        #     for (F, S) in MOI.get(solver, MOI.ListOfConstraintTypesPresent())
-        #         for CtrIdx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
-        #             MOI.set(solver, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), CtrIdx))
-        #         end
-        #     end
-        #     for comp in mode.comp_idx_in_sblm
-        #         CtrIdx = sblm_to_solver[comp]
-        #         MOI.set(solver,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
-        #     end
-        #     MOI.optimize!(solver)
-        # end
-    end
+    iterative_optimize!(solver, mode, single_blm, model, t0)
 
     model.solve_time = time() - t1
 
@@ -894,4 +841,93 @@ function MOI.set(::BilevelModel, ::MOI.UserCutCallback, func)
 end
 function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
     error("Callbacks are not available in BilevelJuMP Models")
+end
+
+function iterative_optimize!(solver, mode, single_blm, model, t0) nothing end
+
+function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0) where T
+    if isempty(mode.IterativeEpsilon)
+        return nothing
+    end
+
+    TerminationEpsilon = mode.epsilon
+
+    if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        println("Starting iterative ProductMode(), printing log below: ")
+        _print_iter_log(;Iteration=0, Regularization=mode.epsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true)
+        for (iter,eps) in enumerate(mode.IterativeEpsilon)
+
+            SetIterPrimalStarts!(single_blm, solver, model.sblm_to_solver)
+            SetIterDualStarts!(single_blm, solver, model.sblm_to_solver)
+            SetIterRegularizations!(single_blm, eps, mode.comp_idx_in_sblm)
+            
+            MOI.empty!(solver)
+            model.sblm_to_solver = MOI.copy_to(solver, single_blm)
+            MOI.optimize!(solver)
+
+            _print_iter_log(;Iteration=iter, Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+
+            TerminationEpsilon = eps
+
+            if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+                break
+            end
+
+        end
+    else
+        @warn "Unable to start iterative ProductMode(). You may want to retry with a larger initial regularizer. For more information see below:"
+    end
+
+    _print_iter_log(;Iteration="Terminated", Regularization=TerminationEpsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true, bottomline=true)
+
+    return nothing
+
+end
+
+function _print_iter_log(;Iteration, Regularization, TerminationStatus, PrimalStatus, ObjectiveValue, t, header=false, bottomline=false, upperline=false)
+    colwidth = Dict(:Iteration=>11, :Regularization=>20, :TerminationStatus=>25, :PrimalStatus=>25, :ObjectiveValue=>25, :t=>15)
+    if upperline
+        println(repeat("-",sum(values(colwidth))))
+    end
+    if header
+        println(lpad("Iteration", colwidth[:Iteration]),lpad("Regularization", colwidth[:Regularization]),lpad("Termination Status", colwidth[:TerminationStatus]),lpad("Primal Status", colwidth[:PrimalStatus]), lpad("Objective Value", colwidth[:ObjectiveValue]), lpad("Time",colwidth[:t]) )
+    end
+    if PrimalStatus ∈ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.8e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(Printf.@sprintf("%.8e",ObjectiveValue), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+    else
+        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.8e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(repeat('-', 14), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+    end
+    if bottomline
+        println(repeat("-",sum(values(colwidth))))
+    end
+end
+
+function SetIterPrimalStarts!(single_blm, solver, sblm_to_solver)
+    for VarIdx in MOI.get(single_blm, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        solverVarIdx = sblm_to_solver[VarIdx]
+        MOI.set(single_blm, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), solverVarIdx))
+    end
+end
+
+function SetIterDualStarts!(single_blm, solver, sblm_to_solver)
+    for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
+        _SetIterDualStart!(single_blm, F, S, solver, sblm_to_solver)
+    end
+end
+
+function _SetIterDualStart!(single_blm, F, S, solver, sblm_to_solver)
+    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+        solverCtrIdx = sblm_to_solver[CtrIdx]
+        MOI.set(single_blm, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), solverCtrIdx))
+    end
+end
+
+function _SetIterDualStart!(single_blm, F::MOI.VectorAffineFunction, S, solver, sblm_to_solver)
+    error("Vector valued functions not yet supported in iterative ProductMode()")
+end
+
+function SetIterRegularizations!(single_blm, eps, comp_idx_in_sblm)
+    for CtrIdx in comp_idx_in_sblm 
+        MOI.set(single_blm,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
+    end
 end
