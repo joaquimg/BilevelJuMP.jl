@@ -91,13 +91,15 @@ end
 mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
     epsilon::T
     IterativeEpsilon::Vector{T}
+    IterativeAttributes
     with_slack::Bool
     comp_idx_in_sblm::Vector{CI}
     aggregation_group::Int # only useful in mixed mode
     function_cache::Union{Nothing, MOI.AbstractScalarFunction}
     function ProductMode(
         eps::T=zero(Float64);
-        ItEps::Vector{T}=T[],
+        IterEps::Vector{T}=T[],
+        IterAttr=Dict(),
         with_slack::Bool = false,
         aggregation_group = nothing
     ) where T<:Float64 # Real
@@ -106,7 +108,8 @@ mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
         # positive integers point to their numbers
         return new{Float64}(
             eps,
-            ItEps,
+            IterEps,
+            IterAttr,
             with_slack,
             Vector{CI}(),
             aggregation_group === nothing ? 0 : aggregation_group,

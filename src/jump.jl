@@ -853,6 +853,9 @@ function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0
     TerminationEpsilon = mode.epsilon
 
     if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        for (attr,val) in mode.IterativeAttributes
+            MOI.set(solver,MOI.RawOptimizerAttribute(attr),val)
+        end
         println("Starting iterative ProductMode(), printing log below: ")
         _print_iter_log(;Iteration=0, Regularization=mode.epsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true)
         for (iter,eps) in enumerate(mode.IterativeEpsilon)
@@ -863,6 +866,17 @@ function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0
             
             MOI.empty!(solver)
             model.sblm_to_solver = MOI.copy_to(solver, single_blm)
+
+            # There seems to be a bug (or feature) that duals to variable bounds are sometimes not copied by MOI.copy_to for some solvers. The following loop is a workaround, but shouldn't stay...
+            for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
+                if F in [MOI.VariableIndex]
+                    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+                        solverCtrIdx = model.sblm_to_solver[CtrIdx]
+                        MOI.set(solver, MOI.ConstraintDualStart(), solverCtrIdx, MOI.get(single_blm, MOI.ConstraintDualStart(), CtrIdx))
+                    end
+                end
+            end
+
             MOI.optimize!(solver)
 
             _print_iter_log(;Iteration=iter, Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
