@@ -235,7 +235,8 @@ function failing_conditions_non_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
         lower_obj_terms,
         lower_to_m_idxmap,
         lower_primal_dual_map,
-        lower_dual_idxmap
+        lower_dual_idxmap,
+        false
     )
 end
 
