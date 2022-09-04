@@ -70,7 +70,7 @@ function recursive_col_search(A::AbstractArray, row::Int, col::Int,
 end
 
 # a version of recursive_col_search that works with I,J,vals = findnz(V)
-function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, vals::Vector{<:Real}, row::Int, col::Int, 
+function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, row::Int, col::Int, 
     rows::AbstractVector{Int}, cols::AbstractVector{Int})
 
     rs = non_zero_idxs_except_one_IJV(I, J, col, row)
@@ -91,7 +91,7 @@ function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, vals::Vector{<
         end
         push!(cols, cs...)
         for c in cs
-            recursive_col_search_IJV(I, J, vals, r, c, rows, cols)
+            recursive_col_search_IJV(I, J, r, c, rows, cols)
         end
     end
     return finish!(rows), finish!(cols)
@@ -184,7 +184,7 @@ function find_connected_rows_cols(A::AbstractArray, row::Int, col::Int;
 end
 
 
-function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int; 
+function find_connected_rows_cols_cached(A, I, J, row::Int, col::Int; 
     skip_1st_col_check=false,
     finding_blocks=false,
     store_cache=true
@@ -213,7 +213,7 @@ function find_connected_rows_cols_cached(A, I, J, vals, row::Int, col::Int;
         rows_to_add, cols_to_add = Int[], Int[]
         for c in cols_to_check
             try
-                rows_to_add, cols_to_add = recursive_col_search_IJV(I,J,vals, row, c, Int[], Int[])
+                rows_to_add, cols_to_add = recursive_col_search_IJV(I, J, row, c, Int[], Int[])
             catch e
                 if isa(e, UnderDeterminedException)
                     if finding_blocks  # then we still need to add the connected rows and cols
@@ -724,7 +724,7 @@ function linear_terms_for_empty_AB(
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
 
-            J_j, N_n, redundant_vals = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=false)
+            J_j, N_n, redundant_vals = find_connected_rows_cols_cached(V, I, J, j, n, skip_1st_col_check=false)
             if redundant_vals
                 return nothing
             end
@@ -816,7 +816,7 @@ function linear_terms_for_non_empty_AB(
             n = lower_var.value
             # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
             rows, cols, redundant_vals = find_connected_rows_cols_cached(
-                V, I, J, vals, j, n, skip_1st_col_check=true, store_cache=store_cache
+                V, I, J, j, n, skip_1st_col_check=true, store_cache=store_cache
             )
             # rows is set J_j, cols is set N_n
             if redundant_vals
@@ -922,7 +922,7 @@ function check_condition_3(A_N::AbstractVector{Int}, V::AbstractMatrix, lower_pr
     Threads.@threads for n in A_N
         j = lower_primal_var_to_lower_con[MOI.VariableIndex(n)].value
         # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
-        _, N_n, _ = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=true)
+        _, N_n, _ = find_connected_rows_cols_cached(V, I, J, j, n, skip_1st_col_check=true)
         # NOTE not handling redundant_vals here b/c goal is to first check conditions 
         # (redundant_vals handled when determining linearizations)
         if !(issubset(setdiff(A_N, n), N_n))
@@ -1112,7 +1112,7 @@ function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual
         j = lower_con.value
         for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
             n = lower_var.value
-            rows, cols = find_connected_rows_cols_cached(V, I, J, vals, j, n, skip_1st_col_check=!(isempty(AB_N)))
+            rows, cols = find_connected_rows_cols_cached(V, I, J, j, n, skip_1st_col_check=!(isempty(AB_N)))
             push!(J_Us[Threads.threadid()], rows...)
             push!(N_Us[Threads.threadid()], cols...)
         end
