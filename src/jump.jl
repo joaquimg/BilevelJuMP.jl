@@ -858,35 +858,12 @@ function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0
         end
         println("Starting iterative ProductMode(), printing log below: ")
         _print_iter_log(;Iteration=0, Regularization=mode.epsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true)
-        for (iter,eps) in enumerate(mode.IterativeEpsilon)
-
-            SetIterPrimalStarts!(single_blm, solver, model.sblm_to_solver)
-            SetIterDualStarts!(single_blm, solver, model.sblm_to_solver)
-            SetIterRegularizations!(single_blm, eps, mode.comp_idx_in_sblm)
-            
-            MOI.empty!(solver)
-            model.sblm_to_solver = MOI.copy_to(solver, single_blm)
-
-            # There seems to be a bug (or feature) that duals to variable bounds are sometimes not copied by MOI.copy_to for some solvers. The following loop is a workaround, but shouldn't stay...
-            for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
-                if F in [MOI.VariableIndex]
-                    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
-                        solverCtrIdx = model.sblm_to_solver[CtrIdx]
-                        MOI.set(solver, MOI.ConstraintDualStart(), solverCtrIdx, MOI.get(single_blm, MOI.ConstraintDualStart(), CtrIdx))
-                    end
-                end
-            end
-
-            MOI.optimize!(solver)
-
-            _print_iter_log(;Iteration=iter, Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
-
-            TerminationEpsilon = eps
-
-            if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-                break
-            end
-
+        
+        if MOI.supports_incremental_interface(solver)
+            comp_idxs_in_solver = get_solver_comp_idxs(model, mode)
+            TerminationEpsilon = _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
+        else
+            TerminationEpsilon = _iterative_optimize_copy!(single_blm, solver, mode, model, t0)
         end
     else
         @warn "Unable to start iterative ProductMode(). You may want to retry with a larger initial regularizer. For more information see below:"
@@ -898,6 +875,62 @@ function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0
 
 end
 
+function get_solver_comp_idxs(model, mode::ProductMode{T}) where T
+    [model.sblm_to_solver[comp_idx_in_sblm] for comp_idx_in_sblm in mode.comp_idx_in_sblm ]
+end
+
+function _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
+    for (iter,eps) in enumerate(mode.IterativeEpsilon)
+
+        SetIterPrimalStarts!(solver)
+        SetIterDualStarts!(solver)
+        SetIterRegularizations!(solver, eps, comp_idxs_in_solver)
+
+        MOI.optimize!(solver)
+
+        _print_iter_log(;Iteration="$(iter)s", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+
+        TerminationEpsilon = eps
+
+        if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            return TerminationEpsilon
+        end
+    end
+    return mode.IterativeEpsilon[end]
+end
+
+function _iterative_optimize_copy!(single_blm, solver, mode, model, t0)
+    for (iter,eps) in enumerate(mode.IterativeEpsilon)
+        SetIterPrimalStarts!(single_blm, solver, model.sblm_to_solver)
+        SetIterDualStarts!(single_blm, solver, model.sblm_to_solver)
+        SetIterRegularizations!(single_blm, eps, mode.comp_idx_in_sblm)
+        
+        MOI.empty!(solver)
+        model.sblm_to_solver = MOI.copy_to(solver, single_blm)
+
+        # There seems to be a bug (or feature) that duals to variable bounds are sometimes not copied by MOI.copy_to for Ipopt. The following loop is a workaround, but shouldn't stay...
+        for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
+            if F in [MOI.VariableIndex]
+                for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+                    solverCtrIdx = model.sblm_to_solver[CtrIdx]
+                    MOI.set(solver, MOI.ConstraintDualStart(), solverCtrIdx, MOI.get(single_blm, MOI.ConstraintDualStart(), CtrIdx))
+                end
+            end
+        end
+
+        MOI.optimize!(solver)
+
+        _print_iter_log(;Iteration="$(iter)c", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+
+        TerminationEpsilon = eps
+
+        if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            return TerminationEpsilon
+        end
+    end
+    return mode.IterativeEpsilon[end]
+end
+
 function _print_iter_log(;Iteration, Regularization, TerminationStatus, PrimalStatus, ObjectiveValue, t, header=false, bottomline=false, upperline=false)
     colwidth = Dict(:Iteration=>11, :Regularization=>20, :TerminationStatus=>25, :PrimalStatus=>25, :ObjectiveValue=>25, :t=>15)
     if upperline
@@ -907,9 +940,9 @@ function _print_iter_log(;Iteration, Regularization, TerminationStatus, PrimalSt
         println(lpad("Iteration", colwidth[:Iteration]),lpad("Regularization", colwidth[:Regularization]),lpad("Termination Status", colwidth[:TerminationStatus]),lpad("Primal Status", colwidth[:PrimalStatus]), lpad("Objective Value", colwidth[:ObjectiveValue]), lpad("Time",colwidth[:t]) )
     end
     if PrimalStatus ∈ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.8e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(Printf.@sprintf("%.8e",ObjectiveValue), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.5e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(Printf.@sprintf("%.8e",ObjectiveValue), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
     else
-        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.8e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(repeat('-', 14), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.5e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(repeat('-', 14), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
     end
     if bottomline
         println(repeat("-",sum(values(colwidth))))
@@ -940,8 +973,31 @@ function _SetIterDualStart!(single_blm, F::MOI.VectorAffineFunction, S, solver, 
     error("Vector valued functions not yet supported in iterative ProductMode()")
 end
 
-function SetIterRegularizations!(single_blm, eps, comp_idx_in_sblm)
-    for CtrIdx in comp_idx_in_sblm 
-        MOI.set(single_blm,MOI.ConstraintSet(),CtrIdx,MOI.LessThan(eps))
+function SetIterRegularizations!(m, eps, comp_idxs)
+    for CtrIdx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.LessThan(eps))
     end
+end
+
+
+function SetIterPrimalStarts!(solver)
+    for VarIdx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        MOI.set(solver, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), VarIdx))
+    end
+end
+
+function SetIterDualStarts!(solver)
+    for (F, S) in MOI.get(solver, MOI.ListOfConstraintTypesPresent())
+        _SetIterDualStart!(F, S, solver)
+    end
+end
+
+function _SetIterDualStart!(F, S, solver)
+    for CtrIdx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
+        MOI.set(solver, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), CtrIdx))
+    end
+end
+
+function _SetIterDualStart!(F::MOI.VectorAffineFunction, S, solver)
+    error("Vector valued functions not yet supported in iterative ProductMode()")
 end
