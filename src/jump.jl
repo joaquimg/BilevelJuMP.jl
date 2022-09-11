@@ -888,7 +888,7 @@ function _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
 
         MOI.optimize!(solver)
 
-        _print_iter_log(;Iteration="$(iter)s", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+        _print_iter_log(;Iteration="s$(iter)", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
 
         TerminationEpsilon = eps
 
@@ -908,19 +908,9 @@ function _iterative_optimize_copy!(single_blm, solver, mode, model, t0)
         MOI.empty!(solver)
         model.sblm_to_solver = MOI.copy_to(solver, single_blm)
 
-        # There seems to be a bug (or feature) that duals to variable bounds are sometimes not copied by MOI.copy_to for Ipopt. The following loop is a workaround, but shouldn't stay...
-        for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
-            if F in [MOI.VariableIndex]
-                for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
-                    solverCtrIdx = model.sblm_to_solver[CtrIdx]
-                    MOI.set(solver, MOI.ConstraintDualStart(), solverCtrIdx, MOI.get(single_blm, MOI.ConstraintDualStart(), CtrIdx))
-                end
-            end
-        end
-
         MOI.optimize!(solver)
 
-        _print_iter_log(;Iteration="$(iter)c", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+        _print_iter_log(;Iteration="c$(iter)", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
 
         TerminationEpsilon = eps
 
