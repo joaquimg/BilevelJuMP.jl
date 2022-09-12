@@ -845,7 +845,7 @@ end
 
 function iterative_optimize!(solver, mode, single_blm, model, t0) nothing end
 
-function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0) where T
+function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model::BilevelModel, t0) where T
     if isempty(mode.IterativeEpsilon)
         return nothing
     end
@@ -875,16 +875,16 @@ function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model, t0
 
 end
 
-function get_solver_comp_idxs(model, mode::ProductMode{T}) where T
+function get_solver_comp_idxs(model::BilevelModel, mode::ProductMode{T}) where T
     [model.sblm_to_solver[comp_idx_in_sblm] for comp_idx_in_sblm in mode.comp_idx_in_sblm ]
 end
 
-function _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
+function _iterative_optimize_solver!(solver, mode::ProductMode{T}, comp_idxs_in_solver::Vector{MathOptInterface.ConstraintIndex{F, S}}, t0) where {T, F, S}
     for (iter,eps) in enumerate(mode.IterativeEpsilon)
 
         SetIterPrimalStarts!(solver)
         SetIterDualStarts!(solver)
-        SetIterRegularizations!(solver, eps, comp_idxs_in_solver)
+        SetIterRegularizations!(solver, eps, comp_idxs_in_solver, S)
 
         MOI.optimize!(solver)
 
@@ -899,7 +899,7 @@ function _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
     return mode.IterativeEpsilon[end]
 end
 
-function _iterative_optimize_copy!(single_blm, solver, mode, model, t0)
+function _iterative_optimize_copy!(single_blm, solver, mode::ProductMode{T}, model::BilevelModel, t0) where T
     for (iter,eps) in enumerate(mode.IterativeEpsilon)
         SetIterPrimalStarts!(single_blm, solver, model.sblm_to_solver)
         SetIterDualStarts!(single_blm, solver, model.sblm_to_solver)
@@ -969,6 +969,17 @@ function SetIterRegularizations!(m, eps, comp_idxs)
     end
 end
 
+function SetIterRegularizations!(m, eps, comp_idxs, S::Type{MOI.LessThan{T}}) where T
+    for CtrIdx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.LessThan(eps))
+    end
+end
+
+function SetIterRegularizations!(m, eps, comp_idxs, S::Type{MOI.GreaterThan{T}}) where T
+    for CtrIdx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.GreaterThan(-1*eps))
+    end
+end
 
 function SetIterPrimalStarts!(solver)
     for VarIdx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}

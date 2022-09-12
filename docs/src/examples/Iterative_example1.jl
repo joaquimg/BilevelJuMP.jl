@@ -27,13 +27,13 @@ using JuMP, BilevelJuMP, Ipopt
 
 # First, we need to specify an iterable with our desired regularization values.
 # The problem will be solved for each element in this series, while the next step starts at the optimal values of the previous iteration. 
-# Note, that this iterable specifies regularization parameters after a first solve with the initial value 1e-0. 
+# Note, that this iterable specifies regularization parameters after a first solve with the initial value (later set to 1e-0). 
 IterEps = [1e-0 * 0.99^i for i in 1:1500]
 
 # Also, it is possible to give specific solver attributes that are not valid for the initial solve, but only subsequent ones.
-# Warmstarting interior point algorithms is difficult, but some of the following options can be recommended. 
-# Allowing warmstarts in Ipopt explicitly is necessary in Ipopt, this may vary with different solvers.
-# Also, we are suppressing solver outputs for all but the first iteration (and could instead write a log to a file using the commented lines).
+# Warmstarting interior point algorithms is difficult, but some of the following options can be recommended for Ipopt. 
+# Allowing warmstarts explicitly is necessary in Ipopt, this may vary with different solvers.
+# In addition, we are suppressing solver outputs for all but the first iteration (and could instead write a log to a file using the commented lines).
 
 IterAttr = Dict( 
     "mu_init" => 1e-9, 
@@ -77,7 +77,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-0;IterEp
 set_optimizer_attribute(model, "mu_target", 1e-9)
 
 # Warmstarting the first iteration is also possible, start values need to be provided using set_start_value() and set_dual_start_value() functions, or in the variable declarations.
-# Note, that if you are using starting values, the solver options must be set accordingly for the first iteration (as above...).
+# Note, that if you are using starting values, the solver options must be set accordingly for the first iteration (as with mu_target, not via IterAttr...).
 
 # Finally, we can optimize: 
 optimize!(model)
@@ -87,3 +87,41 @@ optimize!(model)
 @test value(y) ≈ 6 atol=1e-4
 @test value(z) ≈ 1 atol=1e-4
 @test value(w) ≈ 1 atol=1e-4
+
+
+# It is important to check that the solver actually accepts and uses our warmstart as desired. Otherwise, the iterative solution procedure does not work at all!
+# The following script illustrates how one can verify the desired behavior; the math remains unchanged from above...
+# This time, we do not suppress any solver output. You can see that IterEps only contains one value (and it is the same as the regularization specified for the initial solve).
+# If all options for the warmstart are set correctly, you should see that the solver (in our case Ipopt) accepts the warmstart solution as optimal. 
+# Primal and dual infeasibility of the initial point (inf_pr/inf_du) should be very low (i.e. within solver specified tolerances for optimal termination). 
+# In our example, both should be less than 1e-9. 
+# This is an important check to run before your true task, 
+# It is left to the user to verify that using an empty IterAttr does not yield the same bahavior. 
+
+using JuMP, BilevelJuMP, Ipopt
+IterEps = [1e-0 for i in 1:1]
+IterAttr = Dict( 
+    "mu_init" => 1e-9, 
+    "warm_start_init_point"=> "yes", 
+    "warm_start_bound_push"=> 1e-12, 
+    "warm_start_bound_frac"=> 1e-12, 
+    "warm_start_slack_bound_frac"=> 1e-12, 
+    "warm_start_slack_bound_push"=> 1e-12, 
+    "warm_start_mult_bound_push" => 1e-12, 
+    )
+TestModel = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-0;IterEps=IterEps, IterAttr = IterAttr))
+@variable(Upper(TestModel), x)
+@variable(UpperOnly(TestModel), z)
+@variable(Lower(TestModel), y)
+@variable(LowerOnly(TestModel), w)
+@objective(Upper(TestModel), Min, -x + 4y + z)
+@constraint(Upper(TestModel), y + 2x + z <= 9)
+@constraint(Upper(TestModel), z == 1)
+@objective(Lower(TestModel), Min, -x - y + w)
+@constraint(Lower(TestModel),  y >= 0)
+@constraint(Lower(TestModel), x + y + w <= 8)
+@constraint(Lower(TestModel),  x >= 0)
+@constraint(Lower(TestModel),  x <= 4)
+@constraint(Lower(TestModel),  w == 1)
+set_optimizer_attribute(TestModel, "mu_target", 1e-9)
+optimize!(TestModel)
