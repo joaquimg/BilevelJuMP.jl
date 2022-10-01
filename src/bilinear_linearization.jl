@@ -20,14 +20,14 @@ end
 
 
 # switch input of I,J for finding cs
-function non_zero_idxs_except_one_IJV(I, J, col::Int, idx::Int)
+function non_zero_idxs_except_one_IJV(I::Vector{Int}, J::Vector{Int}, col::Int, idx::Int)::Vector{Int}
     rs = PushVector{Int}()
     for (i,v) in enumerate(J)
         if v == col && I[i] != idx
             push!(rs, I[i])
         end
     end
-    return rs  # need finish! ?
+    return finish!(rs)
 end
 
 
@@ -71,7 +71,7 @@ end
 
 # a version of recursive_col_search that works with I,J,vals = findnz(V)
 function recursive_col_search_IJV(I::Vector{Int}, J::Vector{Int}, row::Int, col::Int, 
-    rows::AbstractVector{Int}, cols::AbstractVector{Int})
+    rows::PushVector{Int}, cols::PushVector{Int})::Tuple{Vector{Int}, Vector{Int}}
 
     rs = non_zero_idxs_except_one_IJV(I, J, col, row)
     # rs = non_zero_idxs_except_one(A[:, col], row)
@@ -188,7 +188,7 @@ function find_connected_rows_cols_cached(A, I, J, row::Int, col::Int;
     skip_1st_col_check=false,
     finding_blocks=false,
     store_cache=true
-    )
+    )::Tuple{Vector{Int}, Vector{Int}, Bool}
     
     if (row, col, skip_1st_col_check, finding_blocks) ∉ keys(cache)
         if A[row, col] == 0 
@@ -213,7 +213,7 @@ function find_connected_rows_cols_cached(A, I, J, row::Int, col::Int;
         rows_to_add, cols_to_add = Int[], Int[]
         for c in cols_to_check
             try
-                rows_to_add, cols_to_add = recursive_col_search_IJV(I, J, row, c, Int[], Int[])
+                rows_to_add, cols_to_add = recursive_col_search_IJV(I, J, row, c, PushVector{Int}(), PushVector{Int}())
             catch e
                 if isa(e, UnderDeterminedException)
                     if finding_blocks  # then we still need to add the connected rows and cols
@@ -235,9 +235,9 @@ function find_connected_rows_cols_cached(A, I, J, row::Int, col::Int;
         end
         if !store_cache
             # when not checking linearization conditions, storing in the cache unnecessarily consumes memory
-            return finish!(rows), finish!(cols), redundant_vals
+            return rows, cols, redundant_vals
         end
-        cache[(row, col, skip_1st_col_check, finding_blocks)] = finish!(rows), finish!(cols), redundant_vals
+        cache[(row, col, skip_1st_col_check, finding_blocks)] = rows, cols, redundant_vals
     end
     return cache[(row, col, skip_1st_col_check, finding_blocks)]
 end
@@ -787,7 +787,7 @@ function linear_terms_for_non_empty_AB(
         lower_primal_dual_map,
         lower_dual_idxmap,
         store_cache
-    )
+    )::Vector{MOI.ScalarAffineTerm}
     # TODO add store_cache to empty AB functions
     nt = Threads.nthreads()
 
@@ -798,10 +798,8 @@ function linear_terms_for_non_empty_AB(
     end
 
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
-    I, J, vals = findnz(V)
+    I, J, _ = findnz(V)
 
-    # threading this for loop leads to malloc error "pointer being freed was not allocated"
-    # maybe can thread it when not checking linearization conditions?
     Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
         id = Threads.threadid()
         lower_con = upper_var_to_lower_ctr[upper_var]
@@ -1095,7 +1093,7 @@ function is_model_in_standard_form(m::MOI.ModelLike)
 end
 
 
-function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N) # TODO rm V arg
+function get_all_connected_rows_cols(upper_var_to_lower_ctr, bilinear_upper_dual_to_lower_primal, V, AB_N)
 
     # have to create nthreads arrays and then combine them at the end (to be thread safe)
     J_Us = Vector{PushVector{Int}}()
