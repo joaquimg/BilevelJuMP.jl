@@ -840,7 +840,6 @@ function linear_terms_for_non_empty_AB(
                 lower_con_index = con_type(r)
                 lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
 
-                @info("adding term: p=$p,  w=$(w[r]), times lower dual")
                 push!(linearizations,
                     MOI.ScalarAffineTerm(p*w[r], lower_dual_idxmap[lower_dual_var])  
                 )
@@ -855,7 +854,6 @@ function linear_terms_for_non_empty_AB(
                 # lower primal * lower cost
                 lower_var_cost_coef = BilevelJuMP.get_coef(lower_var, lower_obj_terms)
                 if !isapprox(lower_var_cost_coef, 0.0; atol=1e-12)
-                    @info("adding term: p=$p,  c=$lower_var_cost_coef, times lower var")
                     push!(linearizations,
                         MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
                     )
@@ -870,11 +868,9 @@ function linear_terms_for_non_empty_AB(
                 # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
                 if low_bound != -Inf && !isapprox(low_bound, 0.0; atol=1e-12) && !isnothing(low_dual)
 
-                    @info("adding term: -p=$(-p),  low_bound=$low_bound, times lower dual")
                     push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
                 end
                 if upp_bound != Inf && !isapprox(upp_bound, 0.0; atol=1e-12) && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
-                    @info("adding term: p=$(p),  upp_bound=$upp_bound, times lower dual")
                     push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
                 end
             end
