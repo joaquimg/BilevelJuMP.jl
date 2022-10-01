@@ -786,26 +786,37 @@ function linear_terms_for_non_empty_AB(
         lower_to_m_idxmap,
         lower_primal_dual_map,
         lower_dual_idxmap,
-        store_cache
+        store_cache,
+        num_blocks, 
+        rows
     )::Vector{MOI.ScalarAffineTerm}
     # TODO add store_cache to empty AB functions
-    nt = Threads.nthreads()
 
-    linearizations = Vector{PushVector{MOI.ScalarAffineTerm}}()
-
-    for _ in 1:nt
-        push!(linearizations, PushVector{MOI.ScalarAffineTerm}())
-    end
+    linearizations = PushVector{MOI.ScalarAffineTerm}()
 
     con_type = MOI.ConstraintIndex{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}
     I, J, _ = findnz(V)
 
-    Threads.@threads for upper_var in collect(eachindex(upper_var_to_lower_ctr))  # equivalent to set A with pairs (j,n) : A_jn ≠ 0
-        id = Threads.threadid()
-        lower_con = upper_var_to_lower_ctr[upper_var]
-        j = lower_con.value
+    # only need one (j,n) pair for the linearization! (equ. 23 or 24 in https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9729553)
+    # upper_var_to_lower_ctr is equivalent to set A with pairs (j,n) : A_jn ≠ 0
 
-        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var]
+    for block_int in 1:num_blocks
+
+        # find a j in this block, i.e. a row in V or a constraint index in the lower problem
+        j = nothing
+        upper_var = nothing
+        for (uv, lower_con) in upper_var_to_lower_ctr
+            if lower_con.value in rows[block_int]
+                j = lower_con.value
+                upper_var = uv
+                continue
+            end
+        end
+        if isnothing(j)
+            return nothing
+        end 
+
+        for lower_var in bilinear_upper_dual_to_lower_primal[upper_var] # typically just one lower_var
 
             A_jn = bilinear_upper_dual_to_quad_term[upper_var][lower_var]
             if isapprox(A_jn, 0.0; atol=1e-12)
@@ -813,39 +824,42 @@ function linear_terms_for_non_empty_AB(
             end
             n = lower_var.value
             # this call is same as in get_all_connected_rows_cols, hence memoization should speed things up
-            rows, cols, redundant_vals = find_connected_rows_cols_cached(
+            J_j, N_n, redundant_vals = find_connected_rows_cols_cached(
                 V, I, J, j, n, skip_1st_col_check=true, store_cache=store_cache
             )
-            # rows is set J_j, cols is set N_n
             if redundant_vals
                 return nothing
             end
 
             V_jn = V[j,n]
             p = A_jn / V_jn
-            for r in rows
+            for r in J_j
                 if isapprox(w[r], 0.0; atol=1e-12)
                     continue
                 end
                 lower_con_index = con_type(r)
                 lower_dual_var = lower_primal_dual_map.primal_con_dual_var[lower_con_index][1]
 
-                push!(linearizations[id],
+                @info("adding term: p=$p,  w=$(w[r]), times lower dual")
+                push!(linearizations,
                     MOI.ScalarAffineTerm(p*w[r], lower_dual_idxmap[lower_dual_var])  
                 )
             end
 
             # TODO assert that lower level constraints in upper_var_to_lower_ctr are linear
-            cols = setdiff(cols, A_N)
+            N_n = setdiff(N_n, A_N)
             num_vars = MOI.get(lower, MOI.NumberOfVariables())
-            for c in cols
+            for c in N_n
                 if c > num_vars continue end  # TODO do we need to add slack variables?
                 lower_var = MOI.VariableIndex(c)
                 # lower primal * lower cost
                 lower_var_cost_coef = BilevelJuMP.get_coef(lower_var, lower_obj_terms)
-                push!(linearizations[id],
-                    MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
-                )
+                if !isapprox(lower_var_cost_coef, 0.0; atol=1e-12)
+                    @info("adding term: p=$p,  c=$lower_var_cost_coef, times lower var")
+                    push!(linearizations,
+                        MOI.ScalarAffineTerm(-p*lower_var_cost_coef, lower_to_m_idxmap[lower_var])
+                    )
+                end
                 # variable bound * dual variable
                 low_bound, upp_bound = MOIU.get_bounds(lower, Float64, lower_var) # yl[n_prime], yu[n_prime] #
                 lo_bound_index = MOI.ConstraintIndex{MOI.VariableIndex, MOI.GreaterThan{Float64}}(lower_var.value)
@@ -855,16 +869,19 @@ function linear_terms_for_non_empty_AB(
 
                 # have to use opposite signs of paper for these terms (b/c Dualization sets variable bound dual variables to be non-positive?)
                 if low_bound != -Inf && !isapprox(low_bound, 0.0; atol=1e-12) && !isnothing(low_dual)
-                    push!(linearizations[id], MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
+
+                    @info("adding term: -p=$(-p),  low_bound=$low_bound, times lower dual")
+                    push!(linearizations, MOI.ScalarAffineTerm(-p * low_bound, lower_dual_idxmap[low_dual]))
                 end
                 if upp_bound != Inf && !isapprox(upp_bound, 0.0; atol=1e-12) && !isnothing(upp_dual) # TODO add a big number in place of Inf ?
-                    push!(linearizations[id], MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
+                    @info("adding term: p=$(p),  upp_bound=$upp_bound, times lower dual")
+                    push!(linearizations, MOI.ScalarAffineTerm( p * upp_bound, lower_dual_idxmap[upp_dual]))
                 end
             end
         end
     end
 
-    return vcat(finish!.(linearizations)...)
+    return linearizations
 end
 
 
@@ -1252,6 +1269,8 @@ function main_linearization(
             
             @debug """starting find_blocks at $(Dates.format(now(), "HH:MM:SS"))"""
             num_blocks, rows, cols = find_blocks(V, U)
+            # it is necessary to find the blocks of the lower problem because the linearization
+            # requires one pair of (j,n) values for each block
 
             conditions_passed = Bool[]
 
@@ -1270,8 +1289,6 @@ function main_linearization(
                         bilinear_upper_dual_to_lower_primal)
                     push!(conditions_passed, check)
                 end
-                # recover memory
-                rows, cols = nothing, nothing
                 @debug("Done looping over V blocks")
             else
                 push!(conditions_passed, true)
@@ -1292,7 +1309,9 @@ function main_linearization(
                     lower_to_m_idxmap,
                     lower_primal_dual_map,
                     lower_dual_idxmap,
-                    check_linearization_conditions
+                    check_linearization_conditions,
+                    num_blocks,
+                    rows
                 )
                 if isnothing(linearizations)
                     @warn("Unable to linearize bilinear terms due to underdertermined system of equations. Skipping linearization process.")
