@@ -2,7 +2,6 @@ using DataFrames
 using CSV
 using Printf
 
-# include(raw"C:\Users\joaquimgarcia\.julia\dev\BilevelJuMP\benchmarks\table.jl")
 
 cd(@__DIR__)
 
