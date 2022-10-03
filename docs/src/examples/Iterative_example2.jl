@@ -49,7 +49,7 @@ IterAttr = Dict(
 # We can now specify our model, where the initial regularization is 1e+0, followed by setting the iterative values and settings:
 model1 = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-0;IterEps=IterEps, IterAttr = IterAttr))
 
-# The following lines are copied from the example as presented before: 
+# The following lines merge the two lower level problems into a single one. It is left to the reader to check the KKTs are indeed equivalent: 
 @variable(Lower(model1), q[F] >= 0)
 @variable(Upper(model1), Q >= 0)
 

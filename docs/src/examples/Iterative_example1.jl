@@ -93,9 +93,11 @@ optimize!(model)
 # The following script illustrates how one can verify the desired behavior; the math remains unchanged from above...
 # This time, we do not suppress any solver output. You can see that IterEps only contains one value (and it is the same as the regularization specified for the initial solve).
 # If all options for the warmstart are set correctly, you should see that the solver (in our case Ipopt) accepts the warmstart solution as optimal. 
-# Primal and dual infeasibility of the initial point (inf_pr/inf_du) should be very low (i.e. within solver specified tolerances for optimal termination). 
-# In our example, both should be less than 1e-9. 
-# This is an important check to run before your true task, 
+# For more complicated problems, it may be necessary to relax this statement to near optimal. However, very few iterations should be made to find the optimal solution again.
+# Primal and dual infeasibility of the initial point (inf_pr/inf_du) should in general be very low (i.e. in the order of solver specified tolerances for optimal termination). 
+# In our simple example, both should be less than 1e-9. 
+# Depending on the actual problem and modifications by Ipopt (such as scaling etc.), this may not always be the case and you could come across values of roughly 1e-6 sometimes...
+# In general, you should always check that provided warmstarts actually work as desired before going ahead!
 # It is left to the user to verify that using an empty IterAttr does not yield the same bahavior. 
 
 using JuMP, BilevelJuMP, Ipopt
