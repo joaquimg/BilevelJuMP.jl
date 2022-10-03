@@ -5,8 +5,7 @@ using Printf
 
 cd(@__DIR__)
 
-# FILE = "C:\\Users\\joaquimgarcia\\Desktop\\bilevel_results.csv"
-FILE = raw"C:\Users\joaquimgarcia\.julia\dev\BilevelJuMP\benchmarks\benchFinal.log"
+FILE = ".\\bilevel_results.csv"
 df = DataFrame(CSV.File(FILE))
 
 function mystr(t::Number, g::Number, opt = "cbc")
