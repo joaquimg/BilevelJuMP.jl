@@ -20,6 +20,7 @@ function iterative_product_mode_01()
         Ipopt.Optimizer,
         mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
     )
+    set_optimizer_attribute(model, "print_level", 0)
 
     @variable(Upper(model), x)
     @variable(UpperOnly(model), z)
@@ -38,7 +39,7 @@ function iterative_product_mode_01()
 
     set_optimizer_attribute(model, "mu_target", 1e-9)
 
-    optimize!(model)
+    optimize!(model; show_iter_log = false)
 
     @test value(x) ≈ 1 atol = 1e-4
     @test value(y) ≈ 6 atol = 1e-4
@@ -77,6 +78,7 @@ function iterative_product_mode_02_1()
         Ipopt.Optimizer,
         mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
     )
+    set_optimizer_attribute(model1, "print_level", 0)
 
     @variable(Lower(model1), q[F] >= 0)
     @variable(Upper(model1), Q >= 0)
@@ -94,7 +96,7 @@ function iterative_product_mode_02_1()
 
     set_optimizer_attribute(model1, "mu_target", 1e-9)
 
-    optimize!(model1)
+    optimize!(model1; show_iter_log = false)
 
     @test isapprox(value(model1[:Q]), 6; atol = 1e-6)
     @test isapprox(value.(model1[:q]).data, [2, 2]; atol = 1e-6)
@@ -129,6 +131,7 @@ function iterative_product_mode_02_2()
         Ipopt.Optimizer,
         mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
     )
+    set_optimizer_attribute(model2, "print_level", 0)
 
     @variable(Lower(model2), q[F] >= 0)
     @variable(Upper(model2), Q >= 0)
@@ -146,7 +149,7 @@ function iterative_product_mode_02_2()
 
     set_optimizer_attribute(model2, "mu_target", 1e-9)
 
-    optimize!(model2)
+    optimize!(model2; show_iter_log = false)
 
     # Auto testing
 
@@ -183,6 +186,7 @@ function iterative_product_mode_02_3()
         Ipopt.Optimizer,
         mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
     )
+    set_optimizer_attribute(model3, "print_level", 0)
 
     @variable(Lower(model3), q[F] >= 0)
     @variable(Upper(model3), Q >= 0)
@@ -200,7 +204,7 @@ function iterative_product_mode_02_3()
 
     set_optimizer_attribute(model3, "mu_target", 1e-9)
 
-    optimize!(model3)
+    optimize!(model3; show_iter_log = false)
 
     # Auto testing
 

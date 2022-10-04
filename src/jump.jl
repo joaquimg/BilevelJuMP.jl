@@ -496,6 +496,7 @@ function JuMP.optimize!(
     bilevel_prob = "",
     solver_prob = "",
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+    show_iter_log = true,
 )
 
     if model.mode === nothing
@@ -621,7 +622,7 @@ function JuMP.optimize!(
 
     MOI.optimize!(solver)
 
-    iterative_optimize!(solver, mode, single_blm, model, t0)
+    iterative_optimize!(solver, mode, single_blm, model, t0, show_iter_log)
 
     model.solve_time = time() - t1
 
@@ -885,7 +886,7 @@ function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
     error("Callbacks are not available in BilevelJuMP Models")
 end
 
-function iterative_optimize!(solver, mode, single_blm, model, t0)
+function iterative_optimize!(solver, mode, single_blm, model, t0, show_iter_log)
     nothing
 end
 
@@ -895,6 +896,7 @@ function iterative_optimize!(
     single_blm,
     model::BilevelModel,
     t0,
+    show_iter_log::Bool,
 ) where {T}
 
     if isempty(mode.iter_eps)
@@ -909,24 +911,32 @@ function iterative_optimize!(
             MOI.set(solver, MOI.RawOptimizerAttribute(attr), val)
         end
 
-        println("Starting iterative ProductMode(), printing log below: ")
-        print_iter_log(;
-            iteration = 0,
-            regularization = mode.epsilon,
-            termination_status = MOI.get(solver, MOI.TerminationStatus()),
-            primal_status = MOI.get(solver, MOI.PrimalStatus()),
-            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
-            t = time() - t0,
-            upperline = true,
-            header = true,
-        )
+        if show_iter_log
+            println("Starting iterative BilevelJuMP.ProductMode(), printing log below: ")
+            print_iter_log(;
+                iteration = 0,
+                regularization = mode.epsilon,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+                upperline = true,
+                header = true,
+            )
+        end
 
         if MOI.supports_incremental_interface(solver)
             comp_idxs_in_solver = get_solver_comp_idxs(model, mode)
-            termination_eps =
-                iterative_optimize_solver(solver, mode, comp_idxs_in_solver, t0)
+            termination_eps = iterative_optimize_solver(
+                solver,
+                mode,
+                comp_idxs_in_solver,
+                t0,
+                show_iter_log,
+            )
         else
-            termination_eps = iterative_optimize_copy(single_blm, solver, mode, model, t0)
+            termination_eps =
+                iterative_optimize_copy(single_blm, solver, mode, model, t0, show_iter_log)
         end
 
     else
@@ -935,17 +945,19 @@ function iterative_optimize!(
         )
     end
 
-    print_iter_log(;
-        iteration = "Terminated",
-        regularization = termination_eps,
-        termination_status = MOI.get(solver, MOI.TerminationStatus()),
-        primal_status = MOI.get(solver, MOI.PrimalStatus()),
-        objective_value = MOI.get(solver, MOI.ObjectiveValue()),
-        t = time() - t0,
-        upperline = true,
-        header = true,
-        bottomline = true,
-    )
+    if show_iter_log
+        print_iter_log(;
+            iteration = "Terminated",
+            regularization = termination_eps,
+            termination_status = MOI.get(solver, MOI.TerminationStatus()),
+            primal_status = MOI.get(solver, MOI.PrimalStatus()),
+            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+            t = time() - t0,
+            upperline = true,
+            header = true,
+            bottomline = true,
+        )
+    end
 
     return nothing
 
@@ -964,6 +976,7 @@ function iterative_optimize_solver(
     mode::ProductMode{T},
     comp_idxs_in_solver::Vector{MathOptInterface.ConstraintIndex{F,S}},
     t0,
+    show_iter_log,
 ) where {T,F,S}
 
     for (iter, eps) in enumerate(mode.iter_eps)
@@ -974,14 +987,16 @@ function iterative_optimize_solver(
 
         MOI.optimize!(solver)
 
-        print_iter_log(;
-            iteration = "s$(iter)",
-            regularization = eps,
-            termination_status = MOI.get(solver, MOI.TerminationStatus()),
-            primal_status = MOI.get(solver, MOI.PrimalStatus()),
-            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
-            t = time() - t0,
-        )
+        if show_iter_log
+            print_iter_log(;
+                iteration = "s$(iter)",
+                regularization = eps,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+            )
+        end
 
         termination_eps = eps
 
@@ -1001,6 +1016,7 @@ function iterative_optimize_copy(
     mode::ProductMode{T},
     model::BilevelModel,
     t0,
+    show_iter_log,
 ) where {T}
 
     for (iter, eps) in enumerate(mode.iter_eps)
@@ -1014,14 +1030,16 @@ function iterative_optimize_copy(
 
         MOI.optimize!(solver)
 
-        print_iter_log(;
-            iteration = "c$(iter)",
-            regularization = eps,
-            termination_status = MOI.get(solver, MOI.TerminationStatus()),
-            primal_status = MOI.get(solver, MOI.PrimalStatus()),
-            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
-            t = time() - t0,
-        )
+        if show_iter_log
+            print_iter_log(;
+                iteration = "c$(iter)",
+                regularization = eps,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+            )
+        end
 
         termination_eps = eps
 
