@@ -12,7 +12,7 @@ jobs:
       GKSwstype: nul
     steps:
       - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v1
         with:
           # Build documentation on Julia 1.6
           version: '1.6'
