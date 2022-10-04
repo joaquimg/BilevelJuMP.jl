@@ -26,7 +26,7 @@ struct Interval{T}
     lo::T
     hi::T
 end
-function Interval(lo::T, hi::T) where {T <: Real}
+function Interval(lo::T, hi::T) where {T<:Real}
     # if hi < lo <= hi + eps(T)
     #     lo = hi
     # end
@@ -44,7 +44,7 @@ end
 function +(a::Interval{T}, b::T) where {T<:Real}
     Interval(a.lo + b, a.hi + b)
 end
-+(b::T, a::Interval{T}) where {T<:Real} = a+b
++(b::T, a::Interval{T}) where {T<:Real} = a + b
 
 function -(a::Interval{T}, b::T) where {T<:Real}
     Interval(a.lo - b, a.hi - b)
@@ -53,11 +53,11 @@ function -(b::T, a::Interval{T}) where {T<:Real}
     Interval(b - a.hi, b - a.lo)
 end
 
-function +(a::Interval{T}, b::Interval{T}) where T<:Real
+function +(a::Interval{T}, b::Interval{T}) where {T<:Real}
     Interval(a.lo + b.lo, a.hi + b.hi)
 end
 
-function -(a::Interval{T}, b::Interval{T}) where T<:Real
+function -(a::Interval{T}, b::Interval{T}) where {T<:Real}
     Interval(a.lo - b.hi, a.hi - b.lo)
 end
 
@@ -65,10 +65,10 @@ end
 function *(x::T, a::Interval{T}) where {T<:Real}
     (iszero(a) || iszero(x)) && return Interval(zero(T), zero(T))
     if x ≥ 0.0
-        return Interval(a.lo*x, a.hi*x)
+        return Interval(a.lo * x, a.hi * x)
     else
-        return Interval(a.hi*x, a.lo*x)
+        return Interval(a.hi * x, a.lo * x)
     end
 end
 
-*(a::Interval{T}, x::T) where {T<:Real} = x*a
+*(a::Interval{T}, x::T) where {T<:Real} = x * a

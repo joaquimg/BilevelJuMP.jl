@@ -54,8 +54,8 @@ end)
 @objective(Lower(model), Min, y)
 
 # Lower constraints
-@constraint(Lower(model), l1,  2x -  y <= 7)
-@constraint(Lower(model), l2, -2x +  4y <= 16)
+@constraint(Lower(model), l1, 2x - y <= 7)
+@constraint(Lower(model), l2, -2x + 4y <= 16)
 @constraint(Lower(model), l3, y <= 5)
 
 # Using MibS Solver

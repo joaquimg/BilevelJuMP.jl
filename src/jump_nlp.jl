@@ -6,7 +6,7 @@
 =#
 
 function _has_nlp_data(model)
-    return  model.nlp_data !== nothing
+    return model.nlp_data !== nothing
 end
 function _load_nlp_data(model)
     # callen in JuMP.optimize!
@@ -73,7 +73,8 @@ function JuMP.set_objective(
     m.nlp_data.nlobj = ex
     return
 end
-function JuMP.set_objective(::LowerModel,
+function JuMP.set_objective(
+    ::LowerModel,
     ::MOI.OptimizationSense,
     ::JuMP._NonlinearExprData,
 )
@@ -86,7 +87,13 @@ function JuMP._parse_NL_expr_runtime(m::UpperModel, x, tape, parent, values)
     return nothing
 end
 
-function JuMP._parse_NL_expr_runtime(m::UpperModel, x::BilevelVariableRef, tape, parent, values)
+function JuMP._parse_NL_expr_runtime(
+    m::UpperModel,
+    x::BilevelVariableRef,
+    tape,
+    parent,
+    values,
+)
     if !in_upper(x)
         error(
             "Variable in nonlinear expression does not belong to the " *

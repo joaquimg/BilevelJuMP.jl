@@ -6,7 +6,7 @@ function pass_names(dest, src, map)
             MOI.set(dest, MOI.VariableName(), map[vi], name)
         end
     end
-    for (F,S) in MOI.get(src, MOI.ListOfConstraintTypesPresent())
+    for (F, S) in MOI.get(src, MOI.ListOfConstraintTypesPresent())
         if !(F <: MOI.VariableIndex)
             for con in MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
                 name = MOI.get(src, MOI.ConstraintName(), con)
@@ -18,8 +18,13 @@ function pass_names(dest, src, map)
     end
 end
 
-function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap, 
-    filter_constraints::Union{Nothing, Function}=nothing; allow_single_bounds::Bool = true)
+function append_to(
+    dest::MOI.ModelLike,
+    src::MOI.ModelLike,
+    idxmap,
+    filter_constraints::Union{Nothing,Function} = nothing;
+    allow_single_bounds::Bool = true,
+)
 
     #=
         This function follows closely the function `default_copy_to` defined in
@@ -36,7 +41,7 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap,
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
     # index_map_for_variable_indices only initializes the data structure
     # idxmap = index_map_for_variable_indices(vis_src)
-    
+
     # The `NLPBlock` assumes that the order of variables does not change (#849)
     if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
         error("NLP models are not supported.")
@@ -62,8 +67,8 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap,
         # this is very importante because variables are shered between
         # upper, lower and lower dual levels
         constraints_not_added = Any[
-            MOIU._try_constrain_variables_on_creation(dest, src, idxmap, S)
-            for S in MOIU.sorted_variable_sets_by_cost(dest, src)
+            MOIU._try_constrain_variables_on_creation(dest, src, idxmap, S) for
+            S in MOIU.sorted_variable_sets_by_cost(dest, src)
         ]
     end
 
@@ -91,140 +96,159 @@ function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap,
 end
 
 # scalar
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VariableIndex, MOI.ScalarAffineFunction{T}}},
-    ::Type{T}
-    ) where T
-    MOI.ScalarAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
     ::Type{T},
-    ::Type{<:Union{MOI.VariableIndex, MOI.ScalarAffineFunction{T}}}
-    ) where T
+    ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
+    ::Type{T},
+) where {T}
     MOI.ScalarAffineFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VariableIndex, MOI.ScalarAffineFunction{T}}},
-    ::Type{<:Union{MOI.VariableIndex, MOI.ScalarAffineFunction{T}}}
-    ) where T
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    ::Type{T},
+    ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
+) where {T}
+    MOI.ScalarAffineFunction{T}
+end
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
+    ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
+) where {T}
     MOI.ScalarQuadraticFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     ::Type{MOI.ScalarQuadraticFunction{T}},
-    ::Type{T}
-    ) where T
+    ::Type{T},
+) where {T}
     MOI.ScalarQuadraticFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
     ::Type{T},
-    ::Type{MOI.ScalarQuadraticFunction{T}}
-    ) where T
+    ::Type{T},
+    ::Type{MOI.ScalarQuadraticFunction{T}},
+) where {T}
     MOI.ScalarQuadraticFunction{T}
 end
 # flip
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        MOI.VariableIndex,
-        MOI.ScalarAffineFunction{T},
-        MOI.ScalarQuadraticFunction{T}
-        },
-    α::T) where T
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    f::Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
+    α::T,
+) where {T}
     return MOIU.operate(LinearAlgebra.dot, T, α, f)
 end
 # pass to *
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        T,
-        MOI.VariableIndex,
-        MOI.ScalarAffineFunction{T}
-        },
-    g::Union{
-        MOI.VariableIndex,
-        MOI.ScalarAffineFunction{T}
-        }
-    ) where T
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    f::Union{T,MOI.VariableIndex,MOI.ScalarAffineFunction{T}},
+    g::Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}},
+) where {T}
     return MOIU.operate(*, T, f, g)
 end
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     α::T,
-    f::MOI.ScalarQuadraticFunction{T}
-    ) where T
+    f::MOI.ScalarQuadraticFunction{T},
+) where {T}
     return MOIU.operate(*, T, f, α)
 end
 
 # vector
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
-    ::Type{Vector{T}}
-    ) where T
-    MOI.VectorAffineFunction{T}
-end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
     ::Type{Vector{T}},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
-    ) where T
+) where {T}
     MOI.VectorAffineFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}},
-    ::Type{<:Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{T}}}
-    ) where T
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    ::Type{Vector{T}},
+    ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
+) where {T}
+    MOI.VectorAffineFunction{T}
+end
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
+    ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
+) where {T}
     MOI.VectorQuadraticFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     ::Type{MOI.VectorQuadraticFunction{T}},
-    ::Type{Vector{T}}
-    ) where T
+    ::Type{Vector{T}},
+) where {T}
     MOI.VectorQuadraticFunction{T}
 end
-function MOIU.promote_operation(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.promote_operation(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     ::Type{Vector{T}},
-    ::Type{MOI.VectorQuadraticFunction{T}}
-    ) where T
+    ::Type{MOI.VectorQuadraticFunction{T}},
+) where {T}
     MOI.VectorQuadraticFunction{T}
 end
 # flip
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     f::Union{
         MOI.VectorOfVariables,
         MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-        },
-    α::Vector{T}) where T
+        MOI.VectorQuadraticFunction{T},
+    },
+    α::Vector{T},
+) where {T}
     return MOIU.operate(LinearAlgebra.dot, T, α, f)
 end
 # pass to _operate(LinearAlgebra.dot, ...)
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
-    f::Union{
-        Vector{T},
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T}
-        },
-    g::Union{
-        MOI.VectorOfVariables,
-        MOI.VectorAffineFunction{T}
-        }
-    ) where T
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
+    f::Union{Vector{T},MOI.VectorOfVariables,MOI.VectorAffineFunction{T}},
+    g::Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}},
+) where {T}
     return _operate(LinearAlgebra.dot, T, f, g)
 end
-function MOIU.operate(::typeof(LinearAlgebra.dot), ::Type{T},
+function MOIU.operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     α::T,
-    f::MOI.VectorQuadraticFunction{T}
-    ) where T
+    f::MOI.VectorQuadraticFunction{T},
+) where {T}
     return _operate(LinearAlgebra.dot, T, f, α)
 end
-function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
+function _operate(
+    ::typeof(LinearAlgebra.dot),
+    ::Type{T},
     f::Union{
         Vector{T},
         MOI.VectorOfVariables,
         MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-        },
+        MOI.VectorQuadraticFunction{T},
+    },
     g::Union{
         MOI.VectorOfVariables,
         MOI.VectorAffineFunction{T},
-        MOI.VectorQuadraticFunction{T}
-    }) where T
+        MOI.VectorQuadraticFunction{T},
+    },
+) where {T}
 
     dim = MOI.output_dimension(g)
     if MOI.output_dimension(f) != dim
@@ -235,11 +259,11 @@ function _operate(::typeof(LinearAlgebra.dot), ::Type{T},
     gs = MOIU.scalarize(g)
 
     out = MOIU.operate(*, T, fs[1], gs[1])
-    for i in 2:dim
+    for i = 2:dim
         MOIU.operate!(+, T, out, MOIU.operate(*, T, fs[i], gs[i]))
     end
 
     return out
 end
-MOIU.scalarize(v::Vector{T}) where T<:Number = v
-MOI.output_dimension(v::Vector{T}) where T<:Number = length(v)#
+MOIU.scalarize(v::Vector{T}) where {T<:Number} = v
+MOI.output_dimension(v::Vector{T}) where {T<:Number} = length(v)#

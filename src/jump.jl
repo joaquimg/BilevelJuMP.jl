@@ -19,17 +19,17 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # maps the BilevelVariableRef index
     # to JuMP variables of the correct level
     # variable that appear in both levels are inboth dicts
-    var_upper::Dict{Int, JuMP.AbstractVariableRef}
-    var_lower::Dict{Int, JuMP.AbstractVariableRef}
+    var_upper::Dict{Int,JuMP.AbstractVariableRef}
+    var_lower::Dict{Int,JuMP.AbstractVariableRef}
 
     # additional info for variables such as bound hints
     # holds the variable level: LOWER_BOTH UPPER_BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
-    var_info::Dict{Int, BilevelVariableInfo}
+    var_info::Dict{Int,BilevelVariableInfo}
 
     # maps JuMP.VariableRef to BilevelVariableRef
     # built upon necessity for getting contraints and functions
-    var_upper_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
-    var_lower_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
+    var_upper_rev::Union{Nothing,Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}}
+    var_lower_rev::Union{Nothing,Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}}
 
     # JuMP.VariableRef of variables from named level that are NOT linking
     upper_only::Set{JuMP.AbstractVariableRef}
@@ -37,56 +37,56 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # upper level decisions that are "parameters" of the second level
     # keys are *decision* variables from the upper level
     # values are *parameter* variables from the lower level (linked to the keys)
-    upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    upper_to_lower_link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     # keys are *decision* variables from the lower level
     # values are *parameter* variables from the upper level (linked to the keys)
-    lower_to_upper_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    lower_to_upper_link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     # keys are upper level variables (representing lower level dual variables)
     # values are lower level constraints
-    upper_var_to_lower_ctr_link::Dict{JuMP.AbstractVariableRef, JuMP.ConstraintRef}
+    upper_var_to_lower_ctr_link::Dict{JuMP.AbstractVariableRef,JuMP.ConstraintRef}
     # joint link
     # for all variables that appear in both models
     # keys are upper indices and values are lower indices
     # same as: merge(upper_to_lower_link, reverse(lower_to_upper_link))
-    link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
 
     # Integer index of the last constraint added (for indexing BilevelConstraintRef's)
     nextconidx::Int
 
     # maps the BilevelConstraintRef index
     # to JuMP ConstraintRef of the correct level
-    ctr_upper::Dict{Int, JuMP.ConstraintRef}
-    ctr_lower::Dict{Int, JuMP.ConstraintRef}
+    ctr_upper::Dict{Int,JuMP.ConstraintRef}
+    ctr_lower::Dict{Int,JuMP.ConstraintRef}
 
     # additional info for constraints such as bound hints and start values
-    ctr_info::Dict{Int, BilevelConstraintInfo}
+    ctr_info::Dict{Int,BilevelConstraintInfo}
 
     # maps JuMP.ConstraintRef to BilevelConstraintRef
     # built upon necessity for getting contraints and functions
-    ctr_upper_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
-    ctr_lower_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
+    ctr_upper_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
+    ctr_lower_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
 
     #
-    solver#::MOI.ModelLike
-    mode
+    solver::Any#::MOI.ModelLike
+    mode::Any
 
     # maps for MPEC based solution methods
     # from upper level JuMP.index(JuMP.VariableRef) = (MOI.VI)
     # to mpec indices
-    upper_to_sblm
+    upper_to_sblm::Any
     # from lower MOI indices
     # to mpec indices
-    lower_to_sblm
+    lower_to_sblm::Any
     # from lower dual MOI indices
     # to mpec indices
-    lower_dual_to_sblm
+    lower_dual_to_sblm::Any
     # from mped indices to solver indices
-    sblm_to_solver
+    sblm_to_solver::Any
     # lower primal to dual map
     # to obtain dual variables from primal constraints
-    lower_primal_dual_map
+    lower_primal_dual_map::Any
 
     # results from opt process
     solve_time::Float64
@@ -98,7 +98,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     pass_start::Bool
 
     # for completing the JuMP.Model API
-    objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
+    objdict::Dict{Symbol,Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
 
@@ -108,25 +108,25 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
             # var
             0,
-            Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, BilevelVariableInfo}(),
+            Dict{Int,JuMP.AbstractVariable}(),
+            Dict{Int,JuMP.AbstractVariable}(),
+            Dict{Int,BilevelVariableInfo}(),
             nothing,
             nothing,
 
             # links
             Set{JuMP.AbstractVariableRef}(),
             Set{JuMP.AbstractVariableRef}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
-            Dict{JuMP.AbstractVariable, JuMP.ConstraintRef}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.ConstraintRef}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
 
             #ctr
             0,
-            Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, BilevelConstraintInfo}(),
+            Dict{Int,JuMP.AbstractConstraint}(),
+            Dict{Int,JuMP.AbstractConstraint}(),
+            Dict{Int,BilevelConstraintInfo}(),
             nothing,
             nothing,
 
@@ -149,19 +149,20 @@ mutable struct BilevelModel <: AbstractBilevelModel
             false,
             true,
             # jump api
-            Dict{Symbol, Any}(),
-            )
+            Dict{Symbol,Any}(),
+        )
 
         return model
     end
 end
-function BilevelModel(optimizer_constructor;
-        mode::AbstractBilevelSolverMode = SOS1Mode(),
-        add_bridges::Bool=true
-    )
+function BilevelModel(
+    optimizer_constructor;
+    mode::AbstractBilevelSolverMode = SOS1Mode(),
+    add_bridges::Bool = true,
+)
     bm = BilevelModel()
     set_mode(bm, mode)
-    JuMP.set_optimizer(bm, optimizer_constructor; add_bridges=add_bridges)
+    JuMP.set_optimizer(bm, optimizer_constructor; add_bridges = add_bridges)
     return bm
 end
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
@@ -193,12 +194,20 @@ level_both(::UpperModel) = UPPER_BOTH
 
 # obj
 
-function set_link!(m::UpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(
+    m::UpperModel,
+    upper::JuMP.AbstractVariableRef,
+    lower::JuMP.AbstractVariableRef,
+)
     bilevel_model(m).upper_to_lower_link[upper] = lower
     bilevel_model(m).link[upper] = lower
     nothing
 end
-function set_link!(m::LowerModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(
+    m::LowerModel,
+    upper::JuMP.AbstractVariableRef,
+    lower::JuMP.AbstractVariableRef,
+)
     bilevel_model(m).lower_to_upper_link[lower] = upper
     bilevel_model(m).link[upper] = lower
     nothing
@@ -223,7 +232,8 @@ level(::UpperOnlyModel) = UPPER_ONLY
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
-in_upper(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == UPPER_ONLY || l == DUAL_OF_LOWER
+in_upper(l::Level) =
+    l == LOWER_BOTH || l == UPPER_BOTH || l == UPPER_ONLY || l == DUAL_OF_LOWER
 in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
 
 function push_single_level_variable!(m::LowerOnlyModel, vref::JuMP.AbstractVariableRef)
@@ -245,7 +255,7 @@ function BilevelVariableRef(model::BilevelModel, idx)
 end
 
 # Constraints
-const BilevelConstraintRef = JuMP.ConstraintRef{BilevelModel, Int}#, Shape <: AbstractShape
+const BilevelConstraintRef = JuMP.ConstraintRef{BilevelModel,Int}#, Shape <: AbstractShape
 
 # Objective
 
@@ -257,7 +267,7 @@ JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel
 function convert_indices(d::Dict)
     ret = Dict{VI,VI}()
     # sizehint!(ret, length(d))
-    for (k,v) in d
+    for (k, v) in d
         ret[JuMP.index(k)] = JuMP.index(v)
     end
     return ret
@@ -265,7 +275,7 @@ end
 function index2(d::Dict)
     ret = Dict{VI,CI}()
     # sizehint!(ret, length(d))
-    for (k,v) in d
+    for (k, v) in d
         ret[JuMP.index(k)] = JuMP.index(v)
     end
     return ret
@@ -356,7 +366,8 @@ function JuMP.primal_status(model::InnerBilevelModel)
 end
 
 JuMP.dual_status(::BilevelModel) = error(
-    "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.")
+    "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.",
+)
 function JuMP.dual_status(model::UpperModel)
     _check_solver(model.m)
     return MOI.get(model.m.solver, MOI.DualStatus())
@@ -382,7 +393,7 @@ replace_var_type(::Type{M}) where {M<:JuMP.AbstractModel} = BilevelVariableRef
 function build_reverse_var_map!(um::UpperModel)
     m = bilevel_model(um)
     if m.var_upper_rev === nothing
-        m.var_upper_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        m.var_upper_rev = Dict{JuMP.AbstractVariableRef,BilevelVariableRef}()
         for (idx, ref) in m.var_upper
             m.var_upper_rev[ref] = BilevelVariableRef(m, idx)
         end
@@ -392,7 +403,7 @@ end
 function build_reverse_var_map!(lm::LowerModel)
     m = bilevel_model(lm)
     if m.var_lower_rev === nothing
-        m.var_lower_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        m.var_lower_rev = Dict{JuMP.AbstractVariableRef,BilevelVariableRef}()
         for (idx, ref) in m.var_lower
             m.var_lower_rev[ref] = BilevelVariableRef(m, idx)
         end
@@ -405,48 +416,64 @@ function reverse_replace_variable(f, m::InnerBilevelModel)
     build_reverse_var_map!(m)
     return replace_variables(f, mylevel_model(m), get_reverse_var_map(m), level(m))
 end
-function replace_variables(var::VV, # JuMP.VariableRef
+function replace_variables(
+    var::VV, # JuMP.VariableRef
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,V<:JuMP.AbstractVariableRef, M, VV<:JuMP.AbstractVariableRef}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,V<:JuMP.AbstractVariableRef,M,VV<:JuMP.AbstractVariableRef}
     return variable_map[var]
 end
-function replace_variables(var::BilevelVariableRef,
+function replace_variables(
+    var::BilevelVariableRef,
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,V<:JuMP.AbstractVariableRef, M<:BilevelModel}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,V<:JuMP.AbstractVariableRef,M<:BilevelModel}
     if var.model === model && in_level(var, level)
         return variable_map[var.idx]
     elseif var.model === model
-        error("Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.")
+        error(
+            "Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.",
+        )
     else
-        error("A BilevelModel cannot have expression using variables of a BilevelModel different from itself")
+        error(
+            "A BilevelModel cannot have expression using variables of a BilevelModel different from itself",
+        )
     end
 end
-function replace_variables(aff::JuMP.GenericAffExpr{C, VV},
+function replace_variables(
+    aff::JuMP.GenericAffExpr{C,VV},
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
-    result = JuMP.GenericAffExpr{C, replace_var_type(M)}(0.0)#zero(aff)
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,C,V<:JuMP.AbstractVariableRef,M,VV}
+    result = JuMP.GenericAffExpr{C,replace_var_type(M)}(0.0)#zero(aff)
     result.constant = aff.constant
     for (coef, var) in JuMP.linear_terms(aff)
-        JuMP.add_to_expression!(result,
-        coef,
-        replace_variables(var, model, variable_map, level))
+        JuMP.add_to_expression!(
+            result,
+            coef,
+            replace_variables(var, model, variable_map, level),
+        )
     end
     return result
 end
-function replace_variables(quad::JuMP.GenericQuadExpr{C, VV},
+function replace_variables(
+    quad::JuMP.GenericQuadExpr{C,VV},
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,C,V<:JuMP.AbstractVariableRef,M,VV}
     aff = replace_variables(quad.aff, model, variable_map, level)
-    quadv = JuMP.GenericQuadExpr{C, replace_var_type(M)}(aff)
+    quadv = JuMP.GenericQuadExpr{C,replace_var_type(M)}(aff)
     for (coef, var1, var2) in JuMP.quad_terms(quad)
-        JuMP.add_to_expression!(quadv,
-        coef,
-        replace_variables(var1, model, variable_map, level),
-        replace_variables(var2, model, variable_map, level))
+        JuMP.add_to_expression!(
+            quadv,
+            coef,
+            replace_variables(var1, model, variable_map, level),
+            replace_variables(var2, model, variable_map, level),
+        )
     end
     return quadv
 end
@@ -462,11 +489,19 @@ end
 
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} =
     error("Can't solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel;
-    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "", file_format = MOI.FileFormats.FORMAT_AUTOMATIC)
+function JuMP.optimize!(
+    model::BilevelModel;
+    lower_prob = "",
+    upper_prob = "",
+    bilevel_prob = "",
+    solver_prob = "",
+    file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+)
 
     if model.mode === nothing
-        error("No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`")
+        error(
+            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+        )
     else
         mode = model.mode
     end
@@ -497,8 +532,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     t0 = time()
 
-    moi_upper = JuMP.index.(
-        collect(values(model.upper_to_lower_link)))
+    moi_upper = JuMP.index.(collect(values(model.upper_to_lower_link)))
     moi_link = convert_indices(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
@@ -507,8 +541,16 @@ function JuMP.optimize!(model::BilevelModel;
     build_bounds!(model, mode)
 
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
-        build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2,
-            copy_names = model.copy_names, pass_start = model.pass_start)
+        build_bilevel(
+            upper,
+            lower,
+            moi_link,
+            moi_upper,
+            mode,
+            moi_link2,
+            copy_names = model.copy_names,
+            pass_start = model.pass_start,
+        )
 
     # pass additional info (hints - not actual problem data)
     # for lower level dual variables (start, upper hint, lower hint)
@@ -518,7 +560,7 @@ function JuMP.optimize!(model::BilevelModel;
             # this fails for vector-constrained variables due dualization 0.3.5
             # because of constrained variables that change the dual
             pre_duals = lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
-            duals = map(x->lower_dual_to_sblm[x], pre_duals)
+            duals = map(x -> lower_dual_to_sblm[x], pre_duals)
             pass_dual_info(single_blm, duals, info)
         end
     end
@@ -538,7 +580,7 @@ function JuMP.optimize!(model::BilevelModel;
     end
 
     sblm_to_solver = MOI.copy_to(solver, single_blm)
-    
+
     if _has_nlp_data(model.upper)
         # NLP requires an upstream jump model
         # probably is neough to have the fields:
@@ -592,14 +634,12 @@ end
 
 function pass_primal_info(single_blm, primal, info::BilevelVariableInfo)
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(primal.value))
-        MOI.add_constraint(single_blm,
-            primal, LT{Float64}(info.upper))
+       !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(primal.value))
+        MOI.add_constraint(single_blm, primal, LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(primal.value))
-        MOI.add_constraint(single_blm,
-            primal, GT{Float64}(info.lower))
+       !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(primal.value))
+        MOI.add_constraint(single_blm, primal, GT{Float64}(info.lower))
     end
     return
 end
@@ -609,14 +649,12 @@ function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Float64})
         MOI.set(single_blm, MOI.VariablePrimalStart(), dual[], info.start)
     end
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[].value))
-        MOI.add_constraint(single_blm,
-            dual[], LT{Float64}(info.upper))
+       !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[].value))
+        MOI.add_constraint(single_blm, dual[], LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[].value))
-        MOI.add_constraint(single_blm,
-            dual[], GT{Float64}(info.lower))
+       !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[].value))
+        MOI.add_constraint(single_blm, dual[], GT{Float64}(info.lower))
     end
     return
 end
@@ -626,14 +664,12 @@ function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Vector{Flo
             MOI.set(single_blm, MOI.VariablePrimalStart(), dual[i], info.start[i])
         end
         if !isnan(info.upper[i]) &&
-            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[i].value))
-            MOI.add_constraint(single_blm,
-                dual[i], LT{Float64}(info.upper[i]))
+           !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[i].value))
+            MOI.add_constraint(single_blm, dual[i], LT{Float64}(info.upper[i]))
         end
         if !isnan(info.lower[i]) &&
-            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[i].value))
-            MOI.add_constraint(single_blm,
-                dual[i], MOI.GreaterThan{Float64}(info.lower[i]))
+           !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[i].value))
+            MOI.add_constraint(single_blm, dual[i], MOI.GreaterThan{Float64}(info.lower[i]))
         end
     end
     return
@@ -707,13 +743,13 @@ inf_if_nan(::typeof(+), val) = ifelse(isnan(val), Inf, val)
 inf_if_nan(::typeof(-), val) = ifelse(isnan(val), -Inf, val)
 
 dual_lower_bound(::CI{F,LT{T}}) where {F,T} = -Inf
-dual_upper_bound(::CI{F,LT{T}}) where {F,T} =  0.0
+dual_upper_bound(::CI{F,LT{T}}) where {F,T} = 0.0
 
-dual_lower_bound(::CI{F,GT{T}}) where {F,T} =  0.0
+dual_lower_bound(::CI{F,GT{T}}) where {F,T} = 0.0
 dual_upper_bound(::CI{F,GT{T}}) where {F,T} = +Inf
 
-dual_lower_bound(::CI{F,ET{T}}) where {F,T} =  0.0
-dual_upper_bound(::CI{F,ET{T}}) where {F,T} =  0.0
+dual_lower_bound(::CI{F,ET{T}}) where {F,T} = 0.0
+dual_upper_bound(::CI{F,ET{T}}) where {F,T} = 0.0
 
 dual_lower_bound(::CI{F,S}) where {F,S} = -Inf
 dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
@@ -722,17 +758,22 @@ dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
 
 function _check_solver(bm::BilevelModel)
     if bm.solver === nothing
-        error("No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`")
+        error(
+            "No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`",
+        )
     end
 end
 
-function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
-    add_bridges::Bool=true)
+function JuMP.set_optimizer(
+    bm::BilevelModel,
+    optimizer_constructor;
+    add_bridges::Bool = true,
+)
     # error_if_direct_mode(model, :set_optimizer)
     if add_bridges
         # If `default_copy_to` without names is supported,
         # no need for a second cache.
-        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64)
+        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type = Float64)
         # for bridge_type in model.bridge_types
         #     _moi_add_bridge(optimizer, bridge_type)
         # end
@@ -748,20 +789,21 @@ function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
 end
 
 
-function pass_cache(bm::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
+function pass_cache(bm::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where {T}
     mode.cache = bm.mode.cache
     return nothing
 end
-function pass_cache(bm::BilevelModel, mode::AbstractBilevelSolverMode{T}) where T
+function pass_cache(bm::BilevelModel, mode::AbstractBilevelSolverMode{T}) where {T}
     return nothing
 end
 
-function check_mixed_mode(::MixedMode{T}) where T
-end
+function check_mixed_mode(::MixedMode{T}) where {T} end
 function check_mixed_mode(mode)
-    error("Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`")
+    error(
+        "Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`",
+    )
 end
-function set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode{T}) where T
+function set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode{T}) where {T}
     bm = ci.model
     check_mixed_mode(bm.mode)
     _mode = deepcopy(mode)
@@ -789,15 +831,15 @@ function get_mode(ci::BilevelConstraintRef)
     end
 end
 
-function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where T
+function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where {T}
     error("Cant set MixedMode in a specific constraint")
 end
-function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where T
+function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where {T}
     error("Cant set StrongDualityMode in a specific constraint")
 end
 
 # mode for variable bounds
-function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where T
+function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where {T}
     bm = vi.model
     check_mixed_mode(bm.mode)
     _mode = deepcopy(mode)
@@ -826,10 +868,10 @@ function get_mode(vi::BilevelVariableRef)
     end
 end
 
-function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
+function set_mode(::BilevelVariableRef, ::MixedMode{T}) where {T}
     error("Cant set MixedMode in a specific variable")
 end
-function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
+function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where {T}
     error("Cant set StrongDualityMode in a specific variable")
 end
 
@@ -843,162 +885,323 @@ function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
     error("Callbacks are not available in BilevelJuMP Models")
 end
 
-function iterative_optimize!(solver, mode, single_blm, model, t0) nothing end
+function iterative_optimize!(solver, mode, single_blm, model, t0)
+    nothing
+end
 
-function iterative_optimize!(solver, mode::ProductMode{T}, single_blm, model::BilevelModel, t0) where T
-    if isempty(mode.IterativeEpsilon)
+function iterative_optimize!(
+    solver,
+    mode::ProductMode{T},
+    single_blm,
+    model::BilevelModel,
+    t0,
+) where {T}
+
+    if isempty(mode.iter_eps)
         return nothing
     end
 
-    TerminationEpsilon = mode.epsilon
+    termination_eps = mode.epsilon
 
     if MOI.get(solver, MOI.PrimalStatus()) in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-        for (attr,val) in mode.IterativeAttributes
-            MOI.set(solver,MOI.RawOptimizerAttribute(attr),val)
+
+        for (attr, val) in mode.iter_attr
+            MOI.set(solver, MOI.RawOptimizerAttribute(attr), val)
         end
+
         println("Starting iterative ProductMode(), printing log below: ")
-        _print_iter_log(;Iteration=0, Regularization=mode.epsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true)
-        
+        print_iter_log(;
+            iteration = 0,
+            regularization = mode.epsilon,
+            termination_status = MOI.get(solver, MOI.TerminationStatus()),
+            primal_status = MOI.get(solver, MOI.PrimalStatus()),
+            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+            t = time() - t0,
+            upperline = true,
+            header = true,
+        )
+
         if MOI.supports_incremental_interface(solver)
             comp_idxs_in_solver = get_solver_comp_idxs(model, mode)
-            TerminationEpsilon = _iterative_optimize_solver!(solver, mode, comp_idxs_in_solver, t0)
+            termination_eps =
+                iterative_optimize_solver(solver, mode, comp_idxs_in_solver, t0)
         else
-            TerminationEpsilon = _iterative_optimize_copy!(single_blm, solver, mode, model, t0)
+            termination_eps = iterative_optimize_copy(single_blm, solver, mode, model, t0)
         end
+
     else
-        @warn "Unable to start iterative ProductMode(). You may want to retry with a larger initial regularizer. For more information see below:"
+        error(
+            "Unable to start iterative ProductMode() because initial solution is not feasible. You may want to retry with a larger initial regularizer. For more information take a look at the solver log. ",
+        )
     end
 
-    _print_iter_log(;Iteration="Terminated", Regularization=TerminationEpsilon, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0, upperline=true, header=true, bottomline=true)
+    print_iter_log(;
+        iteration = "Terminated",
+        regularization = termination_eps,
+        termination_status = MOI.get(solver, MOI.TerminationStatus()),
+        primal_status = MOI.get(solver, MOI.PrimalStatus()),
+        objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+        t = time() - t0,
+        upperline = true,
+        header = true,
+        bottomline = true,
+    )
 
     return nothing
 
 end
 
-function get_solver_comp_idxs(model::BilevelModel, mode::ProductMode{T}) where T
-    [model.sblm_to_solver[comp_idx_in_sblm] for comp_idx_in_sblm in mode.comp_idx_in_sblm ]
+function get_solver_comp_idxs(model::BilevelModel, mode::ProductMode{T}) where {T}
+
+    return [
+        model.sblm_to_solver[comp_idx_in_sblm] for comp_idx_in_sblm in mode.comp_idx_in_sblm
+    ]
+
 end
 
-function _iterative_optimize_solver!(solver, mode::ProductMode{T}, comp_idxs_in_solver::Vector{MathOptInterface.ConstraintIndex{F, S}}, t0) where {T, F, S}
-    for (iter,eps) in enumerate(mode.IterativeEpsilon)
+function iterative_optimize_solver(
+    solver,
+    mode::ProductMode{T},
+    comp_idxs_in_solver::Vector{MathOptInterface.ConstraintIndex{F,S}},
+    t0,
+) where {T,F,S}
 
-        SetIterPrimalStarts!(solver)
-        SetIterDualStarts!(solver)
-        SetIterRegularizations!(solver, eps, comp_idxs_in_solver, S)
+    for (iter, eps) in enumerate(mode.iter_eps)
+
+        set_iter_primal_starts(solver)
+        set_iter_dual_starts(solver)
+        set_iter_regularizations(solver, eps, comp_idxs_in_solver, S)
 
         MOI.optimize!(solver)
 
-        _print_iter_log(;Iteration="s$(iter)", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+        print_iter_log(;
+            iteration = "s$(iter)",
+            regularization = eps,
+            termination_status = MOI.get(solver, MOI.TerminationStatus()),
+            primal_status = MOI.get(solver, MOI.PrimalStatus()),
+            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+            t = time() - t0,
+        )
 
-        TerminationEpsilon = eps
+        termination_eps = eps
 
         if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-            return TerminationEpsilon
+            return termination_eps
         end
+
     end
-    return mode.IterativeEpsilon[end]
+
+    return mode.iter_eps[end]
+
 end
 
-function _iterative_optimize_copy!(single_blm, solver, mode::ProductMode{T}, model::BilevelModel, t0) where T
-    for (iter,eps) in enumerate(mode.IterativeEpsilon)
-        SetIterPrimalStarts!(single_blm, solver, model.sblm_to_solver)
-        SetIterDualStarts!(single_blm, solver, model.sblm_to_solver)
-        SetIterRegularizations!(single_blm, eps, mode.comp_idx_in_sblm)
-        
+function iterative_optimize_copy(
+    single_blm,
+    solver,
+    mode::ProductMode{T},
+    model::BilevelModel,
+    t0,
+) where {T}
+
+    for (iter, eps) in enumerate(mode.iter_eps)
+
+        set_iter_primal_starts(single_blm, solver, model.sblm_to_solver)
+        set_iter_dual_starts(single_blm, solver, model.sblm_to_solver)
+        set_iter_regularizations(single_blm, eps, mode.comp_idx_in_sblm)
+
         MOI.empty!(solver)
         model.sblm_to_solver = MOI.copy_to(solver, single_blm)
 
         MOI.optimize!(solver)
 
-        _print_iter_log(;Iteration="c$(iter)", Regularization=eps, TerminationStatus=MOI.get(solver, MOI.TerminationStatus()), PrimalStatus=MOI.get(solver, MOI.PrimalStatus()), ObjectiveValue=MOI.get(solver, MOI.ObjectiveValue()), t=time()-t0)
+        print_iter_log(;
+            iteration = "c$(iter)",
+            regularization = eps,
+            termination_status = MOI.get(solver, MOI.TerminationStatus()),
+            primal_status = MOI.get(solver, MOI.PrimalStatus()),
+            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+            t = time() - t0,
+        )
 
-        TerminationEpsilon = eps
+        termination_eps = eps
 
         if MOI.get(solver, MOI.PrimalStatus()) ∉ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-            return TerminationEpsilon
+            return termination_eps
         end
+
     end
-    return mode.IterativeEpsilon[end]
+
+    return mode.iter_eps[end]
+
 end
 
-function _print_iter_log(;Iteration, Regularization, TerminationStatus, PrimalStatus, ObjectiveValue, t, header=false, bottomline=false, upperline=false)
-    colwidth = Dict(:Iteration=>11, :Regularization=>20, :TerminationStatus=>25, :PrimalStatus=>25, :ObjectiveValue=>25, :t=>15)
+function print_iter_log(;
+    iteration,
+    regularization,
+    termination_status,
+    primal_status,
+    objective_value,
+    t,
+    header = false,
+    bottomline = false,
+    upperline = false,
+)
+
+    colwidth = Dict(
+        :iteration => 11,
+        :regularization => 20,
+        :termination_status => 25,
+        :primal_status => 25,
+        :objective_value => 25,
+        :t => 15,
+    )
+
     if upperline
-        println(repeat("-",sum(values(colwidth))))
+        println(repeat("-", sum(values(colwidth))))
     end
+
     if header
-        println(lpad("Iteration", colwidth[:Iteration]),lpad("Regularization", colwidth[:Regularization]),lpad("Termination Status", colwidth[:TerminationStatus]),lpad("Primal Status", colwidth[:PrimalStatus]), lpad("Objective Value", colwidth[:ObjectiveValue]), lpad("Time",colwidth[:t]) )
+        println(
+            lpad("Iteration", colwidth[:iteration]),
+            lpad("Regularization", colwidth[:regularization]),
+            lpad("Termination Status", colwidth[:termination_status]),
+            lpad("Primal Status", colwidth[:primal_status]),
+            lpad("Objective Value", colwidth[:objective_value]),
+            lpad("Time", colwidth[:t]),
+        )
     end
-    if PrimalStatus ∈ [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
-        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.5e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(Printf.@sprintf("%.8e",ObjectiveValue), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+
+    if primal_status in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        println(
+            lpad(iteration, colwidth[:iteration]),
+            lpad(Printf.@sprintf("%.5e", regularization), colwidth[:regularization]),
+            lpad(termination_status, colwidth[:termination_status]),
+            lpad(primal_status, colwidth[:primal_status]),
+            lpad(Printf.@sprintf("%.8e", objective_value), colwidth[:objective_value]),
+            lpad(Printf.@sprintf("%.2f", t), colwidth[:t]),
+        )
     else
-        println(lpad(Iteration, colwidth[:Iteration]),lpad(Printf.@sprintf("%.5e",Regularization), colwidth[:Regularization]),lpad(TerminationStatus, colwidth[:TerminationStatus]),lpad(PrimalStatus, colwidth[:PrimalStatus]), lpad(repeat('-', 14), colwidth[:ObjectiveValue]), lpad(Printf.@sprintf("%.2f",t),colwidth[:t]) )
+        println(
+            lpad(iteration, colwidth[:iteration]),
+            lpad(Printf.@sprintf("%.5e", regularization), colwidth[:regularization]),
+            lpad(termination_status, colwidth[:termination_status]),
+            lpad(primal_status, colwidth[:primal_status]),
+            lpad(repeat('-', 14), colwidth[:objective_value]),
+            lpad(Printf.@sprintf("%.2f", t), colwidth[:t]),
+        )
     end
+
     if bottomline
-        println(repeat("-",sum(values(colwidth))))
+        println(repeat("-", sum(values(colwidth))))
     end
+
 end
 
-function SetIterPrimalStarts!(single_blm, solver, sblm_to_solver)
-    for VarIdx in MOI.get(single_blm, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
-        solverVarIdx = sblm_to_solver[VarIdx]
-        MOI.set(single_blm, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), solverVarIdx))
+function set_iter_primal_starts(single_blm, solver, sblm_to_solver)
+
+    for var_idx in
+        MOI.get(single_blm, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        solver_var_idx = sblm_to_solver[VarIdx]
+        MOI.set(
+            single_blm,
+            MOI.VariablePrimalStart(),
+            var_idx,
+            MOI.get(solver, MOI.VariablePrimal(), solver_var_idx),
+        )
     end
+
 end
 
-function SetIterDualStarts!(single_blm, solver, sblm_to_solver)
+function set_iter_dual_starts(single_blm, solver, sblm_to_solver)
+
     for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
-        _SetIterDualStart!(single_blm, F, S, solver, sblm_to_solver)
+        set_iter_dual_start(single_blm, F, S, solver, sblm_to_solver)
     end
+
 end
 
-function _SetIterDualStart!(single_blm, F, S, solver, sblm_to_solver)
-    for CtrIdx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
-        solverCtrIdx = sblm_to_solver[CtrIdx]
-        MOI.set(single_blm, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), solverCtrIdx))
+function set_iter_dual_start(single_blm, F, S, solver, sblm_to_solver)
+
+    for ctr_idx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+        solver_ctr_idx = sblm_to_solver[ctr_idx]
+        MOI.set(
+            single_blm,
+            MOI.ConstraintDualStart(),
+            ctr_idx,
+            MOI.get(solver, MOI.ConstraintDual(), solver_ctr_idx),
+        )
     end
+
 end
 
-function _SetIterDualStart!(single_blm, F::MOI.VectorAffineFunction, S, solver, sblm_to_solver)
+function set_iter_dual_start(
+    single_blm,
+    F::MOI.VectorAffineFunction,
+    S,
+    solver,
+    sblm_to_solver,
+)
     error("Vector valued functions not yet supported in iterative ProductMode()")
 end
 
-function SetIterRegularizations!(m, eps, comp_idxs)
-    for CtrIdx in comp_idxs
-        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.LessThan(eps))
+function set_iter_regularizations(m, eps, comp_idxs)
+
+    for ctr_idx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.LessThan(eps))
     end
+
 end
 
-function SetIterRegularizations!(m, eps, comp_idxs, S::Type{MOI.LessThan{T}}) where T
-    for CtrIdx in comp_idxs
-        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.LessThan(eps))
+function set_iter_regularizations(m, eps, comp_idxs, S::Type{MOI.LessThan{T}}) where {T}
+
+    for ctr_idx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.LessThan(eps))
     end
+
 end
 
-function SetIterRegularizations!(m, eps, comp_idxs, S::Type{MOI.GreaterThan{T}}) where T
-    for CtrIdx in comp_idxs
-        MOI.set(m, MOI.ConstraintSet(), CtrIdx,MOI.GreaterThan(-1*eps))
+function set_iter_regularizations(m, eps, comp_idxs, S::Type{MOI.GreaterThan{T}}) where {T}
+
+    for ctr_idx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.GreaterThan(-1 * eps))
     end
+
 end
 
-function SetIterPrimalStarts!(solver)
-    for VarIdx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
-        MOI.set(solver, MOI.VariablePrimalStart(), VarIdx, MOI.get(solver, MOI.VariablePrimal(), VarIdx))
+function set_iter_primal_starts(solver)
+
+    for var_idx in MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        MOI.set(
+            solver,
+            MOI.VariablePrimalStart(),
+            var_idx,
+            MOI.get(solver, MOI.VariablePrimal(), var_idx),
+        )
     end
+
 end
 
-function SetIterDualStarts!(solver)
+function set_iter_dual_starts(solver)
+
     for (F, S) in MOI.get(solver, MOI.ListOfConstraintTypesPresent())
-        _SetIterDualStart!(F, S, solver)
+        set_iter_dual_start(F, S, solver)
     end
+
 end
 
-function _SetIterDualStart!(F, S, solver)
-    for CtrIdx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
-        MOI.set(solver, MOI.ConstraintDualStart(), CtrIdx, MOI.get(solver, MOI.ConstraintDual(), CtrIdx))
+function set_iter_dual_start(F, S, solver)
+
+    for ctr_idx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
+        MOI.set(
+            solver,
+            MOI.ConstraintDualStart(),
+            ctr_idx,
+            MOI.get(solver, MOI.ConstraintDual(), ctr_idx),
+        )
     end
+
 end
 
-function _SetIterDualStart!(F::MOI.VectorAffineFunction, S, solver)
+function set_iter_dual_start(F::MOI.VectorAffineFunction, S, solver)
     error("Vector valued functions not yet supported in iterative ProductMode()")
 end

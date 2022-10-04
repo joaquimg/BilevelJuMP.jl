@@ -52,9 +52,9 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 @objective(Lower(model), Min, -x)
 
 #-
-@constraint(Lower(model), x +  y <= 8)
-@constraint(Lower(model), 4x +  y >= 8)
-@constraint(Lower(model), 2x +  y <= 13)
+@constraint(Lower(model), x + y <= 8)
+@constraint(Lower(model), 4x + y >= 8)
+@constraint(Lower(model), 2x + y <= 13)
 @constraint(Lower(model), 2x - 7y <= 0)
 @constraint(Lower(model), x <= 5)
 
@@ -63,9 +63,9 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 
 optimize!(model)
 
-@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-3
-@test value(x) ≈ 3.5 * 8 / 15 atol=1e-6
-@test value(y) ≈ 8 / 15 atol=1e-6
+@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol = 1e-3
+@test value(x) ≈ 3.5 * 8 / 15 atol = 1e-6
+@test value(y) ≈ 8 / 15 atol = 1e-6
 
 # TODO: why are these commented out?    #src
 # @test dual(l2) #≈ [0] atol=atol       #src

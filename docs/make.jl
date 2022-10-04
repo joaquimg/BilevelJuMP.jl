@@ -26,7 +26,8 @@ function link_example(content)
     edit_url = match(r"EditURL = \"(.+?)\"", content)[1]
     footer = match(r"^(---\n\n\*This page was generated using)"m, content)[1]
     content = replace(
-        content, footer => "!!! info\n    [View this file on Github]($(edit_url)).\n\n" * footer
+        content,
+        footer => "!!! info\n    [View this file on Github]($(edit_url)).\n\n" * footer,
     )
     return content
 end
@@ -39,12 +40,7 @@ function literate_directory(dir)
         @testset "$(filename)" begin
             _include_sandbox(filename)
         end
-        Literate.markdown(
-            filename,
-            dir;
-            documenter = true,
-            postprocess = link_example
-        )
+        Literate.markdown(filename, dir; documenter = true, postprocess = link_example)
     end
     return
 end
@@ -53,25 +49,20 @@ literate_directory(_EXAMPLE_DIR)
 
 makedocs(
     modules = [BilevelJuMP],
-    doctest  = false,
-    clean    = true,
-    format   = Documenter.HTML(
+    doctest = false,
+    clean = true,
+    format = Documenter.HTML(
         mathengine = Documenter.MathJax2(),
         prettyurls = get(ENV, "CI", nothing) == "true",
     ),
     sitename = "BilevelJuMP.jl",
-    authors  = "Joaquim Garcia",
-    pages   = [
+    authors = "Joaquim Garcia",
+    pages = [
         "Home" => "index.md",
         "Manual" => "manual.md",
-        "Examples" => [
-            joinpath("examples", f) for
-            f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
-        ]
-    ]
+        "Examples" =>
+            [joinpath("examples", f) for f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")],
+    ],
 )
 
-deploydocs(
-    repo = "github.com/joaquimg/BilevelJuMP.jl.git",
-    push_preview = true,
-)
+deploydocs(repo = "github.com/joaquimg/BilevelJuMP.jl.git", push_preview = true)
