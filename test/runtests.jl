@@ -280,34 +280,36 @@ end
 end
 
 @testset "Princeton Handbook Quadratic" begin
-    for solver in vcat(solvers_nlp, solvers_nlp_sum)
-        jump_HTP_quad01(solver.opt, solver.mode)
-        jump_HTP_quad02(solver.opt, solver.mode)
-        jump_HTP_quad04(solver.opt, solver.mode, CONFIG_3)
-        jump_HTP_quad05(solver.opt, solver.mode)
-        jump_HTP_quad06(solver.opt, solver.mode, CONFIG_3)
-        # jump_HTP_quad06b(solver.opt, solver.mode)
-        jump_HTP_quad07(solver.opt, solver.mode)
-        jump_HTP_quad08(solver.opt, solver.mode) # not PSD
-        jump_HTP_quad09(solver.opt, solver.mode)
-    end
-    for solver in solvers_nlp
-        jump_HTP_quad03(solver.opt, solver.mode)
-    end
+    for is_min in [true, false]
+        for solver in vcat(solvers_nlp, solvers_nlp_sum)
+            jump_HTP_quad01(solver.opt, is_min, solver.mode)
+            jump_HTP_quad02(solver.opt, is_min, solver.mode)
+            jump_HTP_quad04(solver.opt, is_min, solver.mode, CONFIG_3)
+            jump_HTP_quad05(solver.opt, is_min, solver.mode)
+            jump_HTP_quad06(solver.opt, is_min, solver.mode, CONFIG_3)
+            # jump_HTP_quad06b(solver.opt, is_min, solver.mode)
+            jump_HTP_quad07(solver.opt, is_min, solver.mode)
+            jump_HTP_quad08(solver.opt, is_min, solver.mode) # not PSD
+            jump_HTP_quad09(solver.opt, is_min, solver.mode)
+        end
+        for solver in solvers_nlp
+            jump_HTP_quad03(solver.opt, is_min, solver.mode)
+        end
 
-    for solver in solvers_sos_quad
-        jump_HTP_quad01(solver.opt, solver.mode, CONFIG_4)
-        jump_HTP_quad02(solver.opt, solver.mode)
-        jump_HTP_quad04(solver.opt, solver.mode)
-        jump_HTP_quad05(solver.opt, solver.mode)
-        jump_HTP_quad06(solver.opt, solver.mode)
-        jump_HTP_quad06b(solver.opt, solver.mode, CONFIG_4)
-        jump_HTP_quad07(solver.opt, solver.mode, CONFIG_4)
-        # jump_HTP_quad08(solver.opt, solver.mode) # not PSD
-    end
-    for solver in solvers_sos
-        jump_HTP_quad03(solver.opt, solver.mode)
-        jump_HTP_quad09(solver.opt, solver.mode)
+        for solver in solvers_sos_quad
+            jump_HTP_quad01(solver.opt, is_min, solver.mode, CONFIG_4)
+            jump_HTP_quad02(solver.opt, is_min, solver.mode)
+            jump_HTP_quad04(solver.opt, is_min, solver.mode)
+            jump_HTP_quad05(solver.opt, is_min, solver.mode)
+            jump_HTP_quad06(solver.opt, is_min, solver.mode)
+            jump_HTP_quad06b(solver.opt, is_min, solver.mode, CONFIG_4)
+            jump_HTP_quad07(solver.opt, is_min, solver.mode, CONFIG_4)
+            # jump_HTP_quad08(solver.opt, is_min, solver.mode) # not PSD
+        end
+        for solver in solvers_sos
+            jump_HTP_quad03(solver.opt, is_min, solver.mode)
+            jump_HTP_quad09(solver.opt, is_min, solver.mode)
+        end
     end
 end
 
@@ -366,6 +368,11 @@ end
         # jump_fanzeres2017(solver.opt, solver.mode)
         jump_eq_price(solver.opt, solver.mode)
     end
+end
+
+@testset "Lower QP" begin
+    jump_qp_lower_min()
+    jump_qp_lower_max()
 end
 
 @testset "Fruits" begin
