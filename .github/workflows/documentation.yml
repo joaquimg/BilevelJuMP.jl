@@ -15,8 +15,8 @@ jobs:
           # Build documentation on Julia 1.6
           version: '1.6'
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.add(name="Dualization", version="0.5.5")'
-             #; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia -e 'using Pkg; Pkg.add(name="Dualization", version="0.5.5")'
+             #julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
