@@ -1488,7 +1488,7 @@ end
 # TODO - add quadratic problems
 
 # 9.3.2 - parg 221
-function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad01(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
@@ -1503,8 +1503,13 @@ function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), x >= 0)
     @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
 
-    @objective(Lower(model), Min,
-        (y-1)^2 -1.5*x*y)
+    if is_min
+        @objective(Lower(model), Min,
+            (y-1)^2 -1.5*x*y)
+    else
+        @objective(Lower(model), Max,
+            -((y-1)^2 -1.5*x*y))
+    end
 
     @constraint(Lower(model), -3x +    y <= -3)
     @constraint(Lower(model),   x - 0.5y <= 4)
@@ -1523,7 +1528,7 @@ function jump_HTP_quad01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.3- parg 222
-function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad02(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
@@ -1541,8 +1546,13 @@ function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), y >= 0)
     @constraint(Upper(model), y <= 20)
 
-    @objective(Lower(model), Min,
-        (x + 2y - 30)^2)
+    if is_min
+        @objective(Lower(model), Min,
+            (x + 2y - 30)^2)
+    else
+        @objective(Lower(model), Max,
+            -((x + 2y - 30)^2))
+    end
 
     @constraint(Lower(model),   x +    y <= 20)
     @constraint(Lower(model),     -    y <= 0)
@@ -1560,7 +1570,7 @@ function jump_HTP_quad02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.4- parg 223
-function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad03(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1579,12 +1589,17 @@ function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), [i=1:2], y[i] >= -10)
     @constraint(Upper(model), [i=1:2], y[i] <= 20)
 
-    @objective(Lower(model), Min,
-        (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
-        # the boo does not contain the 40, it is a 20 there
-        # however the solution does not match
-        # the file https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds923.html
-        # has a 40
+    if is_min
+        @objective(Lower(model), Min,
+            (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
+    else
+        @objective(Lower(model), Max,
+            -((-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2))
+    end
+    # the boo does not contain the 40, it is a 20 there
+    # however the solution does not match
+    # the file https://www.gams.com/latest/emplib_ml/libhtml/emplib_flds923.html
+    # has a 40
 
     @constraint(Lower(model),  [i=1:2],- x[i] + 2y[i] <= -10)
     @constraint(Lower(model), [i=1:2], y[i] >= -10)
@@ -1604,7 +1619,7 @@ function jump_HTP_quad03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.5- parg 225
-function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad04(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1619,8 +1634,13 @@ function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
         0.5*((y[1]-2)^2+(y[2]-2)^2) )
     @constraint(Upper(model), [i=1:2], y[i] >= 0)
 
-    @objective(Lower(model), Min,
-        0.5*(y[1]^2) + y[2])
+    if is_min
+        @objective(Lower(model), Min,
+            0.5*(y[1]^2) + y[2])
+    else
+        @objective(Lower(model), Max,
+            -(0.5*(y[1]^2) + y[2]))
+    end
 
     @constraint(Lower(model), y[1] + y[2] == x)
     @constraint(Lower(model), [i=1:2], y[i] >= 0)
@@ -1636,7 +1656,7 @@ function jump_HTP_quad04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.6- parg 226
-function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad05(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1652,8 +1672,13 @@ function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), x >= 0)
     @constraint(Upper(model), x <= 8)
 
-    @objective(Lower(model), Min,
-        (y-5)^2 )
+    if is_min
+        @objective(Lower(model), Min,
+            (y-5)^2 )
+    else
+        @objective(Lower(model), Max,
+            -((y-5)^2) )
+    end
 
     @constraint(Lower(model), -2x+y <= 1)
     @constraint(Lower(model),  x-2y <= 2)
@@ -1672,7 +1697,7 @@ function jump_HTP_quad05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.7- parg 227
-function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad06(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1687,8 +1712,13 @@ function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
         x[1]^2 -2x[1] +x[2]^2 -2x[2] +y[1]^2 +y[2]^2)
     @constraint(Upper(model), [i=1:2], y[i] >= 0)
 
-    @objective(Lower(model), Min,
-        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+    if is_min
+        @objective(Lower(model), Min,
+            (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+    else
+        @objective(Lower(model), Max,
+            -((-x[1] + y[1])^2 + (-x[2] + y[2])^2))
+    end
 
     @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
@@ -1704,7 +1734,7 @@ function jump_HTP_quad06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @test sol ≈ [0.5 ; 0.5; 0.5; 0.5] atol=atol
 
 end
-function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad06b(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
     # TODO reviews the behaviour comment
     atol = config.atol
     start = config.start_value
@@ -1719,8 +1749,13 @@ function jump_HTP_quad06b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Con
         x[1]^2 +x[2]^2 +y[1]^2 - 3y[1] +y[2]^2 - 3y[2])
     @constraint(Upper(model), [i=1:2], y[i] >= 0)
 
-    @objective(Lower(model), Min,
-        (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+    if is_min
+        @objective(Lower(model), Min,
+            (-x[1] + y[1])^2 + (-x[2] + y[2])^2)
+    else
+        @objective(Lower(model), Max,
+            -((-x[1] + y[1])^2 + (-x[2] + y[2])^2))
+    end
 
     @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
@@ -1755,7 +1790,7 @@ end
 
 
 # 9.3.8- parg 228
-function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad07(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
 
@@ -1770,8 +1805,13 @@ function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), x >= 0)
     @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
 
-    @objective(Lower(model), Min,
-        (y-1)^2 -1.5*x*y)
+    if is_min
+        @objective(Lower(model), Min,
+            (y-1)^2 -1.5*x*y)
+    else
+        @objective(Lower(model), Max,
+            -((y-1)^2 -1.5*x*y))
+    end
 
     @constraint(Lower(model), -3x +    y <= -3)
     @constraint(Lower(model),   x - 0.5y <= 4)
@@ -1790,7 +1830,7 @@ function jump_HTP_quad07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.9 - parg 229
-function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad08(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
     # Q objective is not PSD
 
     atol = config.atol
@@ -1809,8 +1849,13 @@ function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), y >= 0)
     @constraint(Upper(model), y <= 1)
 
-    @objective(Lower(model), Min,
-        -(1-4x)*y -(2x+2) )
+    if is_min
+        @objective(Lower(model), Min,
+            -(1-4x)*y -(2x+2) )
+    else
+        @objective(Lower(model), Max,
+            -(-(1-4x)*y -(2x+2) ))
+    end
 
     @constraint(Lower(model), y >= 0)
     @constraint(Lower(model), y <= 1)
@@ -1827,7 +1872,7 @@ function jump_HTP_quad08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 end
 
 # 9.3.10- parg 230
-function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad09(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1843,8 +1888,13 @@ function jump_HTP_quad09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
     @constraint(Upper(model), [i=1:2], y[i] >= 0)
     @constraint(Upper(model), x >= 0)
 
-    @objective(Lower(model), Min,
-        2y[1]+x*y[2])
+    if is_min
+        @objective(Lower(model), Min,
+            2y[1]+x*y[2])
+    else
+        @objective(Lower(model), Max,
+            -(2y[1]+x*y[2]))
+    end
 
     @constraint(Lower(model), x + 4 <= y[1] + y[2])
     # this 4 is missing from the book
@@ -2826,4 +2876,54 @@ function jump_01_sum_agg(optimizer, config = Config())
     # @test dual(c3) ≈ [0] atol=atol
     # @test dual(c4) ≈ [1] atol=atol #NLP fail
 
+end
+
+"""
+From: https://github.com/joaquimg/BilevelJuMP.jl/issues/182
+By: LukasBarner
+
+Siddiqui S, Gabriel SA (2013). An sos1-based approach for solving mpecs with a natural gas market applica-
+tion. Networks and Spatial Economics 13(2):205–227.
+"""
+function jump_qp_lower_min(config = Config())
+    F = [1,2]
+    c = Dict(1=>1, 2=>1)
+    C = 1
+    a = 13
+    b = 1
+
+    model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode())
+
+    @variable(Lower(model), q[F] >= 0)
+    @variable(Upper(model), Q >= 0)
+
+    @objective(Upper(model), Max, ((a-b * (q[1] + q[2] + Q)) * Q - C*Q) )
+
+    @objective(Lower(model), Min, -((a-b * (q[1] + q[2] + Q)) * q[1] - C*q[1] + (a-b * (q[1] + q[2] + Q)) * q[2] - C*q[2] + b*q[1]*q[2]) )
+
+    optimize!(model)
+
+    @test isapprox(value.(Q), 6; atol=1e-5)
+    @test isapprox(value.(q).data, [2,2]; atol=1e-5)
+end
+function jump_qp_lower_max(config = Config())
+    F = [1,2]
+    c = Dict(1=>1, 2=>1)
+    C = 1
+    a = 13
+    b = 1
+
+    model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode())
+
+    @variable(Lower(model), q[F] >= 0)
+    @variable(Upper(model), Q >= 0)
+
+    @objective(Upper(model), Max, ((a-b * (q[1] + q[2] + Q)) * Q - C*Q) )
+
+    @objective(Lower(model), Max, +((a-b * (q[1] + q[2] + Q)) * q[1] - C*q[1] + (a-b * (q[1] + q[2] + Q)) * q[2] - C*q[2] + b*q[1]*q[2]) )
+
+    optimize!(model)
+
+    @test isapprox(value.(Q), 6; atol=1e-5)
+    @test isapprox(value.(q).data, [2,2]; atol=1e-5)
 end
