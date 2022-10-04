@@ -2906,7 +2906,7 @@ function jump_qp_lower_min(config = Config())
     @test isapprox(value.(Q), 6; atol=1e-5)
     @test isapprox(value.(q).data, [2,2]; atol=1e-5)
 end
-function jump_qp_lower_min(config = Config())
+function jump_qp_lower_max(config = Config())
     F = [1,2]
     c = Dict(1=>1, 2=>1)
     C = 1
