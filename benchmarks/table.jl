@@ -2,13 +2,13 @@ using DataFrames
 using CSV
 using Printf
 
+
 cd(@__DIR__)
 
-FILE = "C:\\Users\\joaquimgarcia\\Desktop\\bilevel_results.csv"
-FILE2 = "C:\\Users\\joaquimgarcia\\Desktop\\bilevel_results2.csv"
+FILE = ".\\bilevel_results.csv"
 df = DataFrame(CSV.File(FILE))
 
-function mystr(t::Number, g::Number, opt::String = "cbc")
+function mystr(t::Number, g::Number, opt = "cbc")
     if g < 1e-4
         t = min(t, 600)
         return "$(trunc.(Int,t))s"
@@ -18,12 +18,14 @@ function mystr(t::Number, g::Number, opt::String = "cbc")
         t = min(t, 600)
         return "$(trunc.(Int,t))s"
     else
-        return ""
+        @show g, t
+        return " - "
     end
 end
-mystr(t::String, g::String, opt::String = cbc) = ""
+# mystr(t::String, g::AbstractString, opt::String = "cbc") = @show g, t;""
+mystr(t, g, opt = "cbc") = ""
 
-df2 = transform(df, [:time, :gap] => (t,g) -> mystr.(t, g))
+df2 = transform(df, [:solve_time, :gap] => (t,g) -> mystr.(t, g))
 
 function int_or_empty(str)
     return strip(str)
@@ -34,8 +36,8 @@ function int_or_empty(str)
     end
 end
 
-fnd(df, sym, str) = strip.(df[sym]) .== str
-fnd(df, sym, str, str2) = strip.(df[sym]) .== "($str;$str2)"
+fnd(df, sym, str) = strip.(df[!,sym]) .== str
+fnd(df, sym, str, str2) = strip.(df[!,sym]) .== "($str;$str2)"
 
 mrow(NAME) = "\\parbox[t]{2mm}{\\multirow{3}{*}{\\rotatebox[origin=c]{90}{$(NAME)}}}"
 
@@ -47,15 +49,16 @@ for i in eachrow(df)
     s = replace(s, "("=>"")
     s = replace(s, ")"=>"")
     s = split(s,';')
-    push!(instances, (strip(i[:prob]), int_or_empty(s[1]), int_or_empty(s[2])))
+    push!(instances, (strip(i[:prob]), int_or_empty(s[2]), int_or_empty(s[1])))
 end
 # ordered
 @show instances = sort!(collect(instances))#, order = Base.Reverse)
 
 solvers = Set()
 for i in eachrow(df), mode in modes
-    if mode == strip(i[:mode])
-        push!(solvers, i[:opt])
+    (_opt, _mode) = split(strip(i[:opt_mode]), "_")
+    if mode == _mode
+        push!(solvers, _opt)
     end
 end
 # ordered
@@ -63,9 +66,9 @@ end
 
 s = ""
 
-s *= "\\begin{table}[]\n"
-s *= "\\resizebox{\\textwidth}{!}{\\%\n"
-s *= "\\begin{tabular}{llllllllllllllll}\n"
+s *= "\\begin{table}[!ht]\n"
+s *= "\\resizebox{\\textwidth}{!}{\n"
+s *= "\\begin{tabular}{rr$("|rr$(true ? "r" : "")"^(length(solvers)))}\n"
 
 lp = "NULL"
 
@@ -75,21 +78,27 @@ s *= "\\toprule\n"
 # first two columns are case data
 s *= " & "
 for opt in solvers
-    s *= " & \\multicolumn{2}{c}{$opt}"
+    s *= " & \\multicolumn{3}{c}{$opt} $(opt != solvers[end] ? "\\vline" : "")"
 end
 s *= " \\\\\n"
 
-s *= " & inst"
+s *= " & Inst"
 for opt in solvers
-    s *= " & obj & gap(\\%) "
+    s *= " & Obj & Gap " #(\\%)
+    if true
+        s *= " & Time "
+    end
+
 end
 s *= " \\\\\n"
 
+if false
 s *= " & "
 for opt in solvers
     s *= " &   & time(s) "
 end
 s *= " \\\\\n"
+end
 
 
 
@@ -111,47 +120,56 @@ for (p,i1,i2) in instances
     end
     for opt in solvers
         for mode in modes
+            @show opt_mode = "$(opt)_$(mode)"
+            @show i2, i1
             o = ""
             g = ""
             t = ""
-
             o = try
-                minimum(df[fnd(df, :mode, mode) .& fnd(df, :opt, opt) .& fnd(df, :prob, p) .& fnd(df, :inst, i1, i2), :obj])
+                minimum(df[fnd(df, :opt_mode, opt_mode) .& fnd(df, :prob, p) .& fnd(df, :inst, i2, i1), :upper_obj])
             catch
                 ""
             end
             g = try
-                    minimum(df[fnd(df, :mode, mode) .& fnd(df, :opt, opt) .& fnd(df, :prob, p) .& fnd(df, :inst, i1, i2), :gap])
+                minimum(df[fnd(df, :opt_mode, opt_mode) .& fnd(df, :prob, p) .& fnd(df, :inst, i2, i1), :gap])
             catch
                 ""
             end
             t = try
-                    minimum(df[fnd(df, :mode, mode) .& fnd(df, :opt, opt) .& fnd(df, :prob, p) .& fnd(df, :inst, i1, i2), :time])
+                minimum(df[fnd(df, :opt_mode, opt_mode) .& fnd(df, :prob, p) .& fnd(df, :inst, i2, i1), :solve_time])
             catch
                 ""
             end
-            # @show t, g
             v = mystr(t, g, opt)
+            @show t, g, v, o
             s *= " & "
             s *= pobj(o)
             s *= " & "
-            if length(v) > 0
-                s *= v
+            if true
+                s *= pgap(g)
+                s *= " & "
+                s *= ptime(t)
+            else
+                if length(v) > 0
+                    s *= v
+                end
             end
         end
     end
     s *= " \\\\\n"
 end
 s *= "\\bottomrule\n"
-
 s *= "\\end{tabular}\n"
 s *= "}\n"
+s *= "\\caption{$(modes[1]), Time in seconds (s), Gap in percent (\\%).}\n"
+s *= "\\label{table_$(modes[1])}\n"
 s *= "\\end{table}\n"
 
 
+@show modes[1]
 println(s)
 
-f = open("table_$(modes[1]).tex", "w")
+f = open("table2_$(modes[1]).tex", "w")
 print(f, s)
 close(f)
 
@@ -159,12 +177,36 @@ close(f)
 
 end
 
-pobj(o::String) = ""
-pobj(o::Number) = abs(o) < 1e8 ? Printf.@sprintf("%4.2f", o) : ""
+function pgap(g::Number)
+    if g < 1e-4
+        return "0"
+    elseif g < 10
+        return "$(trunc.(Int,100*g))"
+    else
+        return " - "
+    end
+end
+function ptime(t::Number)
+    if t < 600 - 5
+        return "$(trunc.(Int,t))"
+    else
+        return " - "
+    end
+end
+pobj(o::String) = " - "
+pobj(o::Number) = abs(o) < 1e8 ? Printf.@sprintf("%4.2f", o) : " - "
 
 
 
-modes = [["fa10"], ["fa100"], ["sos1"], ["prod10"], ["prod100"], ["sd10"], ["sd100"], ["prod", "sd"]]
+modes = [
+    # ["fa100"],
+    # ["sos1"],
+    # ["indc"],
+    # ["prod100"],
+    # ["sd100"],
+    ["prod"],
+    ["sd"],
+    ]
 for mode in modes
     ptable(df, mode)
 end
