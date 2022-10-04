@@ -75,34 +75,36 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   19  6.1333413e+00 1.32e-07 1.12e+05  -1.0 5.27e-02    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   20  6.1333412e+00 1.28e-07 2.35e+06  -1.0 2.43e-03    -  1.00e+00 1.38e-01f  2
-  21  6.1333372e+00 2.05e-08 4.83e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
-  22  6.1333345e+00 2.22e-16 3.69e+05  -1.0 7.67e-03    -  1.00e+00 1.00e+00h  1
-  23  6.1333351e+00 2.22e-16 2.36e+06  -1.0 3.69e-03    -  1.00e+00 5.00e-01f  2
-  24  6.1333347e+00 0.00e+00 1.05e+03  -1.0 7.66e-05    -  1.00e+00 1.00e+00h  1
-  25  6.1333346e+00 2.22e-16 1.31e+05  -2.5 2.28e-04    -  9.92e-01 1.00e+00h  1
-  26  6.1333346e+00 2.22e-16 1.53e+05  -2.5 2.64e-03   0.9 1.00e+00 1.25e-01f  4
-Cannot call restoration phase at point that is almost feasible (violation 2.220446e-16).
+  21  6.1333372e+00 2.05e-08 4.84e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
+  22  6.1333345e+00 1.11e-16 3.71e+05  -1.0 7.68e-03    -  1.00e+00 1.00e+00h  1
+  23  6.1333345e+00 2.22e-16 1.13e+07  -1.0 7.07e+00    -  7.08e-05 4.08e-06f 10
+  24  6.1333345e+00 2.22e-16 4.69e+06  -1.0 6.02e-03    -  1.00e+00 1.93e-02f  3
+  25  6.1333346e+00 1.11e-16 6.47e+06  -1.0 4.98e-03    -  1.00e+00 2.50e-01f  3
+  26  6.1333346e+00 0.00e+00 1.92e+04  -1.0 1.13e-03    -  1.00e+00 1.00e+00h  1
+  27  6.1333345e+00 0.00e+00 4.18e+04  -1.7 6.27e-04   2.7 1.00e+00 1.00e+00h  1
+  28  6.1333343e+00 0.00e+00 2.78e+03  -1.7 7.07e-04   2.2 1.00e+00 1.00e+00f  1
+Cannot call restoration phase at point that is almost feasible (violation 0.000000e+00).
 Abort in line search due to no other fall back.
 
-Number of Iterations....: 26
+Number of Iterations....: 28
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333346403637696e+00    6.1333346403637696e+00
-Dual infeasibility......:   1.5334872960026801e+05    1.5334872960026801e+05
-Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
-Variable bound violation:   4.3702289735690075e-09    4.3702289735690075e-09
-Complementarity.........:   2.8449358796157052e-03    2.8449358796157052e-03
-Overall NLP error.......:   1.5534211210406022e+02    1.5334872960026801e+05
+Objective...............:   6.1333342638903785e+00    6.1333342638903785e+00
+Dual infeasibility......:   2.7824484642569860e+03    2.7824484642569860e+03
+Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
+Variable bound violation:   4.3702288956191809e-09    4.3702288956191809e-09
+Complementarity.........:   2.0572907200337082e-02    2.0572907200337082e-02
+Overall NLP error.......:   4.1125380915709675e-01    2.7824484642569860e+03
 
 
-Number of objective function evaluations             = 48
-Number of objective gradient evaluations             = 28
-Number of equality constraint evaluations            = 48
-Number of inequality constraint evaluations          = 48
-Number of equality constraint Jacobian evaluations   = 28
-Number of inequality constraint Jacobian evaluations = 28
-Number of Lagrangian Hessian evaluations             = 27
-Total seconds in IPOPT                               = 0.045
+Number of objective function evaluations             = 59
+Number of objective gradient evaluations             = 30
+Number of equality constraint evaluations            = 59
+Number of inequality constraint evaluations          = 59
+Number of equality constraint Jacobian evaluations   = 30
+Number of inequality constraint Jacobian evaluations = 30
+Number of Lagrangian Hessian evaluations             = 29
+Total seconds in IPOPT                               = 0.055
 
 EXIT: Error in step computation!</pre><p>Automated testing</p><pre><code class="language-julia">@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-4
 @test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-4
@@ -112,4 +114,4 @@ EXIT: Error in step computation!</pre><p>Automated testing</p><pre><code class="
 @test value(u1) ≈ 3.5 * 8 / 15 atol=1e-4
 @test value(l1) ≈ 4.5 * 8 / 15 atol=1e-4
 @test dual(l1) ≈ [0] atol=1e-4
-@test dual(l3) ≈ [0] atol=1e-4</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2.2/">« Foundations of Bilevel Programming: Example 2.1</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 October 2022 11:37">Tuesday 4 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@test dual(l3) ≈ [0] atol=1e-4</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2.2/">« Foundations of Bilevel Programming: Example 2.1</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 October 2022 14:02">Tuesday 4 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
