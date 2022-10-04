@@ -497,6 +497,7 @@ function JuMP.optimize!(
     solver_prob = "",
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
     show_iter_log = true,
+    consider_constrained_variables = false,
 )
 
     if model.mode === nothing
@@ -551,6 +552,7 @@ function JuMP.optimize!(
             moi_link2,
             copy_names = model.copy_names,
             pass_start = model.pass_start,
+            consider_constrained_variables = consider_constrained_variables,
         )
 
     # pass additional info (hints - not actual problem data)
