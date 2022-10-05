@@ -3,7 +3,6 @@
 # SOCBLP stands for bilevel programming problem with lower level second-order cone program
 # Bold point(s): Using second-order cone in the lower level problem 
 
-
 # Model of the problem
 # First level
 # ```math
@@ -33,23 +32,23 @@ using Ipopt
 using JuMP
 using Test
 
-
-
-model = BilevelModel(() -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer()), mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(
+    () -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer());
+    mode = BilevelJuMP.ProductMode(1e-9),
+)
 
 # First we need to create all of the variables in the upper and lower problems:
 
 # Upper level variables
 @variable(Upper(model), x)
 
-
 #Lower level variables
-@variable(Lower(model), y[i=1:2])
+@variable(Lower(model), y[i = 1:2])
 
 # Then we can add the objective and constraints of the upper problem:
 
 # Upper level objecive function
-@objective(Upper(model), Min, x + 3(y[1] -y[2]))
+@objective(Upper(model), Min, x + 3(y[1] - y[2]))
 
 # Upper level constraints
 @constraint(Upper(model), x >= 2)
@@ -58,19 +57,19 @@ model = BilevelModel(() -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ip
 # Followed by the objective and constraints of the lower problem:
 
 # Lower objective function
-@objective(Lower(model), Min, - (y[1] - y[2]))
+@objective(Lower(model), Min, -(y[1] - y[2]))
 
 # Lower constraints
 @constraint(Lower(model), lb_y_1, y[1] >= 0)
 @constraint(Lower(model), lb_y_2, y[2] >= 0)
-@constraint(Lower(model), con1, x +  (y[1] - y[2]) <=  8)
-@constraint(Lower(model), con2, x + 4(y[1] - y[2]) >=  8)
+@constraint(Lower(model), con1, x + (y[1] - y[2]) <= 8)
+@constraint(Lower(model), con2, x + 4(y[1] - y[2]) >= 8)
 @constraint(Lower(model), con3, x + 2(y[1] - y[2]) <= 12)
 @constraint(Lower(model), soc_lw, y in SecondOrderCone())
 
 # Defining bounds
-BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5., 5.])
-BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5., 5.])
+BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5.0, 5.0])
+BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5.0, 5.0])
 # require lower bounds
 for con in [con1, con3]
     BilevelJuMP.set_dual_lower_bound_hint(con, -15)
@@ -87,14 +86,13 @@ end
 
 # Now we can solve the problem and verify the solution again that reported by
 
-
 optimize!(model)
 primal_status(model)
 termination_status(model)
 
 value.(y)
 
-@test objective_value(model) ≈ 12  atol=1e-1
-@test value(x) ≈ 6 atol=1e-3
+@test objective_value(model) ≈ 12 atol = 1e-1
+@test value(x) ≈ 6 atol = 1e-3
 @test value(y[2]) >= 0 - 1e-3
-@test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
+@test value(y[1]) - value(y[2]) ≈ 2 atol = 1e-3

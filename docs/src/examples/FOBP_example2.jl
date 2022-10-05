@@ -3,8 +3,6 @@
 # Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
 # Moving the bound on x to lower level
 
-
-
 # Model of the problem
 # First level
 # ```math
@@ -30,7 +28,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to define all of the variables in the upper and lower problems:
 
@@ -53,9 +51,9 @@ end)
 @objective(Lower(model), Min, -x)
 
 # Lower level constraints
-@constraint(Lower(model), l1,  x +  y <= 8)
-@constraint(Lower(model), l2, 4x +  y >= 8)
-@constraint(Lower(model), l3, 2x +  y <= 13)
+@constraint(Lower(model), l1, x + y <= 8)
+@constraint(Lower(model), l2, 4x + y >= 8)
+@constraint(Lower(model), l3, 2x + y <= 13)
 @constraint(Lower(model), l4, 2x - 7y <= 0)
 
 # !!! tip
@@ -86,15 +84,15 @@ optimize!(model)
 
 # Automated testing
 
-@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-4
-@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-4
-@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol=1e-4
-@test value(x) ≈ 3.5 * 8 / 15 atol=1e-4
-@test value(y) ≈ 8 / 15 atol=1e-4
-@test value(u1) ≈ 3.5 * 8 / 15 atol=1e-4
-@test value(l1) ≈ 4.5 * 8 / 15 atol=1e-4
-@test dual(l1) ≈ [0] atol=1e-4
-@test dual(l3) ≈ [0] atol=1e-4
+@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol = 1e-4
+@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol = 1e-4
+@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol = 1e-4
+@test value(x) ≈ 3.5 * 8 / 15 atol = 1e-4
+@test value(y) ≈ 8 / 15 atol = 1e-4
+@test value(u1) ≈ 3.5 * 8 / 15 atol = 1e-4
+@test value(l1) ≈ 4.5 * 8 / 15 atol = 1e-4
+@test dual(l1) ≈ [0] atol = 1e-4
+@test dual(l3) ≈ [0] atol = 1e-4
 
 # TODO: why are these commented out?    #src
 # @test dual(l2) #≈ [0] atol=atol       #src

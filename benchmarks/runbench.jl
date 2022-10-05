@@ -37,13 +37,17 @@ using Juniper
 using QuadraticToBinary
 
 QB = QuadraticToBinary.Optimizer{Float64}
-cache(opt) = MOIU.CachingOptimizer(
-    MOIU.UniversalFallback(MOIU.Model{Float64}()), opt)
+function cache(opt)
+    return MOIU.CachingOptimizer(
+        MOIU.UniversalFallback(MOIU.Model{Float64}()),
+        opt,
+    )
+end
 
 function cpx()
-    s=CPLEX.Optimizer()
-    MOI.set(s, MOI.RawParameter("CPXPARAM_TimeLimit"),MAX_TIME*1)
-    s
+    s = CPLEX.Optimizer()
+    MOI.set(s, MOI.RawParameter("CPXPARAM_TimeLimit"), MAX_TIME * 1)
+    return s
 end
 
 # warm-up - precompilation
@@ -61,16 +65,39 @@ MAX_TIME = 600
 #     return KN_OPT
 # end
 
-
 SOLVERS = [
     #=
         SOS1
     =#
-    (with_att(Gurobi.Optimizer, "TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "gurobi_sos1"),
-    (with_att(CPLEX.Optimizer, "CPXPARAM_TimeLimit" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "cplex_sos1"),
-    (with_att(Xpress.Optimizer, "MAXTIME" => -MAX_TIME*1, "logfile" => "output.log"), BilevelJuMP.SOS1Mode(), "xpress_sos1"),
-    (with_att(Cbc.Optimizer, "seconds" => MAX_TIME*1.0), BilevelJuMP.SOS1Mode(), "cbc_sos1"),
-    (with_att(SCIP.Optimizer, "limits/time" => MAX_TIME*1), BilevelJuMP.SOS1Mode(), "scip_sos1"),
+    (
+        with_att(Gurobi.Optimizer, "TimeLimit" => MAX_TIME * 1),
+        BilevelJuMP.SOS1Mode(),
+        "gurobi_sos1",
+    ),
+    (
+        with_att(CPLEX.Optimizer, "CPXPARAM_TimeLimit" => MAX_TIME * 1),
+        BilevelJuMP.SOS1Mode(),
+        "cplex_sos1",
+    ),
+    (
+        with_att(
+            Xpress.Optimizer,
+            "MAXTIME" => -MAX_TIME * 1,
+            "logfile" => "output.log",
+        ),
+        BilevelJuMP.SOS1Mode(),
+        "xpress_sos1",
+    ),
+    (
+        with_att(Cbc.Optimizer, "seconds" => MAX_TIME * 1.0),
+        BilevelJuMP.SOS1Mode(),
+        "cbc_sos1",
+    ),
+    (
+        with_att(SCIP.Optimizer, "limits/time" => MAX_TIME * 1),
+        BilevelJuMP.SOS1Mode(),
+        "scip_sos1",
+    ),
     #=
         indicator
     =#
@@ -162,12 +189,7 @@ SOLVERS = [
     # (() -> AmplNLWriter.Optimizer("couenne"), BilevelJuMP.StrongDualityEqualityMode(), "couenne_sd"),
 ]
 
-PROBLEMS = [
-    :SVR,
-    :TOLL,
-    :FORECAST,
-    :RAND,
-]
+PROBLEMS = [:SVR, :TOLL, :FORECAST, :RAND]
 
 SEEDS = [
     1234,
@@ -184,9 +206,9 @@ SEEDS = [
 
 SVR = [
     # (features, sample_size)
-    (  1,  10),
-    (  1,  10),
-    (  2,  10),
+    (1, 10),
+    (1, 10),
+    (2, 10),
     # (  5,  10),
     # (  1, 100),
     # (  2, 100), # 600
@@ -208,10 +230,10 @@ SVR = [
 
 RAND = [
     # (rows, cols)
-    (   5,   5),
-    (  10,   5),
-    (   5,  10),
-    (  10,  10),
+    (5, 5),
+    (10, 5),
+    (5, 10),
+    (10, 10),
     # (  50,  10),
     # (  10,  50),
     # (  50,  50), # 600
@@ -245,9 +267,9 @@ TOLL = [
 
 FORECAST = [
     # (products, sample_size)
-    (  1,  10),
-    (  2,  10),
-    (  5,  10),
+    (1, 10),
+    (2, 10),
+    (5, 10),
     # (  1, 100),
     # (  2, 100), # hard for prod10
     # (  5, 100), # 600
@@ -272,19 +294,25 @@ function separator()
     println("============================================================")
     println("============================================================")
     println()
-    println()
+    return println()
 end
 
 function new_file()
     cd(dirname(@__FILE__))
     FILE = open("bench$(replace("$(now())",":"=>"_")).log", "w")
-    println(FILE, "opt_mode, prob, inst, primal_status, termination_status, solve_time, build_time, lower_obj, upper_obj")
+    println(
+        FILE,
+        "opt_mode, prob, inst, primal_status, termination_status, solve_time, build_time, lower_obj, upper_obj",
+    )
     flush(FILE)
     return FILE
 end
 function newline(FILE, data, opt, prb, inst, seed)
-    println(FILE, "$opt, $prb, $inst, $seed, $(data[1]),$(data[2]),$(data[3]),$(data[4]),$(data[5]),$(data[6]),$(data[7])")
-    flush(FILE)
+    println(
+        FILE,
+        "$opt, $prb, $inst, $seed, $(data[1]),$(data[2]),$(data[3]),$(data[4]),$(data[5]),$(data[6]),$(data[7])",
+    )
+    return flush(FILE)
 end
 FILE = new_file()
 for seed in SEEDS
@@ -305,7 +333,6 @@ for seed in SEEDS
                 separator()
                 ret = bench_rand(rows, cols, 0.5, optimizer, mode, seed)
                 newline(FILE, ret, name, :RAND, (rows, cols), seed)
-
             end
         end
         if :TOLL in PROBLEMS

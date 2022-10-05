@@ -2,7 +2,6 @@ using JuMP, BilevelJuMP
 using Random
 
 function bench_svr(dim, sample, optimizer, mode, seed = 1234)
-
     rng = Random.MersenneTwister(seed)
 
     # Toll Setting
@@ -27,7 +26,7 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
     vars = []
 
     # MOI.empty!(optimizer)
-    model = BilevelModel(optimizer, mode = mode)
+    model = BilevelModel(optimizer; mode = mode)
     try
         JuMP.set_time_limit_sec(model, MAX_TIME)
     catch e
@@ -35,7 +34,6 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
         @show "failed to set limit time"
     end
     # JuMP.set_time_limit_sec(model, 1.)
-
 
     # hyper parameters
     @variable(Upper(model), C >= 0)
@@ -49,45 +47,61 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
     =#
 
     # absolute value extra variables
-    @variable(Upper(model), a_up_pos[i=OutSample] >= 0)
-    @variable(Upper(model), a_up_neg[i=OutSample] >= 0)
+    @variable(Upper(model), a_up_pos[i = OutSample] >= 0)
+    @variable(Upper(model), a_up_neg[i = OutSample] >= 0)
 
     for i in OutSample
-        c = @constraint(Upper(model),
-            a_up_pos[i] >= + sum(w[j]*x[i,j] for j in 1:Dimension) - y[i])
+        c = @constraint(
+            Upper(model),
+            a_up_pos[i] >= +sum(w[j] * x[i, j] for j in 1:Dimension) - y[i]
+        )
         push!(ctrs, c)
-        c = @constraint(Upper(model),
-            a_up_neg[i] >= - sum(w[j]*x[i,j] for j in 1:Dimension) + y[i])
+        c = @constraint(
+            Upper(model),
+            a_up_neg[i] >= -sum(w[j] * x[i, j] for j in 1:Dimension) + y[i]
+        )
         push!(ctrs, c)
     end
 
-    @objective(Upper(model),
-        Min, sum(a_up_pos[i] + a_up_neg[i] for i in OutSample))
+    @objective(
+        Upper(model),
+        Min,
+        sum(a_up_pos[i] + a_up_neg[i] for i in OutSample)
+    )
 
     #=
         Lower level
     =#
 
-    @variable(Lower(model), a_lo_pos[i=InSample] >= 0)
-    @variable(Lower(model), a_lo_neg[i=InSample] >= 0)
+    @variable(Lower(model), a_lo_pos[i = InSample] >= 0)
+    @variable(Lower(model), a_lo_neg[i = InSample] >= 0)
 
-    @variable(Lower(model), a_lo_max[i=InSample] >= 0)
+    @variable(Lower(model), a_lo_max[i = InSample] >= 0)
 
     for i in InSample
-        c = @constraint(Lower(model),
-            a_lo_pos[i] >= + sum(w[j]*x[i,j] for j in 1:Dimension) - y[i])
+        c = @constraint(
+            Lower(model),
+            a_lo_pos[i] >= +sum(w[j] * x[i, j] for j in 1:Dimension) - y[i]
+        )
         push!(ctrs, c)
-        c = @constraint(Lower(model),
-            a_lo_neg[i] >= - sum(w[j]*x[i,j] for j in 1:Dimension) + y[i])
+        c = @constraint(
+            Lower(model),
+            a_lo_neg[i] >= -sum(w[j] * x[i, j] for j in 1:Dimension) + y[i]
+        )
         push!(ctrs, c)
-        c = @constraint(Lower(model),
-            a_lo_max[i] >= a_lo_pos[i] + a_lo_neg[i] - ε)
+        c = @constraint(
+            Lower(model),
+            a_lo_max[i] >= a_lo_pos[i] + a_lo_neg[i] - ε
+        )
         push!(ctrs, c)
     end
 
-    @objective(Lower(model),
-        Min, C * sum(a_lo_max[i] for i in InSample) + 
-            1/2*sum(w[j]^2 for j in 1:Dimension))
+    @objective(
+        Lower(model),
+        Min,
+        C * sum(a_lo_max[i] for i in InSample) +
+        1 / 2 * sum(w[j]^2 for j in 1:Dimension)
+    )
 
     #=
         Optimize
@@ -132,11 +146,11 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
     obj_u = try
         objective_value(Upper(model))
     catch
-         NaN
+        NaN
     end
     gap = try
         bound = objective_bound(Upper(model))
-        abs(obj_u - bound)/max(abs(bound), 1e-8)
+        abs(obj_u - bound) / max(abs(bound), 1e-8)
     catch
         NaN
     end

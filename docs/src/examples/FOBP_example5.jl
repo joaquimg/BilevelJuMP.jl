@@ -19,13 +19,12 @@
 # -4x-5y \leq 10,\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 atol = 1e-3
@@ -42,7 +41,6 @@ atol = 1e-3
 
 # Upper level objecive function
 @objective(Upper(model), Min, 0 * y + 0)
-
 
 # Followed by the objective and constraints of the lower problem:
 

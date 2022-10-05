@@ -22,7 +22,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 atol = 1e-3
@@ -41,7 +41,7 @@ atol = 1e-3
 @objective(Upper(model), Min, x^2 + y)
 
 # Upper level constraints
-@constraint(Upper(model), u1, -x -y <= 0)
+@constraint(Upper(model), u1, -x - y <= 0)
 
 # Followed by the objective and constraints of the lower problem:
 
@@ -61,7 +61,6 @@ primal_status(model)
 termination_status(model)
 
 # Auto testing
-@test objective_value(model) ≈ 0 atol=atol
-@test value(x) ≈ 0 atol=atol
-@test value(y) ≈ 0 atol=atol
-
+@test objective_value(model) ≈ 0 atol = atol
+@test value(x) ≈ 0 atol = atol
+@test value(y) ≈ 0 atol = atol
