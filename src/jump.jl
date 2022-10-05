@@ -463,7 +463,7 @@ end
 JuMP.optimize!(::T) where {T<:AbstractBilevelModel} =
     error("Can't solve a model of type: $T ")
 function JuMP.optimize!(model::BilevelModel;
-    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "", file_format = MOI.FileFormats.FORMAT_AUTOMATIC)
+    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "", file_format = MOI.FileFormats.FORMAT_AUTOMATIC, consider_constrained_variables = false,)
 
     if model.mode === nothing
         error("No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`")
@@ -508,7 +508,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
         build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2,
-            copy_names = model.copy_names, pass_start = model.pass_start)
+            copy_names = model.copy_names, pass_start = model.pass_start, consider_constrained_variables = consider_constrained_variables,)
 
     # pass additional info (hints - not actual problem data)
     # for lower level dual variables (start, upper hint, lower hint)

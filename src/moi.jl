@@ -255,6 +255,52 @@ end
 accept_vector_set(::ProductMode{T}, ::Complement) where T = nothing
 accept_vector_set(::MixedMode{T}, ::Complement) where T = nothing
 
+function get_variable_complement(primal_model, dual_model, primal_con, dual_con) 
+    error("An internal error with variable complements occurred. Likely, your problem type does not yet support consideration of constrained variables. If you are certain it does, a sign flip or something else did not work as expected in Dualization.jl ...")
+end
+
+function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:MOI.GreaterThan{T},Fd,Sd<:MOI.GreaterThan{T}} where T
+    primal_variable = MOI.get(primal_model, MOI.ConstraintFunction(), primal_con)
+    primal_set =  MOI.get(primal_model, MOI.ConstraintSet(), primal_con)
+
+    @assert MOI.constant(primal_set) == 0 "Unexpected variable bound"
+
+    dual_func = MOI.get(dual_model, MOI.ConstraintFunction(), dual_con)
+    dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
+    if MOI.constant(dual_set) > 0
+        dual_func.constant = dual_func.constant - MOI.constant(dual_set)
+    elseif MOI.constant(dual_set) < 0
+        dual_func.constant = dual_func.constant + MOI.constant(dual_set)
+    end
+    return Complement(false, primal_con, dual_func, set_with_zero(dual_set), primal_variable)
+end
+
+function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:MOI.LessThan{T},Fd,Sd<:MOI.LessThan{T}} where T
+    primal_variable = MOI.get(primal_model, MOI.ConstraintFunction(), primal_con)
+    primal_set =  MOI.get(primal_model, MOI.ConstraintSet(), primal_con)
+
+    @assert MOI.constant(primal_set) == 0 "Unexpected variable bound"
+
+    dual_func = MOI.get(dual_model, MOI.ConstraintFunction(), dual_con)
+    dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
+    if MOI.constant(dual_set) > 0
+        dual_func.constant = dual_func.constant - MOI.constant(dual_set)
+    elseif MOI.constant(dual_set) < 0
+        dual_func.constant = dual_func.constant + MOI.constant(dual_set)
+    end
+    return Complement(false, primal_con, dual_func, set_with_zero(dual_set), primal_variable)
+end
+
+function get_variable_complements(primal_model, dual_model, primal_dual_map)
+    map = primal_dual_map.primal_con_dual_var
+    out = Complement[]
+    for (primal_con, dual_con) in primal_dual_map.constrained_var_dual
+        con = get_variable_complement(primal_model, dual_model, primal_con, dual_con)
+        push!(out, con)
+    end
+    return out
+end
+
 function get_canonical_complements(primal_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
     out = Complement[]
@@ -311,7 +357,8 @@ function build_bilevel(
     mode,
     upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
     copy_names::Bool = false,
-    pass_start::Bool = false
+    pass_start::Bool = false,
+    consider_constrained_variables::Bool = false,
     )
 
     # Start with an empty problem
@@ -326,7 +373,7 @@ function build_bilevel(
         dual_names = DualNames("dual_","dual_"),
         variable_parameters = upper_variables,
         ignore_objective = ignore_dual_objective(mode),
-        consider_constrained_variables = false,
+        consider_constrained_variables = consider_constrained_variables,
     )
     # the model
     lower_dual = dual_problem.dual_model
@@ -428,6 +475,26 @@ function build_bilevel(
                 # feasible equality constraints always satisfy complementarity
             end
         end
+
+        if consider_constrained_variables
+            # complementary slackness for variable bounds
+            variable_comps = get_variable_complements(lower, lower_dual, lower_primal_dual_map)
+            for comp in variable_comps
+                if !is_equality(comp.set_w_zero)
+                    accept_vector_set(mode, comp)
+                    add_complement(
+                        mode,
+                        m,
+                        comp,
+                        lower_dual_idxmap,
+                        lower_idxmap,
+                        copy_names,
+                        pass_start,
+                    )
+                end
+            end
+        end
+
     else # strong duality
         add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
     end
