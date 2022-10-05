@@ -1,4 +1,4 @@
-function iterative_product_mode_01()
+function iterative_product_mode_01(consider_variable_bounds::Bool)
     # This example is from the book Decomposition Techniques in Mathematical Programming, as used in the examples section
     # Chapter 7.2, page 281, [url](https://www.springer.com/gp/book/9783540276852)
     iter_eps = [1e-0 * 0.95^i for i = 1:300]
@@ -39,7 +39,7 @@ function iterative_product_mode_01()
 
     set_optimizer_attribute(model, "mu_target", 1e-9)
 
-    optimize!(model; show_iter_log = false)
+    optimize!(model; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     @test value(x) ≈ 1 atol = 1e-4
     @test value(y) ≈ 6 atol = 1e-4
@@ -48,7 +48,7 @@ function iterative_product_mode_01()
 
 end
 
-function iterative_product_mode_02_1_min()
+function iterative_product_mode_02_1_min(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics"
     # It can be found in section 3 "Numerical Examples"
     # Dataset 1
@@ -96,14 +96,14 @@ function iterative_product_mode_02_1_min()
 
     set_optimizer_attribute(model1, "mu_target", 1e-9)
 
-    optimize!(model1; show_iter_log = false)
+    optimize!(model1; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     @test isapprox(value(model1[:Q]), 6; atol = 1e-4)
     @test isapprox(value.(model1[:q]).data, [2, 2]; atol = 1e-4)
 
 end
 
-function iterative_product_mode_02_2_min()
+function iterative_product_mode_02_2_min(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics" 
     # It can be found in section 3 "Numerical Examples"
     # Dataset 2: 
@@ -149,7 +149,7 @@ function iterative_product_mode_02_2_min()
 
     set_optimizer_attribute(model2, "mu_target", 1e-9)
 
-    optimize!(model2; show_iter_log = false)
+    optimize!(model2; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     # Auto testing
 
@@ -158,7 +158,7 @@ function iterative_product_mode_02_2_min()
 
 end
 
-function iterative_product_mode_02_3_min()
+function iterative_product_mode_02_3_min(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics"
     # It can be found in section 3 "Numerical Examples"
     # Dataset 3:
@@ -204,7 +204,7 @@ function iterative_product_mode_02_3_min()
 
     set_optimizer_attribute(model3, "mu_target", 1e-9)
 
-    optimize!(model3; show_iter_log = false)
+    optimize!(model3; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     # Auto testing
 
@@ -213,7 +213,7 @@ function iterative_product_mode_02_3_min()
 
 end
 
-function iterative_product_mode_02_1_max()
+function iterative_product_mode_02_1_max(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics"
     # It can be found in section 3 "Numerical Examples"
     # Dataset 1
@@ -261,14 +261,14 @@ function iterative_product_mode_02_1_max()
 
     set_optimizer_attribute(model1, "mu_target", 1e-9)
 
-    optimize!(model1; show_iter_log = false)
+    optimize!(model1; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     @test isapprox(value(model1[:Q]), 6; atol = 1e-4)
     @test isapprox(value.(model1[:q]).data, [2, 2]; atol = 1e-4)
 
 end
 
-function iterative_product_mode_02_2_max()
+function iterative_product_mode_02_2_max(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics" 
     # It can be found in section 3 "Numerical Examples"
     # Dataset 2: 
@@ -314,7 +314,7 @@ function iterative_product_mode_02_2_max()
 
     set_optimizer_attribute(model2, "mu_target", 1e-9)
 
-    optimize!(model2; show_iter_log = false)
+    optimize!(model2; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     # Auto testing
 
@@ -323,7 +323,7 @@ function iterative_product_mode_02_2_max()
 
 end
 
-function iterative_product_mode_02_3_max()
+function iterative_product_mode_02_3_max(consider_variable_bounds::Bool)
     # This example is from the paper S. Siddiqui & S. A. Gabriel (2012): "An SOS1-Based Approach for Solving MPECs with a Natural Gas Market Application", as appearing in "Networks and Spatial Economics"
     # It can be found in section 3 "Numerical Examples"
     # Dataset 3:
@@ -369,7 +369,7 @@ function iterative_product_mode_02_3_max()
 
     set_optimizer_attribute(model3, "mu_target", 1e-9)
 
-    optimize!(model3; show_iter_log = false)
+    optimize!(model3; show_iter_log = false, consider_constrained_variables = consider_variable_bounds)
 
     # Auto testing
 

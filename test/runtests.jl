@@ -395,13 +395,15 @@ end
 end
 
 @testset "Iterative Product Mode" begin
-    iterative_product_mode_01()
-    iterative_product_mode_02_1_min()
-    iterative_product_mode_02_2_min()
-    iterative_product_mode_02_3_min()
-    iterative_product_mode_02_1_max()
-    iterative_product_mode_02_2_max()
-    iterative_product_mode_02_3_max()
+    for consider_variable_bounds in [true, false]
+        iterative_product_mode_01(consider_variable_bounds)
+        iterative_product_mode_02_1_min(consider_variable_bounds)
+        iterative_product_mode_02_2_min(consider_variable_bounds)
+        iterative_product_mode_02_3_min(consider_variable_bounds)
+        iterative_product_mode_02_1_max(consider_variable_bounds)
+        iterative_product_mode_02_2_max(consider_variable_bounds)
+        iterative_product_mode_02_3_max(consider_variable_bounds)
+    end
 end
 
 end
