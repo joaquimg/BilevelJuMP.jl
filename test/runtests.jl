@@ -396,9 +396,12 @@ end
 
 @testset "Iterative Product Mode" begin
     iterative_product_mode_01()
-    iterative_product_mode_02_1()
-    iterative_product_mode_02_2()
-    iterative_product_mode_02_3()
+    iterative_product_mode_02_1_min()
+    iterative_product_mode_02_2_min()
+    iterative_product_mode_02_3_min()
+    iterative_product_mode_02_1_max()
+    iterative_product_mode_02_2_max()
+    iterative_product_mode_02_3_max()
 end
 
 end
