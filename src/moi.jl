@@ -256,7 +256,7 @@ accept_vector_set(::ProductMode{T}, ::Complement) where T = nothing
 accept_vector_set(::MixedMode{T}, ::Complement) where T = nothing
 
 function get_variable_complement(primal_model, dual_model, primal_con, dual_con) 
-    error("An internal error with variable complements occurred. Likely, your problem type does not yet support consideration of constrained variables. If you are certain it does, a sign flip or something else did not work as expected in Dualization.jl ...")
+    error("An internal error with variable complements occurred. Likely, your problem type does not yet support consideration of constrained variables.")
 end
 
 function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:MOI.GreaterThan{T},Fd,Sd<:MOI.GreaterThan{T}} where T
@@ -496,7 +496,11 @@ function build_bilevel(
         end
 
     else # strong duality
-        add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
+        if !consider_constrained_variables || contains_only_scalar_sets(lower)
+            add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
+        else
+            error("Only scalar sets in lower level allowed with consider_constrained_variables.")
+        end
     end
     add_aggregate_constraints(m, mode, copy_names)
 
@@ -1087,6 +1091,15 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
     # else
     # end
     return c1
+end
+
+function contains_only_scalar_sets(model::MOI.ModelLike)
+    for (F,S) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
+        if !(S <: SCALAR_SETS)
+            return false
+        end
+    end
+    return true
 end
 
 function to_vector_affine(f::MOI.VectorAffineFunction{T}) where T
