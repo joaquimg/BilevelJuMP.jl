@@ -1,11 +1,10 @@
 function jump_objective()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    ex1 = -4x -3y
+    ex1 = -4x - 3y
 
     @objective(Upper(model), Min, ex1)
 
@@ -14,8 +13,8 @@ function jump_objective()
     @objective(Lower(model), Min, ex2)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
+        c1, 2x + y <= 4
+        c2, x + 2y <= 4
         c3, x >= 0
         c4, y >= 0
     end)
@@ -43,30 +42,31 @@ function jump_objective()
 
     @test_throws ErrorException JuMP.objective_function_type(model)
     @test_throws ErrorException JuMP.objective_function(model)
-    @test_throws ErrorException JuMP.objective_function(model, MOI.VariableIndex)
+    @test_throws ErrorException JuMP.objective_function(
+        model,
+        MOI.VariableIndex,
+    )
 
     @test_throws ErrorException JuMP.optimize!(Upper(model))
-
 end
 
 function jump_constraints()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @constraints(Upper(model), begin
-        cup, 2x+y <= 4
+        cup, 2x + y <= 4
     end)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
+        c1, 2x + y <= 4
+        c2, x + 2y <= 4
         c3, x >= 0
         c4, y >= 0
     end)
@@ -92,30 +92,37 @@ function jump_constraints()
     @test BilevelJuMP.get_primal_lower_bound_hint(x) == 1.8
 
     @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(c1))
-    @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup))
-    @test_throws ErrorException @variable(Upper(model), 0 <= alpha <= 10, BilevelJuMP.DualOf(cup), bad_key_arg = false)
-    @test_throws ErrorException @constraint(model, x+2y <= 4)
-
+    @test_throws ErrorException @variable(
+        Upper(model),
+        0 <= alpha <= 10,
+        BilevelJuMP.DualOf(cup)
+    )
+    @test_throws ErrorException @variable(
+        Upper(model),
+        0 <= alpha <= 10,
+        BilevelJuMP.DualOf(cup),
+        bad_key_arg = false
+    )
+    @test_throws ErrorException @constraint(model, x + 2y <= 4)
 end
 
 function jump_variables()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @constraints(Upper(model), begin
-        cup, 2x+y <= 4
+        cup, 2x + y <= 4
     end)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
+        c1, 2x + y <= 4
+        c2, x + 2y <= 4
         c3, x >= 0
         c4, y >= 0
     end)
@@ -133,14 +140,13 @@ function jump_variables()
 end
 
 function jump_objective_solver(optimizer, mode)
-
     MOI.empty!(optimizer)
-    model = BilevelModel(()->optimizer, mode = mode)
+    model = BilevelModel(() -> optimizer; mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @constraints(Upper(model), begin
         cx, x == 0
@@ -158,10 +164,9 @@ function jump_objective_solver(optimizer, mode)
     # not accepted by cbc
     # @test JuMP.relative_gap(Upper(model)) ≈ 0.0 atol=1e-3
     # @test JuMP.dual_objective_value(model) ≈ 0.0 atol=1e-3
-    @test JuMP.objective_value(Upper(model)) ≈ 0.0 atol=1e-3
+    @test JuMP.objective_value(Upper(model)) ≈ 0.0 atol = 1e-3
     JuMP.objective_bound(Upper(model))
-    JuMP.set_objective(Upper(model), MOI.MAX_SENSE, x)
-
+    return JuMP.set_objective(Upper(model), MOI.MAX_SENSE, x)
 end
 
 function jump_display()
@@ -189,19 +194,20 @@ function jump_display()
 
     @constraint(Lower(model), c0, x >= -1)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
+        c1, 2x + y <= 4
+        c2, x + 2y <= 4
         c3, x >= 0
         c4, y >= 0
     end)
 
-    @test JuMP.num_constraints(model) == 
-        JuMP.num_constraints(Upper(model)) + JuMP.num_constraints(Lower(model)) 
+    @test JuMP.num_constraints(model) ==
+          JuMP.num_constraints(Upper(model)) +
+          JuMP.num_constraints(Lower(model))
 
     display(x)
     println()
@@ -227,12 +233,12 @@ end
 
 function invalid_lower_objective(optimizer, mode)
     MOI.empty!(optimizer)
-    model = BilevelModel(()->optimizer, mode = mode)
+    model = BilevelModel(() -> optimizer; mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @test_throws ErrorException optimize!(model)
     return
@@ -247,7 +253,7 @@ function jump_display_solver(optimizer, mode)
     atol = config.atol
 
     MOI.empty!(optimizer)
-    model = BilevelModel(()->optimizer, mode = mode)
+    model = BilevelModel(() -> optimizer; mode = mode)
 
     # config.bound_hint = true
 
@@ -259,12 +265,12 @@ function jump_display_solver(optimizer, mode)
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
+        c1, 2x + y <= 4
     end)
 
     display(model)
@@ -272,8 +278,7 @@ function jump_display_solver(optimizer, mode)
     display(Upper(model))
     println()
     display(Lower(model))
-    println()
-
+    return println()
 end
 
 function jump_bounds()
@@ -291,12 +296,12 @@ function jump_bounds()
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c, 2x+y <= 4
+        c, 2x + y <= 4
     end)
 
     @variable(Upper(model), l, DualOf(c))
@@ -362,11 +367,9 @@ function jump_bounds()
     @test is_integer(l) == false
     @test_throws ErrorException set_integer(l)
     @test_throws ErrorException unset_integer(l)
-
 end
 
 function jump_attributes()
-
     model = BilevelModel()
 
     # min -4x -3y
@@ -377,12 +380,12 @@ function jump_attributes()
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c, 2x+y <= 4
+        c, 2x + y <= 4
     end)
 
     BilevelJuMP.set_copy_names(model)
@@ -398,21 +401,24 @@ function jump_attributes()
     @test isnan(JuMP.solve_time(model))
     @test isnan(BilevelJuMP.build_time(model))
 
-    @test_throws MethodError JuMP.set_optimizer_attributes(model, "weird" => true, "strange" => "yes")
+    @test_throws MethodError JuMP.set_optimizer_attributes(
+        model,
+        "weird" => true,
+        "strange" => "yes",
+    )
     @test_throws ErrorException JuMP.get_optimizer_attribute(model, "weird")
 
     return nothing
 end
 
 function jump_attributes_solver(optimizer, mode)
-
     MOI.empty!(optimizer)
-    model = BilevelModel(()->optimizer, mode = mode)
+    model = BilevelModel(() -> optimizer; mode = mode)
 
     @variable(Upper(model), x)
     @variable(Lower(model), y)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @constraints(Upper(model), begin
         cx, x == 0
@@ -430,7 +436,7 @@ function jump_attributes_solver(optimizer, mode)
     # not accepted by cbc
     # @test JuMP.relative_gap(Upper(model)) ≈ 0.0 atol=1e-3
     # @test JuMP.dual_objective_value(model) ≈ 0.0 atol=1e-3
-    @test JuMP.objective_value(Upper(model)) ≈ 0.0 atol=1e-3
+    @test JuMP.objective_value(Upper(model)) ≈ 0.0 atol = 1e-3
     JuMP.objective_bound(Upper(model))
     JuMP.set_objective(Upper(model), MOI.MAX_SENSE, x)
 
@@ -455,8 +461,11 @@ function jump_attributes_solver(optimizer, mode)
     @test JuMP.simplex_iterations(model) >= 0
     @test_throws ArgumentError JuMP.barrier_iterations(model)
 
-    @test_throws MethodError JuMP.set_optimizer_attributes(mode, "weird" => true, "strange" => "yes")
-
+    @test_throws MethodError JuMP.set_optimizer_attributes(
+        mode,
+        "weird" => true,
+        "strange" => "yes",
+    )
 end
 
 function mixed_mode_unit()
@@ -478,26 +487,41 @@ function mixed_mode_unit()
     @variable(Upper(model), x >= 0)
     @variable(Lower(model), y >= 0)
 
-    @objective(Upper(model), Min, -4x -3y)
+    @objective(Upper(model), Min, -4x - 3y)
 
     @objective(Lower(model), Min, y)
 
     @constraints(Lower(model), begin
-        c1, 2x+y <= 4
-        c2, x+2y <= 4
+        c1, 2x + y <= 4
+        c2, x + 2y <= 4
     end)
 
     @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.SOS1Mode())
-    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.IndicatorMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(
+        c1,
+        BilevelJuMP.IndicatorMode(),
+    )
     @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.SOS1Mode())
-    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.IndicatorMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(
+        x,
+        BilevelJuMP.IndicatorMode(),
+    )
 
     BilevelJuMP.set_mode(model, BilevelJuMP.MixedMode())
 
-    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.MixedMode())
-    @test_throws ErrorException BilevelJuMP.set_mode(c1, BilevelJuMP.StrongDualityMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(
+        c1,
+        BilevelJuMP.MixedMode(),
+    )
+    @test_throws ErrorException BilevelJuMP.set_mode(
+        c1,
+        BilevelJuMP.StrongDualityMode(),
+    )
     @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.MixedMode())
-    @test_throws ErrorException BilevelJuMP.set_mode(x, BilevelJuMP.StrongDualityMode())
+    @test_throws ErrorException BilevelJuMP.set_mode(
+        x,
+        BilevelJuMP.StrongDualityMode(),
+    )
 
     BilevelJuMP.set_mode(x, BilevelJuMP.FortunyAmatMcCarlMode())
     BilevelJuMP.set_mode(y, BilevelJuMP.IndicatorMode())
@@ -519,7 +543,6 @@ function mixed_mode_unit()
 end
 
 function variables_unit()
-
     model = BilevelModel()
 
     @variable(Upper(model), w >= 0)
@@ -527,16 +550,16 @@ function variables_unit()
     @variable(Lower(model), y >= 0)
     @variable(Lower(model), z >= 0)
 
-    @test Set(JuMP.all_variables(Upper(model))) == Set([x,y,z,w])
-    @test Set(JuMP.all_variables(Lower(model))) == Set([x,y,z,w])
-    @test Set(JuMP.all_variables(model)) == Set([x,y,z,w])
+    @test Set(JuMP.all_variables(Upper(model))) == Set([x, y, z, w])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([x, y, z, w])
+    @test Set(JuMP.all_variables(model)) == Set([x, y, z, w])
 
     JuMP.delete(model, x)
     JuMP.delete(model, y)
 
-    @test Set(JuMP.all_variables(Upper(model))) == Set([w,z])
-    @test Set(JuMP.all_variables(Lower(model))) == Set([w,z])
-    @test Set(JuMP.all_variables(model)) == Set([w,z])
+    @test Set(JuMP.all_variables(Upper(model))) == Set([w, z])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([w, z])
+    @test Set(JuMP.all_variables(model)) == Set([w, z])
 
     ex = @expression(model, w + z)
     @constraint(Upper(model), ctr, ex >= 0)
@@ -568,12 +591,15 @@ function variables_unit()
 end
 
 function jump_no_cb()
-
     model = BilevelModel()
 
     @variable(Upper(model), x >= 0)
 
-    @test_throws ErrorException MOI.set(model, MOI.LazyConstraintCallback(), x -> x)
+    @test_throws ErrorException MOI.set(
+        model,
+        MOI.LazyConstraintCallback(),
+        x -> x,
+    )
     @test_throws ErrorException MOI.set(model, MOI.UserCutCallback(), x -> x)
     @test_throws ErrorException MOI.set(model, MOI.HeuristicCallback(), x -> x)
 
@@ -581,7 +607,6 @@ function jump_no_cb()
 end
 
 function constraint_unit()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
@@ -590,22 +615,22 @@ function constraint_unit()
     @constraint(Upper(model), ctru, x == 0)
     @constraint(Lower(model), ctrl, y == 0)
 
-    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+    for (f, s) in JuMP.list_of_constraint_types(Upper(model))
         @test ctru == JuMP.all_constraints(Upper(model), f, s)[]
     end
-    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+    for (f, s) in JuMP.list_of_constraint_types(Lower(model))
         @test ctrl == JuMP.all_constraints(Lower(model), f, s)[]
         @test Set([ctrl, ctru]) == Set(JuMP.all_constraints(model, f, s))
     end
     @test JuMP.list_of_constraint_types(Lower(model)) ==
-        JuMP.list_of_constraint_types(Upper(model))
+          JuMP.list_of_constraint_types(Upper(model))
     @test JuMP.list_of_constraint_types(Lower(model)) ==
-        JuMP.list_of_constraint_types(model)
+          JuMP.list_of_constraint_types(model)
 
-    for (f,s) in JuMP.list_of_constraint_types(Upper(model))
+    for (f, s) in JuMP.list_of_constraint_types(Upper(model))
         @test JuMP.num_constraints(Upper(model), f, s) == 1
     end
-    for (f,s) in JuMP.list_of_constraint_types(Lower(model))
+    for (f, s) in JuMP.list_of_constraint_types(Lower(model))
         @test JuMP.num_constraints(Lower(model), f, s) == 1
     end
     JuMP.delete(model, ctru)
@@ -616,7 +641,6 @@ function constraint_unit()
 end
 
 function constraint_dualof()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
@@ -625,11 +649,9 @@ function constraint_dualof()
     @constraint(Lower(model), ctrs[i in 1:2], y == 0)
 
     @test_throws ErrorException DualOf(ctrs)
-
 end
 
 function constraint_hints()
-
     model = BilevelModel()
 
     @variable(Upper(model), x)
@@ -638,9 +660,7 @@ function constraint_hints()
     @constraint(Lower(model), lin, y == 0)
     @constraint(Lower(model), soc, [y, x] in SecondOrderCone())
 
-
     @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(lin, [1])
     @test_throws ErrorException BilevelJuMP.set_dual_upper_bound_hint(soc, 1)
     @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(soc, [1])
-
 end

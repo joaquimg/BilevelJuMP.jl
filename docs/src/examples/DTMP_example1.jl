@@ -4,7 +4,6 @@
 
 # Bold points in example: Here, we are using upperonly, loweronly for defining variables. Also, we are using equality in constraints. Using upperonly/loweronly will create variables that will appear in the proper model. By this definition, we might have slightly smaller reformulated models in the algorithm. 
 
-
 # Model of the problem
 # First level
 # ```math
@@ -29,7 +28,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -56,11 +55,11 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 @objective(Lower(model), Min, -x - y + w)
 
 # Lower constraints
-@constraint(Lower(model),  y >= 0)
+@constraint(Lower(model), y >= 0)
 @constraint(Lower(model), x + y + w <= 8)
-@constraint(Lower(model),  x >= 0)
-@constraint(Lower(model),  x <= 4)
-@constraint(Lower(model),  w == 1)
+@constraint(Lower(model), x >= 0)
+@constraint(Lower(model), x <= 4)
+@constraint(Lower(model), w == 1)
 
 # Initial Starting conditions  #src
 
@@ -69,7 +68,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 optimize!(model)
 
 # Auto testing
-@test value(x) ≈ 1 atol=1e-2
-@test value(y) ≈ 6 atol=1e-2
-@test value(z) ≈ 1 atol=1e-2
-@test value(w) ≈ 1 atol=1e-2
+@test value(x) ≈ 1 atol = 1e-2
+@test value(y) ≈ 6 atol = 1e-2
+@test value(z) ≈ 1 atol = 1e-2
+@test value(w) ≈ 1 atol = 1e-2

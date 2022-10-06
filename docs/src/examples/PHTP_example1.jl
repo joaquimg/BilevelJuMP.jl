@@ -21,13 +21,12 @@
 # x+y \leq 7,\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 atol = 1e-3
@@ -43,23 +42,21 @@ atol = 1e-3
 # Then we can add the objective and constraints of the upper problem:
 
 # Upper level objecive function
-@objective(Upper(model), Min, (x-5)^2 + (2y+1)^2)
+@objective(Upper(model), Min, (x - 5)^2 + (2y + 1)^2)
 
 # Upper level constraints
 @constraint(Upper(model), x >= 0)
 @constraint(Upper(model), y >= 0) # only in lowrrin GAMS
 
-
-
 # Followed by the objective and constraints of the lower problem:
 
 # Lower objective function
-@objective(Lower(model), Min, (y-1)^2 -1.5*x*y)
+@objective(Lower(model), Min, (y - 1)^2 - 1.5 * x * y)
 
 # Lower constraints
-@constraint(Lower(model), -3x +    y <= -3)
-@constraint(Lower(model),   x - 0.5y <= 4)
-@constraint(Lower(model),   x +    y <= 7)
+@constraint(Lower(model), -3x + y <= -3)
+@constraint(Lower(model), x - 0.5y <= 4)
+@constraint(Lower(model), x + y <= 7)
 
 # Initial Starting conditions  #src
 
@@ -70,6 +67,5 @@ optimize!(model)
 primal_status(model)
 termination_status(model)
 
-@test value(x) ≈ 1 atol=atol
-@test value(y) ≈ 0 atol=atol
-
+@test value(x) ≈ 1 atol = atol
+@test value(y) ≈ 0 atol = atol

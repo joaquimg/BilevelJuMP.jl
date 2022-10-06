@@ -8,7 +8,13 @@ function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
     lower_only = Dict(
         JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
     )
-    return _build_single_model(upper, lower, lower_to_upper, lower_only, check_MIPMIP)
+    return _build_single_model(
+        upper,
+        lower,
+        lower_to_upper,
+        lower_only,
+        check_MIPMIP,
+    )
 end
 
 function _build_single_model(
@@ -16,7 +22,7 @@ function _build_single_model(
     lower::MOI.ModelLike,
     lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
     lower_only::Dict{MOI.VariableIndex,MOI.VariableIndex},
-    check_MIPMIP::Bool = false
+    check_MIPMIP::Bool = false,
 )
     model = MOI.FileFormats.MPS.Model()
     upper_to_model_link = MOI.copy_to(model, upper)
@@ -43,29 +49,41 @@ function _build_single_model(
         return upper_to_model_link[lower_to_upper_link[x]]
     end
 
-    
     # Testing if the model is MIP-MIP or not. 
     if check_MIPMIP
-        int_var = MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.Integer}())
-        int_var = int_var + MOI.get(model, MOI.NumberOfConstraints{MOI.VariableIndex, MOI.ZeroOne}())
+        int_var = MOI.get(
+            model,
+            MOI.NumberOfConstraints{MOI.VariableIndex,MOI.Integer}(),
+        )
+        int_var =
+            int_var + MOI.get(
+                model,
+                MOI.NumberOfConstraints{MOI.VariableIndex,MOI.ZeroOne}(),
+            )
         all_var = MOI.get(model, MOI.NumberOfVariables())
         if int_var != all_var
-            throw("Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!")
+            throw(
+                "Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!",
+            )
         end
     end
 
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
 
-    return model, lower_variables, lower_objective, lower_constraints, lower_sense
+    return model,
+    lower_variables,
+    lower_objective,
+    lower_constraints,
+    lower_sense
 end
 
 function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
     i = 0
-    dict = Dict{MOI.ConstraintIndex, Int}()
+    dict = Dict{MOI.ConstraintIndex,Int}()
     for (S, _) in MOI.FileFormats.MPS.SET_TYPES
         for ci in MOI.get(
             model,
-            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64}, S}(),
+            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64},S}(),
         )
             dict[ci] = i
             i += 1
@@ -87,13 +105,12 @@ function _write_auxillary_file(
     lower_objective::MOI.ScalarAffineFunction,
     lower_constraints::Vector{MOI.ConstraintIndex},
     lower_sense::MOI.OptimizationSense,
-    aux_filename::String
+    aux_filename::String,
 )
     rows = _index_to_row_link(new_model)
     cols = _index_to_column_link(new_model)
-    obj_coefficients = Dict{MOI.VariableIndex,Float64}(
-        x => 0.0 for x in lower_variables
-    )
+    obj_coefficients =
+        Dict{MOI.VariableIndex,Float64}(x => 0.0 for x in lower_variables)
     for term in lower_objective.terms
         if haskey(obj_coefficients, term.variable)
             obj_coefficients[term.variable] += term.coefficient
@@ -111,7 +128,7 @@ function _write_auxillary_file(
         for x in lower_variables
             println(io, "LO $(obj_coefficients[x])")
         end
-        println(io, "OS ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
+        return println(io, "OS ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
     end
     return
 end
@@ -125,12 +142,12 @@ function _call_mibs(mps_filename, aux_filename, mibs_call)
     # write(io, "\n BilevelJuMP Calling MibS \n")
     io_err = "mibs_errors.txt"
     mibs_call() do exe
-        run(
+        return run(
             pipeline(
-                `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`,
+                `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`;
                 stdout = io,
                 stderr = io_err,
-            )
+            ),
         )
     end
     # seekstart(io_err)
@@ -141,15 +158,14 @@ end
 function _parse_output(
     output::String,
     new_model::MOI.FileFormats.MPS.Model,
-    lower_variables::Vector{MOI.VariableIndex}
-    )
+    lower_variables::Vector{MOI.VariableIndex},
+)
     lines = split(output, '\n')
     found_status = false
     objective_value = NaN
 
     upper = Dict{Int,Float64}()
     lower = Dict{Int,Float64}()
-
 
     all_var = MOI.get(new_model, MOI.ListOfVariableIndices())
 
@@ -172,14 +188,13 @@ function _parse_output(
             Dict_Lower_IndexToModel[CntD] = y
             CntD = CntD + 1
         else
-            Dict_Upper_Name[CntU] = nameofvar  
+            Dict_Upper_Name[CntU] = nameofvar
             Dict_Upper_Value[nameofvar] = 0
             Dict_Upper_IndexToModel[CntU] = y
             CntU = CntU + 1
         end
         Dict_All[y] = 0
     end
-
 
     for line in lines
         if !found_status
@@ -222,7 +237,7 @@ function _parse_output(
         nonzero_lower = lower,
         all_upper = Dict_Upper_Value,
         all_lower = Dict_Lower_Value,
-        all_var = Dict_All
+        all_var = Dict_All,
     )
 end
 
@@ -262,7 +277,7 @@ function solve_with_MibS(
     mktempdir() do path
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
-        new_model, variables, objective, constraints, sense  =
+        new_model, variables, objective, constraints, sense =
             _build_single_model(model, true)
         # This MPS file must be strictly compliant with the format
         MOI.write_to_file(new_model, mps_filename)
@@ -285,24 +300,28 @@ function solve_with_MibS(
             mps_db = joinpath(orig_path, debug_file_prefix * "model.mps")
             aux_db = joinpath(orig_path, debug_file_prefix * "model.aux")
             try
-                cp(mps_filename, mps_db, force = true)
+                cp(mps_filename, mps_db; force = true)
             catch e
-                println("BilevelJuMP failed to write debug file $mps_db: with $e")
+                println(
+                    "BilevelJuMP failed to write debug file $mps_db: with $e",
+                )
             end
             try
-                cp(aux_filename, aux_db, force = true)
+                cp(aux_filename, aux_db; force = true)
             catch e
-                println("BilevelJuMP failed to write debug file $aux_db: with $e")
+                println(
+                    "BilevelJuMP failed to write debug file $aux_db: with $e",
+                )
             end
         end
         if length(err) > 0
             mibs_error =
-            "MibS returned:\n\n" *
-            "$err\n\n" *
-            "MibS input files can be found at:\n" *
-            "* $mps_db\n" *
-            "* $aux_db\n\n" *
-            "Please include these files if you open an issue.\n"
+                "MibS returned:\n\n" *
+                "$err\n\n" *
+                "MibS input files can be found at:\n" *
+                "* $mps_db\n" *
+                "* $aux_db\n\n" *
+                "Please include these files if you open an issue.\n"
             error(mibs_error)
         end
         if length(output) == 0

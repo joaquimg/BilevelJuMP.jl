@@ -21,34 +21,32 @@
 # -10 \leq y_j \leq 20, \forall j \in J.\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
-
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 
 # Upper level variables
-@variable(Upper(model), x[i=1:2], start = 0)
+@variable(Upper(model), x[i = 1:2], start = 0)
 
 # Lower level variables
-@variable(Lower(model), y[i=1:2], start = -10)
+@variable(Lower(model), y[i = 1:2], start = -10)
 
 # Then we can add the objective and constraints of the upper problem:
 
 # Upper level objecive function
-@objective(Upper(model), Min,2x[1] + 2x[2] -3y[1] - 3y[2] -60)
+@objective(Upper(model), Min, 2x[1] + 2x[2] - 3y[1] - 3y[2] - 60)
 
 # Upper level constraints
-@constraint(Upper(model), x[1] + x[2] + y[1] -2y[2] -40 <= 0)
-@constraint(Upper(model), [i=1:2], x[i] >= 0)
-@constraint(Upper(model), [i=1:2], x[i] <= 50)
-@constraint(Upper(model), [i=1:2], y[i] >= -10)
-@constraint(Upper(model), [i=1:2], y[i] <= 20)
+@constraint(Upper(model), x[1] + x[2] + y[1] - 2y[2] - 40 <= 0)
+@constraint(Upper(model), [i = 1:2], x[i] >= 0)
+@constraint(Upper(model), [i = 1:2], x[i] <= 50)
+@constraint(Upper(model), [i = 1:2], y[i] >= -10)
+@constraint(Upper(model), [i = 1:2], y[i] <= 20)
 
 # Followed by the objective and constraints of the lower problem:
 
@@ -56,9 +54,9 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
 @objective(Lower(model), Min, (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)
 
 # Lower constraints
-@constraint(Lower(model),  [i=1:2],- x[i] + 2y[i] <= -10)
-@constraint(Lower(model), [i=1:2], y[i] >= -10)
-@constraint(Lower(model), [i=1:2], y[i] <= 20)
+@constraint(Lower(model), [i = 1:2], -x[i] + 2y[i] <= -10)
+@constraint(Lower(model), [i = 1:2], y[i] >= -10)
+@constraint(Lower(model), [i = 1:2], y[i] <= 20)
 
 # Now we can solve the problem and verify the solution again that reported by the book
 
@@ -67,8 +65,8 @@ primal_status(model)
 termination_status(model)
 
 # Auto testing
-@test objective_value(model) ≈ 0 atol=1e-3
+@test objective_value(model) ≈ 0 atol = 1e-3
 sol = vcat(value.(x), value.(y))
-@test sol ≈ [0 ; 0 ; -10; -10] || sol ≈ [0 ; 30; -10; 10] #atol=1e-3
+@test sol ≈ [0; 0; -10; -10] || sol ≈ [0; 30; -10; 10] #atol=1e-3
 
 # # Like any other optimization problem, there is a chance in bilevel optimization to find multiple solutions with the same optimal value; based on the inherent stochasticity of the algorithm and random seed, we are expecting two optimal solutions for this problem. 

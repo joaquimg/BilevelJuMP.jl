@@ -31,7 +31,7 @@ function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
     cu = sprand(rng, cols, 0.5, f_c)
 
     # MOI.empty!(optimizer)
-    model = BilevelModel(optimizer, mode = mode)
+    model = BilevelModel(optimizer; mode = mode)
     try
         JuMP.set_time_limit_sec(model, MAX_TIME)
     catch e
@@ -46,7 +46,6 @@ function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
 
     @objective(Upper(model), Min, cu' * x)
     @objective(Lower(model), Min, cl' * y)
-
 
     #=
         Optimize
@@ -68,11 +67,11 @@ function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)
     obj_u = try
         objective_value(Upper(model))
     catch
-         NaN
+        NaN
     end
     gap = try
         bound = objective_bound(Upper(model))
-        abs(obj_u - bound)/max(abs(bound), 1e-8)
+        abs(obj_u - bound) / max(abs(bound), 1e-8)
     catch
         NaN
     end
