@@ -21,7 +21,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
 Feasibility problem with:
 Variables: 0
 Upper Constraints: 0
@@ -29,14 +29,13 @@ Lower Constraints: 0
 Bilevel Model
 Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
 Solver name: Ipopt</pre><p>Global variables</p><pre><code class="language-julia">I = 7 # maximum literals
-clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
-atol = 1e-6</code></pre><pre class="documenter-example-output">1.0e-6</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), ya[i=1:I])
-@variable(Upper(model), yb[i=1:I])
+clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
+atol = 1e-6</code></pre><pre class="documenter-example-output">1.0e-6</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), ya[i = 1:I])
+@variable(Upper(model), yb[i = 1:I])
 @variable(Upper(model), z)
 
-
 #Lower level variables
-@variable(Lower(model), x[i=1:I])</code></pre><pre class="documenter-example-output">7-element Vector{BilevelJuMP.BilevelVariableRef}:
+@variable(Lower(model), x[i = 1:I])</code></pre><pre class="documenter-example-output">7-element Vector{BilevelJuMP.BilevelVariableRef}:
  x[1]
  x[2]
  x[3]
@@ -45,24 +44,28 @@ atol = 1e-6</code></pre><pre class="documenter-example-output">1.0e-6</pre><p>Fi
  x[6]
  x[7]</pre><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)</code></pre><p class="math-container">\[ x_{1} + x_{2} + x_{3} + x_{4} + x_{5} + x_{6} + x_{7} - z \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), ca, z &lt;= 1)
 @constraint(Upper(model), cb, z &gt;= 0)
-@constraint(Upper(model), c1[i=1:I], ya[i] &gt;= 0)
-@constraint(Upper(model), c2[i=1:I], ya[i] &lt;= 1)
-@constraint(Upper(model), c3[i=1:I], yb[i] &gt;= 0)
-@constraint(Upper(model), c4[i=1:I], yb[i] &lt;= 1)
-@constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+@constraint(Upper(model), c1[i = 1:I], ya[i] &gt;= 0)
+@constraint(Upper(model), c2[i = 1:I], ya[i] &lt;= 1)
+@constraint(Upper(model), c3[i = 1:I], yb[i] &gt;= 0)
+@constraint(Upper(model), c4[i = 1:I], yb[i] &lt;= 1)
+@constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
  c5[1] : ya[1] + yb[1] = 1.0
  c5[2] : ya[2] + yb[2] = 1.0
  c5[3] : ya[3] + yb[3] = 1.0
  c5[4] : ya[4] + yb[4] = 1.0
  c5[5] : ya[5] + yb[5] = 1.0
  c5[6] : ya[6] + yb[6] = 1.0
- c5[7] : ya[7] + yb[7] = 1.0</pre><p>for c in clauses</p><pre><code class="language-julia">@constraint(Upper(model), cc[k in eachindex(clauses)], sum(i &gt; 0 ? ya[i] : yb[-i] for i in clauses[k]) &gt;= z)</code></pre><pre class="documenter-example-output">4-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+ c5[7] : ya[7] + yb[7] = 1.0</pre><p>for c in clauses</p><pre><code class="language-julia">@constraint(
+    Upper(model),
+    cc[k in eachindex(clauses)],
+    sum(i &gt; 0 ? ya[i] : yb[-i] for i in clauses[k]) &gt;= z
+)</code></pre><pre class="documenter-example-output">4-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
  cc[1] : ya[1] + ya[2] + ya[3] - z ≥ 0.0
  cc[2] : ya[3] + yb[1] + yb[4] - z ≥ 0.0
  cc[3] : ya[4] + ya[7] + yb[6] - z ≥ 0.0
- cc[4] : ya[5] + ya[6] + ya[7] - z ≥ 0.0</pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -sum(x[i] for i in 1:I))</code></pre><p class="math-container">\[ -x_{1} - x_{2} - x_{3} - x_{4} - x_{5} - x_{6} - x_{7} \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), b1[i=1:I], x[i] &gt;= 0)
-@constraint(Lower(model), b2[i=1:I], x[i] &lt;= ya[i])
-@constraint(Lower(model), b3[i=1:I], x[i] &lt;= yb[i])</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
+ cc[4] : ya[5] + ya[6] + ya[7] - z ≥ 0.0</pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -sum(x[i] for i in 1:I))</code></pre><p class="math-container">\[ -x_{1} - x_{2} - x_{3} - x_{4} - x_{5} - x_{6} - x_{7} \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), b1[i = 1:I], x[i] &gt;= 0)
+@constraint(Lower(model), b2[i = 1:I], x[i] &lt;= ya[i])
+@constraint(Lower(model), b3[i = 1:I], x[i] &lt;= yb[i])</code></pre><pre class="documenter-example-output">7-element Vector{JuMP.ConstraintRef{BilevelModel, Int64, JuMP.ScalarShape}}:
  b3[1] : -yb[1] + x[1] ≤ 0.0
  b3[2] : -yb[2] + x[2] ≤ 0.0
  b3[3] : -yb[3] + x[3] ≤ 0.0
@@ -79,8 +82,8 @@ for i in 1:I
     JuMP.set_dual_start_value.(b3, -1)
 end</code></pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)
 primal_status(model)
-termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><p>Auto testing</p><pre><code class="language-julia">@test objective_value(model) ≈ -1 atol=atol
-@test value.(x) ≈ zeros(I) atol=atol
-@test value.(ya) ≈ ones(I) atol=atol
-@test value.(yb) ≈ zeros(I) atol=atol
-@test value(z) ≈ 1 atol=atol</code></pre><pre class="documenter-example-output">Test Passed</pre><p>@show dual.(b1) #≈ 6 atol=atol @show dual.(b2) #≈ 2 atol=atol @show dual.(b3) #≈ 2 atol=atol</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Example 2</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 October 2022 14:54">Tuesday 4 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><p>Auto testing</p><pre><code class="language-julia">@test objective_value(model) ≈ -1 atol = atol
+@test value.(x) ≈ zeros(I) atol = atol
+@test value.(ya) ≈ ones(I) atol = atol
+@test value.(yb) ≈ zeros(I) atol = atol
+@test value(z) ≈ 1 atol = atol</code></pre><pre class="documenter-example-output">Test Passed</pre><p>@show dual.(b1) #≈ 6 atol=atol @show dual.(b2) #≈ 2 atol=atol @show dual.(b3) #≈ 2 atol=atol</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Example 2</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 6 October 2022 02:56">Thursday 6 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

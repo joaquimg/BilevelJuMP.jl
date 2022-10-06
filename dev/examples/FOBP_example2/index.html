@@ -14,7 +14,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
 Feasibility problem with:
 Variables: 0
 Upper Constraints: 0
@@ -26,9 +26,9 @@ Solver name: Ipopt</pre><p>First we need to define all of the variables in the u
     u1, x &lt;= 5
     u2, y &lt;= 8
     u3, y &gt;= 0
-end)</code></pre><pre class="documenter-example-output">(u1 : x ≤ 5.0, u2 : y ≤ 8.0, u3 : y ≥ 0.0)</pre><p>Followed by the objective and constraints of the lower problem: Lower level objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -x)</code></pre><p class="math-container">\[ -x \]</p><p>Lower level constraints</p><pre><code class="language-julia">@constraint(Lower(model), l1,  x +  y &lt;= 8)
-@constraint(Lower(model), l2, 4x +  y &gt;= 8)
-@constraint(Lower(model), l3, 2x +  y &lt;= 13)
+end)</code></pre><pre class="documenter-example-output">(u1 : x ≤ 5.0, u2 : y ≤ 8.0, u3 : y ≥ 0.0)</pre><p>Followed by the objective and constraints of the lower problem: Lower level objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -x)</code></pre><p class="math-container">\[ -x \]</p><p>Lower level constraints</p><pre><code class="language-julia">@constraint(Lower(model), l1, x + y &lt;= 8)
+@constraint(Lower(model), l2, 4x + y &gt;= 8)
+@constraint(Lower(model), l3, 2x + y &lt;= 13)
 @constraint(Lower(model), l4, 2x - 7y &lt;= 0)</code></pre><p>l4 : $ -7 y + 2 x \leq 0.0 $</p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>You can use the singular <code>@constraint</code> macro or the plural <code>@constraints</code>!</p></div></div><p>We can also set hints for the variables associated with the problems.</p><p>In this example, we know the duals on the lower constraints are in the set <code>[-15, 15]</code>:</p><pre><code class="language-julia">for c in [l1, l2, l3, l4]
     BilevelJuMP.set_dual_upper_bound_hint(c, 15)
     BilevelJuMP.set_dual_lower_bound_hint(c, -15)
@@ -76,42 +76,66 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   20  6.1333412e+00 1.28e-07 2.35e+06  -1.0 2.43e-03    -  1.00e+00 1.38e-01f  2
   21  6.1333372e+00 2.05e-08 4.84e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
-  22  6.1333345e+00 1.11e-16 3.71e+05  -1.0 7.68e-03    -  1.00e+00 1.00e+00h  1
-  23  6.1333345e+00 2.22e-16 1.13e+07  -1.0 7.07e+00    -  7.08e-05 4.08e-06f 10
-  24  6.1333345e+00 2.22e-16 4.69e+06  -1.0 6.02e-03    -  1.00e+00 1.93e-02f  3
-  25  6.1333346e+00 1.11e-16 6.47e+06  -1.0 4.98e-03    -  1.00e+00 2.50e-01f  3
-  26  6.1333346e+00 0.00e+00 1.92e+04  -1.0 1.13e-03    -  1.00e+00 1.00e+00h  1
-  27  6.1333345e+00 0.00e+00 4.18e+04  -1.7 6.27e-04   2.7 1.00e+00 1.00e+00h  1
-  28  6.1333343e+00 0.00e+00 2.78e+03  -1.7 7.07e-04   2.2 1.00e+00 1.00e+00f  1
-Cannot call restoration phase at point that is almost feasible (violation 0.000000e+00).
-Abort in line search due to no other fall back.
+  22  6.1333345e+00 0.00e+00 3.71e+05  -1.0 7.67e-03    -  1.00e+00 1.00e+00h  1
+  23  6.1333351e+00 0.00e+00 2.36e+06  -1.0 3.69e-03    -  1.00e+00 5.00e-01f  2
+  24  6.1333351e+00 6.17e-11 1.82e+05  -1.0 5.21e-05   7.4 1.00e+00 1.22e-04f 14
+  25  6.1333361e+00 1.42e-09 1.08e+01  -1.0 1.67e-04   6.9 1.00e+00 1.00e+00F  1
+  26  6.1333333e+00 1.28e-11 9.62e+00  -5.7 3.72e-06   6.4 1.00e+00 1.00e+00s 22
+  27r 6.1333333e+00 1.28e-11 1.00e+03  -5.7 0.00e+00    -  0.00e+00 0.00e+00R  1
+  28r 6.1333333e+00 5.65e-12 4.77e+03  -5.7 2.02e-02    -  1.04e-01 5.57e-01f  1
+  29r 6.1333333e+00 5.51e-12 4.69e+03  -5.7 9.58e-03    -  4.73e-03 2.53e-02f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  30r 6.1333333e+00 3.73e-12 3.68e+03  -5.7 9.40e-03    -  5.81e-02 3.23e-01f  1
+  31r 6.1333333e+00 3.40e-12 3.41e+03  -5.7 7.17e-03    -  4.67e-01 8.92e-02f  1
+  32r 6.1333333e+00 2.95e-12 3.04e+03  -5.7 1.57e-02    -  9.85e-01 1.32e-01f  1
+  33  6.1333333e+00 2.92e-12 1.94e+02  -5.7 4.19e-06    -  1.00e+00 9.17e-03f  2
+  34  6.1333338e+00 4.00e-07 2.97e+03  -5.7 1.39e+00    -  2.86e-01 1.00e+00f  1
+  35  6.1333335e+00 1.68e-07 2.86e+03  -5.7 8.29e-06   5.9 1.00e+00 3.96e-02h  2
+  36  6.1333334e+00 5.01e-08 1.59e+03  -5.7 3.69e-07   5.5 1.00e+00 4.45e-01h  2
+  37  6.1333333e+00 8.88e-16 1.50e-02  -5.7 1.56e-07   5.0 1.00e+00 1.00e+00h  1
+  38  6.1333333e+00 8.88e-16 1.80e+03  -5.7 2.07e+00    -  6.85e-01 1.00e+00f  1
+  39  6.1333333e+00 0.00e+00 7.36e+02  -5.7 6.58e+00    -  8.22e-01 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  40  6.1333333e+00 0.00e+00 1.40e+02  -5.7 8.33e-01    -  1.00e+00 1.00e+00h  1
+  41  6.1333333e+00 0.00e+00 2.36e+01  -5.7 1.76e+00    -  1.00e+00 1.00e+00h  1
+  42  6.1333333e+00 0.00e+00 7.50e-02  -5.7 2.47e-02    -  1.00e+00 1.00e+00h  1
+  43  6.1333333e+00 0.00e+00 1.05e-03  -5.7 8.88e-03    -  1.00e+00 1.00e+00h  1
+  44  6.1333333e+00 0.00e+00 7.83e-09  -5.7 2.01e-05    -  1.00e+00 1.00e+00h  1
+  45  6.1333333e+00 0.00e+00 2.37e+00  -8.6 3.39e-04    -  9.93e-01 1.00e+00h  1
+In iteration 45, 1 Slack too small, adjusting variable bound
+  46  6.1333333e+00 0.00e+00 1.15e-01  -8.6 7.44e-01    -  9.51e-01 9.77e-01h  1
+  47  6.1333333e+00 0.00e+00 1.19e-01  -8.6 1.46e+00    -  1.00e+00 1.00e+00h  1
+  48  6.1333333e+00 0.00e+00 2.36e-02  -8.6 8.45e-01    -  1.00e+00 1.00e+00h  1
+  49  6.1333333e+00 0.00e+00 1.62e-04  -8.6 1.39e-01    -  1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  50  6.1333333e+00 0.00e+00 1.54e-09  -8.6 3.89e-04    -  1.00e+00 1.00e+00h  1
 
-Number of Iterations....: 28
+Number of Iterations....: 50
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333342638903785e+00    6.1333342638903785e+00
-Dual infeasibility......:   2.7824484642569860e+03    2.7824484642569860e+03
+Objective...............:   6.1333332742376614e+00    6.1333332742376614e+00
+Dual infeasibility......:   1.5410623379043066e-09    1.5410623379043066e-09
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   4.3702288956191809e-09    4.3702288956191809e-09
-Complementarity.........:   2.0572907200337082e-02    2.0572907200337082e-02
-Overall NLP error.......:   4.1125380915709675e-01    2.7824484642569860e+03
+Variable bound violation:   4.3702290096584022e-09    4.3702290096584022e-09
+Complementarity.........:   2.5059035689621743e-09    2.5059035689621743e-09
+Overall NLP error.......:   2.5059035689621743e-09    2.5059035689621743e-09
 
 
-Number of objective function evaluations             = 59
-Number of objective gradient evaluations             = 30
-Number of equality constraint evaluations            = 59
-Number of inequality constraint evaluations          = 59
-Number of equality constraint Jacobian evaluations   = 30
-Number of inequality constraint Jacobian evaluations = 30
-Number of Lagrangian Hessian evaluations             = 29
-Total seconds in IPOPT                               = 0.063
+Number of objective function evaluations             = 107
+Number of objective gradient evaluations             = 47
+Number of equality constraint evaluations            = 107
+Number of inequality constraint evaluations          = 107
+Number of equality constraint Jacobian evaluations   = 52
+Number of inequality constraint Jacobian evaluations = 52
+Number of Lagrangian Hessian evaluations             = 50
+Total seconds in IPOPT                               = 0.030
 
-EXIT: Error in step computation!</pre><p>Automated testing</p><pre><code class="language-julia">@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol=1e-4
-@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol=1e-4
-@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol=1e-4
-@test value(x) ≈ 3.5 * 8 / 15 atol=1e-4
-@test value(y) ≈ 8 / 15 atol=1e-4
-@test value(u1) ≈ 3.5 * 8 / 15 atol=1e-4
-@test value(l1) ≈ 4.5 * 8 / 15 atol=1e-4
-@test dual(l1) ≈ [0] atol=1e-4
-@test dual(l3) ≈ [0] atol=1e-4</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2.2/">« Foundations of Bilevel Programming: Example 2.1</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 October 2022 14:54">Tuesday 4 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><p>Automated testing</p><pre><code class="language-julia">@test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol = 1e-4
+@test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol = 1e-4
+@test objective_value(Lower(model)) ≈ -3.5 * 8 / 15 atol = 1e-4
+@test value(x) ≈ 3.5 * 8 / 15 atol = 1e-4
+@test value(y) ≈ 8 / 15 atol = 1e-4
+@test value(u1) ≈ 3.5 * 8 / 15 atol = 1e-4
+@test value(l1) ≈ 4.5 * 8 / 15 atol = 1e-4
+@test dual(l1) ≈ [0] atol = 1e-4
+@test dual(l3) ≈ [0] atol = 1e-4</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2.2/">« Foundations of Bilevel Programming: Example 2.1</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 6 October 2022 02:56">Thursday 6 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

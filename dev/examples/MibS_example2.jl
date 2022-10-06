@@ -1,6 +1,5 @@
 # # Example 2 on MibS
 
-
 # Model of the problem
 # First level
 # ```math
@@ -44,7 +43,7 @@ model = BilevelModel()
 
 # Upper constraints
 @constraints(Upper(model), begin
-    u1, -3x + 2y + 5z  <= 12
+    u1, -3x + 2y + 5z <= 12
     u2, x + 2y <= 20
     u3, x <= 10
 end)
@@ -55,8 +54,8 @@ end)
 @objective(Lower(model), Min, y)
 
 # Lower constraints
-@constraint(Lower(model), l1,  2x -  y + 3z <= 7)
-@constraint(Lower(model), l2, -2x +  4y <= 16)
+@constraint(Lower(model), l1, 2x - y + 3z <= 7)
+@constraint(Lower(model), l2, -2x + 4y <= 16)
 @constraint(Lower(model), l3, y <= 5)
 
 # Using MibS Solver

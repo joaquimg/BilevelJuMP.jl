@@ -13,7 +13,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
 Feasibility problem with:
 Variables: 0
 Upper Constraints: 0
@@ -23,11 +23,11 @@ Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
 Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
 @variable(UpperOnly(model), z)</code></pre><p class="math-container">\[ z \]</p><p>Lower level variables</p><pre><code class="language-julia">@variable(Lower(model), y)
 @variable(LowerOnly(model), w)</code></pre><p class="math-container">\[ w \]</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, -x + 4y + z)</code></pre><p class="math-container">\[ -x + 4 y + z \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), y + 2x + z &lt;= 9)
-@constraint(Upper(model), z == 1)</code></pre><p class="math-container">\[ z = 1.0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -x - y + w)</code></pre><p class="math-container">\[ -x - y + w \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model),  y &gt;= 0)
+@constraint(Upper(model), z == 1)</code></pre><p class="math-container">\[ z = 1.0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -x - y + w)</code></pre><p class="math-container">\[ -x - y + w \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), y &gt;= 0)
 @constraint(Lower(model), x + y + w &lt;= 8)
-@constraint(Lower(model),  x &gt;= 0)
-@constraint(Lower(model),  x &lt;= 4)
-@constraint(Lower(model),  w == 1)</code></pre><p class="math-container">\[ w = 1.0 \]</p><p>Now we can solve the problem and verify the solution again that reported by book</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+@constraint(Lower(model), x &gt;= 0)
+@constraint(Lower(model), x &lt;= 4)
+@constraint(Lower(model), w == 1)</code></pre><p class="math-container">\[ w = 1.0 \]</p><p>Now we can solve the problem and verify the solution again that reported by book</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:        6
 Number of nonzeros in inequality constraint Jacobian.:       23
@@ -86,12 +86,12 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
 Number of Iterations....: 34
 
                                    (scaled)                 (unscaled)
-Objective...............:   2.3999999455996647e+01    2.3999999455996647e+01
-Dual infeasibility......:   7.4605450369391369e-12    7.4605450369391369e-12
+Objective...............:   2.3999999455996644e+01    2.3999999455996644e+01
+Dual infeasibility......:   7.4578336764811025e-12    7.4578336764811025e-12
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   4.0833339750133360e-09    4.0833339750133360e-09
-Complementarity.........:   2.5133913973496502e-09    2.5133913973496502e-09
-Overall NLP error.......:   2.5133913973496502e-09    2.5133913973496502e-09
+Variable bound violation:   4.0833339750133791e-09    4.0833339750133791e-09
+Complementarity.........:   2.5133913974248273e-09    2.5133913974248273e-09
+Overall NLP error.......:   2.5133913974248273e-09    2.5133913974248273e-09
 
 
 Number of objective function evaluations             = 41
@@ -101,9 +101,9 @@ Number of inequality constraint evaluations          = 41
 Number of equality constraint Jacobian evaluations   = 35
 Number of inequality constraint Jacobian evaluations = 35
 Number of Lagrangian Hessian evaluations             = 34
-Total seconds in IPOPT                               = 0.020
+Total seconds in IPOPT                               = 0.018
 
-EXIT: Optimal Solution Found.</pre><p>Auto testing</p><pre><code class="language-julia">@test value(x) ≈ 1 atol=1e-2
-@test value(y) ≈ 6 atol=1e-2
-@test value(z) ≈ 1 atol=1e-2
-@test value(w) ≈ 1 atol=1e-2</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 October 2022 14:54">Tuesday 4 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><p>Auto testing</p><pre><code class="language-julia">@test value(x) ≈ 1 atol = 1e-2
+@test value(y) ≈ 6 atol = 1e-2
+@test value(z) ≈ 1 atol = 1e-2
+@test value(w) ≈ 1 atol = 1e-2</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 6 October 2022 02:56">Thursday 6 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
