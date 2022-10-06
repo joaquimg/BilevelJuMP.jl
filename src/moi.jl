@@ -259,7 +259,7 @@ function get_variable_complement(primal_model, dual_model, primal_con, dual_con)
     error("An internal error with variable complements occurred. Likely, your problem type does not yet support consideration of constrained variables.")
 end
 
-function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:MOI.GreaterThan{T},Fd,Sd<:MOI.GreaterThan{T}} where T
+function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:Union{MOI.LessThan{T},MOI.GreaterThan{T}},Fd,Sd<:Union{MOI.LessThan{T},MOI.GreaterThan{T}}} where T
     primal_variable = MOI.get(primal_model, MOI.ConstraintFunction(), primal_con)
     primal_set =  MOI.get(primal_model, MOI.ConstraintSet(), primal_con)
 
@@ -275,21 +275,6 @@ function get_variable_complement(primal_model, dual_model, primal_con::MOI.Const
     return Complement(false, primal_con, dual_func, set_with_zero(dual_set), primal_variable)
 end
 
-function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VariableIndex,Sp<:MOI.LessThan{T},Fd,Sd<:MOI.LessThan{T}} where T
-    primal_variable = MOI.get(primal_model, MOI.ConstraintFunction(), primal_con)
-    primal_set =  MOI.get(primal_model, MOI.ConstraintSet(), primal_con)
-
-    @assert MOI.constant(primal_set) == 0 "Unexpected variable bound"
-
-    dual_func = MOI.get(dual_model, MOI.ConstraintFunction(), dual_con)
-    dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
-    if MOI.constant(dual_set) > 0
-        dual_func.constant = dual_func.constant - MOI.constant(dual_set)
-    elseif MOI.constant(dual_set) < 0
-        dual_func.constant = dual_func.constant + MOI.constant(dual_set)
-    end
-    return Complement(false, primal_con, dual_func, set_with_zero(dual_set), primal_variable)
-end
 
 function get_variable_complements(primal_model, dual_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
