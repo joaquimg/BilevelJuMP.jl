@@ -2485,18 +2485,15 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constra
     @objective(Upper(model), Min, x[1])
     @objective(Lower(model), Min, y[1])
 
-    if !consider_constrained_variables
-        optimize!(model; consider_constrained_variables = consider_constrained_variables)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
-        primal_status(model)
-        termination_status(model)
+    primal_status(model)
+    termination_status(model)
 
-        @test objective_value(model) ≈ 0  atol=1e-1
-        @test value.(x) ≈ [0, 0, 0] atol=1e-3
-        @test value.(y) ≈ [0, 0, 0] atol=1e-3
-    else
-        @test_throws ErrorException optimize!(model; consider_constrained_variables = consider_constrained_variables)
-    end
+    @test objective_value(model) ≈ 0  atol=1e-1
+    @test value.(x) ≈ [0, 0, 0] atol=1e-3
+    @test value.(y) ≈ [0, 0, 0] atol=1e-3
+
 end
 
 #=
@@ -2554,20 +2551,17 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constra
         end
     end
 
-    if !consider_constrained_variables
-        optimize!(model; consider_constrained_variables = consider_constrained_variables)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
-        primal_status(model)
-        termination_status(model)
-        value.(y)
+    primal_status(model)
+    termination_status(model)
+    value.(y)
 
-        @test objective_value(model) ≈ 12  atol=1e-1
-        @test value(x) ≈ 6 atol=1e-3
-        @test value(y[2]) >= 0 - 1e-3
-        @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
-    else
-        @test_throws ErrorException optimize!(model; consider_constrained_variables = consider_constrained_variables)
-    end
+    @test objective_value(model) ≈ 12  atol=1e-1
+    @test value(x) ≈ 6 atol=1e-3
+    @test value(y[2]) >= 0 - 1e-3
+    @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
+
 end
 function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
@@ -2617,21 +2611,18 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constra
         end
     end
 
-    if !consider_constrained_variables
-        optimize!(model; consider_constrained_variables = consider_constrained_variables)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
-        JuMP.raw_status(model)
-        primal_status(model)
-        termination_status(model)
-        value.(y)
+    JuMP.raw_status(model)
+    primal_status(model)
+    termination_status(model)
+    value.(y)
 
-        @test objective_value(model) ≈ 6  atol=1e-1
-        @test value(x) ≈ 2 atol=1e-3
-        @test value(y[2]) <= 0 + 1e-3
-        @test value(y[1]) + value(y[2]) ≈ 2 atol=1e-3
-    else
-        @test_throws ErrorException optimize!(model; consider_constrained_variables = consider_constrained_variables)
-    end
+    @test objective_value(model) ≈ 6  atol=1e-1
+    @test value(x) ≈ 2 atol=1e-3
+    @test value(y[2]) <= 0 + 1e-3
+    @test value(y[1]) + value(y[2]) ≈ 2 atol=1e-3
+    
 end
 
 function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
@@ -2680,21 +2671,18 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constra
         end
     end
 
-    if !consider_constrained_variables
-        optimize!(model; consider_constrained_variables = consider_constrained_variables)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
-        JuMP.raw_status(model)
-        primal_status(model)
-        termination_status(model)
-        value.(y)
+    JuMP.raw_status(model)
+    primal_status(model)
+    termination_status(model)
+    value.(y)
 
-        @test objective_value(model) ≈ 12 atol=1e-1
-        @test value(x) ≈ 6 atol=1e-3
-        @test value(y[1]) ≈ 2 atol=1e-3
-        @test sqrt(value(y[2])^2 + value(y[3])^2) <= 2 + 1e-3
-    else
-        @test_throws ErrorException optimize!(model; consider_constrained_variables = consider_constrained_variables)
-    end
+    @test objective_value(model) ≈ 12 atol=1e-1
+    @test value(x) ≈ 6 atol=1e-3
+    @test value(y[1]) ≈ 2 atol=1e-3
+    @test sqrt(value(y[2])^2 + value(y[3])^2) <= 2 + 1e-3
+    
 end
 
 # from: https://github.com/joaquimg/BilevelJuMP.jl/issues/82

@@ -275,6 +275,18 @@ function get_variable_complement(primal_model, dual_model, primal_con::MOI.Const
     return Complement(false, primal_con, dual_func, set_with_zero(dual_set), primal_variable)
 end
 
+function get_variable_complement(primal_model, dual_model, primal_con::MOI.ConstraintIndex{Fp,Sp}, dual_con::MOI.ConstraintIndex{Fd,Sd}) where {Fp<:MOI.VectorOfVariables,Sp<:VECTOR_SETS,Fd,Sd<:VECTOR_SETS} where T
+    primal_variables = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), primal_con))::Fp
+    primal_set =  MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), primal_con))::Sp
+
+    dual_func = MOI.copy(MOI.get(dual_model, MOI.ConstraintFunction(), dual_con))
+    dual_set = MOI.copy(MOI.get(dual_model, MOI.ConstraintSet(), dual_con))
+
+    # Do we have a todo here as in function get_canonical_complement(primal_model, map, ci::CI{F,S}) where {F, S<:VECTOR_SETS} ??
+
+    con = Complement(true, primal_con, dual_func, set_with_zero(dual_set), primal_variables.variables)
+    return con
+end
 
 function get_variable_complements(primal_model, dual_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
@@ -481,11 +493,7 @@ function build_bilevel(
         end
 
     else # strong duality
-        if !consider_constrained_variables || contains_only_scalar_sets(lower)
-            add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
-        else
-            error("Only scalar sets in lower level allowed with consider_constrained_variables.")
-        end
+        add_strong_duality(mode, m, lower_primal_obj, lower_dual_obj, lower_idxmap, lower_dual_idxmap)
     end
     add_aggregate_constraints(m, mode, copy_names)
 
@@ -1076,15 +1084,6 @@ function add_complement(mode::FortunyAmatMcCarlMode{T}, m, comp::Complement,
     # else
     # end
     return c1
-end
-
-function contains_only_scalar_sets(model::MOI.ModelLike)
-    for (F,S) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
-        if !(S <: SCALAR_SETS)
-            return false
-        end
-    end
-    return true
 end
 
 function to_vector_affine(f::MOI.VectorAffineFunction{T}) where T

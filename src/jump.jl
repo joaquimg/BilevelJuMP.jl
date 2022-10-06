@@ -517,9 +517,7 @@ function JuMP.optimize!(model::BilevelModel;
             ctr = model.ctr_lower[idx]
             # this fails for vector-constrained variables due dualization 0.3.5
             # because of constrained variables that change the dual
-            pre_duals = lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
-            duals = map(x->lower_dual_to_sblm[x], pre_duals)
-            pass_dual_info(single_blm, duals, info)
+            pass_necessary_dual_info(single_blm, info, consider_constrained_variables, lower_primal_dual_map, lower_dual_to_sblm, JuMP.index(ctr))
         end
     end
     # pass lower & upper level primal variables info (upper, lower)
@@ -599,6 +597,24 @@ function pass_primal_info(single_blm, primal, info::BilevelVariableInfo)
         MOI.add_constraint(single_blm,
             primal, GT{Float64}(info.lower))
     end
+    return
+end
+
+function pass_necessary_dual_info(single_blm, info, consider_constrained_variables::Bool, lower_primal_dual_map, lower_dual_to_sblm, ctr_idx::MOI.ConstraintIndex{F,S}) where {F<:Union{MOI.VariableIndex,MOI.VectorOfVariables},S}
+    if consider_constrained_variables
+        return
+    else
+        pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
+        duals = map(x->lower_dual_to_sblm[x], pre_duals)
+        pass_dual_info(single_blm, duals, info)
+    end
+    return
+end
+
+function pass_necessary_dual_info(single_blm, info, consider_constrained_variables::Bool, lower_primal_dual_map, lower_dual_to_sblm, ctr_idx::MOI.ConstraintIndex{F,S}) where {F,S}
+    pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
+    duals = map(x->lower_dual_to_sblm[x], pre_duals)
+    pass_dual_info(single_blm, duals, info)
     return
 end
 
