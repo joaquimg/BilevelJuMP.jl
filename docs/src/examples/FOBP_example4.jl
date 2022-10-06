@@ -22,7 +22,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 atol = 1e-3

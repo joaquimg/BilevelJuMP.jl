@@ -23,7 +23,7 @@ b = 1
 # First, we need to specify an iterable with our desired regularization values.
 # The problem will be solved for each element in this series, while the next step starts at the optimal values of the previous iteration. 
 # Note, that this iterable specifies regularization parameters after a first solve with the initial value 1e-0. 
-iter_eps = [1e-0 * 0.99^i for i = 1:1500]
+iter_eps = [1e-0 * 0.99^i for i in 1:1500]
 
 # Also, it is possible to give specific solver attributes that are not valid for the initial solve, but only subsequent ones.
 # Warmstarting interior point algorithms is difficult, but some of the following options can be recommended. 
@@ -48,8 +48,12 @@ iter_attr = Dict(
 
 # We can now specify our model, where the initial regularization is 1e+0, followed by setting the iterative values and settings:
 model1 = BilevelModel(
-    Ipopt.Optimizer,
-    mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+    Ipopt.Optimizer;
+    mode = BilevelJuMP.ProductMode(
+        1e-0;
+        iter_eps = iter_eps,
+        iter_attr = iter_attr,
+    ),
 )
 
 # The following lines merge the two lower level problems into a single one. It is left to the reader to check the KKTs are indeed equivalent: 
@@ -62,8 +66,8 @@ model1 = BilevelModel(
     Lower(model1),
     Min,
     -(
-        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] + (a - b * (q[1] + q[2] + Q)) * q[2] -
-        C * q[2] + b * q[1] * q[2]
+        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] +
+        (a - b * (q[1] + q[2] + Q)) * q[2] - C * q[2] + b * q[1] * q[2]
     )
 )
 
@@ -97,7 +101,7 @@ C = 1
 a = 13
 b = 0.1
 
-iter_eps = [1e-0 * 0.99^i for i = 1:1500]
+iter_eps = [1e-0 * 0.99^i for i in 1:1500]
 
 iter_attr = Dict(
     "mu_init" => 1e-9,
@@ -111,8 +115,12 @@ iter_attr = Dict(
 )
 
 model2 = BilevelModel(
-    Ipopt.Optimizer,
-    mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+    Ipopt.Optimizer;
+    mode = BilevelJuMP.ProductMode(
+        1e-0;
+        iter_eps = iter_eps,
+        iter_attr = iter_attr,
+    ),
 )
 
 @variable(Lower(model2), q[F] >= 0)
@@ -124,8 +132,8 @@ model2 = BilevelModel(
     Lower(model2),
     Min,
     -(
-        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] + (a - b * (q[1] + q[2] + Q)) * q[2] -
-        C * q[2] + b * q[1] * q[2]
+        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] +
+        (a - b * (q[1] + q[2] + Q)) * q[2] - C * q[2] + b * q[1] * q[2]
     )
 )
 
@@ -146,7 +154,7 @@ C = 2
 a = 13
 b = 0.1
 
-iter_eps = [1e-0 * 0.99^i for i = 1:1500]
+iter_eps = [1e-0 * 0.99^i for i in 1:1500]
 
 iter_attr = Dict(
     "mu_init" => 1e-9,
@@ -160,8 +168,12 @@ iter_attr = Dict(
 )
 
 model3 = BilevelModel(
-    Ipopt.Optimizer,
-    mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+    Ipopt.Optimizer;
+    mode = BilevelJuMP.ProductMode(
+        1e-0;
+        iter_eps = iter_eps,
+        iter_attr = iter_attr,
+    ),
 )
 
 @variable(Lower(model3), q[F] >= 0)
@@ -173,8 +185,8 @@ model3 = BilevelModel(
     Lower(model3),
     Min,
     -(
-        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] + (a - b * (q[1] + q[2] + Q)) * q[2] -
-        C * q[2] + b * q[1] * q[2]
+        (a - b * (q[1] + q[2] + Q)) * q[1] - C * q[1] +
+        (a - b * (q[1] + q[2] + Q)) * q[2] - C * q[2] + b * q[1] * q[2]
     )
 )
 

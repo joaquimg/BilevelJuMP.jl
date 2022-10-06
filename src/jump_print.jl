@@ -1,19 +1,33 @@
-JuMP.num_variables(m::AbstractBilevelModel) = JuMP.num_variables(bilevel_model(m))
+function JuMP.num_variables(m::AbstractBilevelModel)
+    return JuMP.num_variables(bilevel_model(m))
+end
 _plural(n) = (isone(n) ? "" : "s")
 function JuMP.show_constraints_summary(io::IO, model::BilevelModel)
     JuMP.show_constraints_summary(io, Upper(model))
-    JuMP.show_constraints_summary(io, Lower(model), true)
+    return JuMP.show_constraints_summary(io, Lower(model), true)
 end
 function JuMP.show_constraints_summary(io::IO, model::UpperModel)
     n = JuMP.num_constraints(model)
-    println(io, "Upper Constraint", _plural(n), ": ", n)
+    return println(io, "Upper Constraint", _plural(n), ": ", n)
 end
-function JuMP.show_constraints_summary(io::IO, model::LowerModel, line_break = false)
+function JuMP.show_constraints_summary(
+    io::IO,
+    model::LowerModel,
+    line_break = false,
+)
     n = JuMP.num_constraints(model)
-    print(io, "Lower Constraint", _plural(n), ": ", n, ifelse(line_break, "\n", ""))
+    return print(
+        io,
+        "Lower Constraint",
+        _plural(n),
+        ": ",
+        n,
+        ifelse(line_break, "\n", ""),
+    )
 end
-JuMP.show_backend_summary(io::IO, model::InnerBilevelModel) =
-    JuMP.show_backend_summary(io, model.m)
+function JuMP.show_backend_summary(io::IO, model::InnerBilevelModel)
+    return JuMP.show_backend_summary(io, model.m)
+end
 function JuMP.show_backend_summary(io::IO, model::BilevelModel)
     println(io, "Bilevel Model")
     println(io, "Solution method: ", model.mode)
@@ -37,12 +51,20 @@ function JuMP.solver_name(model::BilevelModel)
 end
 
 function JuMP.show_objective_function_summary(io::IO, model::UpperModel)
-    println(io, "Upper objective function type: \n", JuMP.objective_function_type(model))
+    return println(
+        io,
+        "Upper objective function type: \n",
+        JuMP.objective_function_type(model),
+    )
 end
 function JuMP.show_objective_function_summary(io::IO, model::LowerModel)
-    println(io, "Lower objective function type: \n", JuMP.objective_function_type(model))
+    return println(
+        io,
+        "Lower objective function type: \n",
+        JuMP.objective_function_type(model),
+    )
 end
 function JuMP.show_objective_function_summary(io::IO, model::BilevelModel)
     JuMP.show_objective_function_summary(io, Upper(model))
-    JuMP.show_objective_function_summary(io, Lower(model))
+    return JuMP.show_objective_function_summary(io, Lower(model))
 end

@@ -22,10 +22,10 @@ mutable struct BilevelConstraintInfo{T<:Union{Float64,Vector{Float64}}}
     upper::T
     lower::T
     function BilevelConstraintInfo{Float64}(level)
-        new(level, NaN, NaN, NaN)
+        return new(level, NaN, NaN, NaN)
     end
     function BilevelConstraintInfo{Vector{Float64}}(level, N::Integer)
-        new(level, fill(NaN, N), fill(NaN, N), fill(NaN, N))
+        return new(level, fill(NaN, N), fill(NaN, N), fill(NaN, N))
     end
 end
 
@@ -34,10 +34,10 @@ mutable struct BilevelVariableInfo{T<:Union{Float64,Vector{Float64}}}
     upper::T
     lower::T
     function BilevelVariableInfo(level)
-        new{Float64}(level, NaN, NaN)
+        return new{Float64}(level, NaN, NaN)
     end
     function BilevelVariableInfo(level, N::Integer)
-        new{Vector{Float64}}(level, fill(NaN, N), fill(NaN, N))
+        return new{Vector{Float64}}(level, fill(NaN, N), fill(NaN, N))
     end
 end
 function BilevelVariableInfo(_info::BilevelConstraintInfo{T}) where {T}
@@ -147,7 +147,12 @@ mutable struct FortunyAmatMcCarlMode{T} <: AbstractBilevelSolverMode{T}
         primal_big_M = Inf,
         dual_big_M = Inf,
     )
-        return new{Float64}(with_slack, primal_big_M, dual_big_M, ComplementBoundCache())
+        return new{Float64}(
+            with_slack,
+            primal_big_M,
+            dual_big_M,
+            ComplementBoundCache(),
+        )
     end
 end
 
@@ -268,7 +273,10 @@ end
 mutable struct StrongDualityMode{T} <: AbstractBilevelSolverMode{T}
     inequality::Bool
     epsilon::T
-    function StrongDualityMode(eps::T = zero(Float64); inequality = true) where {T}
+    function StrongDualityMode(
+        eps::T = zero(Float64);
+        inequality = true,
+    ) where {T}
         return new{T}(inequality, eps)
     end
 end
@@ -276,7 +284,10 @@ end
 ignore_dual_objective(::AbstractBilevelSolverMode{T}) where {T} = true
 ignore_dual_objective(::StrongDualityMode{T}) where {T} = false
 
-function accept_vector_set(mode::AbstractBilevelSolverMode{T}, con::Complement) where {T}
+function accept_vector_set(
+    mode::AbstractBilevelSolverMode{T},
+    con::Complement,
+) where {T}
     if con.is_vec
         error(
             "Set $(typeof(con.set_w_zero)) is not accepted when solution method is $(typeof(mode))",
@@ -296,7 +307,11 @@ function get_canonical_complements(primal_model, primal_dual_map)
     end
     return out
 end
-function get_canonical_complement(primal_model, map, ci::CI{F,S}) where {F,S<:VECTOR_SETS}
+function get_canonical_complement(
+    primal_model,
+    map,
+    ci::CI{F,S},
+) where {F,S<:VECTOR_SETS}
     T = Float64
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
@@ -310,12 +325,17 @@ function get_canonical_complement(primal_model, map, ci::CI{F,S}) where {F,S<:VE
     con = Complement(true, ci, func, set_with_zero(set), map[ci])
     return con
 end
-function get_canonical_complement(primal_model, map, ci::CI{F,S}) where {F,S<:SCALAR_SETS}
+function get_canonical_complement(
+    primal_model,
+    map,
+    ci::CI{F,S},
+) where {F,S<:SCALAR_SETS}
     T = Float64
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
     constant =
-        Dualization.set_dot(1, set, T) * Dualization.get_scalar_term(primal_model, ci)[]
+        Dualization.set_dot(1, set, T) *
+        Dualization.get_scalar_term(primal_model, ci)[]
     if F == MOI.VariableIndex
         func = MOIU.operate(+, T, func, constant)
     else
@@ -346,14 +366,17 @@ function build_bilevel(
 
     # Start with an empty problem
     moi_mode = MOIU.AUTOMATIC
-    m = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), moi_mode)
+    m = MOIU.CachingOptimizer(
+        MOIU.UniversalFallback(MOIU.Model{Float64}()),
+        moi_mode,
+    )
 
     #=
         Create Lower DUAL level model
     =#
     # dualize the second level
     dual_problem = Dualization.dualize(
-        lower,
+        lower;
         dual_names = DualNames("dual_", "dual_"),
         variable_parameters = upper_variables,
         ignore_objective = ignore_dual_objective(mode),
@@ -385,7 +408,8 @@ function build_bilevel(
         # get primal obj
         type_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
         @assert type_primal_obj !== nothing
-        lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
+        lower_primal_obj =
+            MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
         # deepcopy and delete dual obj
         # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
     end
@@ -397,7 +421,7 @@ function build_bilevel(
     end
 
     # append the second level primal
-    append_to(m, lower, lower_idxmap, allow_single_bounds = true)
+    append_to(m, lower, lower_idxmap; allow_single_bounds = true)
     if copy_names
         pass_names(m, lower, lower_idxmap)
     end
@@ -411,7 +435,8 @@ function build_bilevel(
         # get dual obj
         tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
         @assert tp_dual_obj !== nothing
-        lower_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunction{tp_dual_obj}())
+        lower_dual_obj =
+            MOI.get(lower_dual, MOI.ObjectiveFunction{tp_dual_obj}())
         # delete dual obj
         # MOI.set(lower_dual, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
     end
@@ -422,12 +447,14 @@ function build_bilevel(
     # 1.1) primal variables
     for (lower_primal_var_key, lower_dual_quad_slack_val) in
         lower_primal_dual_map.primal_var_dual_quad_slack
-        lower_dual_idxmap[lower_dual_quad_slack_val] = lower_idxmap[lower_primal_var_key]
+        lower_dual_idxmap[lower_dual_quad_slack_val] =
+            lower_idxmap[lower_primal_var_key]
     end
     # 1.2) and to upper level variable which are lower level parameters
     for (lower_primal_param_key, lower_dual_param_val) in
         lower_primal_dual_map.primal_parameter
-        lower_dual_idxmap[lower_dual_param_val] = lower_idxmap[lower_primal_param_key]
+        lower_dual_idxmap[lower_dual_param_val] =
+            lower_idxmap[lower_primal_param_key]
     end
     # 2) Dual variables might appear in the upper level
     for (upper_var, lower_con) in upper_var_to_lower_ctr
@@ -485,7 +512,11 @@ function build_bilevel(
     end
     add_aggregate_constraints(m, mode, copy_names)
 
-    return m, upper_idxmap, lower_idxmap, lower_primal_dual_map, lower_dual_idxmap
+    return m,
+    upper_idxmap,
+    lower_idxmap,
+    lower_primal_dual_map,
+    lower_dual_idxmap
 end
 
 function add_strong_duality(
@@ -496,7 +527,6 @@ function add_strong_duality(
     idxmap_primal,
     idxmap_dual,
 ) where {T}
-
     primal = MOIU.map_indices.(Ref(idxmap_primal), primal_obj)
     dual = MOIU.map_indices.(Ref(idxmap_dual), dual_obj)
 
@@ -508,11 +538,16 @@ function add_strong_duality(
         return CI[c]
     else
         func_up = MOIU.operate(-, T, func, mode.epsilon)
-        c_up = MOIU.normalize_and_add_constraint(m, func_up, MOI.LessThan(zero(T)))
+        c_up =
+            MOIU.normalize_and_add_constraint(m, func_up, MOI.LessThan(zero(T)))
         MOI.set(m, MOI.ConstraintName(), c_up, "lower_strong_duality_up")
 
         func_lo = MOIU.operate(+, T, func, mode.epsilon)
-        c_lo = MOIU.normalize_and_add_constraint(m, func_lo, MOI.GreaterThan(zero(T)))
+        c_lo = MOIU.normalize_and_add_constraint(
+            m,
+            func_lo,
+            MOI.GreaterThan(zero(T)),
+        )
         MOI.set(m, MOI.ConstraintName(), c_lo, "lower_strong_duality_lo")
 
         return CI[c_up, c_lo]
@@ -533,7 +568,11 @@ function _add_aggregate_constraints(
     # appush!(out_ctr, c1)
     if true # comp.is_vec
         prod_f2 = MOIU.operate(+, T, func, eps)
-        c2 = MOIU.normalize_and_add_constraint(m, prod_f2, MOI.GreaterThan{T}(0.0))
+        c2 = MOIU.normalize_and_add_constraint(
+            m,
+            prod_f2,
+            MOI.GreaterThan{T}(0.0),
+        )
         # appush!(out_ctr, c2)
     end
     if copy_names
@@ -548,7 +587,13 @@ function add_aggregate_constraints(m, mode::ProductMode, copy_names)
     if mode.function_cache === nothing
         return nothing
     end
-    _add_aggregate_constraints(m, mode.function_cache, mode.epsilon, 0, copy_names)
+    _add_aggregate_constraints(
+        m,
+        mode.function_cache,
+        mode.epsilon,
+        0,
+        copy_names,
+    )
     return nothing
 end
 function add_aggregate_constraints(m, mode::MixedMode{T}, copy_names) where {T}
@@ -596,17 +641,32 @@ function add_complement(
 ) where {T}
     _mode = get_mode(mode, comp.constraint, idxmap_primal)
     accept_vector_set(_mode, comp)
-    ret = add_complement(_mode, m, comp, idxmap_primal, idxmap_dual, copy_names, pass_start)
+    ret = add_complement(
+        _mode,
+        m,
+        comp,
+        idxmap_primal,
+        idxmap_dual,
+        copy_names,
+        pass_start,
+    )
     add_function_to_cache(mode, _mode)
     return ret
 end
 add_function_to_cache(mode::MixedMode{T}, _mode) where {T} = nothing
-function add_function_to_cache(mode::MixedMode{T}, _mode::ProductMode{T}) where {T}
+function add_function_to_cache(
+    mode::MixedMode{T},
+    _mode::ProductMode{T},
+) where {T}
     idx = _mode.aggregation_group
     if _mode.function_cache !== nothing && idx > 0
         if haskey(mode.function_cache, idx)
-            mode.function_cache[idx] =
-                MOIU.operate(+, T, mode.function_cache[idx], _mode.function_cache)
+            mode.function_cache[idx] = MOIU.operate(
+                +,
+                T,
+                mode.function_cache[idx],
+                _mode.function_cache,
+            )
         else
             mode.function_cache[idx] = _mode.function_cache
         end
@@ -619,7 +679,11 @@ function get_mode(
     mode::MixedMode{T},
     ci::CI{F,S},
     map,
-) where {T,F<:MOI.VariableIndex,S<:Union{MOI.EqualTo{T},MOI.LessThan{T},MOI.GreaterThan{T}}}
+) where {
+    T,
+    F<:MOI.VariableIndex,
+    S<:Union{MOI.EqualTo{T},MOI.LessThan{T},MOI.GreaterThan{T}},
+}
     # key = map[VI(ci.value)]
     key = VI(ci.value)
     if haskey(mode.constraint_mode_map_v, key)
@@ -661,7 +725,8 @@ function add_complement(
     if with_slack
         slack, slack_in_set = MOI.add_constrained_variable(m, s)
         new_f = MOIU.operate(-, T, f_dest, slack)
-        equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+        equality =
+            MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
 
         if pass_start
             val = MOIU.eval_variables(
@@ -673,7 +738,11 @@ function add_complement(
             end
         end
 
-        c = MOI.add_constraint(m, MOI.VectorOfVariables([slack, dual]), MOI.Complements(1))
+        c = MOI.add_constraint(
+            m,
+            MOI.VectorOfVariables([slack, dual]),
+            MOI.Complements(1),
+        )
         if copy_names
             nm = MOI.get(m, MOI.VariableName(), dual)
             MOI.set(m, MOI.VariableName(), slack, "slk_($(nm))")
@@ -725,7 +794,11 @@ function add_complement(
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
 
     dual = idxmap_dual[v]
-    c1 = MOI.add_constraint(m, MOI.VectorOfVariables([slack, dual]), MOI.SOS1([1.0, 2.0]))
+    c1 = MOI.add_constraint(
+        m,
+        MOI.VectorOfVariables([slack, dual]),
+        MOI.SOS1([1.0, 2.0]),
+    )
 
     if copy_names
         nm = MOI.get(m, MOI.VariableName(), dual)
@@ -787,9 +860,17 @@ function add_complement(
         end
         new_f = MOIU.operate(-, T, f_dest, only_variable_functions(slack))
         if comp.is_vec
-            equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.Zeros(length(slack)))
+            equality = MOIU.normalize_and_add_constraint(
+                m,
+                new_f,
+                MOI.Zeros(length(slack)),
+            )
         else
-            equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+            equality = MOIU.normalize_and_add_constraint(
+                m,
+                new_f,
+                MOI.EqualTo(zero(T)),
+            )
         end
 
         prod_f = MOIU.operate(
@@ -805,7 +886,11 @@ function add_complement(
 
         if mode.aggregation_group == 0
             prod_f1 = MOIU.operate(-, T, prod_f, eps)
-            c1 = MOIU.normalize_and_add_constraint(m, prod_f1, MOI.LessThan{Float64}(0.0))
+            c1 = MOIU.normalize_and_add_constraint(
+                m,
+                prod_f1,
+                MOI.LessThan{Float64}(0.0),
+            )
             appush!(out_ctr, c1)
             if comp.is_vec
                 prod_f2 = MOIU.operate(+, T, prod_f, eps)
@@ -846,7 +931,12 @@ function add_complement(
             if mode.aggregation_group == 0
                 MOI.set(m, MOI.ConstraintName(), c1, "compl_prodWslk_($(nm))")
                 if comp.is_vec
-                    MOI.set(m, MOI.ConstraintName(), c2, "compl_prodWslk2_($(nm))")
+                    MOI.set(
+                        m,
+                        MOI.ConstraintName(),
+                        c2,
+                        "compl_prodWslk2_($(nm))",
+                    )
                 end
             end
         end
@@ -854,11 +944,19 @@ function add_complement(
         new_f = MOIU.operate(dot, T, f_dest, only_variable_functions(dual))
         if mode.aggregation_group == 0
             new_f1 = MOIU.operate(-, T, new_f, eps)
-            c1 = MOIU.normalize_and_add_constraint(m, new_f1, MOI.LessThan{T}(0.0))
+            c1 = MOIU.normalize_and_add_constraint(
+                m,
+                new_f1,
+                MOI.LessThan{T}(0.0),
+            )
             appush!(out_ctr, c1)
             if comp.is_vec # conic
                 new_f2 = MOIU.operate(+, T, new_f, eps)
-                c2 = MOIU.normalize_and_add_constraint(m, new_f2, MOI.GreaterThan{T}(0.0))
+                c2 = MOIU.normalize_and_add_constraint(
+                    m,
+                    new_f2,
+                    MOI.GreaterThan{T}(0.0),
+                )
                 appush!(out_ctr, c2)
             end
             if copy_names
@@ -903,7 +1001,9 @@ function add_complement(
     dual = idxmap_dual[v]
 
     if comp.is_vec
-        error("Vector constraint is (currently) not supported by indicator mode")
+        error(
+            "Vector constraint is (currently) not supported by indicator mode",
+        )
     end
 
     if copy_names
@@ -957,21 +1057,46 @@ function add_complement(
         s1 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(pre_s1)
         s2 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
-            MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
-            MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 0.0, 1.0))
+            MOI.set(
+                m,
+                MOI.VariablePrimalStart(),
+                vb1,
+                ifelse(is_tight, 1.0, 0.0),
+            )
+            MOI.set(
+                m,
+                MOI.VariablePrimalStart(),
+                vb2,
+                ifelse(is_tight, 0.0, 1.0),
+            )
         end
     elseif method == ZERO_ZERO
         s1 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(pre_s1)
         s2 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
-            MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 0.0, 1.0))
-            MOI.set(m, MOI.VariablePrimalStart(), vb2, ifelse(is_tight, 1.0, 0.0))
+            MOI.set(
+                m,
+                MOI.VariablePrimalStart(),
+                vb1,
+                ifelse(is_tight, 0.0, 1.0),
+            )
+            MOI.set(
+                m,
+                MOI.VariablePrimalStart(),
+                vb2,
+                ifelse(is_tight, 1.0, 0.0),
+            )
         end
     else
         s1 = MOI.Indicator{MOI.ACTIVATE_ON_ONE}(pre_s1)
         s2 = MOI.Indicator{MOI.ACTIVATE_ON_ZERO}(MOI.EqualTo(zero(T)))
         if pass_start && has_start
-            MOI.set(m, MOI.VariablePrimalStart(), vb1, ifelse(is_tight, 1.0, 0.0))
+            MOI.set(
+                m,
+                MOI.VariablePrimalStart(),
+                vb1,
+                ifelse(is_tight, 1.0, 0.0),
+            )
         end
     end
 
@@ -1023,7 +1148,6 @@ function add_complement(
     copy_names::Bool,
     pass_start::Bool,
 ) where {T}
-
     f = comp.func_w_cte
     s = comp.set_w_zero
     v = comp.variable
@@ -1036,8 +1160,10 @@ function add_complement(
     end
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
 
-    f_bounds =
-        MOIU.eval_variables(vi -> get_bounds(vi, mode.cache.map, mode.primal_big_M), f_dest)
+    f_bounds = MOIU.eval_variables(
+        vi -> get_bounds(vi, mode.cache.map, mode.primal_big_M),
+        f_dest,
+    )
 
     if pass_start
         val = MOIU.eval_variables(
@@ -1052,7 +1178,8 @@ function add_complement(
 
     if mode.with_slack
         new_f = MOIU.operate(-, T, f_dest, slack)
-        equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+        equality =
+            MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
         if pass_start && has_start
             MOI.set(m, MOI.VariablePrimalStart(), slack, val)
         end

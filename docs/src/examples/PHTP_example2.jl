@@ -21,14 +21,12 @@
 # -10 \leq y_j \leq 20, \forall j \in J.\\
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
-
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 

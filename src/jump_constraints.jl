@@ -1,8 +1,8 @@
 function in_upper(cref::BilevelConstraintRef)
-    cref.model.ctr_info[cref.index].level == UPPER_ONLY
+    return cref.model.ctr_info[cref.index].level == UPPER_ONLY
 end
 function in_lower(cref::BilevelConstraintRef)
-    cref.model.ctr_info[cref.index].level == LOWER_ONLY
+    return cref.model.ctr_info[cref.index].level == LOWER_ONLY
 end
 function raw_ref(model::BilevelModel, idx::Int)
     if haskey(model.ctr_upper, idx)
@@ -20,8 +20,12 @@ function BilevelConstraintRef(model, idx)
     return JuMP.ConstraintRef(model, idx, raw.shape)
 end
 level(cref::BilevelConstraintRef) = cref.model.ctr_info[cref.index].level
-function JuMP.add_constraint(::BilevelModel, ::JuMP.AbstractConstraint, ::String = "")
-    error(
+function JuMP.add_constraint(
+    ::BilevelModel,
+    ::JuMP.AbstractConstraint,
+    ::String = "",
+)
+    return error(
         "Can't add constraint directly to the bilevel model `m`, " *
         "attach the constraint to the upper or lower model " *
         "with @constraint(Upper(m), ...) or @constraint(Lower(m), ...)",
@@ -42,7 +46,8 @@ function JuMP.add_constraint(
     blm.nextconidx += 1
     cref = JuMP.ConstraintRef(blm, blm.nextconidx, JuMP.shape(c))
     func = JuMP.jump_function(c)
-    level_func = replace_variables(func, bilevel_model(m), mylevel_var_list(m), level(m))
+    level_func =
+        replace_variables(func, bilevel_model(m), mylevel_var_list(m), level(m))
     level_c = JuMP.build_constraint(error, level_func, c.set)
     level_cref = JuMP.add_constraint(mylevel_model(m), level_c, name)
     mylevel_ctr_list(m)[cref.index] = level_cref
@@ -52,12 +57,15 @@ function JuMP.add_constraint(
     end
     blm.ctr_upper_rev = nothing
     blm.ctr_lower_rev = nothing
-    cref
+    return cref
 end
 
-JuMP.is_valid(m::BilevelModel, cref::BilevelConstraintRef) = cref.index in keys(m.ctr_info)
-JuMP.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef) =
-    JuMP.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
+function JuMP.is_valid(m::BilevelModel, cref::BilevelConstraintRef)
+    return cref.index in keys(m.ctr_info)
+end
+function JuMP.is_valid(m::InnerBilevelModel, cref::BilevelConstraintRef)
+    return JuMP.is_valid(bilevel_model(m), cref) && level(cref) == level(m)
+end
 function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
     cidx = cref.index
     model = cref.model
@@ -70,15 +78,20 @@ function JuMP.constraint_object(cref::BilevelConstraintRef, F::Type, S::Type)
         return reverse_replace_variable(con, Lower(model))
     end
 end
-function reverse_replace_variable(con::JuMP.VectorConstraint, m::InnerBilevelModel)
+function reverse_replace_variable(
+    con::JuMP.VectorConstraint,
+    m::InnerBilevelModel,
+)
     func = reverse_replace_variable(con.func, m)
-    JuMP.VectorConstraint(func, con.set, con.shape)
+    return JuMP.VectorConstraint(func, con.set, con.shape)
 end
-function reverse_replace_variable(con::JuMP.ScalarConstraint, m::InnerBilevelModel)
+function reverse_replace_variable(
+    con::JuMP.ScalarConstraint,
+    m::InnerBilevelModel,
+)
     func = reverse_replace_variable(con.func, m)
-    JuMP.ScalarConstraint(func, con.set)
+    return JuMP.ScalarConstraint(func, con.set)
 end
-
 
 function empty_info(level, c::JuMP.ScalarConstraint{F,S}) where {F,S}
     return BilevelConstraintInfo{Float64}(level)
@@ -111,9 +124,12 @@ function _assert_dim(cref, array::Number, value::Vector)
     return
 end
 
-function JuMP.set_dual_start_value(cref::BilevelConstraintRef, value::T) where {T<:Number}
+function JuMP.set_dual_start_value(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Number}
     _assert_dim(cref, cref.model.ctr_info[cref.index].start, value)
-    cref.model.ctr_info[cref.index].start = value
+    return cref.model.ctr_info[cref.index].start = value
 end
 function JuMP.set_dual_start_value(
     cref::BilevelConstraintRef,
@@ -121,15 +137,18 @@ function JuMP.set_dual_start_value(
 ) where {T<:Vector{S}} where {S}
     array = cref.model.ctr_info[cref.index].start
     _assert_dim(cref, array, value)
-    copyto!(array, value)
+    return copyto!(array, value)
 end
 function JuMP.dual_start_value(cref::BilevelConstraintRef)
-    cref.model.ctr_info[cref.index].start
+    return cref.model.ctr_info[cref.index].start
 end
 
-function set_dual_upper_bound_hint(cref::BilevelConstraintRef, value::T) where {T<:Number}
+function set_dual_upper_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Number}
     _assert_dim(cref, cref.model.ctr_info[cref.index].upper, value)
-    cref.model.ctr_info[cref.index].upper = value
+    return cref.model.ctr_info[cref.index].upper = value
 end
 function set_dual_upper_bound_hint(
     cref::BilevelConstraintRef,
@@ -137,14 +156,17 @@ function set_dual_upper_bound_hint(
 ) where {T<:Vector{S}} where {S}
     array = cref.model.ctr_info[cref.index].upper
     _assert_dim(cref, array, value)
-    copyto!(array, value)
+    return copyto!(array, value)
 end
 function get_dual_upper_bound_hint(cref::BilevelConstraintRef)
-    cref.model.ctr_info[cref.index].upper
+    return cref.model.ctr_info[cref.index].upper
 end
-function set_dual_lower_bound_hint(cref::BilevelConstraintRef, value::T) where {T<:Number}
+function set_dual_lower_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Number}
     _assert_dim(cref, cref.model.ctr_info[cref.index].lower, value)
-    cref.model.ctr_info[cref.index].lower = value
+    return cref.model.ctr_info[cref.index].lower = value
 end
 function set_dual_lower_bound_hint(
     cref::BilevelConstraintRef,
@@ -152,23 +174,29 @@ function set_dual_lower_bound_hint(
 ) where {T<:Vector{S}} where {S}
     array = cref.model.ctr_info[cref.index].lower
     _assert_dim(cref, array, value)
-    copyto!(array, value)
+    return copyto!(array, value)
 end
 function get_dual_lower_bound_hint(cref::BilevelConstraintRef)
-    cref.model.ctr_info[cref.index].lower
+    return cref.model.ctr_info[cref.index].lower
 end
 
-function set_primal_upper_bound_hint(vref::BilevelVariableRef, value::T) where {T<:Number}
-    vref.model.var_info[vref.idx].upper = value
+function set_primal_upper_bound_hint(
+    vref::BilevelVariableRef,
+    value::T,
+) where {T<:Number}
+    return vref.model.var_info[vref.idx].upper = value
 end
 function get_primal_upper_bound_hint(vref::BilevelVariableRef)
-    vref.model.var_info[vref.idx].upper
+    return vref.model.var_info[vref.idx].upper
 end
-function set_primal_lower_bound_hint(vref::BilevelVariableRef, value::T) where {T<:Number}
-    vref.model.var_info[vref.idx].lower = value
+function set_primal_lower_bound_hint(
+    vref::BilevelVariableRef,
+    value::T,
+) where {T<:Number}
+    return vref.model.var_info[vref.idx].lower = value
 end
 function get_primal_lower_bound_hint(vref::BilevelVariableRef)
-    vref.model.var_info[vref.idx].lower
+    return vref.model.var_info[vref.idx].lower
 end
 
 function JuMP.value(cref::BilevelConstraintRef; result::Int = 1)
@@ -185,7 +213,11 @@ function JuMP.value(cref::BilevelConstraintRef; result::Int = 1)
     end
     # Solver constraint associated with the single bilevel model constraint
     con_solver_idx = cref.model.sblm_to_solver[con_sblm_idx]
-    return MOI.get(cref.model.solver, MOI.ConstraintPrimal(result), con_solver_idx)
+    return MOI.get(
+        cref.model.solver,
+        MOI.ConstraintPrimal(result),
+        con_solver_idx,
+    )
 end
 # variables again (duals)
 # code for using dual variables associated with lower level constraints
@@ -212,7 +244,7 @@ struct DualOf
     ci::BilevelConstraintRef
 end
 function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
-    error(
+    return error(
         "If you are trying to do something like:\n" *
         "@constraint(Lower(m), my_constraint_vector[t in 1:T], ...)\n" *
         "@variable(Upper(m), my_variable[1:N], " *
@@ -234,7 +266,6 @@ function JuMP.build_variable(
     dual_of::DualOf;
     extra_kw_args...,
 )
-
     if level(dual_of.ci) != LOWER_ONLY
         error(
             "Variables can only be tied to LOWER level constraints, got $(dual_of.ci.level) level",
@@ -263,7 +294,18 @@ function JuMP.build_variable(
     info.binary && _error("Dual variable cannot be binary")
     info.integer && _error("Dual variable cannot be integer")
 
-    info = JuMP.VariableInfo(false, NaN, false, NaN, false, NaN, false, NaN, false, false)
+    info = JuMP.VariableInfo(
+        false,
+        NaN,
+        false,
+        NaN,
+        false,
+        NaN,
+        false,
+        NaN,
+        false,
+        false,
+    )
 
     return DualVariableInfo(info, dual_of.ci)
 end
@@ -276,14 +318,15 @@ function JuMP.add_variable(
     m = bilevel_model(inner)
     m.last_variable_index += 1
     vref = BilevelVariableRef(m, m.last_variable_index, DUAL_OF_LOWER)
-    v_upper = JuMP.add_variable(m.upper, JuMP.ScalarVariable(dual_info.info), name)
+    v_upper =
+        JuMP.add_variable(m.upper, JuMP.ScalarVariable(dual_info.info), name)
     m.var_upper[vref.idx] = v_upper
     m.upper_var_to_lower_ctr_link[v_upper] = m.ctr_lower[dual_info.ci.index]
     m.var_info[vref.idx] = empty_info(DUAL_OF_LOWER)
     JuMP.set_name(vref, name)
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
-    vref
+    return vref
 end
 
 function get_constrain_ref(vref::BilevelVariableRef)
@@ -306,7 +349,8 @@ function JuMP.dual(cref::BilevelConstraintRef)
         con_lower_ref = cref.model.ctr_lower[cref.index]
         con_lower_idx = con_lower_ref.index
         # Dual variable associated with constraint index
-        model_var_idxs = cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
+        model_var_idxs =
+            cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
         # Single bilevel model variable associated with the dual variable
         sblm_var_idxs = MOI.VariableIndex[]
         for vi in model_var_idxs
@@ -317,14 +361,23 @@ function JuMP.dual(cref::BilevelConstraintRef)
         for vi in sblm_var_idxs
             push!(solver_var_idxs, cref.model.sblm_to_solver[vi])
         end
-        pre_duals = MOI.get(cref.model.solver, MOI.VariablePrimal(), solver_var_idxs)
-        return JuMP.reshape_vector(pre_duals, JuMP.dual_shape(con_lower_ref.shape))
+        pre_duals =
+            MOI.get(cref.model.solver, MOI.VariablePrimal(), solver_var_idxs)
+        return JuMP.reshape_vector(
+            pre_duals,
+            JuMP.dual_shape(con_lower_ref.shape),
+        )
     elseif in_upper(cref)
         m = cref.model
         con_upper_ref = cref.model.ctr_upper[cref.index]
-        solver_ctr_idx = m.sblm_to_solver[m.upper_to_sblm[JuMP.index(con_upper_ref)]]
-        pre_duals = MOI.get(cref.model.solver, MOI.ConstraintDual(), solver_ctr_idx)
-        return JuMP.reshape_vector(pre_duals, JuMP.dual_shape(con_upper_ref.shape))
+        solver_ctr_idx =
+            m.sblm_to_solver[m.upper_to_sblm[JuMP.index(con_upper_ref)]]
+        pre_duals =
+            MOI.get(cref.model.solver, MOI.ConstraintDual(), solver_ctr_idx)
+        return JuMP.reshape_vector(
+            pre_duals,
+            JuMP.dual_shape(con_upper_ref.shape),
+        )
     else
         error(
             "Dual solutions of upper level constraints are not available. Either the solution method does nto porvide duals or or the solver failed to get one.",
@@ -344,7 +397,10 @@ function JuMP.add_to_function_constant(cref::BilevelConstraintRef, val)
     return JuMP.add_to_function_constant(raw_ref(cref), val)
 end
 
-function JuMP.normalized_coefficient(cref::BilevelConstraintRef, var::BilevelVariableRef)
+function JuMP.normalized_coefficient(
+    cref::BilevelConstraintRef,
+    var::BilevelVariableRef,
+)
     model = cref.model
     level_var = if in_upper(cref)
         model.var_upper[var.idx]
@@ -397,7 +453,7 @@ function JuMP.all_constraints(model::InnerBilevelModel, f, s)
     build_reverse_ctr_map!(model)
     m = mylevel_model(model)
     list = JuMP.all_constraints(m, f, s)
-    get_reverse_ctr_map.(model, list)
+    return get_reverse_ctr_map.(model, list)
 end
 function build_reverse_ctr_map!(um::UpperModel)
     m = bilevel_model(um)

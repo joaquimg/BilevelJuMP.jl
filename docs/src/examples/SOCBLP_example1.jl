@@ -3,7 +3,6 @@
 # SOCBLP stands for bilevel programming problem with lower level second-order cone program
 # Bold point(s): Using second-order cone in the lower level problem 
 
-
 # Model of the problem
 # First level
 # ```math
@@ -33,10 +32,8 @@ using Ipopt
 using JuMP
 using Test
 
-
-
 model = BilevelModel(
-    () -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer()),
+    () -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer());
     mode = BilevelJuMP.ProductMode(1e-9),
 )
 
@@ -44,7 +41,6 @@ model = BilevelModel(
 
 # Upper level variables
 @variable(Upper(model), x)
-
 
 #Lower level variables
 @variable(Lower(model), y[i = 1:2])
@@ -83,13 +79,12 @@ for con in [lb_y_1, lb_y_2, con2]
     BilevelJuMP.set_dual_upper_bound_hint(con, +15)
 end
 # bounds defined in the upper level are not dualized
-for i = 1:2
+for i in 1:2
     @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
     @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
 end
 
 # Now we can solve the problem and verify the solution again that reported by
-
 
 optimize!(model)
 primal_status(model)

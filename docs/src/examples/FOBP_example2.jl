@@ -3,8 +3,6 @@
 # Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
 # Moving the bound on x to lower level
 
-
-
 # Model of the problem
 # First level
 # ```math
@@ -30,7 +28,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to define all of the variables in the upper and lower problems:
 

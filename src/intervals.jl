@@ -31,34 +31,34 @@ function Interval(lo::T, hi::T) where {T<:Real}
     #     lo = hi
     # end
     @assert lo <= hi
-    Interval{T}(lo, hi)
+    return Interval{T}(lo, hi)
 end
 
 function Base.iszero(a::Interval)
-    iszero(a.hi) && iszero(a.lo)
+    return iszero(a.hi) && iszero(a.lo)
 end
 
 +(a::Interval) = a
 -(a::Interval) = Interval(-a.hi, -a.lo)
 
 function +(a::Interval{T}, b::T) where {T<:Real}
-    Interval(a.lo + b, a.hi + b)
+    return Interval(a.lo + b, a.hi + b)
 end
 +(b::T, a::Interval{T}) where {T<:Real} = a + b
 
 function -(a::Interval{T}, b::T) where {T<:Real}
-    Interval(a.lo - b, a.hi - b)
+    return Interval(a.lo - b, a.hi - b)
 end
 function -(b::T, a::Interval{T}) where {T<:Real}
-    Interval(b - a.hi, b - a.lo)
+    return Interval(b - a.hi, b - a.lo)
 end
 
 function +(a::Interval{T}, b::Interval{T}) where {T<:Real}
-    Interval(a.lo + b.lo, a.hi + b.hi)
+    return Interval(a.lo + b.lo, a.hi + b.hi)
 end
 
 function -(a::Interval{T}, b::Interval{T}) where {T<:Real}
-    Interval(a.lo - b.hi, a.hi - b.lo)
+    return Interval(a.lo - b.hi, a.hi - b.lo)
 end
 
 ## Multiplication

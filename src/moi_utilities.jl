@@ -67,8 +67,8 @@ function append_to(
         # this is very importante because variables are shered between
         # upper, lower and lower dual levels
         constraints_not_added = Any[
-            MOIU._try_constrain_variables_on_creation(dest, src, idxmap, S) for
-            S in MOIU.sorted_variable_sets_by_cost(dest, src)
+            MOIU._try_constrain_variables_on_creation(dest, src, idxmap, S)
+            for S in MOIU.sorted_variable_sets_by_cost(dest, src)
         ]
     end
 
@@ -102,7 +102,7 @@ function MOIU.promote_operation(
     ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
     ::Type{T},
 ) where {T}
-    MOI.ScalarAffineFunction{T}
+    return MOI.ScalarAffineFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -110,7 +110,7 @@ function MOIU.promote_operation(
     ::Type{T},
     ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
 ) where {T}
-    MOI.ScalarAffineFunction{T}
+    return MOI.ScalarAffineFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -118,7 +118,7 @@ function MOIU.promote_operation(
     ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
     ::Type{<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T}}},
 ) where {T}
-    MOI.ScalarQuadraticFunction{T}
+    return MOI.ScalarQuadraticFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -126,7 +126,7 @@ function MOIU.promote_operation(
     ::Type{MOI.ScalarQuadraticFunction{T}},
     ::Type{T},
 ) where {T}
-    MOI.ScalarQuadraticFunction{T}
+    return MOI.ScalarQuadraticFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -134,13 +134,17 @@ function MOIU.promote_operation(
     ::Type{T},
     ::Type{MOI.ScalarQuadraticFunction{T}},
 ) where {T}
-    MOI.ScalarQuadraticFunction{T}
+    return MOI.ScalarQuadraticFunction{T}
 end
 # flip
 function MOIU.operate(
     ::typeof(LinearAlgebra.dot),
     ::Type{T},
-    f::Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
+    f::Union{
+        MOI.VariableIndex,
+        MOI.ScalarAffineFunction{T},
+        MOI.ScalarQuadraticFunction{T},
+    },
     α::T,
 ) where {T}
     return MOIU.operate(LinearAlgebra.dot, T, α, f)
@@ -170,7 +174,7 @@ function MOIU.promote_operation(
     ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
     ::Type{Vector{T}},
 ) where {T}
-    MOI.VectorAffineFunction{T}
+    return MOI.VectorAffineFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -178,7 +182,7 @@ function MOIU.promote_operation(
     ::Type{Vector{T}},
     ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
 ) where {T}
-    MOI.VectorAffineFunction{T}
+    return MOI.VectorAffineFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -186,7 +190,7 @@ function MOIU.promote_operation(
     ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
     ::Type{<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}},
 ) where {T}
-    MOI.VectorQuadraticFunction{T}
+    return MOI.VectorQuadraticFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -194,7 +198,7 @@ function MOIU.promote_operation(
     ::Type{MOI.VectorQuadraticFunction{T}},
     ::Type{Vector{T}},
 ) where {T}
-    MOI.VectorQuadraticFunction{T}
+    return MOI.VectorQuadraticFunction{T}
 end
 function MOIU.promote_operation(
     ::typeof(LinearAlgebra.dot),
@@ -202,7 +206,7 @@ function MOIU.promote_operation(
     ::Type{Vector{T}},
     ::Type{MOI.VectorQuadraticFunction{T}},
 ) where {T}
-    MOI.VectorQuadraticFunction{T}
+    return MOI.VectorQuadraticFunction{T}
 end
 # flip
 function MOIU.operate(
@@ -249,17 +253,20 @@ function _operate(
         MOI.VectorQuadraticFunction{T},
     },
 ) where {T}
-
     dim = MOI.output_dimension(g)
     if MOI.output_dimension(f) != dim
-        throw(DimensionMismatch("f and g are of different MOI.output_dimension's!"))
+        throw(
+            DimensionMismatch(
+                "f and g are of different MOI.output_dimension's!",
+            ),
+        )
     end
 
     fs = MOIU.scalarize(f)
     gs = MOIU.scalarize(g)
 
     out = MOIU.operate(*, T, fs[1], gs[1])
-    for i = 2:dim
+    for i in 2:dim
         MOIU.operate!(+, T, out, MOIU.operate(*, T, fs[i], gs[i]))
     end
 

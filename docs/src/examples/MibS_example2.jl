@@ -1,6 +1,5 @@
 # # Example 2 on MibS
 
-
 # Model of the problem
 # First level
 # ```math

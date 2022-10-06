@@ -2,7 +2,6 @@
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 3.7, Page 59. [url](https://www.springer.com/gp/book/9781402006319)
 
-
 # Model of the problem
 
 # First level
@@ -31,13 +30,12 @@
 # I = \{1,...,7\}
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 
@@ -51,14 +49,13 @@ atol = 1e-6
 @variable(Upper(model), yb[i = 1:I])
 @variable(Upper(model), z)
 
-
 #Lower level variables
 @variable(Lower(model), x[i = 1:I])
 
 # Then we can add the objective and constraints of the upper problem:
 
 # Upper level objecive function
-@objective(Upper(model), Min, sum(x[i] for i = 1:I) - z)
+@objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
 
 # Upper level constraints
 @constraint(Upper(model), ca, z <= 1)
@@ -76,17 +73,15 @@ atol = 1e-6
     sum(i > 0 ? ya[i] : yb[-i] for i in clauses[k]) >= z
 )
 
-
 # Followed by the objective and constraints of the lower problem:
 
 # Lower objective function
-@objective(Lower(model), Min, -sum(x[i] for i = 1:I))
+@objective(Lower(model), Min, -sum(x[i] for i in 1:I))
 
 # Lower constraints
 @constraint(Lower(model), b1[i = 1:I], x[i] >= 0)
 @constraint(Lower(model), b2[i = 1:I], x[i] <= ya[i])
 @constraint(Lower(model), b3[i = 1:I], x[i] <= yb[i])
-
 
 # Initial Starting conditions
 
@@ -94,13 +89,11 @@ JuMP.set_start_value.(x, 0)
 JuMP.set_start_value.(ya, 1)
 JuMP.set_start_value.(yb, 0)
 JuMP.set_start_value(z, 1)
-for i = 1:I
+for i in 1:I
     JuMP.set_dual_start_value.(b1, 0)
     JuMP.set_dual_start_value.(b2, 0)
     JuMP.set_dual_start_value.(b3, -1)
 end
-
-
 
 # Now we can solve the problem and verify the solution again that reported by
 # Dempe.

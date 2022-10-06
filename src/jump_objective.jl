@@ -1,38 +1,55 @@
-function JuMP.set_objective_sense(m::InnerBilevelModel, sense::MOI.OptimizationSense)
-    JuMP.set_objective_sense(mylevel_model(m), sense)
+function JuMP.set_objective_sense(
+    m::InnerBilevelModel,
+    sense::MOI.OptimizationSense,
+)
+    return JuMP.set_objective_sense(mylevel_model(m), sense)
 end
 function JuMP.set_objective(
     m::InnerBilevelModel,
     sense::MOI.OptimizationSense,
     f::JuMP.AbstractJuMPScalar,
 )
-    level_f = replace_variables(f, bilevel_model(m), mylevel_var_list(m), level(m))
-    JuMP.set_objective(mylevel_model(m), sense, level_f)
+    level_f =
+        replace_variables(f, bilevel_model(m), mylevel_var_list(m), level(m))
+    return JuMP.set_objective(mylevel_model(m), sense, level_f)
 end
-function JuMP.set_objective(m::InnerBilevelModel, sense::MOI.OptimizationSense, f::Real)
-    JuMP.set_objective(mylevel_model(m), sense, f)
+function JuMP.set_objective(
+    m::InnerBilevelModel,
+    sense::MOI.OptimizationSense,
+    f::Real,
+)
+    return JuMP.set_objective(mylevel_model(m), sense, f)
 end
-JuMP.objective_sense(m::InnerBilevelModel) = JuMP.objective_sense(mylevel_model(m))
+function JuMP.objective_sense(m::InnerBilevelModel)
+    return JuMP.objective_sense(mylevel_model(m))
+end
 function JuMP.objective_function_type(m::InnerBilevelModel)
     tp = JuMP.objective_function_type(mylevel_model(m))
     return bilevel_type(m, tp)
 end
 bilevel_type(::InnerBilevelModel, ::Type{JuMP.VariableRef}) = BilevelVariableRef
-function bilevel_type(::InnerBilevelModel, ::Type{JuMP.GenericAffExpr{C,V}}) where {C,V}
-    JuMP.GenericAffExpr{C,BilevelVariableRef}
+function bilevel_type(
+    ::InnerBilevelModel,
+    ::Type{JuMP.GenericAffExpr{C,V}},
+) where {C,V}
+    return JuMP.GenericAffExpr{C,BilevelVariableRef}
 end
-function bilevel_type(::InnerBilevelModel, ::Type{JuMP.GenericQuadExpr{C,V}}) where {C,V}
-    JuMP.GenericAffExpr{C,BilevelVariableRef}
+function bilevel_type(
+    ::InnerBilevelModel,
+    ::Type{JuMP.GenericQuadExpr{C,V}},
+) where {C,V}
+    return JuMP.GenericAffExpr{C,BilevelVariableRef}
 end
 # JuMP.objective_function(m::InnerBilevelModel) = mylevel_obj_function(m)
 function JuMP.objective_function(m::InnerBilevelModel)
     f = JuMP.objective_function(mylevel_model(m))
-    reverse_replace_variable(f, m)
+    return reverse_replace_variable(f, m)
 end
 function JuMP.objective_function(m::InnerBilevelModel, FT::Type)
     f = JuMP.objective_function(mylevel_model(m), FT)
     f2 = reverse_replace_variable(f, m)
-    f2 isa FT || error("The objective function is not of type $FT, show $(typeof(f2))")
+    f2 isa FT ||
+        error("The objective function is not of type $FT, show $(typeof(f2))")
     return f2
 end
 
@@ -60,17 +77,20 @@ function JuMP.set_objective(
     sense::MOI.OptimizationSense,
     f::JuMP.AbstractJuMPScalar,
 )
-    bilevel_obj_error()
+    return bilevel_obj_error()
 end
 JuMP.objective_sense(m::BilevelModel) = JuMP.objective_sense(m.upper)# bilevel_obj_error()
 JuMP.objective_function_type(model::BilevelModel) = bilevel_obj_error()
 JuMP.objective_function(model::BilevelModel) = bilevel_obj_error()
 function JuMP.objective_function(model::BilevelModel, FT::Type)
-    bilevel_obj_error()
+    return bilevel_obj_error()
 end
 
-bilevel_obj_error() =
-    error("There is no objective for BilevelModel use Upper(.) and Lower(.)")
+function bilevel_obj_error()
+    return error(
+        "There is no objective for BilevelModel use Upper(.) and Lower(.)",
+    )
+end
 
 function JuMP.objective_value(model::BilevelModel)
     _check_solver(model)
@@ -86,7 +106,7 @@ end
 function lower_objective_value(model::BilevelModel; result::Int = 1)
     f = JuMP.objective_function(Lower(model))
     # Evaluate the lower objective expression
-    return JuMP.value(f, result = result)
+    return JuMP.value(f; result = result)
     # return JuMP.value(v -> JuMP.value(v, result = result), f)
     # return JuMP.value(v -> inner_ref_to_value(Lower(model), v), f)
 end
@@ -98,7 +118,7 @@ function JuMP.set_objective_coefficient(
 )
     level_var = variable.model.var_upper[variable.idx]
     model = JuMP.owner_model(level_var)
-    JuMP.set_objective_coefficient(model, level_var, coeff)
+    return JuMP.set_objective_coefficient(model, level_var, coeff)
 end
 function JuMP.set_objective_coefficient(
     ::LowerModel,
@@ -107,5 +127,5 @@ function JuMP.set_objective_coefficient(
 )
     level_var = variable.model.var_lower[variable.idx]
     model = JuMP.owner_model(level_var)
-    JuMP.set_objective_coefficient(model, level_var, coeff)
+    return JuMP.set_objective_coefficient(model, level_var, coeff)
 end

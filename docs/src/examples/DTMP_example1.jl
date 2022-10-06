@@ -4,7 +4,6 @@
 
 # Bold points in example: Here, we are using upperonly, loweronly for defining variables. Also, we are using equality in constraints. Using upperonly/loweronly will create variables that will appear in the proper model. By this definition, we might have slightly smaller reformulated models in the algorithm. 
 
-
 # Model of the problem
 # First level
 # ```math
@@ -29,7 +28,7 @@ using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # First we need to create all of the variables in the upper and lower problems:
 

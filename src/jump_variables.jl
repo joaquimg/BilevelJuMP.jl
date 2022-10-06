@@ -1,11 +1,13 @@
 
 mylevel(v::BilevelVariableRef) = v.level
-in_level(v::BilevelVariableRef, level::Level) = (
-    v.level === LOWER_BOTH ||
-    v.level === UPPER_BOTH ||
-    v.level === level ||
-    (v.level === DUAL_OF_LOWER && level === UPPER_ONLY)
-)
+function in_level(v::BilevelVariableRef, level::Level)
+    return (
+        v.level === LOWER_BOTH ||
+        v.level === UPPER_BOTH ||
+        v.level === level ||
+        (v.level === DUAL_OF_LOWER && level === UPPER_ONLY)
+    )
+end
 
 in_level(v::BilevelVariableRef, ::UpperModel) = in_upper(v)
 in_level(v::BilevelVariableRef, ::LowerModel) = in_lower(v)
@@ -37,8 +39,9 @@ end
 
 Base.broadcastable(v::BilevelVariableRef) = Ref(v)
 Base.copy(v::BilevelVariableRef) = v
-Base.:(==)(v::BilevelVariableRef, w::BilevelVariableRef) =
-    v.model === w.model && v.idx == w.idx && v.level == w.level
+function Base.:(==)(v::BilevelVariableRef, w::BilevelVariableRef)
+    return v.model === w.model && v.idx == w.idx && v.level == w.level
+end
 JuMP.owner_model(v::BilevelVariableRef) = v.model
 JuMP.isequal_canonical(v::BilevelVariableRef, w::BilevelVariableRef) = v == w
 # add in both levels
@@ -61,7 +64,7 @@ function JuMP.add_variable(
     JuMP.set_name(vref, name)
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
-    vref
+    return vref
 end
 function JuMP.add_variable(
     single::SingleBilevelModel,
@@ -78,7 +81,7 @@ function JuMP.add_variable(
     JuMP.set_name(vref, name)
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
-    vref
+    return vref
 end
 function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
     model = vref.model
@@ -104,9 +107,12 @@ function JuMP.delete(::BilevelModel, vref::BilevelVariableRef)
     model.var_lower_rev = nothing
     return nothing
 end
-JuMP.is_valid(m::BilevelModel, vref::BilevelVariableRef) = vref.idx in keys(m.var_info)
-JuMP.is_valid(m::InnerBilevelModel, vref::BilevelVariableRef) =
-    JuMP.is_valid(bilevel_model(m), vref) && in_level(vref, level(m))
+function JuMP.is_valid(m::BilevelModel, vref::BilevelVariableRef)
+    return vref.idx in keys(m.var_info)
+end
+function JuMP.is_valid(m::InnerBilevelModel, vref::BilevelVariableRef)
+    return JuMP.is_valid(bilevel_model(m), vref) && in_level(vref, level(m))
+end
 JuMP.num_variables(m::BilevelModel) = length(m.var_info)
 JuMP.num_variables(m::UpperModel) = length(m.m.var_upper)
 JuMP.num_variables(m::LowerModel) = length(m.m.var_lower)
@@ -176,14 +182,14 @@ function JuMP.has_lower_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return !isnan(get_dual_lower_bound_hint(get_constrain_ref(vref)))
     end
-    JuMP.has_lower_bound(jump_var_ref(vref))
+    return JuMP.has_lower_bound(jump_var_ref(vref))
 end
 function JuMP.lower_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return get_dual_lower_bound_hint(get_constrain_ref(vref))
     end
     # @assert !JuMP.is_fixed(vref)
-    JuMP.lower_bound(jump_var_ref(vref))
+    return JuMP.lower_bound(jump_var_ref(vref))
 end
 function JuMP.set_lower_bound(vref::BilevelVariableRef, lower::Number)
     if mylevel(vref) == DUAL_OF_LOWER
@@ -205,14 +211,14 @@ function JuMP.has_upper_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return !isnan(get_dual_upper_bound_hint(get_constrain_ref(vref)))
     end
-    JuMP.has_upper_bound(jump_var_ref(vref))
+    return JuMP.has_upper_bound(jump_var_ref(vref))
 end
 function JuMP.upper_bound(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return get_dual_upper_bound_hint(get_constrain_ref(vref))
     end
     # @assert !JuMP.is_fixed(vref)
-    JuMP.upper_bound(jump_var_ref(vref))
+    return JuMP.upper_bound(jump_var_ref(vref))
 end
 function JuMP.set_upper_bound(vref::BilevelVariableRef, upper)
     if mylevel(vref) == DUAL_OF_LOWER
@@ -227,7 +233,7 @@ function JuMP.delete_upper_bound(vref::BilevelVariableRef)
         set_dual_upper_bound_hint(get_constrain_ref(vref), NaN)
         return
     end
-    JuMP.delete_upper_bound(jump_var_ref(vref))
+    return JuMP.delete_upper_bound(jump_var_ref(vref))
 end
 
 JuMP.is_fixed(vref::BilevelVariableRef) = JuMP.is_fixed(jump_var_ref(vref))
@@ -236,20 +242,20 @@ function JuMP.fix(vref::BilevelVariableRef, value; force::Bool = false)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be fixed.")
     end
-    JuMP.fix(jump_var_ref(vref), value; force = force)
+    return JuMP.fix(jump_var_ref(vref), value; force = force)
 end
 function JuMP.unfix(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be fixed.")
     end
-    JuMP.unfix(jump_var_ref(vref))
+    return JuMP.unfix(jump_var_ref(vref))
 end
 
 function JuMP.start_value(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         return JuMP.dual_start_value(get_constrain_ref(vref))
     end
-    JuMP.start_value(jump_var_ref(vref))
+    return JuMP.start_value(jump_var_ref(vref))
 end
 function JuMP.set_start_value(vref::BilevelVariableRef, start)
     if mylevel(vref) == DUAL_OF_LOWER
@@ -266,26 +272,26 @@ function JuMP.set_binary(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be binary.")
     end
-    JuMP.set_binary(jump_var_ref(vref))
+    return JuMP.set_binary(jump_var_ref(vref))
 end
 function JuMP.unset_binary(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be binary.")
     end
-    JuMP.unset_binary(jump_var_ref(vref))
+    return JuMP.unset_binary(jump_var_ref(vref))
 end
 JuMP.is_integer(vref::BilevelVariableRef) = JuMP.is_integer(jump_var_ref(vref))
 function JuMP.set_integer(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be integer.")
     end
-    JuMP.set_integer(jump_var_ref(vref))
+    return JuMP.set_integer(jump_var_ref(vref))
 end
 function JuMP.unset_integer(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be integer.")
     end
-    JuMP.unset_integer(jump_var_ref(vref))
+    return JuMP.unset_integer(jump_var_ref(vref))
 end
 
 function JuMP.value(v::BilevelVariableRef; result::Int = 1)::Float64

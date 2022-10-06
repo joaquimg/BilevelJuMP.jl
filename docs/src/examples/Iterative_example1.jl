@@ -28,7 +28,7 @@ using JuMP, BilevelJuMP, Ipopt
 # First, we need to specify an iterable with our desired regularization values.
 # The problem will be solved for each element in this series, while the next step starts at the optimal values of the previous iteration. 
 # Note, that this iterable specifies regularization parameters after a first solve with the initial value (later set to 1e-0). 
-iter_eps = [1e-0 * 0.99^i for i = 1:1500]
+iter_eps = [1e-0 * 0.99^i for i in 1:1500]
 
 # Also, it is possible to give specific solver attributes that are not valid for the initial solve, but only subsequent ones.
 # Warmstarting interior point algorithms is difficult, but some of the following options can be recommended for Ipopt. 
@@ -53,8 +53,12 @@ iter_attr = Dict(
 
 # We can now specify our model, where the initial regularization is 1e+0, followed by setting the iterative values and settings:
 model = BilevelModel(
-    Ipopt.Optimizer,
-    mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+    Ipopt.Optimizer;
+    mode = BilevelJuMP.ProductMode(
+        1e-0;
+        iter_eps = iter_eps,
+        iter_attr = iter_attr,
+    ),
 )
 
 # The following lines are copied from the example as presented before: 
@@ -91,7 +95,6 @@ optimize!(model)
 @test value(z) ≈ 1 atol = 1e-4
 @test value(w) ≈ 1 atol = 1e-4
 
-
 # It is important to check that the solver actually accepts and uses our warmstart as desired. Otherwise, the iterative solution procedure does not work at all!
 # The following script illustrates how one can verify the desired behavior; the math remains unchanged from above...
 # This time, we do not suppress any solver output. You can see that iter_eps only contains one value (and it is the same as the regularization specified for the initial solve).
@@ -104,7 +107,7 @@ optimize!(model)
 # It is left to the user to verify that using an empty iter_attr does not yield the same bahavior. 
 
 using JuMP, BilevelJuMP, Ipopt
-iter_eps = [1e-0 for i = 1:1]
+iter_eps = [1e-0 for i in 1:1]
 iter_attr = Dict(
     "mu_init" => 1e-9,
     "warm_start_init_point" => "yes",
@@ -115,8 +118,12 @@ iter_attr = Dict(
     "warm_start_mult_bound_push" => 1e-12,
 )
 TestModel = BilevelModel(
-    Ipopt.Optimizer,
-    mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+    Ipopt.Optimizer;
+    mode = BilevelJuMP.ProductMode(
+        1e-0;
+        iter_eps = iter_eps,
+        iter_attr = iter_attr,
+    ),
 )
 @variable(Upper(TestModel), x)
 @variable(UpperOnly(TestModel), z)

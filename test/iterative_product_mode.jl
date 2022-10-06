@@ -1,7 +1,7 @@
 function iterative_product_mode_01()
     # This example is from the book Decomposition Techniques in Mathematical Programming, as used in the examples section
     # Chapter 7.2, page 281, [url](https://www.springer.com/gp/book/9783540276852)
-    iter_eps = [1e-0 * 0.95^i for i = 1:300]
+    iter_eps = [1e-0 * 0.95^i for i in 1:300]
 
     iter_attr = Dict(
         "mu_init" => 1e-9,
@@ -17,8 +17,12 @@ function iterative_product_mode_01()
     )
 
     model = BilevelModel(
-        Ipopt.Optimizer,
-        mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+        Ipopt.Optimizer;
+        mode = BilevelJuMP.ProductMode(
+            1e-0;
+            iter_eps = iter_eps,
+            iter_attr = iter_attr,
+        ),
     )
     set_optimizer_attribute(model, "print_level", 0)
 
@@ -36,7 +40,6 @@ function iterative_product_mode_01()
     @constraint(Lower(model), x <= 4)
     @constraint(Lower(model), w == 1)
 
-
     set_optimizer_attribute(model, "mu_target", 1e-9)
 
     optimize!(model; show_iter_log = false)
@@ -45,7 +48,6 @@ function iterative_product_mode_01()
     @test value(y) ≈ 6 atol = 1e-4
     @test value(z) ≈ 1 atol = 1e-4
     @test value(w) ≈ 1 atol = 1e-4
-
 end
 
 function iterative_product_mode_02_1()
@@ -59,7 +61,7 @@ function iterative_product_mode_02_1()
     a = 13
     b = 1
 
-    iter_eps = [1e-0 * 0.95^i for i = 1:300]
+    iter_eps = [1e-0 * 0.95^i for i in 1:300]
 
     iter_attr = Dict(
         "mu_init" => 1e-9,
@@ -75,8 +77,12 @@ function iterative_product_mode_02_1()
     )
 
     model1 = BilevelModel(
-        Ipopt.Optimizer,
-        mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+        Ipopt.Optimizer;
+        mode = BilevelJuMP.ProductMode(
+            1e-0;
+            iter_eps = iter_eps,
+            iter_attr = iter_attr,
+        ),
     )
     set_optimizer_attribute(model1, "print_level", 0)
 
@@ -100,7 +106,6 @@ function iterative_product_mode_02_1()
 
     @test isapprox(value(model1[:Q]), 6; atol = 1e-6)
     @test isapprox(value.(model1[:q]).data, [2, 2]; atol = 1e-6)
-
 end
 
 function iterative_product_mode_02_2()
@@ -114,7 +119,7 @@ function iterative_product_mode_02_2()
     a = 13
     b = 0.1
 
-    iter_eps = [1e-0 * 0.95^i for i = 1:300]
+    iter_eps = [1e-0 * 0.95^i for i in 1:300]
 
     iter_attr = Dict(
         "mu_init" => 1e-9,
@@ -128,8 +133,12 @@ function iterative_product_mode_02_2()
     )
 
     model2 = BilevelModel(
-        Ipopt.Optimizer,
-        mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+        Ipopt.Optimizer;
+        mode = BilevelJuMP.ProductMode(
+            1e-0;
+            iter_eps = iter_eps,
+            iter_attr = iter_attr,
+        ),
     )
     set_optimizer_attribute(model2, "print_level", 0)
 
@@ -155,7 +164,6 @@ function iterative_product_mode_02_2()
 
     @test isapprox(value(model2[:Q]), 60; atol = 1e-6)
     @test isapprox(value.(model2[:q]).data, [20, 20]; atol = 1e-6)
-
 end
 
 function iterative_product_mode_02_3()
@@ -169,7 +177,7 @@ function iterative_product_mode_02_3()
     a = 13
     b = 0.1
 
-    iter_eps = [1e-0 * 0.95^i for i = 1:300]
+    iter_eps = [1e-0 * 0.95^i for i in 1:300]
 
     iter_attr = Dict(
         "mu_init" => 1e-9,
@@ -183,8 +191,12 @@ function iterative_product_mode_02_3()
     )
 
     model3 = BilevelModel(
-        Ipopt.Optimizer,
-        mode = BilevelJuMP.ProductMode(1e-0; iter_eps = iter_eps, iter_attr = iter_attr),
+        Ipopt.Optimizer;
+        mode = BilevelJuMP.ProductMode(
+            1e-0;
+            iter_eps = iter_eps,
+            iter_attr = iter_attr,
+        ),
     )
     set_optimizer_attribute(model3, "print_level", 0)
 
@@ -210,5 +222,4 @@ function iterative_product_mode_02_3()
 
     @test isapprox(value(model3[:Q]), 55; atol = 1e-6)
     @test isapprox(value.(model3[:q]).data, [18.333, 18.333]; atol = 1e-2)
-
 end
