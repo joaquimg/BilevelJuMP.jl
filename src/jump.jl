@@ -19,17 +19,23 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # maps the BilevelVariableRef index
     # to JuMP variables of the correct level
     # variable that appear in both levels are inboth dicts
-    var_upper::Dict{Int, JuMP.AbstractVariableRef}
-    var_lower::Dict{Int, JuMP.AbstractVariableRef}
+    var_upper::Dict{Int,JuMP.AbstractVariableRef}
+    var_lower::Dict{Int,JuMP.AbstractVariableRef}
 
     # additional info for variables such as bound hints
     # holds the variable level: LOWER_BOTH UPPER_BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
-    var_info::Dict{Int, BilevelVariableInfo}
+    var_info::Dict{Int,BilevelVariableInfo}
 
     # maps JuMP.VariableRef to BilevelVariableRef
     # built upon necessity for getting contraints and functions
-    var_upper_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
-    var_lower_rev::Union{Nothing, Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}}
+    var_upper_rev::Union{
+        Nothing,
+        Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef},
+    }
+    var_lower_rev::Union{
+        Nothing,
+        Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef},
+    }
 
     # JuMP.VariableRef of variables from named level that are NOT linking
     upper_only::Set{JuMP.AbstractVariableRef}
@@ -37,56 +43,59 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # upper level decisions that are "parameters" of the second level
     # keys are *decision* variables from the upper level
     # values are *parameter* variables from the lower level (linked to the keys)
-    upper_to_lower_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    upper_to_lower_link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     # keys are *decision* variables from the lower level
     # values are *parameter* variables from the upper level (linked to the keys)
-    lower_to_upper_link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    lower_to_upper_link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
     # lower level decisions that are input to upper
     # keys are upper level variables (representing lower level dual variables)
     # values are lower level constraints
-    upper_var_to_lower_ctr_link::Dict{JuMP.AbstractVariableRef, JuMP.ConstraintRef}
+    upper_var_to_lower_ctr_link::Dict{
+        JuMP.AbstractVariableRef,
+        JuMP.ConstraintRef,
+    }
     # joint link
     # for all variables that appear in both models
     # keys are upper indices and values are lower indices
     # same as: merge(upper_to_lower_link, reverse(lower_to_upper_link))
-    link::Dict{JuMP.AbstractVariableRef, JuMP.AbstractVariableRef}
+    link::Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef}
 
     # Integer index of the last constraint added (for indexing BilevelConstraintRef's)
     nextconidx::Int
 
     # maps the BilevelConstraintRef index
     # to JuMP ConstraintRef of the correct level
-    ctr_upper::Dict{Int, JuMP.ConstraintRef}
-    ctr_lower::Dict{Int, JuMP.ConstraintRef}
+    ctr_upper::Dict{Int,JuMP.ConstraintRef}
+    ctr_lower::Dict{Int,JuMP.ConstraintRef}
 
     # additional info for constraints such as bound hints and start values
-    ctr_info::Dict{Int, BilevelConstraintInfo}
+    ctr_info::Dict{Int,BilevelConstraintInfo}
 
     # maps JuMP.ConstraintRef to BilevelConstraintRef
     # built upon necessity for getting contraints and functions
-    ctr_upper_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
-    ctr_lower_rev::Union{Nothing, Dict{JuMP.ConstraintRef, JuMP.ConstraintRef}} # bilevel ref no defined
+    ctr_upper_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
+    ctr_lower_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
 
     #
-    solver#::MOI.ModelLike
-    mode
+    solver::Any#::MOI.ModelLike
+    mode::Any
 
     # maps for MPEC based solution methods
     # from upper level JuMP.index(JuMP.VariableRef) = (MOI.VI)
     # to mpec indices
-    upper_to_sblm
+    upper_to_sblm::Any
     # from lower MOI indices
     # to mpec indices
-    lower_to_sblm
+    lower_to_sblm::Any
     # from lower dual MOI indices
     # to mpec indices
-    lower_dual_to_sblm
+    lower_dual_to_sblm::Any
     # from mped indices to solver indices
-    sblm_to_solver
+    sblm_to_solver::Any
     # lower primal to dual map
     # to obtain dual variables from primal constraints
-    lower_primal_dual_map
+    lower_primal_dual_map::Any
 
     # results from opt process
     solve_time::Float64
@@ -98,35 +107,34 @@ mutable struct BilevelModel <: AbstractBilevelModel
     pass_start::Bool
 
     # for completing the JuMP.Model API
-    objdict::Dict{Symbol, Any}    # Same that JuMP.Model's field `objdict`
+    objdict::Dict{Symbol,Any}    # Same that JuMP.Model's field `objdict`
 
     function BilevelModel()
-
         model = new(
             JuMP.Model(),
             JuMP.Model(),
 
             # var
             0,
-            Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, JuMP.AbstractVariable}(),
-            Dict{Int, BilevelVariableInfo}(),
+            Dict{Int,JuMP.AbstractVariable}(),
+            Dict{Int,JuMP.AbstractVariable}(),
+            Dict{Int,BilevelVariableInfo}(),
             nothing,
             nothing,
 
             # links
             Set{JuMP.AbstractVariableRef}(),
             Set{JuMP.AbstractVariableRef}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
-            Dict{JuMP.AbstractVariable, JuMP.ConstraintRef}(),
-            Dict{JuMP.AbstractVariable, JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
+            Dict{JuMP.AbstractVariable,JuMP.ConstraintRef}(),
+            Dict{JuMP.AbstractVariable,JuMP.AbstractVariable}(),
 
             #ctr
             0,
-            Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, JuMP.AbstractConstraint}(),
-            Dict{Int, BilevelConstraintInfo}(),
+            Dict{Int,JuMP.AbstractConstraint}(),
+            Dict{Int,JuMP.AbstractConstraint}(),
+            Dict{Int,BilevelConstraintInfo}(),
             nothing,
             nothing,
 
@@ -149,19 +157,20 @@ mutable struct BilevelModel <: AbstractBilevelModel
             false,
             true,
             # jump api
-            Dict{Symbol, Any}(),
-            )
+            Dict{Symbol,Any}(),
+        )
 
         return model
     end
 end
-function BilevelModel(optimizer_constructor;
-        mode::AbstractBilevelSolverMode = SOS1Mode(),
-        add_bridges::Bool=true
-    )
+function BilevelModel(
+    optimizer_constructor;
+    mode::AbstractBilevelSolverMode = SOS1Mode(),
+    add_bridges::Bool = true,
+)
     bm = BilevelModel()
     set_mode(bm, mode)
-    JuMP.set_optimizer(bm, optimizer_constructor; add_bridges=add_bridges)
+    JuMP.set_optimizer(bm, optimizer_constructor; add_bridges = add_bridges)
     return bm
 end
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
@@ -193,15 +202,23 @@ level_both(::UpperModel) = UPPER_BOTH
 
 # obj
 
-function set_link!(m::UpperModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(
+    m::UpperModel,
+    upper::JuMP.AbstractVariableRef,
+    lower::JuMP.AbstractVariableRef,
+)
     bilevel_model(m).upper_to_lower_link[upper] = lower
     bilevel_model(m).link[upper] = lower
-    nothing
+    return nothing
 end
-function set_link!(m::LowerModel, upper::JuMP.AbstractVariableRef, lower::JuMP.AbstractVariableRef)
+function set_link!(
+    m::LowerModel,
+    upper::JuMP.AbstractVariableRef,
+    lower::JuMP.AbstractVariableRef,
+)
     bilevel_model(m).lower_to_upper_link[lower] = upper
     bilevel_model(m).link[upper] = lower
-    nothing
+    return nothing
 end
 
 # Models to deal with variables that are not exchanged between models
@@ -223,14 +240,25 @@ level(::UpperOnlyModel) = UPPER_ONLY
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
-in_upper(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == UPPER_ONLY || l == DUAL_OF_LOWER
+function in_upper(l::Level)
+    return l == LOWER_BOTH ||
+           l == UPPER_BOTH ||
+           l == UPPER_ONLY ||
+           l == DUAL_OF_LOWER
+end
 in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
 
-function push_single_level_variable!(m::LowerOnlyModel, vref::JuMP.AbstractVariableRef)
-    push!(bilevel_model(m).lower_only, vref)
+function push_single_level_variable!(
+    m::LowerOnlyModel,
+    vref::JuMP.AbstractVariableRef,
+)
+    return push!(bilevel_model(m).lower_only, vref)
 end
-function push_single_level_variable!(m::UpperOnlyModel, vref::JuMP.AbstractVariableRef)
-    push!(bilevel_model(m).upper_only, vref)
+function push_single_level_variable!(
+    m::UpperOnlyModel,
+    vref::JuMP.AbstractVariableRef,
+)
+    return push!(bilevel_model(m).upper_only, vref)
 end
 #### Model ####
 
@@ -245,19 +273,21 @@ function BilevelVariableRef(model::BilevelModel, idx)
 end
 
 # Constraints
-const BilevelConstraintRef = JuMP.ConstraintRef{BilevelModel, Int}#, Shape <: AbstractShape
+const BilevelConstraintRef = JuMP.ConstraintRef{BilevelModel,Int}#, Shape <: AbstractShape
 
 # Objective
 
 # Etc
 
 JuMP.object_dictionary(m::BilevelModel) = m.objdict
-JuMP.object_dictionary(m::AbstractBilevelModel) = JuMP.object_dictionary(bilevel_model(m))
+function JuMP.object_dictionary(m::AbstractBilevelModel)
+    return JuMP.object_dictionary(bilevel_model(m))
+end
 
 function convert_indices(d::Dict)
     ret = Dict{VI,VI}()
     # sizehint!(ret, length(d))
-    for (k,v) in d
+    for (k, v) in d
         ret[JuMP.index(k)] = JuMP.index(v)
     end
     return ret
@@ -265,7 +295,7 @@ end
 function index2(d::Dict)
     ret = Dict{VI,CI}()
     # sizehint!(ret, length(d))
-    for (k,v) in d
+    for (k, v) in d
         ret[JuMP.index(k)] = JuMP.index(v)
     end
     return ret
@@ -345,7 +375,6 @@ function JuMP.constraint_by_name(model::BilevelModel, name::String)
     return nothing
 end
 
-
 # Statuses
 function JuMP.primal_status(model::BilevelModel)
     _check_solver(model)
@@ -355,8 +384,11 @@ function JuMP.primal_status(model::InnerBilevelModel)
     return JuMP.primal_status(model.m)
 end
 
-JuMP.dual_status(::BilevelModel) = error(
-    "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.")
+function JuMP.dual_status(::BilevelModel)
+    return error(
+        "Dual status cant be queried for BilevelModel, but you can query for Upper and Lower models.",
+    )
+end
 function JuMP.dual_status(model::UpperModel)
     _check_solver(model.m)
     return MOI.get(model.m.solver, MOI.DualStatus())
@@ -382,7 +414,7 @@ replace_var_type(::Type{M}) where {M<:JuMP.AbstractModel} = BilevelVariableRef
 function build_reverse_var_map!(um::UpperModel)
     m = bilevel_model(um)
     if m.var_upper_rev === nothing
-        m.var_upper_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        m.var_upper_rev = Dict{JuMP.AbstractVariableRef,BilevelVariableRef}()
         for (idx, ref) in m.var_upper
             m.var_upper_rev[ref] = BilevelVariableRef(m, idx)
         end
@@ -392,7 +424,7 @@ end
 function build_reverse_var_map!(lm::LowerModel)
     m = bilevel_model(lm)
     if m.var_lower_rev === nothing
-        m.var_lower_rev = Dict{JuMP.AbstractVariableRef, BilevelVariableRef}()
+        m.var_lower_rev = Dict{JuMP.AbstractVariableRef,BilevelVariableRef}()
         for (idx, ref) in m.var_lower
             m.var_lower_rev[ref] = BilevelVariableRef(m, idx)
         end
@@ -403,70 +435,102 @@ get_reverse_var_map(m::UpperModel) = m.m.var_upper_rev
 get_reverse_var_map(m::LowerModel) = m.m.var_lower_rev
 function reverse_replace_variable(f, m::InnerBilevelModel)
     build_reverse_var_map!(m)
-    return replace_variables(f, mylevel_model(m), get_reverse_var_map(m), level(m))
+    return replace_variables(
+        f,
+        mylevel_model(m),
+        get_reverse_var_map(m),
+        level(m),
+    )
 end
-function replace_variables(var::VV, # JuMP.VariableRef
+function replace_variables(
+    var::VV, # JuMP.VariableRef
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,V<:JuMP.AbstractVariableRef, M, VV<:JuMP.AbstractVariableRef}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,V<:JuMP.AbstractVariableRef,M,VV<:JuMP.AbstractVariableRef}
     return variable_map[var]
 end
-function replace_variables(var::BilevelVariableRef,
+function replace_variables(
+    var::BilevelVariableRef,
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,V<:JuMP.AbstractVariableRef, M<:BilevelModel}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,V<:JuMP.AbstractVariableRef,M<:BilevelModel}
     if var.model === model && in_level(var, level)
         return variable_map[var.idx]
     elseif var.model === model
-        error("Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.")
+        error(
+            "Variable $(var) belonging Only to $(var.level) level, was added in the $(level) level.",
+        )
     else
-        error("A BilevelModel cannot have expression using variables of a BilevelModel different from itself")
+        error(
+            "A BilevelModel cannot have expression using variables of a BilevelModel different from itself",
+        )
     end
 end
-function replace_variables(aff::JuMP.GenericAffExpr{C, VV},
+function replace_variables(
+    aff::JuMP.GenericAffExpr{C,VV},
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
-    result = JuMP.GenericAffExpr{C, replace_var_type(M)}(0.0)#zero(aff)
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,C,V<:JuMP.AbstractVariableRef,M,VV}
+    result = JuMP.GenericAffExpr{C,replace_var_type(M)}(0.0)#zero(aff)
     result.constant = aff.constant
     for (coef, var) in JuMP.linear_terms(aff)
-        JuMP.add_to_expression!(result,
-        coef,
-        replace_variables(var, model, variable_map, level))
+        JuMP.add_to_expression!(
+            result,
+            coef,
+            replace_variables(var, model, variable_map, level),
+        )
     end
     return result
 end
-function replace_variables(quad::JuMP.GenericQuadExpr{C, VV},
+function replace_variables(
+    quad::JuMP.GenericQuadExpr{C,VV},
     model::M,
-    variable_map::Dict{I, V},
-    level::Level) where {I,C,V<:JuMP.AbstractVariableRef, M, VV}
+    variable_map::Dict{I,V},
+    level::Level,
+) where {I,C,V<:JuMP.AbstractVariableRef,M,VV}
     aff = replace_variables(quad.aff, model, variable_map, level)
-    quadv = JuMP.GenericQuadExpr{C, replace_var_type(M)}(aff)
+    quadv = JuMP.GenericQuadExpr{C,replace_var_type(M)}(aff)
     for (coef, var1, var2) in JuMP.quad_terms(quad)
-        JuMP.add_to_expression!(quadv,
-        coef,
-        replace_variables(var1, model, variable_map, level),
-        replace_variables(var2, model, variable_map, level))
+        JuMP.add_to_expression!(
+            quadv,
+            coef,
+            replace_variables(var1, model, variable_map, level),
+            replace_variables(var2, model, variable_map, level),
+        )
     end
     return quadv
 end
-replace_variables(funcs::Vector, args...) = map(f -> replace_variables(f, args...), funcs)
+function replace_variables(funcs::Vector, args...)
+    return map(f -> replace_variables(f, args...), funcs)
+end
 
 function print_lp(m, name, file_format = MOI.FileFormats.FORMAT_AUTOMATIC)
-    dest = MOI.FileFormats.Model(format = file_format, filename = name)
+    dest = MOI.FileFormats.Model(; format = file_format, filename = name)
     MOI.copy_to(dest, m)
-    MOI.write_to_file(dest, name)
+    return MOI.write_to_file(dest, name)
 end
 
 # Optimize
 
-JuMP.optimize!(::T) where {T<:AbstractBilevelModel} =
-    error("Can't solve a model of type: $T ")
-function JuMP.optimize!(model::BilevelModel;
-    lower_prob = "", upper_prob = "", bilevel_prob = "", solver_prob = "", file_format = MOI.FileFormats.FORMAT_AUTOMATIC, consider_constrained_variables = false,)
-
+function JuMP.optimize!(::T) where {T<:AbstractBilevelModel}
+    return error("Can't solve a model of type: $T ")
+end
+function JuMP.optimize!(
+    model::BilevelModel;
+    lower_prob = "",
+    upper_prob = "",
+    bilevel_prob = "",
+    solver_prob = "",
+    file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+    consider_constrained_variables = false,
+)
     if model.mode === nothing
-        error("No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`")
+        error(
+            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+        )
     else
         mode = model.mode
     end
@@ -497,8 +561,7 @@ function JuMP.optimize!(model::BilevelModel;
 
     t0 = time()
 
-    moi_upper = JuMP.index.(
-        collect(values(model.upper_to_lower_link)))
+    moi_upper = JuMP.index.(collect(values(model.upper_to_lower_link)))
     moi_link = convert_indices(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
@@ -506,9 +569,21 @@ function JuMP.optimize!(model::BilevelModel;
     # build bound for FortunyAmatMcCarlMode
     build_bounds!(model, mode)
 
-    single_blm, upper_to_sblm, lower_to_sblm, lower_primal_dual_map, lower_dual_to_sblm =
-        build_bilevel(upper, lower, moi_link, moi_upper, mode, moi_link2,
-            copy_names = model.copy_names, pass_start = model.pass_start, consider_constrained_variables = consider_constrained_variables,)
+    single_blm,
+    upper_to_sblm,
+    lower_to_sblm,
+    lower_primal_dual_map,
+    lower_dual_to_sblm = build_bilevel(
+        upper,
+        lower,
+        moi_link,
+        moi_upper,
+        mode,
+        moi_link2;
+        copy_names = model.copy_names,
+        pass_start = model.pass_start,
+        consider_constrained_variables = consider_constrained_variables,
+    )
 
     # pass additional info (hints - not actual problem data)
     # for lower level dual variables (start, upper hint, lower hint)
@@ -517,7 +592,14 @@ function JuMP.optimize!(model::BilevelModel;
             ctr = model.ctr_lower[idx]
             # this fails for vector-constrained variables due dualization 0.3.5
             # because of constrained variables that change the dual
-            pass_necessary_dual_info(single_blm, info, consider_constrained_variables, lower_primal_dual_map, lower_dual_to_sblm, JuMP.index(ctr))
+            pass_necessary_dual_info(
+                single_blm,
+                info,
+                consider_constrained_variables,
+                lower_primal_dual_map,
+                lower_dual_to_sblm,
+                JuMP.index(ctr),
+            )
         end
     end
     # pass lower & upper level primal variables info (upper, lower)
@@ -536,7 +618,7 @@ function JuMP.optimize!(model::BilevelModel;
     end
 
     sblm_to_solver = MOI.copy_to(solver, single_blm)
-    
+
     if _has_nlp_data(model.upper)
         # NLP requires an upstream jump model
         # probably is neough to have the fields:
@@ -554,13 +636,14 @@ function JuMP.optimize!(model::BilevelModel;
             vi_ss = sblm_to_solver[vi_sb]
             vi_is = vars_in_solver[i]
             if vi_ss != vi_is
-                error("Failed building Non linear problem, please report an issue")
+                error(
+                    "Failed building Non linear problem, please report an issue",
+                )
                 # in case jump or MOI change something in copy/nlpblock
             end
         end
         _load_nlp_data(nlp_model)
     end
-
 
     if length(solver_prob) > 0
         print_lp(solver, solver_prob, file_format)
@@ -588,32 +671,50 @@ end
 
 function pass_primal_info(single_blm, primal, info::BilevelVariableInfo)
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(primal.value))
-        MOI.add_constraint(single_blm,
-            primal, LT{Float64}(info.upper))
+       !MOI.is_valid(
+        single_blm,
+        CI{MOI.VariableIndex,LT{Float64}}(primal.value),
+    )
+        MOI.add_constraint(single_blm, primal, LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(primal.value))
-        MOI.add_constraint(single_blm,
-            primal, GT{Float64}(info.lower))
+       !MOI.is_valid(
+        single_blm,
+        CI{MOI.VariableIndex,GT{Float64}}(primal.value),
+    )
+        MOI.add_constraint(single_blm, primal, GT{Float64}(info.lower))
     end
     return
 end
 
-function pass_necessary_dual_info(single_blm, info, consider_constrained_variables::Bool, lower_primal_dual_map, lower_dual_to_sblm, ctr_idx::MOI.ConstraintIndex{F,S}) where {F<:Union{MOI.VariableIndex,MOI.VectorOfVariables},S}
+function pass_necessary_dual_info(
+    single_blm,
+    info,
+    consider_constrained_variables::Bool,
+    lower_primal_dual_map,
+    lower_dual_to_sblm,
+    ctr_idx::MOI.ConstraintIndex{F,S},
+) where {F<:Union{MOI.VariableIndex,MOI.VectorOfVariables},S}
     if consider_constrained_variables
         return
     else
         pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
-        duals = map(x->lower_dual_to_sblm[x], pre_duals)
+        duals = map(x -> lower_dual_to_sblm[x], pre_duals)
         pass_dual_info(single_blm, duals, info)
     end
     return
 end
 
-function pass_necessary_dual_info(single_blm, info, consider_constrained_variables::Bool, lower_primal_dual_map, lower_dual_to_sblm, ctr_idx::MOI.ConstraintIndex{F,S}) where {F,S}
+function pass_necessary_dual_info(
+    single_blm,
+    info,
+    consider_constrained_variables::Bool,
+    lower_primal_dual_map,
+    lower_dual_to_sblm,
+    ctr_idx::MOI.ConstraintIndex{F,S},
+) where {F,S}
     pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
-    duals = map(x->lower_dual_to_sblm[x], pre_duals)
+    duals = map(x -> lower_dual_to_sblm[x], pre_duals)
     pass_dual_info(single_blm, duals, info)
     return
 end
@@ -623,31 +724,52 @@ function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Float64})
         MOI.set(single_blm, MOI.VariablePrimalStart(), dual[], info.start)
     end
     if !isnan(info.upper) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[].value))
-        MOI.add_constraint(single_blm,
-            dual[], LT{Float64}(info.upper))
+       !MOI.is_valid(
+        single_blm,
+        CI{MOI.VariableIndex,LT{Float64}}(dual[].value),
+    )
+        MOI.add_constraint(single_blm, dual[], LT{Float64}(info.upper))
     end
     if !isnan(info.lower) &&
-        !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[].value))
-        MOI.add_constraint(single_blm,
-            dual[], GT{Float64}(info.lower))
+       !MOI.is_valid(
+        single_blm,
+        CI{MOI.VariableIndex,GT{Float64}}(dual[].value),
+    )
+        MOI.add_constraint(single_blm, dual[], GT{Float64}(info.lower))
     end
     return
 end
-function pass_dual_info(single_blm, dual, info::BilevelConstraintInfo{Vector{Float64}})
+function pass_dual_info(
+    single_blm,
+    dual,
+    info::BilevelConstraintInfo{Vector{Float64}},
+)
     for i in eachindex(dual)
         if !isnan(info.start[i])
-            MOI.set(single_blm, MOI.VariablePrimalStart(), dual[i], info.start[i])
+            MOI.set(
+                single_blm,
+                MOI.VariablePrimalStart(),
+                dual[i],
+                info.start[i],
+            )
         end
         if !isnan(info.upper[i]) &&
-            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,LT{Float64}}(dual[i].value))
-            MOI.add_constraint(single_blm,
-                dual[i], LT{Float64}(info.upper[i]))
+           !MOI.is_valid(
+            single_blm,
+            CI{MOI.VariableIndex,LT{Float64}}(dual[i].value),
+        )
+            MOI.add_constraint(single_blm, dual[i], LT{Float64}(info.upper[i]))
         end
         if !isnan(info.lower[i]) &&
-            !MOI.is_valid(single_blm, CI{MOI.VariableIndex,GT{Float64}}(dual[i].value))
-            MOI.add_constraint(single_blm,
-                dual[i], MOI.GreaterThan{Float64}(info.lower[i]))
+           !MOI.is_valid(
+            single_blm,
+            CI{MOI.VariableIndex,GT{Float64}}(dual[i].value),
+        )
+            MOI.add_constraint(
+                single_blm,
+                dual[i],
+                MOI.GreaterThan{Float64}(info.lower[i]),
+            )
         end
     end
     return
@@ -721,13 +843,13 @@ inf_if_nan(::typeof(+), val) = ifelse(isnan(val), Inf, val)
 inf_if_nan(::typeof(-), val) = ifelse(isnan(val), -Inf, val)
 
 dual_lower_bound(::CI{F,LT{T}}) where {F,T} = -Inf
-dual_upper_bound(::CI{F,LT{T}}) where {F,T} =  0.0
+dual_upper_bound(::CI{F,LT{T}}) where {F,T} = 0.0
 
-dual_lower_bound(::CI{F,GT{T}}) where {F,T} =  0.0
+dual_lower_bound(::CI{F,GT{T}}) where {F,T} = 0.0
 dual_upper_bound(::CI{F,GT{T}}) where {F,T} = +Inf
 
-dual_lower_bound(::CI{F,ET{T}}) where {F,T} =  0.0
-dual_upper_bound(::CI{F,ET{T}}) where {F,T} =  0.0
+dual_lower_bound(::CI{F,ET{T}}) where {F,T} = 0.0
+dual_upper_bound(::CI{F,ET{T}}) where {F,T} = 0.0
 
 dual_lower_bound(::CI{F,S}) where {F,S} = -Inf
 dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
@@ -736,17 +858,23 @@ dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
 
 function _check_solver(bm::BilevelModel)
     if bm.solver === nothing
-        error("No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`")
+        error(
+            "No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`",
+        )
     end
 end
 
-function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
-    add_bridges::Bool=true)
+function JuMP.set_optimizer(
+    bm::BilevelModel,
+    optimizer_constructor;
+    add_bridges::Bool = true,
+)
     # error_if_direct_mode(model, :set_optimizer)
     if add_bridges
         # If `default_copy_to` without names is supported,
         # no need for a second cache.
-        optimizer = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64)
+        optimizer =
+            MOI.instantiate(optimizer_constructor; with_bridge_type = Float64)
         # for bridge_type in model.bridge_types
         #     _moi_add_bridge(optimizer, bridge_type)
         # end
@@ -756,26 +884,34 @@ function JuMP.set_optimizer(bm::BilevelModel, optimizer_constructor;
 
     bm.solver = optimizer
     if !MOI.is_empty(bm.solver)
-        error("Calling the `optimizer_constructor` must return an empty optimizer")
+        error(
+            "Calling the `optimizer_constructor` must return an empty optimizer",
+        )
     end
     return bm
 end
 
-
-function pass_cache(bm::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where T
+function pass_cache(bm::BilevelModel, mode::FortunyAmatMcCarlMode{T}) where {T}
     mode.cache = bm.mode.cache
     return nothing
 end
-function pass_cache(bm::BilevelModel, mode::AbstractBilevelSolverMode{T}) where T
+function pass_cache(
+    bm::BilevelModel,
+    mode::AbstractBilevelSolverMode{T},
+) where {T}
     return nothing
 end
 
-function check_mixed_mode(::MixedMode{T}) where T
-end
+function check_mixed_mode(::MixedMode{T}) where {T} end
 function check_mixed_mode(mode)
-    error("Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`")
+    return error(
+        "Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`",
+    )
 end
-function set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode{T}) where T
+function set_mode(
+    ci::BilevelConstraintRef,
+    mode::AbstractBilevelSolverMode{T},
+) where {T}
     bm = ci.model
     check_mixed_mode(bm.mode)
     _mode = deepcopy(mode)
@@ -803,15 +939,18 @@ function get_mode(ci::BilevelConstraintRef)
     end
 end
 
-function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where T
-    error("Cant set MixedMode in a specific constraint")
+function set_mode(::BilevelConstraintRef, ::MixedMode{T}) where {T}
+    return error("Cant set MixedMode in a specific constraint")
 end
-function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where T
-    error("Cant set StrongDualityMode in a specific constraint")
+function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where {T}
+    return error("Cant set StrongDualityMode in a specific constraint")
 end
 
 # mode for variable bounds
-function set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode{T}) where T
+function set_mode(
+    vi::BilevelVariableRef,
+    mode::AbstractBilevelSolverMode{T},
+) where {T}
     bm = vi.model
     check_mixed_mode(bm.mode)
     _mode = deepcopy(mode)
@@ -840,19 +979,19 @@ function get_mode(vi::BilevelVariableRef)
     end
 end
 
-function set_mode(::BilevelVariableRef, ::MixedMode{T}) where T
-    error("Cant set MixedMode in a specific variable")
+function set_mode(::BilevelVariableRef, ::MixedMode{T}) where {T}
+    return error("Cant set MixedMode in a specific variable")
 end
-function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where T
-    error("Cant set StrongDualityMode in a specific variable")
+function set_mode(::BilevelVariableRef, ::StrongDualityMode{T}) where {T}
+    return error("Cant set StrongDualityMode in a specific variable")
 end
 
 function MOI.set(::BilevelModel, ::MOI.LazyConstraintCallback, func)
-    error("Callbacks are not available in BilevelJuMP Models")
+    return error("Callbacks are not available in BilevelJuMP Models")
 end
 function MOI.set(::BilevelModel, ::MOI.UserCutCallback, func)
-    error("Callbacks are not available in BilevelJuMP Models")
+    return error("Callbacks are not available in BilevelJuMP Models")
 end
 function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
-    error("Callbacks are not available in BilevelJuMP Models")
+    return error("Callbacks are not available in BilevelJuMP Models")
 end

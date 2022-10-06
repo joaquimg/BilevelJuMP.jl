@@ -2,7 +2,6 @@
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 3.7, Page 59. [url](https://www.springer.com/gp/book/9781402006319)
 
-
 # Model of the problem
 
 # First level
@@ -31,29 +30,27 @@
 # I = \{1,...,7\}
 # ```
 
-
 using BilevelJuMP
 using Ipopt
 using JuMP
 using Test
 
-model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-9))
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Global variables
 
 I = 7 # maximum literals
-clauses = [[1,2,3],[-1,-4,3],[7,-6,4],[5,6,7]]
+clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
 atol = 1e-6
 # First we need to create all of the variables in the upper and lower problems:
 
 # Upper level variables
-@variable(Upper(model), ya[i=1:I])
-@variable(Upper(model), yb[i=1:I])
+@variable(Upper(model), ya[i = 1:I])
+@variable(Upper(model), yb[i = 1:I])
 @variable(Upper(model), z)
 
-
 #Lower level variables
-@variable(Lower(model), x[i=1:I])
+@variable(Lower(model), x[i = 1:I])
 
 # Then we can add the objective and constraints of the upper problem:
 
@@ -63,15 +60,18 @@ atol = 1e-6
 # Upper level constraints
 @constraint(Upper(model), ca, z <= 1)
 @constraint(Upper(model), cb, z >= 0)
-@constraint(Upper(model), c1[i=1:I], ya[i] >= 0)
-@constraint(Upper(model), c2[i=1:I], ya[i] <= 1)
-@constraint(Upper(model), c3[i=1:I], yb[i] >= 0)
-@constraint(Upper(model), c4[i=1:I], yb[i] <= 1)
-@constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)
+@constraint(Upper(model), c1[i = 1:I], ya[i] >= 0)
+@constraint(Upper(model), c2[i = 1:I], ya[i] <= 1)
+@constraint(Upper(model), c3[i = 1:I], yb[i] >= 0)
+@constraint(Upper(model), c4[i = 1:I], yb[i] <= 1)
+@constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)
 
 # for c in clauses
-@constraint(Upper(model), cc[k in eachindex(clauses)], sum(i > 0 ? ya[i] : yb[-i] for i in clauses[k]) >= z)
-
+@constraint(
+    Upper(model),
+    cc[k in eachindex(clauses)],
+    sum(i > 0 ? ya[i] : yb[-i] for i in clauses[k]) >= z
+)
 
 # Followed by the objective and constraints of the lower problem:
 
@@ -79,10 +79,9 @@ atol = 1e-6
 @objective(Lower(model), Min, -sum(x[i] for i in 1:I))
 
 # Lower constraints
-@constraint(Lower(model), b1[i=1:I], x[i] >= 0)
-@constraint(Lower(model), b2[i=1:I], x[i] <= ya[i])
-@constraint(Lower(model), b3[i=1:I], x[i] <= yb[i])
-
+@constraint(Lower(model), b1[i = 1:I], x[i] >= 0)
+@constraint(Lower(model), b2[i = 1:I], x[i] <= ya[i])
+@constraint(Lower(model), b3[i = 1:I], x[i] <= yb[i])
 
 # Initial Starting conditions
 
@@ -96,8 +95,6 @@ for i in 1:I
     JuMP.set_dual_start_value.(b3, -1)
 end
 
-
-
 # Now we can solve the problem and verify the solution again that reported by
 # Dempe.
 
@@ -106,12 +103,11 @@ primal_status(model)
 termination_status(model)
 
 # Auto testing
-@test objective_value(model) ≈ -1 atol=atol
-@test value.(x) ≈ zeros(I) atol=atol
-@test value.(ya) ≈ ones(I) atol=atol
-@test value.(yb) ≈ zeros(I) atol=atol
-@test value(z) ≈ 1 atol=atol
+@test objective_value(model) ≈ -1 atol = atol
+@test value.(x) ≈ zeros(I) atol = atol
+@test value.(ya) ≈ ones(I) atol = atol
+@test value.(yb) ≈ zeros(I) atol = atol
+@test value(z) ≈ 1 atol = atol
 # @show dual.(b1) #≈ 6 atol=atol
 # @show dual.(b2) #≈ 2 atol=atol
 # @show dual.(b3) #≈ 2 atol=atol
-
