@@ -291,7 +291,7 @@ accept_vector_set(::MixedMode{T}, ::Complement) where {T} = nothing
 
 function get_variable_complement(primal_model, dual_model, primal_con, dual_con)
     return error(
-        "An internal error with variable complements occurred. Likely, your problem type does not yet support consideration of constrained variables.",
+        "An internal error with variable complements occurred. Please open an issue on https://github.com/joaquimg/BilevelJuMP.jl",
     )
 end
 
@@ -312,7 +312,7 @@ function get_variable_complement(
 
     @assert MOI.constant(primal_set) == 0 "Unexpected variable bound"
 
-    dual_func = MOI.get(dual_model, MOI.ConstraintFunction(), dual_con)
+    dual_func = MOI.copy(MOI.get(dual_model, MOI.ConstraintFunction(), dual_con))
     dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
     if MOI.constant(dual_set) > 0
         dual_func.constant = dual_func.constant - MOI.constant(dual_set)
@@ -388,7 +388,7 @@ function get_canonical_complement(
     T = Float64
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
-    dim = MOI.dimension(set)
+    # dim = MOI.dimension(set)
     # vector sets have no constant
     # for i in 1:dim
     #     func.constant[i] = Dualization.set_dot(i, set, T) *
