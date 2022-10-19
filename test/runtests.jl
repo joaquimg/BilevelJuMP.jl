@@ -435,25 +435,3 @@ include("bilinear_linearization.jl")
         end
     end
 end
-
-
-build_maps(
-    ::MathOptInterface.Utilities.CachingOptimizer{MathOptInterface.AbstractOptimizer, MathOptInterface.Utilities.UniversalFallback{MathOptInterface.Utilities.Model{Float64}}}, 
-
-    ::MathOptInterface.Utilities.CachingOptimizer{MathOptInterface.AbstractOptimizer, MathOptInterface.Utilities.UniversalFallback{MathOptInterface.Utilities.Model{Float64}}}, 
-
-    ::Dict{MathOptInterface.VariableIndex, MathOptInterface.VariableIndex}, 
-    ::Dict{MathOptInterface.VariableIndex, MathOptInterface.VariableIndex}
-
-    ::Vector{MathOptInterface.VariableIndex}, 
-    ::Vector{MathOptInterface.VariableIndex}
-
-    ::BilevelJuMP.SOS1Mode{Float64}, 
-
-    ::Dict{MathOptInterface.VariableIndex, MathOptInterface.ConstraintIndex}, 
-    ::Dict{MathOptInterface.VariableIndex, MathOptInterface.ConstraintIndex}
-
-    ::Bool)
-
-
-    build_maps(::Any, ::Any, ::Dict{MathOptInterface.VariableIndex, MathOptInterface.VariableIndex}, ::Vector{MathOptInterface.VariableIndex}, ::Any, ::Dict{MathOptInterface.VariableIndex, MathOptInterface.ConstraintIndex}; copy_names)
