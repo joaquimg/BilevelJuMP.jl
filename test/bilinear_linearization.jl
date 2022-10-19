@@ -174,8 +174,13 @@ function failing_conditions_non_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
     # code from build_bilevel in src/moi.jl
     m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = 
     BilevelJuMP.build_maps(
-        upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, 
-        upper_var_to_lower_ctr, copy_names
+        upper, 
+        lower, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        mode, 
+        upper_var_to_lower_ctr, 
+        copy_names
     )
 
     # code from main_linearization in src/bilinear_linearization.jl
@@ -236,7 +241,9 @@ function failing_conditions_non_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
         lower_to_m_idxmap,
         lower_primal_dual_map,
         lower_dual_idxmap,
-        false
+        false,
+        num_blocks,
+        rows
     )
 end
 
@@ -290,8 +297,13 @@ function failing_conditions_empty_AB_N(mode = BilevelJuMP.SOS1Mode())
     # code from build_bilevel in src/moi.jl
     m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = 
     BilevelJuMP.build_maps(
-        upper, lower, upper_to_lower_var_indices, lower_var_indices_of_upper_vars, mode, 
-        upper_var_to_lower_ctr, copy_names
+        upper, 
+        lower, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        mode, 
+        upper_var_to_lower_ctr, 
+        copy_names
     )
 
     # code from main_linearization in src/bilinear_linearization.jl

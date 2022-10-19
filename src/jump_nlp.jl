@@ -6,7 +6,7 @@
 =#
 
 function _has_nlp_data(model)
-    return  model.nlp_data !== nothing
+    return model.nlp_data !== nothing
 end
 function _load_nlp_data(model)
     # callen in JuMP.optimize!
@@ -35,7 +35,9 @@ end
 
 no_nlp() = error("Non-linear data must be passed to the Upper(.) model")
 no_nlp_lower() = error("NLconstraint(s) are not allowed in the lower level")
-no_nlp_lower_param() = error("NLparameter(s) are not allowed in the lower level")
+function no_nlp_lower_param()
+    return error("NLparameter(s) are not allowed in the lower level")
+end
 
 JuMP._init_NLP(m::UpperModel) = JuMP._init_NLP(mylevel_model(m))
 JuMP._init_NLP(m::LowerModel) = no_nlp_lower()
@@ -49,10 +51,10 @@ function JuMP._new_parameter(m::UpperModel, value::Number)
 end
 
 function JuMP._new_parameter(::LowerModel, ::Number)
-    no_nlp_lower_param()
+    return no_nlp_lower_param()
 end
 function JuMP._new_parameter(::BilevelModel, ::Number)
-    no_nlp()
+    return no_nlp()
 end
 
 # function JuMP.set_objective_function(m::UpperModel, func::JuMP._NonlinearExprData)
@@ -73,7 +75,8 @@ function JuMP.set_objective(
     m.nlp_data.nlobj = ex
     return
 end
-function JuMP.set_objective(::LowerModel,
+function JuMP.set_objective(
+    ::LowerModel,
     ::MOI.OptimizationSense,
     ::JuMP._NonlinearExprData,
 )
@@ -86,14 +89,26 @@ function JuMP._parse_NL_expr_runtime(m::UpperModel, x, tape, parent, values)
     return nothing
 end
 
-function JuMP._parse_NL_expr_runtime(m::UpperModel, x::BilevelVariableRef, tape, parent, values)
+function JuMP._parse_NL_expr_runtime(
+    m::UpperModel,
+    x::BilevelVariableRef,
+    tape,
+    parent,
+    values,
+)
     if !in_upper(x)
         error(
             "Variable in nonlinear expression does not belong to the " *
             "upper model, it is a LowerOnly variable",
         )
     end
-    JuMP._parse_NL_expr_runtime(mylevel_model(m), upper_ref(x), tape, parent, values)
+    JuMP._parse_NL_expr_runtime(
+        mylevel_model(m),
+        upper_ref(x),
+        tape,
+        parent,
+        values,
+    )
     return nothing
 end
 

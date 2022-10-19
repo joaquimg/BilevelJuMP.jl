@@ -14,10 +14,8 @@ using Dates
 const cache = ThreadSafeDict{Tuple{Int, Int, Bool, Bool}, Tuple{Vector{Int}, Vector{Int}, Bool}}()
 # cache for find_connected_rows_cols_cached, which can take several seconds in large problems
 
-export
-BilevelModel,
-Upper, Lower, UpperOnly, LowerOnly,
-DualOf, BilevelAffExpr, BilevelQuadExpr
+export BilevelModel,
+    Upper, Lower, UpperOnly, LowerOnly, DualOf, BilevelAffExpr, BilevelQuadExpr
 
 @enum Level LOWER_BOTH UPPER_BOTH LOWER_ONLY UPPER_ONLY DUAL_OF_LOWER
 

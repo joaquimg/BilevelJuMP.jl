@@ -2,7 +2,6 @@ using JuMP, BilevelJuMP
 using Random
 
 function bench_toll(nodes, optimizer, mode, seed = 1234)
-
     rng = Random.MersenneTwister(seed)
 
     Nodes = nodes
@@ -25,7 +24,7 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
     vars = []
 
     # MOI.empty!(optimizer)
-    model = BilevelModel(optimizer, mode = mode)
+    model = BilevelModel(optimizer; mode = mode)
     try
         JuMP.set_time_limit_sec(model, MAX_TIME)
     catch e
@@ -33,48 +32,88 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
         @show "failed to set limit time"
     end
 
-    v = @variable(Upper(model), 0 <= F[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w] <= cap)
-    for vv in v; push!(vars, vv); end
+    v = @variable(
+        Upper(model),
+        0 <= F[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= cap
+    )
+    for vv in v
+        push!(vars, vv)
+    end
 
-    c = @constraint(Upper(model),[n=1:Nodes,w=1:Nodes;n>w],
-        sum(F[n,w,s] for s in 1:Fares) <= cap)
-    for cc in c; push!(ctrs, cc); end
+    c = @constraint(
+        Upper(model),
+        [n = 1:Nodes, w = 1:Nodes; n > w],
+        sum(F[n, w, s] for s in 1:Fares) <= cap
+    )
+    for cc in c
+        push!(ctrs, cc)
+    end
 
     #=
         lower model
     =#
 
-    v = @variable(Lower(model), 0 <= f[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w] <= cap)
-    for vv in v; push!(vars, vv); end
+    v = @variable(
+        Lower(model),
+        0 <= f[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= cap
+    )
+    for vv in v
+        push!(vars, vv)
+    end
 
-    v = @variable(Lower(model), 0 <= a[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w] <= 100)
-    for vv in v; push!(vars, vv); end
+    v = @variable(
+        Lower(model),
+        0 <= a[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= 100
+    )
+    for vv in v
+        push!(vars, vv)
+    end
 
-    c = @constraint(Lower(model),[n = 1:Nodes],
-         sum(f[n,w,s] for w in 1:Nodes, s in 1:Fares if n>w)
-        -sum(f[w,n,s] for w in 1:Nodes, s in 1:Fares if w>n) == b[n])
-    for cc in c; push!(ctrs_e, cc); end
+    c = @constraint(
+        Lower(model),
+        [n = 1:Nodes],
+        sum(f[n, w, s] for w in 1:Nodes, s in 1:Fares if n > w) -
+        sum(f[w, n, s] for w in 1:Nodes, s in 1:Fares if w > n) == b[n]
+    )
+    for cc in c
+        push!(ctrs_e, cc)
+    end
 
-    c = @constraint(Lower(model),[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w],
-         s * costs[n,w] * f[n,w,s] <= a[n,w,s])
-    for cc in c; push!(ctrs, cc); end
+    c = @constraint(
+        Lower(model),
+        [n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w],
+        s * costs[n, w] * f[n, w, s] <= a[n, w, s]
+    )
+    for cc in c
+        push!(ctrs, cc)
+    end
 
-    c = @constraint(Lower(model),[n=1:Nodes,w=1:Nodes,s=1:Fares;n>w],
-        f[n,w,s] <= F[n,w,s])
-    for cc in c; push!(ctrs, cc); end
+    c = @constraint(
+        Lower(model),
+        [n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w],
+        f[n, w, s] <= F[n, w, s]
+    )
+    for cc in c
+        push!(ctrs, cc)
+    end
 
-    @objective(Lower(model), Min,
-        sum(costs[n,w] * f[n,w,s] + a[n,w,s]
-            for n in 1:Nodes, w in 1:Nodes, s in 1:Fares if n>w)
+    @objective(
+        Lower(model),
+        Min,
+        sum(
+            costs[n, w] * f[n, w, s] + a[n, w, s] for
+            n in 1:Nodes, w in 1:Nodes, s in 1:Fares if n > w
         )
+    )
 
     #=
         upper model
     =#
 
-    @objective(Upper(model), Max,
-        sum(a[n,w,s]
-            for n in 1:Nodes, w in 1:Nodes, s in 1:Fares if n>w)
+    @objective(
+        Upper(model),
+        Max,
+        sum(a[n, w, s] for n in 1:Nodes, w in 1:Nodes, s in 1:Fares if n > w)
     )
 
     #=
@@ -107,11 +146,11 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
     obj_u = try
         objective_value(Upper(model))
     catch
-         NaN
+        NaN
     end
     gap = try
         bound = objective_bound(Upper(model))
-        abs(obj_u - bound)/max(abs(bound), 1e-8)
+        abs(obj_u - bound) / max(abs(bound), 1e-8)
     catch
         NaN
     end
