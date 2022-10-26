@@ -1,6 +1,6 @@
-jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, true, mode, config)
-jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
-function _jump_01(optimizer, vectorized::Bool, mode, config)
+jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_01(optimizer, true, mode, consider_constrained_variables, config)
+jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_01(optimizer, false, mode, consider_constrained_variables, config)
+function _jump_01(optimizer, vectorized::Bool, mode, consider_constrained_variables, config)
 
     atol = config.atol
 
@@ -57,8 +57,8 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     end
 
     # solve twice to check robustness
-    optimize!(model)
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -75,7 +75,7 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     # @test dual(c4) ≈ [1] atol=atol #NLP fail
 
     # solve again to check robustness
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -110,7 +110,7 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
     JuMP.set_objective_coefficient(Lower(model), x, +1)
 
     # solve again to check robustness
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -130,7 +130,7 @@ function _jump_01(optimizer, vectorized::Bool, mode, config)
 
 end
 
-function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -170,7 +170,7 @@ function jump_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     JuMP.set_dual_start_value(c5, -1)
     JuMP.set_dual_start_value(c6, 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -208,9 +208,9 @@ end
 # obs: example 2 is from the book
 
 # Cap 3.2, Pag 25
-jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_03(optimizer, false, mode, config)
-jump_03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_03(optimizer, true, mode, config)
-function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
+jump_03(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config()) = _jump_03(optimizer, false, mode, consider_constrained_variables, config)
+jump_03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config()) = _jump_03(optimizer, true, mode, consider_constrained_variables, config)
+function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -261,7 +261,7 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
         BilevelJuMP.set_primal_upper_bound_hint(y, 9)
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     # @test primal_status(model) == MOI.FEASIBLE_POINT
     # @test primal_status(Upper(model)) == MOI.FEASIBLE_POINT
@@ -293,7 +293,7 @@ function _jump_03(optimizer, vec::Bool, mode = BilevelJuMP.SOS1Mode(), config = 
 
 end
 # change the bound on x to lower level
-function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -316,7 +316,7 @@ function jump_04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), 2x - 7y <= 0)
     @constraint(Lower(model), x <= 5)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -332,7 +332,7 @@ end
 # Sec 3.3 , pag 30 -> product of x and y in lower level objective
 
 # Sec 3.4.1 , pag 32
-function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -353,7 +353,7 @@ function jump_05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x[1] >= 0)
     @constraint(Lower(model), x[2] >= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -370,7 +370,7 @@ end
 # sec 3.5.2.2 pag 44 -> product
 
 # sec 3.7 pag 59
-function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -413,7 +413,7 @@ function jump_3SAT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
         JuMP.set_dual_start_value.(b3, -1)
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -436,7 +436,7 @@ end
 # sec 5.1 pag 121 -> product
 
 # sec 5.1 pag 127
-function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -453,7 +453,7 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @objective(Lower(model), Min, x)
     @constraint(Lower(model), l1, x >= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -464,7 +464,7 @@ function jump_quad_01_a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @test value(y) ≈ 0 atol=atol
 
 end
-function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -481,7 +481,7 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), l1, -x -y <= 0)
     @constraint(Lower(model), l2, x >= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -492,7 +492,7 @@ function jump_quad_01_b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @test value(y) ≈ -0.5 atol=atol
 
 end
-function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -508,7 +508,7 @@ function jump_quad_01_c(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     
     @objective(Lower(model), Min, x)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -531,7 +531,7 @@ end
 
 # sec 8.1 pag 255 example from [279]
 # only the second level is described
-function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -554,7 +554,7 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
     @constraint(Lower(model), -4x + 5y <= 10)
     @constraint(Lower(model), -4x - 5y <= 10)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -564,7 +564,7 @@ function jump_int_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 end
 
 # sec 8.1 pag 257
-function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -587,7 +587,7 @@ function jump_int_02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 
     # DONT include integrality on X (KKT wont work)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -612,7 +612,7 @@ end
 # pag 197 ex 5.1.1
 jump_06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, false, mode, config)
 jump_06_sv(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_06(optimizer, true, mode, config)
-function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -646,7 +646,7 @@ function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = C
     #     @constraint(Lower(model), x == 4)
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -660,7 +660,7 @@ function _jump_06(optimizer, sv::Bool, mode = BilevelJuMP.SOS1Mode(), config = C
 end
 
 # pag 208 ex 5.3.1
-function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -683,7 +683,7 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), 2x[1] - y[1] + 2y[2] - 0.5y[3] <= 1)
     @constraint(Lower(model), 2x[2] +2y[1] - y[2] - 0.5y[3] <= 1)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -695,7 +695,7 @@ function jump_07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 end
 
 # pag 208 ex 5.3.1
-function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -717,7 +717,7 @@ function jump_08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y/2 <= 8)
     @constraint(Lower(model), x - 2y <= 4)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -733,7 +733,7 @@ end
 # pag 302 ex 8.1.1 -> quadratic terms
 
 # pag 304 ex 8.1.2
-function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     # degenerate second level
     # its case that show that the KKT approach is OPTIMISTIC
@@ -761,7 +761,7 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y[2] <= 1)
     @constraint(Lower(model), y[1] + y[2] <= 1)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -771,7 +771,7 @@ function jump_09a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test value.(y) ≈ [0, 1] atol=atol
 
 end
-function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -792,7 +792,7 @@ function jump_09b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), x + y[2] <= 1)
     @constraint(Lower(model), y[1] + y[2] <= 1)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -818,7 +818,7 @@ end
 # pag 4 ex 1.2 -> product
 
 # pag 9 ex 1.4 TODO obtain solution
-function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     n = 10
     f = 100
@@ -849,7 +849,7 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), [i=1:n], x[i] <= 1)
     @constraint(Lower(model), sum(a_lw[i]*x[i] for i in 1:n) >= b)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -861,7 +861,7 @@ function jump_10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 end
 
 # pag 21 ex 2.1
-function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -880,7 +880,7 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), -3x + y <= -3)
     @constraint(Lower(model), 3x + y <= 30)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -890,7 +890,7 @@ function jump_11a(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @test value(y) ≈ 6 atol=atol
 
 end
-function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -909,7 +909,7 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), -3x + y <= -3)
     @constraint(Lower(model), 3x + y <= 30)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -921,7 +921,7 @@ function jump_11b(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 end
 
 # pag 45 ex 3.3
-function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     for a in [0 0.1 0.2]
         atol = config.atol
@@ -944,7 +944,7 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
         MOI.empty!(optimizer)
         @test MOI.is_empty(optimizer)
 
-        optimize!(model)
+        optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
         primal_status(model)
 
@@ -957,7 +957,7 @@ function jump_12(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 end
 
 # pag 45 ex 3.3
-function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -977,7 +977,7 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), -x + y <= 2)
     @constraint(Lower(model), y >= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -988,7 +988,7 @@ function jump_13_quad(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 end
 
 # pag 290 ex 8.2
-function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -1013,7 +1013,7 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
     @constraint(Lower(model), z >= 0)
     @constraint(Lower(model), z <= 10)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1025,7 +1025,7 @@ function jump_14(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 end
 
 # pag 300 ex 8.5.2
-function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -1050,7 +1050,7 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model),  5x + 3y + 0z <= 230)
     @constraint(Lower(model),  5x + 0y + 1z <= 85)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1060,7 +1060,7 @@ function jump_15a_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test value(y) ≈ 75 atol=atol
     @test value(Z) ≈ 21+2/3 atol=atol
 end
-function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1086,7 +1086,7 @@ function jump_15b_INT(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model),  5x + 3y + 0z <= 230)
     @constraint(Lower(model),  5x + 0y + 1z <= 85)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1104,7 +1104,7 @@ end
 =#
 
 # 9.2.2
-function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1134,7 +1134,7 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  8x + 3y[1] - 2y[2] <= 48)
     @constraint(Lower(model), -2x +  y[1] - 3y[2] <= -12)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1145,7 +1145,7 @@ function jump_HTP_lin01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.3
-function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1167,7 +1167,7 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),   x + 2y <= 12)
     @constraint(Lower(model),  4x -  y <= 12)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1180,9 +1180,9 @@ function jump_HTP_lin02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.4 - parg 211
-jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_HTP_lin03(optimizer, false, mode, config)
-jump_HTP_lin03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_HTP_lin03(optimizer, true, mode, config)
-function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
+jump_HTP_lin03(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_HTP_lin03(optimizer, false, mode, consider_constrained_variables, config)
+jump_HTP_lin03_vec(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_HTP_lin03(optimizer, true, mode, consider_constrained_variables, config)
+function _jump_HTP_lin03(optimizer, vec::Bool, mode, consider_constrained_variables, config)
     # send y to upper level
 
     atol = config.atol
@@ -1220,7 +1220,7 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
         @constraint(Lower(model), c3, 2y[1] -  y[2] - (1/2)*y[3] + y[6] + 2x[2] == 1)
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1231,7 +1231,7 @@ function _jump_HTP_lin03(optimizer, vec::Bool, mode, config)
 end
 
 # 9.2.5
-function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1251,7 +1251,7 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  2x + 5y <= 108)
     @constraint(Lower(model),  2x - 3y <= -4)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1262,7 +1262,7 @@ function jump_HTP_lin04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.6
-function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1285,7 +1285,7 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),  -y[1] <= 0)
     @constraint(Lower(model),  -y[2] <= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1298,7 +1298,7 @@ function jump_HTP_lin05(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.7
-function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1322,7 +1322,7 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),    -x + 2y <= 18)
     @constraint(Lower(model),         -y <= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1335,7 +1335,7 @@ function jump_HTP_lin06(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.8 - parg 216
-function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1364,7 +1364,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), + 2x[1] -  y[1] + 2y[2] - (1/2)*y[3] <= 1)
     @constraint(Lower(model), + 2x[2] + 2y[1] -  y[2] - (1/2)*y[3] <= 1)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1375,7 +1375,7 @@ function jump_HTP_lin07(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.9 - parg 217
-function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1400,7 +1400,7 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
     @constraint(Lower(model), +  x[1] +  x[2]                 <= 2)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1413,7 +1413,7 @@ function jump_HTP_lin08(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.10
-function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1435,7 +1435,7 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model),     x - 2y <= 2)
     @constraint(Lower(model),         -y <= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1446,7 +1446,7 @@ function jump_HTP_lin09(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
 end
 
 # 9.2.11 - parg 219
-function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -1473,7 +1473,7 @@ function jump_HTP_lin10(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Confi
     @constraint(Lower(model), - 2x[1]         +  y[1] -  y[2] <= -2.5)
     @constraint(Lower(model), +  x[1] - 3x[2]         +  y[2] <= 2)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1488,7 +1488,7 @@ end
 # TODO - add quadratic problems
 
 # 9.3.2 - parg 221
-function jump_HTP_quad01(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad01(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -1517,7 +1517,7 @@ function jump_HTP_quad01(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     # @constraint(Lower(model), y >= 0) # GAMS file has this constraint
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1528,7 +1528,7 @@ function jump_HTP_quad01(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.3- parg 222
-function jump_HTP_quad02(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad02(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -1559,7 +1559,7 @@ function jump_HTP_quad02(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model),          y <= 20)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1570,7 +1570,7 @@ function jump_HTP_quad02(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.4- parg 223
-function jump_HTP_quad03(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad03(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1606,7 +1606,7 @@ function jump_HTP_quad03(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), [i=1:2], y[i] <= 20)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1619,7 +1619,7 @@ function jump_HTP_quad03(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.5- parg 225
-function jump_HTP_quad04(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad04(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1645,7 +1645,7 @@ function jump_HTP_quad04(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), y[1] + y[2] == x)
     @constraint(Lower(model), [i=1:2], y[i] >= 0)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1656,7 +1656,7 @@ function jump_HTP_quad04(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.6- parg 226
-function jump_HTP_quad05(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad05(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1686,7 +1686,7 @@ function jump_HTP_quad05(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), y >= 0)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1697,7 +1697,7 @@ function jump_HTP_quad05(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.7- parg 227
-function jump_HTP_quad06(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad06(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1724,7 +1724,7 @@ function jump_HTP_quad06(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1734,7 +1734,7 @@ function jump_HTP_quad06(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @test sol ≈ [0.5 ; 0.5; 0.5; 0.5] atol=atol
 
 end
-function jump_HTP_quad06b(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad06b(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # TODO reviews the behaviour comment
     atol = config.atol
     start = config.start_value
@@ -1760,7 +1760,7 @@ function jump_HTP_quad06b(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), conf
     @constraint(Lower(model), [i=1:2], y[i] >= 0.5)
     @constraint(Lower(model), [i=1:2], y[i] <= 1.5)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     #=
     book claims:
@@ -1790,7 +1790,7 @@ end
 
 
 # 9.3.8- parg 228
-function jump_HTP_quad07(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad07(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -1819,7 +1819,7 @@ function jump_HTP_quad07(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), y >= 0) # only difference from problem 1
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -1830,7 +1830,7 @@ function jump_HTP_quad07(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.9 - parg 229
-function jump_HTP_quad08(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad08(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # Q objective is not PSD
 
     atol = config.atol
@@ -1861,7 +1861,7 @@ function jump_HTP_quad08(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), y <= 1)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1872,7 +1872,7 @@ function jump_HTP_quad08(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
 end
 
 # 9.3.10- parg 230
-function jump_HTP_quad09(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_HTP_quad09(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -1902,7 +1902,7 @@ function jump_HTP_quad09(optimizer, is_min, mode = BilevelJuMP.SOS1Mode(), confi
     @constraint(Lower(model), [i=1:2], y[i] >= 0)
 
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -1917,7 +1917,7 @@ end
 =#
 
 # from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc1.html
-function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     ###
     ### PART 1
@@ -1940,7 +1940,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), y >= -x)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test termination_status(model) in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED, MOI.LOCALLY_INFEASIBLE]
 
@@ -1967,7 +1967,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), y >= -x)
     @constraint(Lower(model), y >= +x)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED, MOI.ALMOST_LOCALLY_SOLVED]
 
@@ -1976,7 +1976,7 @@ function jump_jointc1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
 end
 
 # from https://www.gams.com/latest/emplib_ml/libhtml/emplib_jointc2.html
-function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     ###
     ### PART 1
@@ -2004,7 +2004,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), y >= -x)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
@@ -2038,7 +2038,7 @@ function jump_jointc2(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), y >= -x)
     @constraint(Lower(model), y >= x - 2)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test termination_status(model) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 
@@ -2051,7 +2051,7 @@ end
     J.F. Bard
     Operations Research, 1983
 =#
-function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
     # send y to upper level
 
     atol = config.atol
@@ -2078,7 +2078,7 @@ function jump_EffPointAlgo(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model),                                                 -  y[1] - 2y[2] - y[3] <= -2)
     @constraint(Lower(model),         -  2x[2] - 3x[3]        - x[5]                                 <= -3)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -2093,7 +2093,7 @@ end
     K. Moshirvaziri et al.
     Journal of Global Optimization, 1996
 =#
-function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2123,7 +2123,7 @@ function jump_SemiRand(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config
     @constraint(Lower(model), -9x[1] +9x[2] -9x[3] + 5x[4] -5y[1] -4y[2] <= -5)
     @constraint(Lower(model), +5x[1] +3x[2] + x[3] + 9x[4] + y[1] +5y[2] <= 32)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -2140,7 +2140,7 @@ end
 =#
 
 # Chapter 7.2, pag 281
-function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2159,7 +2159,7 @@ function jump_DTMP_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @constraint(Lower(model), -x <= 0)
     @constraint(Lower(model),  x <= 4)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -2173,7 +2173,7 @@ end
     modification to test variables used in a single level
 =#
 
-function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2196,7 +2196,7 @@ function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @constraint(Lower(model),  x <= 4)
     @constraint(Lower(model),  w == 1)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test value(x) ≈ 1 atol=atol
     @test value(y) ≈ 6 atol=atol
@@ -2204,7 +2204,7 @@ function jump_DTMP_01_mod1(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @test value(w) ≈ 1 atol=atol
 end
 
-function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2223,9 +2223,9 @@ function jump_DTMP_01_mod2_error(optimizer, mode = BilevelJuMP.SOS1Mode(), confi
     @test_throws ErrorException @objective(Lower(model), Min, -x - y + z)
 end
 
-jump_DTMP_01_mod3vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_DTMP_01_mod3(optimizer, true, mode, config)
-jump_DTMP_01_mod3(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_DTMP_01_mod3(optimizer, false, mode, config)
-function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode, config)
+jump_DTMP_01_mod3vec(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_DTMP_01_mod3(optimizer, true, mode, consider_constrained_variables, config)
+jump_DTMP_01_mod3(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = consider_constrained_variables, config = Config()) = _jump_DTMP_01_mod3(optimizer, false, mode, consider_constrained_variables, config)
+function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode, consider_constrained_variables, config)
 
     atol = config.atol
 
@@ -2279,7 +2279,7 @@ function _jump_DTMP_01_mod3(optimizer, vectorized::Bool, mode, config)
         @constraint(Lower(model),  w == 1)
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test value(x) ≈ 1 atol=atol
     @test value(y) ≈ 6 atol=atol
@@ -2291,7 +2291,7 @@ end
     Conejo, A. J., Baringo, L., Kazempour, S. J., and Siddiqui, A. S. (2016).
     Investment in Electricity Generation and Transmission. Springer.
 =#
-function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
+function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
     atol = config.atol
     start = config.start_value
@@ -2325,7 +2325,7 @@ function jump_conejo2016(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Conf
 
     @objective(Upper(model), Min, 40_000x + 8760*(10y[1]-lambda*y[1]))
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -2339,7 +2339,7 @@ end
 #=
     Bruno Fanzeres PhD thesis Robust Strategic Bidding in Auction-Based Markets.
 =#
-function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -2365,7 +2365,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
 
     @objective(Upper(model), Max, lambda*g[1])
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -2377,7 +2377,7 @@ function jump_fanzeres2017(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Co
     @test value(lambda) ≈ 1_000 atol=1e-3
 end
 
-function jump_eq_price(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_eq_price(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -2407,7 +2407,7 @@ function jump_eq_price(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config
     @objective(Upper(model), Max, lambda*sum(g[i] for i in 1:jger) -
                         sum(c[i]*g[i] for i in 1:jger) - (lambda - p)*q)
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -2419,7 +2419,7 @@ function jump_eq_price(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config
 
 end
 
-function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
+function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config())
 
     atol = config.atol
     start = config.start_value
@@ -2446,7 +2446,7 @@ function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
     @objective(Lower(m), Min, y[1]+z[2])
 
-    optimize!(m)
+    optimize!(m; consider_constrained_variables)
 
     # TODO add tests
     _a = value.(a)
@@ -2455,7 +2455,7 @@ function jump_16(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config())
 
 end
 
-function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
+function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
     # MOI.set(optimizer, QuadraticToBinary.GlobalVariablePrecision(), 1e-5)
     MOI.empty!(optimizer)
@@ -2485,7 +2485,7 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @objective(Upper(model), Min, x[1])
     @objective(Lower(model), Min, y[1])
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -2493,6 +2493,7 @@ function jump_conic01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test objective_value(model) ≈ 0  atol=1e-1
     @test value.(x) ≈ [0, 0, 0] atol=1e-3
     @test value.(y) ≈ [0, 0, 0] atol=1e-3
+
 end
 
 #=
@@ -2502,7 +2503,7 @@ end
     https://core.ac.uk/download/pdf/81261904.pdf
 =#
 
-function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
+function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
@@ -2550,7 +2551,7 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
     termination_status(model)
@@ -2560,8 +2561,9 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test value(x) ≈ 6 atol=1e-3
     @test value(y[2]) >= 0 - 1e-3
     @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
+
 end
-function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
+function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
@@ -2609,7 +2611,7 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     JuMP.raw_status(model)
     primal_status(model)
@@ -2620,8 +2622,10 @@ function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test value(x) ≈ 2 atol=1e-3
     @test value(y[2]) <= 0 + 1e-3
     @test value(y[1]) + value(y[2]) ≈ 2 atol=1e-3
+    
 end
-function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
+
+function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(); bounds = false)
 
     MOI.empty!(optimizer)
     model = BilevelModel(()->optimizer, mode = mode)
@@ -2667,7 +2671,7 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     JuMP.raw_status(model)
     primal_status(model)
@@ -2678,10 +2682,11 @@ function jump_conic04(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
     @test value(x) ≈ 6 atol=1e-3
     @test value(y[1]) ≈ 2 atol=1e-3
     @test sqrt(value(y[2])^2 + value(y[3])^2) <= 2 + 1e-3
+    
 end
 
 # from: https://github.com/joaquimg/BilevelJuMP.jl/issues/82
-function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(), p_max = 0.1)
+function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), consider_constrained_variables = false, config = Config(), p_max = 0.1)
 
     MOI.empty!(optimizer)
     m = BilevelModel(()->optimizer, mode = mode)
@@ -2699,12 +2704,12 @@ function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
 
     BilevelJuMP.set_copy_names(m)
     optimize!(m, bilevel_prob = "pb.lp", solver_prob = "ps.lp",
-        upper_prob = "pu.lp")
+        upper_prob = "pu.lp", consider_constrained_variables = consider_constrained_variables)
     @test isfile("pb.lp")
     @test isfile("ps.lp")
     @test isfile("pu.lp")
     optimize!(m, bilevel_prob = "pb.mof.json", solver_prob = "ps.mof.json",
-        lower_prob = "pl.mof.json", upper_prob = "pu.mof.json")
+        lower_prob = "pl.mof.json", upper_prob = "pu.mof.json", consider_constrained_variables = consider_constrained_variables)
     @test isfile("pb.mof.json")
     @test isfile("ps.mof.json")
     @test isfile("pl.mof.json")
@@ -2723,7 +2728,7 @@ function jump_fruits(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()
     return nothing
 end
 
-function jump_01_mixed(optimizer, config = Config())
+function jump_01_mixed(optimizer, consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2783,7 +2788,7 @@ function jump_01_mixed(optimizer, config = Config())
     #     BilevelJuMP.set_primal_upper_bound_hint(y, 5)
     # end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -2801,7 +2806,7 @@ function jump_01_mixed(optimizer, config = Config())
 
 end
 
-function jump_01_sum_agg(optimizer, config = Config())
+function jump_01_sum_agg(optimizer, consider_constrained_variables = false, config = Config())
 
     atol = config.atol
 
@@ -2860,7 +2865,7 @@ function jump_01_sum_agg(optimizer, config = Config())
     #     BilevelJuMP.set_primal_upper_bound_hint(y, 5)
     # end
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     primal_status(model)
 
@@ -2885,7 +2890,7 @@ By: LukasBarner
 Siddiqui S, Gabriel SA (2013). An sos1-based approach for solving mpecs with a natural gas market applica-
 tion. Networks and Spatial Economics 13(2):205–227.
 """
-function jump_qp_lower_min(config = Config())
+function jump_qp_lower_min(consider_constrained_variables = false, config = Config())
     F = [1,2]
     c = Dict(1=>1, 2=>1)
     C = 1
@@ -2901,12 +2906,12 @@ function jump_qp_lower_min(config = Config())
 
     @objective(Lower(model), Min, -((a-b * (q[1] + q[2] + Q)) * q[1] - C*q[1] + (a-b * (q[1] + q[2] + Q)) * q[2] - C*q[2] + b*q[1]*q[2]) )
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test isapprox(value.(Q), 6; atol=1e-5)
     @test isapprox(value.(q).data, [2,2]; atol=1e-5)
 end
-function jump_qp_lower_max(config = Config())
+function jump_qp_lower_max(consider_constrained_variables = false, config = Config())
     F = [1,2]
     c = Dict(1=>1, 2=>1)
     C = 1
@@ -2922,7 +2927,7 @@ function jump_qp_lower_max(config = Config())
 
     @objective(Lower(model), Max, +((a-b * (q[1] + q[2] + Q)) * q[1] - C*q[1] + (a-b * (q[1] + q[2] + Q)) * q[2] - C*q[2] + b*q[1]*q[2]) )
 
-    optimize!(model)
+    optimize!(model; consider_constrained_variables = consider_constrained_variables)
 
     @test isapprox(value.(Q), 6; atol=1e-5)
     @test isapprox(value.(q).data, [2,2]; atol=1e-5)

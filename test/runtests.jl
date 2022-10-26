@@ -122,283 +122,833 @@ include("jump_nlp.jl")
     end
 
     @testset "Simple BLP JuMP" begin
-        for solver in solvers_nlp
-            jump_01(solver.opt, solver.mode, CONFIG_3)
-            jump_01vec(solver.opt, solver.mode, CONFIG_3)
-            jump_02(solver.opt, solver.mode) # numerical isntability in ipopt
-            jump_03(solver.opt, solver.mode, CONFIG_3_start)
-            jump_03_vec(solver.opt, solver.mode, CONFIG_3_start)
-            jump_04(solver.opt, solver.mode, CONFIG_3_start)
-            jump_05(solver.opt, solver.mode)
-            jump_3SAT(solver.opt, solver.mode, CONFIG_3)
-            jump_06(solver.opt, solver.mode)
-            # jump_06_sv(solver.opt, solver.mode, CONFIG_4) # fail in Ipopt
-            jump_07(solver.opt, solver.mode, CONFIG_2)
-            jump_08(solver.opt, solver.mode, CONFIG_3_start)
-            jump_09a(solver.opt, solver.mode)
-            jump_09b(solver.opt, solver.mode)
-            jump_11a(solver.opt, solver.mode)
-            jump_11b(solver.opt, solver.mode)
-            jump_12(solver.opt, solver.mode)
-            jump_14(solver.opt, solver.mode)
-        end
-        for solver in solvers_sos
-            jump_01_mixed(solver.opt)
-        end
-        for solver in solvers_sos
-            jump_01(solver.opt, solver.mode)#
-            jump_02(solver.opt, solver.mode)#
-            jump_03(solver.opt, solver.mode)
-            jump_04(solver.opt, solver.mode)
-            jump_05(solver.opt, solver.mode)#
-            jump_3SAT(solver.opt, solver.mode)
-            jump_06(solver.opt, solver.mode)#
-            jump_06_sv(solver.opt, solver.mode, CONFIG_4)
-            jump_07(solver.opt, solver.mode)#
-            jump_08(solver.opt, solver.mode)#
-            jump_09a(solver.opt, solver.mode) # fail on cbc positive SOS
-            jump_09b(solver.opt, solver.mode)
-            jump_11a(solver.opt, solver.mode)#
-            jump_11b(solver.opt, solver.mode)
-            jump_12(solver.opt, solver.mode)#
-            jump_14(solver.opt, solver.mode)
-            #
-            jump_16(solver.opt, solver.mode)
-        end
-        for solver in solvers_bin_exp
-            jump_01(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_02(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_03(solver.opt, solver.mode, CONFIG_3_hint)
-        end
-        for solver in solvers_fa
-            jump_01(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_02(solver.opt, solver.mode, CONFIG_3_hint)
-            jump_03(solver.opt, solver.mode, CONFIG_3_hint)
-        end
-        for solver in solvers_fa2
-            jump_01(solver.opt, solver.mode, CONFIG_3)
-            jump_01vec(solver.opt, solver.mode, CONFIG_3)
-            jump_02(solver.opt, solver.mode, CONFIG_3)
-            jump_03(solver.opt, solver.mode, CONFIG_3)
-        end
-        for solver in solvers_indicator
-            jump_01(solver.opt, solver.mode)
-            jump_01vec(solver.opt, solver.mode)
-            jump_02(solver.opt, solver.mode) # fail cbc - pass xpress 8.9
-            jump_03(solver.opt, solver.mode)
-        end
-        for solver in solvers_complements # requires KNITRO
-            # jump_01(solver.opt, solver.mode, CONFIG_3)
-            # jump_01vec(solver.opt, solver.mode, CONFIG_3)
-            # jump_02(solver.opt, solver.mode) # numerical isntability in ipopt
-            jump_03(solver.opt, solver.mode, CONFIG_3_start)
-            jump_03_vec(solver.opt, solver.mode, CONFIG_3_start)
-            jump_04(solver.opt, solver.mode, CONFIG_3_start)
-            # jump_05(solver.opt, solver.mode)
-            jump_3SAT(solver.opt, solver.mode)
-            jump_06(solver.opt, solver.mode)
-            jump_06_sv(solver.opt, solver.mode)
-            # jump_07(solver.opt, solver.mode, CONFIG_2)
-            jump_08(solver.opt, solver.mode, CONFIG_3_start)
-            jump_09a(solver.opt, solver.mode)
-            # jump_09b(solver.opt, solver.mode)
-            jump_11a(solver.opt, solver.mode)
-            jump_11b(solver.opt, solver.mode)
-            # jump_12(solver.opt, solver.mode)
-            # jump_14(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_nlp
+                jump_01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_01vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_02(solver.opt, solver.mode, consider_constrained_variables) # numerical isntability in ipopt
+                jump_03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_03_vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_05(solver.opt, solver.mode, consider_constrained_variables)
+                jump_3SAT(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_06(solver.opt, solver.mode, consider_constrained_variables)
+                # jump_06_sv(solver.opt, solver.mode, consider_constrained_variables, CONFIG_4) # fail in Ipopt
+                jump_07(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_2,
+                )
+                jump_08(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_09a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_09b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_11a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_11b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_12(solver.opt, solver.mode, consider_constrained_variables)
+                jump_14(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_sos
+                jump_01_mixed(solver.opt, consider_constrained_variables)
+            end
+            for solver in solvers_sos
+                jump_01(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_02(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_03(solver.opt, solver.mode, consider_constrained_variables)
+                jump_04(solver.opt, solver.mode, consider_constrained_variables)
+                jump_05(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_3SAT(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_06(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_06_sv(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_4,
+                )
+                jump_07(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_08(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_09a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # fail on cbc positive SOS
+                jump_09b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_11a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )#
+                jump_11b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_12(solver.opt, solver.mode, consider_constrained_variables)#
+                jump_14(solver.opt, solver.mode, consider_constrained_variables)
+                #
+                jump_16(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_bin_exp
+                jump_01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_01vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+            end
+            for solver in solvers_fa
+                jump_01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_01vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+                jump_03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_hint,
+                )
+            end
+            for solver in solvers_fa2
+                jump_01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_01vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+                jump_03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3,
+                )
+            end
+            for solver in solvers_indicator
+                jump_01(solver.opt, solver.mode, consider_constrained_variables)
+                jump_01vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_02(solver.opt, solver.mode, consider_constrained_variables) # fail cbc - pass xpress 8.9
+                jump_03(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_complements # requires KNITRO
+                # jump_01(solver.opt, solver.mode, consider_constrained_variables, CONFIG_3)
+                # jump_01vec(solver.opt, solver.mode, consider_constrained_variables, CONFIG_3)
+                # jump_02(solver.opt, solver.mode, consider_constrained_variables) # numerical isntability in ipopt
+                jump_03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_03_vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                # jump_05(solver.opt, solver.mode, consider_constrained_variables)
+                jump_3SAT(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_06(solver.opt, solver.mode, consider_constrained_variables)
+                jump_06_sv(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_07(solver.opt, solver.mode, consider_constrained_variables, CONFIG_2)
+                jump_08(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_09a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_09b(solver.opt, solver.mode, consider_constrained_variables)
+                jump_11a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_11b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_12(solver.opt, solver.mode, consider_constrained_variables)
+                # jump_14(solver.opt, solver.mode, consider_constrained_variables)
+            end
         end
     end
 
     @testset "JuMP quad" begin
-        for solver in solvers_quad
-            jump_quad_01_a(solver.opt, solver.mode)
-            jump_quad_01_b(solver.opt, solver.mode, CONFIG_4)
-            jump_quad_01_c(solver.opt, solver.mode)
-            jump_13_quad(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_quad
+                jump_quad_01_a(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_quad_01_b(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_4,
+                )
+                jump_quad_01_c(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_13_quad(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "Princeton Handbook Linear" begin
-        for solver in vcat(solvers_nlp, solvers_nlp_sd)
-            jump_HTP_lin01(solver.opt, solver.mode, CONFIG_1_start)
-            # jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
-            jump_HTP_lin03(solver.opt, solver.mode)
-            jump_HTP_lin03_vec(solver.opt, solver.mode)
-            jump_HTP_lin04(solver.opt, solver.mode)
-            jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
-            jump_HTP_lin06(solver.opt, solver.mode)
-            jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
-            jump_HTP_lin09(solver.opt, solver.mode)
-            # jump_HTP_lin10(solver.opt, solver.mode)
-        end
-        for solver in solvers_nlp
-            jump_HTP_lin02(solver.opt, solver.mode)
-            jump_HTP_lin10(solver.opt, solver.mode)
-        end
-        for solver in solvers_nlp_sd
-            jump_HTP_lin02(solver.opt, solver.mode, CONFIG_2)
-        end
-        for solver in solvers_nlp_sd_i
-            # jump_HTP_lin08(solver.opt, solver.mode, CONFIG_1)
-            # jump_HTP_lin10(solver.opt, solver.mode, CONFIG_4)
-        end
-        for solver in solvers_nlp_sd_e
-            # TODO add dual start
-            # jump_HTP_lin08(solver.opt, solver.mode, CONFIG_4)
-            # jump_HTP_lin10(solver.opt, solver.mode)
-        end
-        for solver in solvers_sos
-            jump_HTP_lin01(solver.opt, solver.mode)
-            jump_HTP_lin02(solver.opt, solver.mode)
-            jump_HTP_lin03(solver.opt, solver.mode) # failing cbc
-            jump_HTP_lin04(solver.opt, solver.mode)
-            jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
-            jump_HTP_lin06(solver.opt, solver.mode)
-            jump_HTP_lin07(solver.opt, solver.mode)
-            jump_HTP_lin08(solver.opt, solver.mode)
-            jump_HTP_lin09(solver.opt, solver.mode)
-            jump_HTP_lin10(solver.opt, solver.mode)
-        end
-        for solver in solvers_complements # requires KNITRO
-            jump_HTP_lin01(solver.opt, solver.mode, CONFIG_3_start)
-            jump_HTP_lin02(solver.opt, solver.mode, CONFIG_4)
-            # jump_HTP_lin03(solver.opt, solver.mode)
-            # jump_HTP_lin03_vec(solver.opt, solver.mode)
-            # jump_HTP_lin04(solver.opt, solver.mode)
-            jump_HTP_lin05(solver.opt, solver.mode) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
-            jump_HTP_lin06(solver.opt, solver.mode)
-            # jump_HTP_lin07(solver.opt, solver.mode, CONFIG_2)
-            # jump_HTP_lin09(solver.opt, solver.mode)
-            jump_HTP_lin10(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in vcat(solvers_nlp, solvers_nlp_sd)
+                jump_HTP_lin01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_1_start,
+                )
+                # jump_HTP_lin02(solver.opt, solver.mode, consider_constrained_variables, CONFIG_4)
+                jump_HTP_lin03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin03_vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin05(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
+                jump_HTP_lin06(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin07(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_2,
+                )
+                jump_HTP_lin09(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_HTP_lin10(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_nlp
+                jump_HTP_lin02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin10(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
+            for solver in solvers_nlp_sd
+                jump_HTP_lin02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_2,
+                )
+            end
+            for solver in solvers_nlp_sd_i
+                # jump_HTP_lin08(solver.opt, solver.mode, consider_constrained_variables, CONFIG_1)
+                # jump_HTP_lin10(solver.opt, solver.mode, consider_constrained_variables, CONFIG_4)
+            end
+            for solver in solvers_nlp_sd_e
+                # TODO add dual start
+                # jump_HTP_lin08(solver.opt, solver.mode, consider_constrained_variables, CONFIG_4)
+                # jump_HTP_lin10(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_sos
+                jump_HTP_lin01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # failing cbc
+                jump_HTP_lin04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin05(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
+                jump_HTP_lin06(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin07(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin08(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin09(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_HTP_lin10(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
+            for solver in solvers_complements # requires KNITRO
+                jump_HTP_lin01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_3_start,
+                )
+                jump_HTP_lin02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_4,
+                )
+                # jump_HTP_lin03(solver.opt, solver.mode, consider_constrained_variables)
+                # jump_HTP_lin03_vec(solver.opt, solver.mode, consider_constrained_variables)
+                # jump_HTP_lin04(solver.opt, solver.mode, consider_constrained_variables)
+                jump_HTP_lin05(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # broken on cbc linux on julia 1.0 and 1.2 but not 1.1 see: https://travis-ci.org/joaquimg/BilevelJuMP.jl/builds/619335351
+                jump_HTP_lin06(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_HTP_lin07(solver.opt, solver.mode, consider_constrained_variables, CONFIG_2)
+                # jump_HTP_lin09(solver.opt, solver.mode, consider_constrained_variables)
+                jump_HTP_lin10(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "Sum aggregation_group" begin
-        for solver in solvers_nlp_sum
-            jump_01_sum_agg(solver.opt)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_nlp_sum
+                jump_01_sum_agg(solver.opt, consider_constrained_variables)
+            end
         end
     end
 
     @testset "Princeton Handbook Quadratic" begin
-        for is_min in [true, false]
-            for solver in vcat(solvers_nlp, solvers_nlp_sum)
-                jump_HTP_quad01(solver.opt, is_min, solver.mode)
-                jump_HTP_quad02(solver.opt, is_min, solver.mode)
-                jump_HTP_quad04(solver.opt, is_min, solver.mode, CONFIG_3)
-                jump_HTP_quad05(solver.opt, is_min, solver.mode)
-                jump_HTP_quad06(solver.opt, is_min, solver.mode, CONFIG_3)
-                # jump_HTP_quad06b(solver.opt, is_min, solver.mode)
-                jump_HTP_quad07(solver.opt, is_min, solver.mode)
-                jump_HTP_quad08(solver.opt, is_min, solver.mode) # not PSD
-                jump_HTP_quad09(solver.opt, is_min, solver.mode)
-            end
-            for solver in solvers_nlp
-                jump_HTP_quad03(solver.opt, is_min, solver.mode)
-            end
+        for consider_constrained_variables in [true, false]
+            for is_min in [true, false]
+                for solver in vcat(solvers_nlp, solvers_nlp_sum)
+                    jump_HTP_quad01(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad02(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad04(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                        CONFIG_3,
+                    )
+                    jump_HTP_quad05(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad06(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                        CONFIG_3,
+                    )
+                    # jump_HTP_quad06b(solver.opt, is_min, solver.mode, consider_constrained_variables)
+                    jump_HTP_quad07(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad08(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    ) # not PSD
+                    jump_HTP_quad09(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                end
+                for solver in solvers_nlp
+                    jump_HTP_quad03(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                end
 
-            for solver in solvers_sos_quad
-                jump_HTP_quad01(solver.opt, is_min, solver.mode, CONFIG_4)
-                jump_HTP_quad02(solver.opt, is_min, solver.mode)
-                jump_HTP_quad04(solver.opt, is_min, solver.mode)
-                jump_HTP_quad05(solver.opt, is_min, solver.mode)
-                jump_HTP_quad06(solver.opt, is_min, solver.mode)
-                jump_HTP_quad06b(solver.opt, is_min, solver.mode, CONFIG_4)
-                jump_HTP_quad07(solver.opt, is_min, solver.mode, CONFIG_4)
-                # jump_HTP_quad08(solver.opt, is_min, solver.mode) # not PSD
-            end
-            for solver in solvers_sos
-                jump_HTP_quad03(solver.opt, is_min, solver.mode)
-                jump_HTP_quad09(solver.opt, is_min, solver.mode)
+                for solver in solvers_sos_quad
+                    jump_HTP_quad01(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                        CONFIG_4,
+                    )
+                    jump_HTP_quad02(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad04(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad05(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad06(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad06b(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                        CONFIG_4,
+                    )
+                    jump_HTP_quad07(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                        CONFIG_4,
+                    )
+                    # jump_HTP_quad08(solver.opt, is_min, solver.mode, consider_constrained_variables) # not PSD
+                end
+                for solver in solvers_sos
+                    jump_HTP_quad03(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                    jump_HTP_quad09(
+                        solver.opt,
+                        is_min,
+                        solver.mode,
+                        consider_constrained_variables,
+                    )
+                end
             end
         end
     end
 
     @testset "Ferris educational" begin
-        for solver in solvers
-            jump_jointc1(solver.opt, solver.mode)
-            jump_jointc2(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers
+                jump_jointc1(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_jointc2(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "Bard Efficient Point Example" begin
-        for solver in solvers_sos
-            jump_EffPointAlgo(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_sos
+                jump_EffPointAlgo(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "SemiRandom" begin
-        for solver in solvers_sos
-            jump_SemiRand(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_sos
+                jump_SemiRand(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "DNE" begin
-        for solver in solvers
-            jump_DTMP_01(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers
+                jump_DTMP_01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "DNE - modifications" begin
-        for solver in solvers
-            jump_DTMP_01_mod1(solver.opt, solver.mode)
-            jump_DTMP_01_mod2_error(solver.opt, solver.mode)
-            jump_DTMP_01_mod3vec(solver.opt, solver.mode)
-            jump_DTMP_01_mod3(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers
+                jump_DTMP_01_mod1(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_DTMP_01_mod2_error(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_DTMP_01_mod3vec(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_DTMP_01_mod3(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "equilibrium" begin
-        for solver in solvers_nlp
-            jump_conejo2016(solver.opt, solver.mode)
-            jump_fanzeres2017(solver.opt, solver.mode)
-            # jump_eq_price(solver.opt, solver.mode)
-        end
-        for solver in solvers_nlp_sd
-            jump_conejo2016(solver.opt, solver.mode)
-            # jump_fanzeres2017(solver.opt, solver.mode)
-            # jump_eq_price(solver.opt, solver.mode)
-        end
-        for solver in solvers_sos_quad_bin
-            jump_conejo2016(solver.opt, solver.mode, config; bounds = true) # fail travis on cbc
-            # jump_fanzeres2017(solver.opt, solver.mode)
-            jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
-        end
-        for solver in solvers_fa_quad_bin
-            jump_conejo2016(solver.opt, solver.mode, config; bounds = true)
-            # jump_fanzeres2017(solver.opt, solver.mode)
-            jump_eq_price(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_nlp
+                jump_conejo2016(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_fanzeres2017(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_eq_price(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_nlp_sd
+                jump_conejo2016(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                # jump_fanzeres2017(solver.opt, solver.mode, consider_constrained_variables)
+                # jump_eq_price(solver.opt, solver.mode, consider_constrained_variables)
+            end
+            for solver in solvers_sos_quad_bin
+                jump_conejo2016(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    config;
+                    bounds = true,
+                ) # fail travis on cbc
+                # jump_fanzeres2017(solver.opt, solver.mode, consider_constrained_variables)
+                jump_eq_price(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                ) # fail travis on cbc
+            end
+            for solver in solvers_fa_quad_bin
+                jump_conejo2016(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    config;
+                    bounds = true,
+                )
+                # jump_fanzeres2017(solver.opt, solver.mode, consider_constrained_variables)
+                jump_eq_price(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "Lower QP" begin
-        jump_qp_lower_min()
-        jump_qp_lower_max()
+        for consider_constrained_variables in [true, false]
+            jump_qp_lower_min(consider_constrained_variables)
+            jump_qp_lower_max(consider_constrained_variables)
+        end
     end
 
     @testset "Fruits" begin
-        for solver in solvers_fa2
-            jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.05)
-            jump_fruits(solver.opt, solver.mode, CONFIG_4, 0.09)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_fa2
+                jump_fruits(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_4,
+                    0.05,
+                )
+                jump_fruits(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    CONFIG_4,
+                    0.09,
+                )
+            end
         end
     end
 
     @testset "Bilevel Conic JuMP NLP" begin
-        for solver in solvers_nlp_lowtol
-            jump_conic01(solver.opt, solver.mode)
-            jump_conic02(solver.opt, solver.mode)
-            jump_conic03(solver.opt, solver.mode)
-            jump_conic04(solver.opt, solver.mode)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_nlp_lowtol
+                jump_conic01(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_conic02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_conic03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+                jump_conic04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                )
+            end
         end
     end
 
     @testset "Bilevel Conic JuMP MIP" begin
-        for solver in solvers_fa_quad_bin_mixed
-            # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
-            @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
-            @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
-            @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
+        for consider_constrained_variables in [true, false]
+            for solver in solvers_fa_quad_bin_mixed
+                # @time jump_conic01(solver.opt, solver.mode, config, bounds = true)
+                @time jump_conic02(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    config,
+                    bounds = true,
+                )
+                @time jump_conic03(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    config,
+                    bounds = true,
+                )
+                @time jump_conic04(
+                    solver.opt,
+                    solver.mode,
+                    consider_constrained_variables,
+                    config,
+                    bounds = true,
+                )
+            end
         end
     end
 end

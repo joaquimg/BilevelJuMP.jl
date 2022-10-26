@@ -289,6 +289,85 @@ end
 accept_vector_set(::ProductMode{T}, ::Complement) where {T} = nothing
 accept_vector_set(::MixedMode{T}, ::Complement) where {T} = nothing
 
+function get_variable_complement(primal_model, dual_model, primal_con, dual_con)
+    return error(
+        "An internal error with variable complements occurred. Please open an issue on https://github.com/joaquimg/BilevelJuMP.jl",
+    )
+end
+
+function get_variable_complement(
+    primal_model,
+    dual_model,
+    primal_con::MOI.ConstraintIndex{Fp,Sp},
+    dual_con::MOI.ConstraintIndex{Fd,Sd},
+) where {
+    Fp<:MOI.VariableIndex,
+    Sp<:Union{MOI.LessThan{T},MOI.GreaterThan{T}},
+    Fd,
+    Sd<:Union{MOI.LessThan{T},MOI.GreaterThan{T}},
+} where {T}
+    primal_variable =
+        MOI.get(primal_model, MOI.ConstraintFunction(), primal_con)
+    primal_set = MOI.get(primal_model, MOI.ConstraintSet(), primal_con)
+
+    @assert MOI.constant(primal_set) == 0 "Unexpected variable bound"
+
+    dual_func = MOI.copy(MOI.get(dual_model, MOI.ConstraintFunction(), dual_con))
+    dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
+    dual_func.constant = dual_func.constant - MOI.constant(dual_set)
+    
+    return Complement(
+        false,
+        primal_con,
+        dual_func,
+        set_with_zero(dual_set),
+        primal_variable,
+    )
+end
+
+function get_variable_complement(
+    primal_model,
+    dual_model,
+    primal_con::MOI.ConstraintIndex{Fp,Sp},
+    dual_con::MOI.ConstraintIndex{Fd,Sd},
+) where {Fp<:MOI.VectorOfVariables,Sp<:VECTOR_SETS,Fd,Sd<:VECTOR_SETS} where {T}
+    primal_variables = MOI.copy(
+        MOI.get(primal_model, MOI.ConstraintFunction(), primal_con),
+    )::Fp
+    primal_set =
+        MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), primal_con))::Sp
+
+    dual_func =
+        MOI.copy(MOI.get(dual_model, MOI.ConstraintFunction(), dual_con))
+    dual_set = MOI.copy(MOI.get(dual_model, MOI.ConstraintSet(), dual_con))
+
+    # Do we have a todo here as in function get_canonical_complement(primal_model, map, ci::CI{F,S}) where {F, S<:VECTOR_SETS} ??
+
+    con = Complement(
+        true,
+        primal_con,
+        dual_func,
+        set_with_zero(dual_set),
+        primal_variables.variables,
+    )
+    return con
+end
+
+function get_variable_complements(primal_model, dual_model, primal_dual_map)
+    map = primal_dual_map.primal_con_dual_var
+    out = Complement[]
+    for (primal_con, dual_con) in primal_dual_map.constrained_var_dual
+        con = get_variable_complement(
+            primal_model,
+            dual_model,
+            primal_con,
+            dual_con,
+        )
+        push!(out, con)
+    end
+    return out
+end
+
 function get_canonical_complements(primal_model, primal_dual_map)
     map = primal_dual_map.primal_con_dual_var
     out = Complement[]
@@ -306,7 +385,7 @@ function get_canonical_complement(
     T = Float64
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
-    dim = MOI.dimension(set)
+    # dim = MOI.dimension(set)
     # vector sets have no constant
     # for i in 1:dim
     #     func.constant[i] = Dualization.set_dot(i, set, T) *
@@ -353,6 +432,8 @@ function build_bilevel(
     upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
     copy_names::Bool = false,
     pass_start::Bool = false,
+    consider_constrained_variables::Bool = false,
+    bilevel_model = BilevelModel(), #BilevelModel
 )
 
     # Start with an empty problem
@@ -371,7 +452,7 @@ function build_bilevel(
         dual_names = DualNames("dual_", "dual_"),
         variable_parameters = upper_variables,
         ignore_objective = ignore_dual_objective(mode),
-        consider_constrained_variables = false,
+        consider_constrained_variables = consider_constrained_variables,
     )
     # the model
     lower_dual = dual_problem.dual_model
@@ -459,6 +540,41 @@ function build_bilevel(
         pass_names(m, lower_dual, lower_dual_idxmap)
     end
 
+    # pass additional info (hints - not actual problem data)
+    # for lower level dual variables (start, upper hint, lower hint)
+    for (idx, info) in bilevel_model.ctr_info
+        if haskey(bilevel_model.ctr_lower, idx)
+            ctr = bilevel_model.ctr_lower[idx]
+            # Only pass dual variable info if duals should exist. 
+            # This is not the case if constrained variables are considered during dualization: 
+            ctr_idx = JuMP.index(ctr)
+            F = MOI.get(lower, MOI.ConstraintFunction() , ctr_idx)
+            if !consider_constrained_variables || !(isa(F, MOI.VariableIndex) || isa(F, MOI.VectorOfVariables))
+                pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
+                duals = map(x -> lower_dual_idxmap[x], pre_duals)
+                pass_dual_info(m, duals, info)
+            end
+        end
+    end
+
+    if !consider_constrained_variables
+        # pass dual starts to single variable bounds, they are not part of bilevel_model.ctr_lower
+        for var in all_variables(bilevel_model.lower)
+            if has_lower_bound(var)
+                start_val = dual_start_value(LowerBoundRef(var))
+                lower_dual_bound_var = lower_primal_dual_map.primal_con_dual_var[JuMP.index(LowerBoundRef(var))][1] 
+                sblm_dual = lower_dual_idxmap[lower_dual_bound_var]
+                MOI.set(m, MOI.VariablePrimalStart(), sblm_dual, start_val)
+            end
+            if has_upper_bound(var)
+                start_val = dual_start_value(UpperBoundRef(var))
+                lower_dual_bound_var = lower_primal_dual_map.primal_con_dual_var[JuMP.index(UpperBoundRef(var))][1] 
+                sblm_dual = lower_dual_idxmap[lower_dual_bound_var]
+                MOI.set(m, MOI.VariablePrimalStart(), sblm_dual, start_val)
+            end
+        end
+    end
+    
     #=
         Additional Optimiality conditions (to complete the KKT)
     =#
@@ -491,6 +607,30 @@ function build_bilevel(
                 # feasible equality constraints always satisfy complementarity
             end
         end
+
+        if consider_constrained_variables
+            # complementary slackness for variable bounds
+            variable_comps = get_variable_complements(
+                lower,
+                lower_dual,
+                lower_primal_dual_map,
+            )
+            for comp in variable_comps
+                if !is_equality(comp.set_w_zero)
+                    accept_vector_set(mode, comp)
+                    add_complement(
+                        mode,
+                        m,
+                        comp,
+                        lower_dual_idxmap,
+                        lower_idxmap,
+                        copy_names,
+                        pass_start,
+                    )
+                end
+            end
+        end
+
     else # strong duality
         add_strong_duality(
             mode,
@@ -783,6 +923,12 @@ function add_complement(
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, slack)
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+
+    slack_start = MOIU.eval_variables(
+        x -> nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), x)),
+        f_dest,
+    )
+    MOI.set(m, MOI.VariablePrimalStart(), slack, slack_start)
 
     dual = idxmap_dual[v]
     c1 = MOI.add_constraint(
@@ -1145,6 +1291,8 @@ function add_complement(
     is_tight = false
     has_start = false
 
+    dual = idxmap_dual[v]
+
     if mode.with_slack
         slack, slack_in_set = MOI.add_constrained_variable(m, s)
     end
@@ -1161,7 +1309,7 @@ function add_complement(
             f_dest,
         )
         if !isnan(val)
-            is_tight = abs(val) < 1e-8
+            is_tight = abs(val) < abs(nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), dual)))
             has_start = true
         end
     end
@@ -1175,15 +1323,13 @@ function add_complement(
         end
     end
 
-    dual = idxmap_dual[v]
     v_bounds = get_bounds(dual, mode.cache.map, mode.dual_big_M)
 
     bin = MOI.add_variable(m)
     if pass_start && has_start && is_tight
-        MOI.set(m, MOI.VariablePrimalStart(), bin, 1.0)
-        MOI.set(m, MOI.VariablePrimalStart(), dual, 0.0)
-    else
         MOI.set(m, MOI.VariablePrimalStart(), bin, 0.0)
+    else
+        MOI.set(m, MOI.VariablePrimalStart(), bin, 1.0)
     end
 
     s1 = flip_set(s)
@@ -1215,7 +1361,7 @@ function add_complement(
         -Mv,
     )
 
-    c1 = MOIU.normalize_and_add_constraint(m, f1, s2)
+    c1 = MOIU.normalize_and_add_constraint(m, f1, s1)
     c2 = MOIU.normalize_and_add_constraint(m, f2, s2)
     c3 = MOI.add_constraint(m, bin, MOI.ZeroOne())
 

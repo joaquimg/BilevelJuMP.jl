@@ -525,6 +525,7 @@ function JuMP.optimize!(
     bilevel_prob = "",
     solver_prob = "",
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+    consider_constrained_variables = false,
 )
     if model.mode === nothing
         error(
@@ -581,21 +582,10 @@ function JuMP.optimize!(
         moi_link2;
         copy_names = model.copy_names,
         pass_start = model.pass_start,
+        consider_constrained_variables = consider_constrained_variables,
+        bilevel_model = model,
     )
 
-    # pass additional info (hints - not actual problem data)
-    # for lower level dual variables (start, upper hint, lower hint)
-    for (idx, info) in model.ctr_info
-        if haskey(model.ctr_lower, idx)
-            ctr = model.ctr_lower[idx]
-            # this fails for vector-constrained variables due dualization 0.3.5
-            # because of constrained variables that change the dual
-            pre_duals =
-                lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
-            duals = map(x -> lower_dual_to_sblm[x], pre_duals)
-            pass_dual_info(single_blm, duals, info)
-        end
-    end
     # pass lower & upper level primal variables info (upper, lower)
     for (idx, info) in model.var_info
         if haskey(model.var_lower, idx)
@@ -607,6 +597,7 @@ function JuMP.optimize!(
         end
         pass_primal_info(single_blm, var, info)
     end
+    
     if length(bilevel_prob) > 0
         print_lp(single_blm, bilevel_prob, file_format)
     end
