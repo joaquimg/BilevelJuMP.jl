@@ -433,6 +433,7 @@ function build_bilevel(
     copy_names::Bool = false,
     pass_start::Bool = false,
     consider_constrained_variables::Bool = false,
+    bilevel_model = BilevelModel(), #BilevelModel
 )
 
     # Start with an empty problem
@@ -539,6 +540,41 @@ function build_bilevel(
         pass_names(m, lower_dual, lower_dual_idxmap)
     end
 
+    # pass additional info (hints - not actual problem data)
+    # for lower level dual variables (start, upper hint, lower hint)
+    for (idx, info) in bilevel_model.ctr_info
+        if haskey(bilevel_model.ctr_lower, idx)
+            ctr = bilevel_model.ctr_lower[idx]
+            # Only pass dual variable info if duals should exist. 
+            # This is not the case if constrained variables are considered during dualization: 
+            ctr_idx = JuMP.index(ctr)
+            F = MOI.get(lower, MOI.ConstraintFunction() , ctr_idx)
+            if !consider_constrained_variables || !(isa(F, MOI.VariableIndex) || isa(F, MOI.VectorOfVariables))
+                pre_duals = lower_primal_dual_map.primal_con_dual_var[ctr_idx] # vector
+                duals = map(x -> lower_dual_idxmap[x], pre_duals)
+                pass_dual_info(m, duals, info)
+            end
+        end
+    end
+
+    if !consider_constrained_variables
+        # pass dual starts to single variable bounds, they are not part of bilevel_model.ctr_lower
+        for var in all_variables(bilevel_model.lower)
+            if has_lower_bound(var)
+                start_val = dual_start_value(LowerBoundRef(var))
+                lower_dual_bound_var = lower_primal_dual_map.primal_con_dual_var[JuMP.index(LowerBoundRef(var))][1] 
+                sblm_dual = lower_dual_idxmap[lower_dual_bound_var]
+                MOI.set(m, MOI.VariablePrimalStart(), sblm_dual, start_val)
+            end
+            if has_upper_bound(var)
+                start_val = dual_start_value(UpperBoundRef(var))
+                lower_dual_bound_var = lower_primal_dual_map.primal_con_dual_var[JuMP.index(UpperBoundRef(var))][1] 
+                sblm_dual = lower_dual_idxmap[lower_dual_bound_var]
+                MOI.set(m, MOI.VariablePrimalStart(), sblm_dual, start_val)
+            end
+        end
+    end
+    
     #=
         Additional Optimiality conditions (to complete the KKT)
     =#
@@ -887,6 +923,12 @@ function add_complement(
     f_dest = MOIU.map_indices.(Ref(idxmap_primal), f)
     new_f = MOIU.operate(-, T, f_dest, slack)
     equality = MOIU.normalize_and_add_constraint(m, new_f, MOI.EqualTo(zero(T)))
+
+    slack_start = MOIU.eval_variables(
+        x -> nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), x)),
+        f_dest,
+    )
+    MOI.set(m, MOI.VariablePrimalStart(), slack, slack_start)
 
     dual = idxmap_dual[v]
     c1 = MOI.add_constraint(
@@ -1249,6 +1291,8 @@ function add_complement(
     is_tight = false
     has_start = false
 
+    dual = idxmap_dual[v]
+
     if mode.with_slack
         slack, slack_in_set = MOI.add_constrained_variable(m, s)
     end
@@ -1265,7 +1309,7 @@ function add_complement(
             f_dest,
         )
         if !isnan(val)
-            is_tight = abs(val) < 1e-8
+            is_tight = abs(val) < abs(nothing_to_nan(MOI.get(m, MOI.VariablePrimalStart(), dual)))
             has_start = true
         end
     end
@@ -1279,15 +1323,13 @@ function add_complement(
         end
     end
 
-    dual = idxmap_dual[v]
     v_bounds = get_bounds(dual, mode.cache.map, mode.dual_big_M)
 
     bin = MOI.add_variable(m)
     if pass_start && has_start && is_tight
-        MOI.set(m, MOI.VariablePrimalStart(), bin, 1.0)
-        MOI.set(m, MOI.VariablePrimalStart(), dual, 0.0)
-    else
         MOI.set(m, MOI.VariablePrimalStart(), bin, 0.0)
+    else
+        MOI.set(m, MOI.VariablePrimalStart(), bin, 1.0)
     end
 
     s1 = flip_set(s)
@@ -1319,7 +1361,7 @@ function add_complement(
         -Mv,
     )
 
-    c1 = MOIU.normalize_and_add_constraint(m, f1, s2)
+    c1 = MOIU.normalize_and_add_constraint(m, f1, s1)
     c2 = MOIU.normalize_and_add_constraint(m, f2, s2)
     c3 = MOI.add_constraint(m, bin, MOI.ZeroOne())
 
