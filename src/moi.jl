@@ -314,11 +314,8 @@ function get_variable_complement(
 
     dual_func = MOI.copy(MOI.get(dual_model, MOI.ConstraintFunction(), dual_con))
     dual_set = MOI.get(dual_model, MOI.ConstraintSet(), dual_con)
-    if MOI.constant(dual_set) > 0
-        dual_func.constant = dual_func.constant - MOI.constant(dual_set)
-    elseif MOI.constant(dual_set) < 0
-        dual_func.constant = dual_func.constant + MOI.constant(dual_set)
-    end
+    dual_func.constant = dual_func.constant - MOI.constant(dual_set)
+    
     return Complement(
         false,
         primal_con,
