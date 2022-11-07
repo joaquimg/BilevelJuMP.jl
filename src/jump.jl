@@ -1261,17 +1261,6 @@ function set_iter_regularizations(
     end
 end
 
-function set_iter_regularizations(
-    m,
-    eps,
-    comp_idxs,
-    S::Type{MOI.GreaterThan{T}},
-) where {T}
-    for ctr_idx in comp_idxs
-        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.GreaterThan(-1 * eps))
-    end
-end
-
 function set_iter_primal_starts(solver)
     for var_idx in
         MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}

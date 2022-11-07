@@ -892,14 +892,16 @@ function add_complement(
                 MOI.LessThan{Float64}(0.0),
             )
             appush!(out_ctr, c1)
+            appush!(mode.comp_idx_in_sblm, c1)
             if comp.is_vec
-                prod_f2 = MOIU.operate(+, T, prod_f, eps)
+                prod_f2 = MOIU.operate(-, T, -1 * prod_f, eps)
                 c2 = MOIU.normalize_and_add_constraint(
                     m,
                     prod_f2,
-                    MOI.GreaterThan{Float64}(0.0),
+                    MOI.LessThan{Float64}(0.0),
                 )
                 appush!(out_ctr, c2)
+                appush!(mode.comp_idx_in_sblm, c2)
             end
         else
             add_function_to_cache(mode, prod_f)
@@ -950,14 +952,16 @@ function add_complement(
                 MOI.LessThan{T}(0.0),
             )
             appush!(out_ctr, c1)
+            appush!(mode.comp_idx_in_sblm, c1)
             if comp.is_vec # conic
-                new_f2 = MOIU.operate(+, T, new_f, eps)
+                new_f2 = MOIU.operate(-, T, -1 * new_f, eps)
                 c2 = MOIU.normalize_and_add_constraint(
                     m,
                     new_f2,
-                    MOI.GreaterThan{T}(0.0),
+                    MOI.LessThan{T}(0.0),
                 )
                 appush!(out_ctr, c2)
+                appush!(mode.comp_idx_in_sblm, c2)
             end
             if copy_names
                 nm = if comp.is_vec
@@ -974,7 +978,6 @@ function add_complement(
             add_function_to_cache(mode, new_f)
         end
     end
-    appush!(mode.comp_idx_in_sblm, out_ctr)
     return out_var, out_ctr
 end
 
