@@ -81,6 +81,8 @@ expansions
 Note that binary expansions require variables to have upper and lower bounds.
 Also, note that the `Gurobi` solver supports products, but requires [setting the
 `"NonConvex"` options](https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd).
+Since, in general, constraint qualification does not hold for the lower level 
+complementary slackness conditions, they may be regularized by enforcing an inequality with a small constant. For more challenging models, an additional solution procedure is implemented, where the regularization is reduced iteratively and the NLP solver is warmstarted with primal/dual values of the previous run. For more information and some recommendations see the examples provided in the docs. 
 
 Finally, one can use `BilevelJuMP.MixedMode(default = mode)` where `mode` is one
 of the other modes described above. With this method it is possible to set

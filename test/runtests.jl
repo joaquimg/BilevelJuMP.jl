@@ -78,6 +78,7 @@ include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
 include("jump_nlp.jl")
+include("iterative_product_mode.jl")
 
 @testset "BilevelJuMP tests" begin
     @testset "MibS" begin
@@ -370,6 +371,13 @@ include("jump_nlp.jl")
             # jump_fanzeres2017(solver.opt, solver.mode)
             jump_eq_price(solver.opt, solver.mode)
         end
+    end
+
+    @testset "Iterative Product Mode" begin
+        iterative_product_mode_01()
+        iterative_product_mode_02_1()
+        iterative_product_mode_02_2()
+        iterative_product_mode_02_3()
     end
 
     @testset "Lower QP" begin

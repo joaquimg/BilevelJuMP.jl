@@ -525,6 +525,7 @@ function JuMP.optimize!(
     bilevel_prob = "",
     solver_prob = "",
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+    show_iter_log = true,
 )
     if model.mode === nothing
         error(
@@ -653,6 +654,8 @@ function JuMP.optimize!(
     model.build_time = t1 - t0
 
     MOI.optimize!(solver)
+
+    iterative_optimize!(solver, mode, single_blm, model, t0, show_iter_log)
 
     model.solve_time = time() - t1
 
@@ -956,4 +959,339 @@ function MOI.set(::BilevelModel, ::MOI.UserCutCallback, func)
 end
 function MOI.set(::BilevelModel, ::MOI.HeuristicCallback, func)
     return error("Callbacks are not available in BilevelJuMP Models")
+end
+
+function iterative_optimize!(solver, mode, single_blm, model, t0, show_iter_log)
+    return nothing
+end
+
+function iterative_optimize!(
+    solver,
+    mode::ProductMode{T},
+    single_blm,
+    model::BilevelModel,
+    t0,
+    show_iter_log::Bool,
+) where {T}
+    if isempty(mode.iter_eps)
+        return nothing
+    end
+
+    termination_eps = mode.epsilon
+
+    if MOI.get(solver, MOI.PrimalStatus()) in
+       [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        for (attr, val) in mode.iter_attr
+            MOI.set(solver, MOI.RawOptimizerAttribute(attr), val)
+        end
+
+        if show_iter_log
+            println(
+                "Starting iterative BilevelJuMP.ProductMode(), printing log below: ",
+            )
+            print_iter_log(;
+                iteration = 0,
+                regularization = mode.epsilon,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+                upperline = true,
+                header = true,
+            )
+        end
+
+        if MOI.supports_incremental_interface(solver)
+            comp_idxs_in_solver = get_solver_comp_idxs(model, mode)
+            termination_eps = iterative_optimize_solver(
+                solver,
+                mode,
+                comp_idxs_in_solver,
+                t0,
+                show_iter_log,
+            )
+        else
+            termination_eps = iterative_optimize_copy(
+                single_blm,
+                solver,
+                mode,
+                model,
+                t0,
+                show_iter_log,
+            )
+        end
+
+    else
+        error(
+            "Unable to start iterative ProductMode() because initial solution is not feasible. You may want to retry with a larger initial regularizer. For more information take a look at the solver log. ",
+        )
+    end
+
+    if show_iter_log
+        print_iter_log(;
+            iteration = "Terminated",
+            regularization = termination_eps,
+            termination_status = MOI.get(solver, MOI.TerminationStatus()),
+            primal_status = MOI.get(solver, MOI.PrimalStatus()),
+            objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+            t = time() - t0,
+            upperline = true,
+            header = true,
+            bottomline = true,
+        )
+    end
+
+    return nothing
+end
+
+function get_solver_comp_idxs(
+    model::BilevelModel,
+    mode::ProductMode{T},
+) where {T}
+    return [
+        model.sblm_to_solver[comp_idx_in_sblm] for
+        comp_idx_in_sblm in mode.comp_idx_in_sblm
+    ]
+end
+
+function iterative_optimize_solver(
+    solver,
+    mode::ProductMode{T},
+    comp_idxs_in_solver::Vector{MathOptInterface.ConstraintIndex{F,S}},
+    t0,
+    show_iter_log,
+) where {T,F,S}
+    for (iter, eps) in enumerate(mode.iter_eps)
+        set_iter_primal_starts(solver)
+        set_iter_dual_starts(solver)
+        set_iter_regularizations(solver, eps, comp_idxs_in_solver, S)
+
+        MOI.optimize!(solver)
+
+        if show_iter_log
+            print_iter_log(;
+                iteration = "s$(iter)",
+                regularization = eps,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+            )
+        end
+
+        termination_eps = eps
+
+        if MOI.get(solver, MOI.PrimalStatus()) ∉
+           [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            return termination_eps
+        end
+    end
+
+    return mode.iter_eps[end]
+end
+
+function iterative_optimize_copy(
+    single_blm,
+    solver,
+    mode::ProductMode{T},
+    model::BilevelModel,
+    t0,
+    show_iter_log,
+) where {T}
+    for (iter, eps) in enumerate(mode.iter_eps)
+        set_iter_primal_starts(single_blm, solver, model.sblm_to_solver)
+        set_iter_dual_starts(single_blm, solver, model.sblm_to_solver)
+        set_iter_regularizations(single_blm, eps, mode.comp_idx_in_sblm)
+
+        MOI.empty!(solver)
+        model.sblm_to_solver = MOI.copy_to(solver, single_blm)
+
+        MOI.optimize!(solver)
+
+        if show_iter_log
+            print_iter_log(;
+                iteration = "c$(iter)",
+                regularization = eps,
+                termination_status = MOI.get(solver, MOI.TerminationStatus()),
+                primal_status = MOI.get(solver, MOI.PrimalStatus()),
+                objective_value = MOI.get(solver, MOI.ObjectiveValue()),
+                t = time() - t0,
+            )
+        end
+
+        termination_eps = eps
+
+        if MOI.get(solver, MOI.PrimalStatus()) ∉
+           [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+            return termination_eps
+        end
+    end
+
+    return mode.iter_eps[end]
+end
+
+function print_iter_log(;
+    iteration,
+    regularization,
+    termination_status,
+    primal_status,
+    objective_value,
+    t,
+    header = false,
+    bottomline = false,
+    upperline = false,
+)
+    colwidth = Dict(
+        :iteration => 11,
+        :regularization => 20,
+        :termination_status => 25,
+        :primal_status => 25,
+        :objective_value => 25,
+        :t => 15,
+    )
+
+    if upperline
+        println(repeat("-", sum(values(colwidth))))
+    end
+
+    if header
+        println(
+            lpad("Iteration", colwidth[:iteration]),
+            lpad("Regularization", colwidth[:regularization]),
+            lpad("Termination Status", colwidth[:termination_status]),
+            lpad("Primal Status", colwidth[:primal_status]),
+            lpad("Objective Value", colwidth[:objective_value]),
+            lpad("Time", colwidth[:t]),
+        )
+    end
+
+    if primal_status in [FEASIBLE_POINT, NEARLY_FEASIBLE_POINT]
+        println(
+            lpad(iteration, colwidth[:iteration]),
+            lpad(
+                Printf.@sprintf("%.5e", regularization),
+                colwidth[:regularization],
+            ),
+            lpad(termination_status, colwidth[:termination_status]),
+            lpad(primal_status, colwidth[:primal_status]),
+            lpad(
+                Printf.@sprintf("%.8e", objective_value),
+                colwidth[:objective_value],
+            ),
+            lpad(Printf.@sprintf("%.2f", t), colwidth[:t]),
+        )
+    else
+        println(
+            lpad(iteration, colwidth[:iteration]),
+            lpad(
+                Printf.@sprintf("%.5e", regularization),
+                colwidth[:regularization],
+            ),
+            lpad(termination_status, colwidth[:termination_status]),
+            lpad(primal_status, colwidth[:primal_status]),
+            lpad(repeat('-', 14), colwidth[:objective_value]),
+            lpad(Printf.@sprintf("%.2f", t), colwidth[:t]),
+        )
+    end
+
+    if bottomline
+        println(repeat("-", sum(values(colwidth))))
+    end
+end
+
+function set_iter_primal_starts(single_blm, solver, sblm_to_solver)
+    for var_idx in MOI.get(
+        single_blm,
+        MOI.ListOfVariableIndices(),
+    )::Vector{MOI.VariableIndex}
+        solver_var_idx = sblm_to_solver[var_idx]
+        MOI.set(
+            single_blm,
+            MOI.VariablePrimalStart(),
+            var_idx,
+            MOI.get(solver, MOI.VariablePrimal(), solver_var_idx),
+        )
+    end
+end
+
+function set_iter_dual_starts(single_blm, solver, sblm_to_solver)
+    for (F, S) in MOI.get(single_blm, MOI.ListOfConstraintTypesPresent())
+        set_iter_dual_start(single_blm, F, S, solver, sblm_to_solver)
+    end
+end
+
+function set_iter_dual_start(single_blm, F, S, solver, sblm_to_solver)
+    for ctr_idx in MOI.get(single_blm, MOI.ListOfConstraintIndices{F,S}())
+        solver_ctr_idx = sblm_to_solver[ctr_idx]
+        MOI.set(
+            single_blm,
+            MOI.ConstraintDualStart(),
+            ctr_idx,
+            MOI.get(solver, MOI.ConstraintDual(), solver_ctr_idx),
+        )
+    end
+end
+
+function set_iter_dual_start(
+    single_blm,
+    F::MOI.VectorAffineFunction,
+    S,
+    solver,
+    sblm_to_solver,
+)
+    return error(
+        "Vector valued functions not yet supported in iterative ProductMode()",
+    )
+end
+
+function set_iter_regularizations(m, eps, comp_idxs)
+    for ctr_idx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.LessThan(eps))
+    end
+end
+
+function set_iter_regularizations(
+    m,
+    eps,
+    comp_idxs,
+    S::Type{MOI.LessThan{T}},
+) where {T}
+    for ctr_idx in comp_idxs
+        MOI.set(m, MOI.ConstraintSet(), ctr_idx, MOI.LessThan(eps))
+    end
+end
+
+function set_iter_primal_starts(solver)
+    for var_idx in
+        MOI.get(solver, MOI.ListOfVariableIndices())::Vector{MOI.VariableIndex}
+        MOI.set(
+            solver,
+            MOI.VariablePrimalStart(),
+            var_idx,
+            MOI.get(solver, MOI.VariablePrimal(), var_idx),
+        )
+    end
+end
+
+function set_iter_dual_starts(solver)
+    for (F, S) in MOI.get(solver, MOI.ListOfConstraintTypesPresent())
+        set_iter_dual_start(F, S, solver)
+    end
+end
+
+function set_iter_dual_start(F, S, solver)
+    for ctr_idx in MOI.get(solver, MOI.ListOfConstraintIndices{F,S}())
+        MOI.set(
+            solver,
+            MOI.ConstraintDualStart(),
+            ctr_idx,
+            MOI.get(solver, MOI.ConstraintDual(), ctr_idx),
+        )
+    end
+end
+
+function set_iter_dual_start(F::MOI.VectorAffineFunction, S, solver)
+    return error(
+        "Vector valued functions not yet supported in iterative ProductMode()",
+    )
 end

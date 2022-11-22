@@ -83,11 +83,16 @@ end
 
 mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
     epsilon::T
+    iter_eps::Vector{T}
+    iter_attr::Any
     with_slack::Bool
+    comp_idx_in_sblm::Vector{CI}
     aggregation_group::Int # only useful in mixed mode
     function_cache::Union{Nothing,MOI.AbstractScalarFunction}
     function ProductMode(
         eps::T = zero(Float64);
+        iter_eps = T[],
+        iter_attr = Dict(),
         with_slack::Bool = false,
         aggregation_group = nothing,
     ) where {T<:Float64} # Real
@@ -96,7 +101,10 @@ mutable struct ProductMode{T} <: AbstractBilevelSolverMode{T}
         # positive integers point to their numbers
         return new{Float64}(
             eps,
+            iter_eps,
+            iter_attr,
             with_slack,
+            CI[],
             aggregation_group === nothing ? 0 : aggregation_group,
             nothing,
         )
@@ -174,6 +182,7 @@ function reset!(mode::FortunyAmatMcCarlMode)
 end
 function reset!(mode::ProductMode)
     mode.function_cache = nothing
+    mode.comp_idx_in_sblm = CI[]
     return nothing
 end
 function reset!(mode::MixedMode)
@@ -883,14 +892,16 @@ function add_complement(
                 MOI.LessThan{Float64}(0.0),
             )
             appush!(out_ctr, c1)
+            appush!(mode.comp_idx_in_sblm, c1)
             if comp.is_vec
-                prod_f2 = MOIU.operate(+, T, prod_f, eps)
+                prod_f2 = MOIU.operate(-, T, -1 * prod_f, eps)
                 c2 = MOIU.normalize_and_add_constraint(
                     m,
                     prod_f2,
-                    MOI.GreaterThan{Float64}(0.0),
+                    MOI.LessThan{Float64}(0.0),
                 )
                 appush!(out_ctr, c2)
+                appush!(mode.comp_idx_in_sblm, c2)
             end
         else
             add_function_to_cache(mode, prod_f)
@@ -941,14 +952,16 @@ function add_complement(
                 MOI.LessThan{T}(0.0),
             )
             appush!(out_ctr, c1)
+            appush!(mode.comp_idx_in_sblm, c1)
             if comp.is_vec # conic
-                new_f2 = MOIU.operate(+, T, new_f, eps)
+                new_f2 = MOIU.operate(-, T, -1 * new_f, eps)
                 c2 = MOIU.normalize_and_add_constraint(
                     m,
                     new_f2,
-                    MOI.GreaterThan{T}(0.0),
+                    MOI.LessThan{T}(0.0),
                 )
                 appush!(out_ctr, c2)
+                appush!(mode.comp_idx_in_sblm, c2)
             end
             if copy_names
                 nm = if comp.is_vec
