@@ -1204,7 +1204,7 @@ function set_iter_primal_starts(single_blm, solver, sblm_to_solver)
         single_blm,
         MOI.ListOfVariableIndices(),
     )::Vector{MOI.VariableIndex}
-        solver_var_idx = sblm_to_solver[VarIdx]
+        solver_var_idx = sblm_to_solver[var_idx]
         MOI.set(
             single_blm,
             MOI.VariablePrimalStart(),
