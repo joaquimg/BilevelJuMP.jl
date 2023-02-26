@@ -615,8 +615,8 @@ function JuMP.optimize!(
 
     if _has_nlp_data(model.upper)
         # NLP requires an upstream jump model
-        # probably is neough to have the fields:
-        # np_data (YES)
+        # probably is enough to have the fields:
+        # nlp_data (YES)
         # moi_backend (YES)
         nlp_model = Model()
         nlp_model.moi_backend = solver

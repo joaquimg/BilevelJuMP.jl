@@ -33,10 +33,18 @@ function Base.getproperty(m::LowerModel, s::Symbol)
     end
 end
 
-no_nlp() = error("Non-linear data must be passed to the Upper(.) model")
-no_nlp_lower() = error("NLconstraint(s) are not allowed in the lower level")
+no_nlp() = error("Nonlinear data must be passed to the Upper(.) model")
+function no_nlp_lower()
+    return error("Nonlinear data is not allowed in the lower level")
+end
+function no_nlp_lower_obj()
+    return error("Nonlinear objective is not allowed in the lower level")
+end
+function no_nlp_lower_con()
+    return error("Nonlinear constraints are not allowed in the lower level")
+end
 function no_nlp_lower_param()
-    return error("NLparameter(s) are not allowed in the lower level")
+    return error("Nonlinear parameters are not allowed in the lower level")
 end
 
 JuMP._init_NLP(m::UpperModel) = JuMP._init_NLP(mylevel_model(m))
@@ -80,7 +88,7 @@ function JuMP.set_objective(
     ::MOI.OptimizationSense,
     ::JuMP._NonlinearExprData,
 )
-    no_nlp_lower()
+    no_nlp_lower_obj()
     return
 end
 
