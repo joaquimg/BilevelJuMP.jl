@@ -1,19 +1,20 @@
 # name = "Alpine"
 # Alpine = "07493b3f-dabb-5b16-a503-4139292d7dd4"
 
-using Alpine, Ipopt, Cbc
+using Alpine, Ipopt, HiGHS
 
 const ALP_IPOPT = optimizer_with_attributes(Ipopt.Optimizer, MOI.Silent() => true, "sb" => "yes")
-const ALP_CBC = optimizer_with_attributes(Cbc.Optimizer, MOI.Silent() => true)
+const ALP_HIGHS = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
+# HiGHS
 
 # ALP_OPT = optimizer_with_attributes(Alpine.Optimizer, "nlp_solver" => ALP_IPOPT,
-# "mip_solver" => ALP_CBC,
+# "mip_solver" => ALP_HIGHS,
 # "loglevel" => 100)
 # ALP = ALP_OPT
 
 ALP_OPT = Alpine.Optimizer()
-MOI.set(ALP_OPT, MOI.RawParameter("nlp_solver"), ALP_IPOPT)
-MOI.set(ALP_OPT, MOI.RawParameter("mip_solver"), ALP_CBC)
+MOI.set(ALP_OPT, MOI.RawOptimizerAttribute("nlp_solver"), ALP_IPOPT)
+MOI.set(ALP_OPT, MOI.RawOptimizerAttribute("mip_solver"), ALP_HIGHS)
 ALP = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(ALP_OPT)
 
 push!(solvers_nlp_lowtol, (opt = ALP, mode = BilevelJuMP.ProductMode(1e-5)))

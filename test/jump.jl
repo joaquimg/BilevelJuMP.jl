@@ -2888,14 +2888,14 @@ By: LukasBarner
 Siddiqui S, Gabriel SA (2013). An sos1-based approach for solving mpecs with a natural gas market applica-
 tion. Networks and Spatial Economics 13(2):205–227.
 """
-function jump_qp_lower_min(config = Config())
+function jump_qp_lower_min(optimizer, config = Config())
     F = [1,2]
     c = Dict(1=>1, 2=>1)
     C = 1
     a = 13
     b = 1
 
-    model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode())
+    model = BilevelModel(()->optimizer, mode = BilevelJuMP.ProductMode())
 
     @variable(Lower(model), q[F] >= 0)
     @variable(Upper(model), Q >= 0)
@@ -2909,14 +2909,14 @@ function jump_qp_lower_min(config = Config())
     @test isapprox(value.(Q), 6; atol=1e-5)
     @test isapprox(value.(q).data, [2,2]; atol=1e-5)
 end
-function jump_qp_lower_max(config = Config())
+function jump_qp_lower_max(optimizer, config = Config())
     F = [1,2]
     c = Dict(1=>1, 2=>1)
     C = 1
     a = 13
     b = 1
 
-    model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode())
+    model = BilevelModel(()->optimizer, mode = BilevelJuMP.ProductMode())
 
     @variable(Lower(model), q[F] >= 0)
     @variable(Upper(model), Q >= 0)
