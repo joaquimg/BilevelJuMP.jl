@@ -28,7 +28,9 @@ end
 
 no_nlp() = error("Nonlinear data must be passed to the Upper(.) model")
 function no_nlp_lower()
-    return error("Nonlinear data (objective, constraints, parameters) is not allowed in the lower level")
+    return error(
+        "Nonlinear data (objective, constraints, parameters) is not allowed in the lower level",
+    )
 end
 
 JuMP._init_NLP(m::UpperModel) = JuMP._init_NLP(mylevel_model(m))
@@ -45,18 +47,15 @@ function MOI.Nonlinear.parse_expression(
     parent::Int,
 )
     if x.level == LOWER_ONLY
-        error("Variable $x is a LOWER_ONLY, and should not belong to upper level nonlinear data.")
+        error(
+            "Variable $x is a LOWER_ONLY, and should not belong to upper level nonlinear data.",
+        )
     end
     m = Upper(x.model)
     MOI.Nonlinear.parse_expression(
         model,
         expr,
-        replace_variables(
-            x,
-            x.model,
-            mylevel_var_list(m),
-            level(m),
-        ),
+        replace_variables(x, x.model, mylevel_var_list(m), level(m)),
         parent,
     )
     return
@@ -66,13 +65,25 @@ end
 ### Nonlinear objectives
 ###
 
-function JuMP.set_nonlinear_objective(model::UpperModel, sense::MOI.OptimizationSense, x)
+function JuMP.set_nonlinear_objective(
+    model::UpperModel,
+    sense::MOI.OptimizationSense,
+    x,
+)
     return JuMP.set_nonlinear_objective(mylevel_model(model), sense, x)
 end
-function JuMP.set_nonlinear_objective(model::LowerModel, sense::MOI.OptimizationSense, x)
+function JuMP.set_nonlinear_objective(
+    model::LowerModel,
+    sense::MOI.OptimizationSense,
+    x,
+)
     return no_nlp_lower()
 end
-function JuMP.set_nonlinear_objective(model::BilevelModel, sense::MOI.OptimizationSense, x)
+function JuMP.set_nonlinear_objective(
+    model::BilevelModel,
+    sense::MOI.OptimizationSense,
+    x,
+)
     return no_nlp()
 end
 
@@ -174,16 +185,27 @@ function JuMP.nonlinear_dual_start_value(model::LowerModel)
     return Float64[]
 end
 function JuMP.nonlinear_dual_start_value(model::BilevelModel)
-    return error("JuMP.nonlinear_dual_start_value should be called in a inner model.")
+    return error(
+        "JuMP.nonlinear_dual_start_value should be called in a inner model.",
+    )
 end
 
-function JuMP.set_nonlinear_dual_start_value(model::UpperModel, start::Vector{Float64})
+function JuMP.set_nonlinear_dual_start_value(
+    model::UpperModel,
+    start::Vector{Float64},
+)
     return JuMP.set_nonlinear_dual_start_value(mylevel_model(model), start)
 end
-function JuMP.set_nonlinear_dual_start_value(model::LowerModel, start::Vector{Float64})
+function JuMP.set_nonlinear_dual_start_value(
+    model::LowerModel,
+    start::Vector{Float64},
+)
     return no_nlp_lower()
 end
-function JuMP.set_nonlinear_dual_start_value(model::BilevelModel, start::Vector{Float64})
+function JuMP.set_nonlinear_dual_start_value(
+    model::BilevelModel,
+    start::Vector{Float64},
+)
     return no_nlp()
 end
 
@@ -193,10 +215,12 @@ end
 function JuMP.set_nonlinear_dual_start_value(model::LowerModel, start::Nothing)
     return no_nlp_lower()
 end
-function JuMP.set_nonlinear_dual_start_value(model::BilevelModel, start::Nothing)
+function JuMP.set_nonlinear_dual_start_value(
+    model::BilevelModel,
+    start::Nothing,
+)
     return no_nlp()
 end
-
 
 function JuMP.register(model::UpperModel, args...)
     return JuMP.register(mylevel_model(model), args...)
