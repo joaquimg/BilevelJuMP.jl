@@ -525,6 +525,7 @@ function JuMP.optimize!(
     bilevel_prob = "",
     solver_prob = "",
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
+    _differentiation_backend::MOI.Nonlinear.AbstractAutomaticDifferentiation = MOI.Nonlinear.SparseReverseMode(),
 )
     if model.mode === nothing
         error(
@@ -545,7 +546,7 @@ function JuMP.optimize!(
         # this first NLPBlock passing is fake,
         # this is just necessary to force the variables
         # order to remain the same
-        _load_nlp_data(model.upper)
+        _load_nlp_data(model.upper, _differentiation_backend)
     end
 
     upper = JuMP.backend(model.upper)
@@ -616,11 +617,11 @@ function JuMP.optimize!(
     if _has_nlp_data(model.upper)
         # NLP requires an upstream jump model
         # probably is enough to have the fields:
-        # nlp_data (YES)
+        # nlp_model (YES)
         # moi_backend (YES)
         nlp_model = Model()
         nlp_model.moi_backend = solver
-        nlp_model.nlp_data = model.upper.nlp_data
+        nlp_model.nlp_model = model.upper.nlp_model
         # TODO assert varible index ordering
         vars_upper_orig = MOI.get(model.upper, MOI.ListOfVariableIndices())
         vars_in_solver = MOI.get(nlp_model, MOI.ListOfVariableIndices())
@@ -636,7 +637,7 @@ function JuMP.optimize!(
                 # in case jump or MOI change something in copy/nlpblock
             end
         end
-        _load_nlp_data(nlp_model)
+        _load_nlp_data(nlp_model, _differentiation_backend)
     end
 
     if length(solver_prob) > 0
