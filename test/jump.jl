@@ -2550,16 +2550,19 @@ function jump_conic02(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(
         end
     end
 
+    unset_silent(model)
     optimize!(model)
+    set_silent(model)
 
-    primal_status(model)
-    termination_status(model)
-    value.(y)
+    @show primal_status(model)
+    @show termination_status(model)
+    @show value.(y)
 
     @test objective_value(model) ≈ 12  atol=1e-1
     @test value(x) ≈ 6 atol=1e-3
     @test value(y[2]) >= 0 - 1e-3
     @test value(y[1]) - value(y[2]) ≈ 2 atol=1e-3
+    return
 end
 function jump_conic03(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config(); bounds = false)
 
