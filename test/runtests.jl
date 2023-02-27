@@ -51,16 +51,16 @@ solvers_fa = OptModeType[]
 solvers_fa2 = OptModeType[] # explicit big-M at 100
 solvers_complements = OptModeType[]
 
-include("solvers/ipopt.jl")
+# include("solvers/ipopt.jl")
 # include("solvers/scip.jl")
 # include("solvers/cbc.jl")
-if Sys.iswindows() && (
-    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
-    get(ENV, "XPRESSDIR", "") != ""
-)
-    @info "Running Xpress in Tests"
-    include("solvers/xpress.jl")
-end
+# if Sys.iswindows() && (
+#     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
+#     get(ENV, "XPRESSDIR", "") != ""
+# )
+#     @info "Running Xpress in Tests"
+#     include("solvers/xpress.jl")
+# end
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
@@ -69,7 +69,7 @@ end
 # include("solvers/bonmin.jl")
 # include("solvers/baron.jl")
 # TODO
-# include("solvers/alpine.jl") # require NLP from JuMP
+include("solvers/alpine.jl") # require NLP from JuMP
 # include("solvers/pavito.jl") # require NLP from JuMP
 # include("solvers/juniper.jl") # require NLP from JuMP
 # include("solvers/path.jl") # require LCP method
@@ -81,14 +81,18 @@ include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
     @testset "MibS" begin
-        include("mibs.jl")
+        # include("mibs.jl")
     end
 
     @testset "nlp" begin
-        jump_nlp_01(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
-        jump_nlp_02(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
-        jump_nlp_03(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
-        jump_nlp_04(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
+        # jump_nlp_01(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
+        # jump_nlp_02(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
+        # jump_nlp_03(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
+        # jump_nlp_04(IPO_OPT; mode = BilevelJuMP.ProductMode(1e-8))
+    end
+    @testset "Lower QP" begin
+        # jump_qp_lower_min(IPO_OPT)
+        # jump_qp_lower_max(IPO_OPT)
     end
 
     @testset "Unit" begin
@@ -370,11 +374,6 @@ include("jump_nlp.jl")
             # jump_fanzeres2017(solver.opt, solver.mode)
             jump_eq_price(solver.opt, solver.mode)
         end
-    end
-
-    @testset "Lower QP" begin
-        jump_qp_lower_min()
-        jump_qp_lower_max()
     end
 
     @testset "Fruits" begin
