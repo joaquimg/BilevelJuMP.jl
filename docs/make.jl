@@ -4,6 +4,7 @@ using Literate
 using Test
 
 const _EXAMPLE_DIR = joinpath(@__DIR__, "src", "examples")
+const _TUTORIAL_DIR = joinpath(@__DIR__, "src", "tutorials")
 
 """
     _include_sandbox(filename)
@@ -53,6 +54,7 @@ function literate_directory(dir)
 end
 
 literate_directory(_EXAMPLE_DIR)
+literate_directory(_TUTORIAL_DIR)
 
 makedocs(;
     modules = [BilevelJuMP],
@@ -66,7 +68,11 @@ makedocs(;
     authors = "Joaquim Garcia",
     pages = [
         "Home" => "index.md",
-        "Manual" => "manual.md",
+        # "Manual" => "manual.md",
+        "Tutorials" => [
+            joinpath("tutorials", f) for
+            f in readdir(_TUTORIAL_DIR) if endswith(f, ".md")
+        ],
         "Examples" => [
             joinpath("examples", f) for
             f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")

@@ -1,9 +1,12 @@
 module BilevelJuMP
 
+import Reexport
+Reexport.@reexport using JuMP
+
 using MathOptInterface
 const MOI = MathOptInterface
 const MOIU = MathOptInterface.Utilities
-using JuMP
+
 using Dualization
 using LinearAlgebra
 

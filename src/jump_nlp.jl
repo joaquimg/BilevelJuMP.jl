@@ -1,8 +1,10 @@
 #=
     NLP
-    many unsafe operations here, because we are using JuMP non exposed
-    methods (the ones starting with "_")
-    - TODO: PIN JUMP
+    unsafe operations:
+    - JuMP._init_NLP
+    - JuMP._nlp_objective_function
+    These are JuMP non exposed methods (the ones starting with "_")
+    Might need to pin JuMP in the future
 =#
 
 function _has_nlp_data(model::JuMP.Model)

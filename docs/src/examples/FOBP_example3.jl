@@ -32,7 +32,6 @@
 
 using BilevelJuMP
 using Ipopt
-using JuMP
 using Test
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))

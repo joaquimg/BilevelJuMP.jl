@@ -1,4 +1,4 @@
-using JuMP, BilevelJuMP
+using BilevelJuMP
 using Random
 
 function bench_svr(dim, sample, optimizer, mode, seed = 1234)

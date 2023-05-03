@@ -3,7 +3,7 @@
 ## Example
 
 ```julia
-using JuMP, BilevelJuMP, Cbc
+using BilevelJuMP, Cbc
 
 model = BilevelModel(Cbc.Optimizer, mode = BilevelJuMP.SOS1Mode())
 

@@ -1,6 +1,6 @@
 using Random
 using Dates
-using JuMP, BilevelJuMP
+using BilevelJuMP
 
 using MathOptInterface
 MOI = MathOptInterface

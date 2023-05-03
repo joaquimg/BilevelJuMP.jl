@@ -21,7 +21,6 @@
 # ```
 
 using BilevelJuMP
-using JuMP
 using Test
 using MibS_jll
 

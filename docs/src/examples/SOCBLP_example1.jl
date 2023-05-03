@@ -29,7 +29,6 @@
 
 using BilevelJuMP
 using Ipopt
-using JuMP
 using Test
 
 model = BilevelModel(

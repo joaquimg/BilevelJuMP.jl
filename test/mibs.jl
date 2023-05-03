@@ -1,7 +1,6 @@
 module TestJuMPInput
 
 using BilevelJuMP
-using JuMP
 using Test
 using MibS_jll
 
@@ -17,7 +16,7 @@ function runtests()
 end
 
 function test_basic_example_1()
-    # using JuMP, BilevelJuMP, MibS_jll
+    # using BilevelJuMP, MibS_jll
     model = BilevelModel()
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)

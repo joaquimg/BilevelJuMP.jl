@@ -1,4 +1,4 @@
-using JuMP, BilevelJuMP
+using BilevelJuMP
 using Random
 
 function bench_toll(nodes, optimizer, mode, seed = 1234)

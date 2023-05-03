@@ -23,7 +23,7 @@ The currently available methods are based on re-writing the problem using the KK
 ## Example
 
 ```julia
-using JuMP, BilevelJuMP, SCIP
+using BilevelJuMP, SCIP
 
 model = BilevelModel(SCIP.Optimizer, mode = BilevelJuMP.SOS1Mode())
 
