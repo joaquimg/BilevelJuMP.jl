@@ -6,6 +6,13 @@ const MOIU = MathOptInterface.Utilities
 using JuMP
 using Dualization
 using LinearAlgebra
+using SparseArrays
+using PushVectors
+using ThreadSafeDicts
+using Dates
+
+const cache = ThreadSafeDict{Tuple{Int, Int, Bool, Bool}, Tuple{Vector{Int}, Vector{Int}, Bool}}()
+# cache for find_connected_rows_cols_cached, which can take several seconds in large problems
 
 export BilevelModel,
     Upper, Lower, UpperOnly, LowerOnly, DualOf, BilevelAffExpr, BilevelQuadExpr
@@ -24,5 +31,6 @@ include("jump_print.jl")
 include("jump_attributes.jl")
 include("jump_nlp.jl")
 include("mibs.jl")
+include("bilinear_linearization.jl")
 
 end

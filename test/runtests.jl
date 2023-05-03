@@ -78,6 +78,7 @@ include("moi.jl")
 include("jump.jl")
 include("jump_unit.jl")
 include("jump_nlp.jl")
+include("bilinear_linearization.jl")
 
 @testset "BilevelJuMP tests" begin
     @testset "MibS" begin
@@ -280,6 +281,27 @@ include("jump_nlp.jl")
             jump_01_sum_agg(solver.opt)
         end
     end
+    for solver in solvers_nlp_sd
+        jump_conejo2016(solver.opt, solver.mode)
+        jump_conejo2016_linearize(solver.opt, solver.mode, config)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode)
+    end
+    for solver in solvers_sos_quad_bin
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true) # fail travis on cbc
+        jump_conejo2016_linearize(solver.opt, solver.mode, config)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode) # fail travis on cbc
+    end
+    for solver in solvers_fa_quad_bin
+        jump_conejo2016(solver.opt, solver.mode, config, bounds = true)
+        jump_conejo2016_linearize(solver.opt, solver.mode, config)
+        # jump_fanzeres2017(solver.opt, solver.mode)
+        # jump_eq_price(solver.opt, solver.mode)  # fail with Gurobi b/c `Variable MathOptInterface.VariableIndex(17) has no upper bound``
+    end
+    for solver in solvers_sos
+        jump_conejo2016_linearize(solver.opt, solver.mode, config)
+    end
 
     @testset "Princeton Handbook Quadratic" begin
         for is_min in [true, false]
@@ -399,6 +421,17 @@ include("jump_nlp.jl")
             @time jump_conic02(solver.opt, solver.mode, config, bounds = true)
             @time jump_conic03(solver.opt, solver.mode, config, bounds = true)
             @time jump_conic04(solver.opt, solver.mode, config, bounds = true)
+        end
+    end
+
+    @testset "bilinear_linearization" begin
+        test_recursive_col_search()
+        test_find_connected_rows_cols()
+        test_get_coef_matrix_and_rhs_vec()
+        failing_conditions_non_empty_AB_N()
+        failing_conditions_empty_AB_N()
+        for solver in solvers_sos
+            simple_linearization(solver.opt, solver.mode)
         end
     end
 end

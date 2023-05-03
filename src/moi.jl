@@ -199,26 +199,26 @@ end
 
 function build_full_map!(
     mode,
-    upper_idxmap,
-    lower_idxmap,
-    lower_dual_idxmap,
-    lower_primal_dual_map,
+    upper_to_m_idxmap, 
+    lower_to_m_idxmap, 
+    lower_dual_idxmap, 
+    lower_primal_dual_map
 )
     return nothing
 end
 function build_full_map!(
     mode::FortunyAmatMcCarlMode,
-    upper_idxmap,
-    lower_idxmap,
-    lower_dual_idxmap,
-    lower_primal_dual_map,
+    upper_to_m_idxmap, 
+    lower_to_m_idxmap, 
+    lower_dual_idxmap, 
+    lower_primal_dual_map
 )
     _build_bound_map!(
         mode.cache,
-        upper_idxmap,
-        lower_idxmap,
-        lower_dual_idxmap,
-        lower_primal_dual_map,
+        upper_to_m_idxmap, 
+        lower_to_m_idxmap, 
+        lower_dual_idxmap, 
+        lower_primal_dual_map
     )
     return nothing
 end
@@ -240,17 +240,17 @@ function build_full_map!(
 end
 function _build_bound_map!(
     mode::ComplementBoundCache,
-    upper_idxmap,
-    lower_idxmap,
-    lower_dual_idxmap,
-    lower_primal_dual_map,
+    upper_to_m_idxmap, 
+    lower_to_m_idxmap, 
+    lower_dual_idxmap, 
+    lower_primal_dual_map
 )
     empty!(mode.map)
-    for (k, v) in mode.upper
-        mode.map[upper_idxmap[k]] = v
+    for (k,v) in mode.upper
+        mode.map[upper_to_m_idxmap[k]] = v
     end
-    for (k, v) in mode.lower
-        mode.map[lower_idxmap[k]] = v
+    for (k,v) in mode.lower
+        mode.map[lower_to_m_idxmap[k]] = v
     end
     for (k, v) in mode.ldual
         vec = lower_primal_dual_map.primal_con_dual_var[k]#[1] # TODO check this scalar
@@ -344,15 +344,15 @@ function set_with_zero(set)
     return MOI.copy(set)
 end
 
-function build_bilevel(
-    upper::MOI.ModelLike,
+
+function build_maps(
+    upper::MOI.ModelLike, 
     lower::MOI.ModelLike,
-    upper_to_lower_link::Dict{VI,VI},
-    upper_variables::Vector{VI},
+    upper_to_lower_var_indices::Dict{VI,VI}, 
+    lower_var_indices_of_upper_vars::Vector{VI},
     mode,
-    upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
-    copy_names::Bool = false,
-    pass_start::Bool = false,
+    upper_var_to_lower_ctr::Dict{VI,CI},
+    copy_names::Bool,
 )
 
     # Start with an empty problem
@@ -365,11 +365,12 @@ function build_bilevel(
     #=
         Create Lower DUAL level model
     =#
+    # TODO if linearizing bilinear terms the lower dual model must be built using standard form!
+    #   (for now requiring that lower model is in standard form)
     # dualize the second level
-    dual_problem = Dualization.dualize(
-        lower;
-        dual_names = DualNames("dual_", "dual_"),
-        variable_parameters = upper_variables,
+    dual_problem = Dualization.dualize(lower;
+        dual_names = Dualization.DualNames("dual_","dual_"),
+        variable_parameters = lower_var_indices_of_upper_vars,
         ignore_objective = ignore_dual_objective(mode),
         consider_constrained_variables = false,
     )
@@ -383,9 +384,9 @@ function build_bilevel(
     =#
 
     # keys are from src (upper), values are from dest (m)
-    upper_idxmap = MOIU.default_copy_to(m, upper)
+    upper_to_m_idxmap = MOIU.default_copy_to(m, upper)
     if copy_names
-        pass_names(m, upper, upper_idxmap)
+        pass_names(m, upper, upper_to_m_idxmap)
     end
 
     #=
@@ -394,35 +395,82 @@ function build_bilevel(
 
     handle_lower_objective_sense(lower)
 
-    # cache and delete lower objective
-    if !ignore_dual_objective(mode)
-        # get primal obj
-        type_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
-        @assert type_primal_obj !== nothing
-        lower_primal_obj =
-            MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
-        # deepcopy and delete dual obj
-        # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
-    end
-
-    # initialize map from (original) lower model to single model (m)
-    lower_idxmap = MOIU.IndexMap()
-    for (upper_key, lower_val) in upper_to_lower_link
-        lower_idxmap[lower_val] = upper_idxmap[upper_key]
+    # initialize map to lower level model
+    lower_to_m_idxmap = MOIU.IndexMap()
+    lower_to_upper_var_indices = Dict{MOI.VariableIndex, MOI.VariableIndex}()
+    for (upper_key, lower_val) in upper_to_lower_var_indices
+        lower_to_m_idxmap[lower_val] = upper_to_m_idxmap[upper_key]
+        lower_to_upper_var_indices[lower_val] = upper_key
     end
 
     # append the second level primal
-    append_to(m, lower, lower_idxmap; allow_single_bounds = true)
+    append_to(m, lower, lower_to_m_idxmap, allow_single_bounds = true)
     if copy_names
-        pass_names(m, lower, lower_idxmap)
+        pass_names(m, lower, lower_to_m_idxmap)
     end
 
     #=
         Pass Dual of Lower level model
     =#
 
-    # initialize map to lower level model
-    if !ignore_dual_objective(mode)
+    # initialize map from lower level dual variables to m indices
+    lower_dual_idxmap = MOIU.IndexMap()
+    # for lower level QP's there are lower dual variables that are tied to:
+    # lower primal variables
+    for (lower_primal_var_key, lower_dual_quad_slack_val) in lower_primal_dual_map.primal_var_dual_quad_slack
+        lower_dual_idxmap[lower_dual_quad_slack_val] = lower_to_m_idxmap[lower_primal_var_key]
+    end
+    # and to upper level variables (which are lower level parameters)
+    for (lower_primal_param_key, lower_dual_param_val) in lower_primal_dual_map.primal_parameter
+        lower_dual_idxmap[lower_dual_param_val] = lower_to_m_idxmap[lower_primal_param_key]
+    end
+    # lower level dual variable -> upper level variable
+    for (upper_var, lower_con) in upper_var_to_lower_ctr
+        var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
+        lower_dual_idxmap[var] = upper_to_m_idxmap[upper_var]
+    end
+
+    # append the second level dual
+    append_to(m, lower_dual, lower_dual_idxmap)
+    if copy_names
+        pass_names(m, lower_dual, lower_dual_idxmap)
+    end
+    return m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap
+end
+
+
+function build_bilevel(
+    upper::MOI.ModelLike, 
+    lower::MOI.ModelLike,
+    upper_to_lower_var_indices::Dict{VI,VI}, 
+    lower_var_indices_of_upper_vars::Vector{VI},
+    mode,
+    upper_var_to_lower_ctr::Dict{VI,CI} = Dict{VI,CI}();
+    copy_names::Bool = false,
+    pass_start::Bool = false,
+    linearize_bilinear_upper_terms::Bool = false,
+    check_linearization_conditions::Bool = true
+    )
+
+    m, lower_dual, lower_primal_dual_map, upper_to_m_idxmap, lower_to_m_idxmap, lower_dual_idxmap = build_maps(
+        upper, 
+        lower, 
+        upper_to_lower_var_indices, 
+        lower_var_indices_of_upper_vars, 
+        mode, 
+        upper_var_to_lower_ctr, 
+        copy_names
+    )
+
+    # cache and delete lower objective
+    if !BilevelJuMP.ignore_dual_objective(mode)
+        # get primal obj
+        type_primal_obj = MOI.get(lower, MOI.ObjectiveFunctionType())
+        @assert type_primal_obj !== nothing
+        lower_primal_obj = MOI.get(lower, MOI.ObjectiveFunction{type_primal_obj}())
+        # deepcopy and delete dual obj
+        # MOI.set(lower, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
+        
         # get dual obj
         tp_dual_obj = MOI.get(lower_dual, MOI.ObjectiveFunctionType())
         @assert tp_dual_obj !== nothing
@@ -432,31 +480,18 @@ function build_bilevel(
         # MOI.set(lower_dual, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), MOI.ScalarAffineFunction(MOI.ScalarAffineTerm{Float64}[], 0.0))
     end
 
-    # initialize map from *dual lower* model to single model (m)
-    lower_dual_idxmap = MOIU.IndexMap()
-    # 1) for QP's there are dual variable that are linked to:
-    # 1.1) primal variables
-    for (lower_primal_var_key, lower_dual_quad_slack_val) in
-        lower_primal_dual_map.primal_var_dual_quad_slack
-        lower_dual_idxmap[lower_dual_quad_slack_val] =
-            lower_idxmap[lower_primal_var_key]
-    end
-    # 1.2) and to upper level variable which are lower level parameters
-    for (lower_primal_param_key, lower_dual_param_val) in
-        lower_primal_dual_map.primal_parameter
-        lower_dual_idxmap[lower_dual_param_val] =
-            lower_idxmap[lower_primal_param_key]
-    end
-    # 2) Dual variables might appear in the upper level
-    for (upper_var, lower_con) in upper_var_to_lower_ctr
-        var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
-        lower_dual_idxmap[var] = upper_idxmap[upper_var]
-    end
+    #=
+        Check if Upper bilinear terms of the form Upper primal * Lower dual exist, and can be linearized
+    =#
+    # TODO implement for bilinear products in constraints (only checking upper objective so far)
 
-    # append the second level dual
-    append_to(m, lower_dual, lower_dual_idxmap)
-    if copy_names
-        pass_names(m, lower_dual, lower_dual_idxmap)
+    if linearize_bilinear_upper_terms 
+        main_linearization(
+            m, lower, upper, upper_var_to_lower_ctr, upper_to_lower_var_indices, 
+            lower_var_indices_of_upper_vars, lower_to_m_idxmap, upper_to_m_idxmap, 
+            lower_primal_dual_map, lower_dual_idxmap,
+            check_linearization_conditions
+        )
     end
 
     #=
@@ -466,10 +501,10 @@ function build_bilevel(
     # build map bound map for FortunyAmatMcCarlMode
     build_full_map!(
         mode,
-        upper_idxmap,
-        lower_idxmap,
-        lower_dual_idxmap,
-        lower_primal_dual_map,
+        upper_to_m_idxmap, 
+        lower_to_m_idxmap, 
+        lower_dual_idxmap, 
+        lower_primal_dual_map
     )
 
     if ignore_dual_objective(mode)
@@ -479,13 +514,13 @@ function build_bilevel(
             if !is_equality(comp.set_w_zero)
                 accept_vector_set(mode, comp)
                 add_complement(
-                    mode,
-                    m,
+                    mode, 
+                    m, 
                     comp,
-                    lower_idxmap,
-                    lower_dual_idxmap,
-                    copy_names,
-                    pass_start,
+                    lower_to_m_idxmap, 
+                    lower_dual_idxmap, 
+                    copy_names, 
+                    pass_start
                 )
             else
                 # feasible equality constraints always satisfy complementarity
@@ -493,21 +528,17 @@ function build_bilevel(
         end
     else # strong duality
         add_strong_duality(
-            mode,
-            m,
-            lower_primal_obj,
-            lower_dual_obj,
-            lower_idxmap,
-            lower_dual_idxmap,
+            mode, 
+            m, 
+            lower_primal_obj, 
+            lower_dual_obj, 
+            lower_to_m_idxmap, 
+            lower_dual_idxmap
         )
     end
     add_aggregate_constraints(m, mode, copy_names)
 
-    return m,
-    upper_idxmap,
-    lower_idxmap,
-    lower_primal_dual_map,
-    lower_dual_idxmap
+    return m, upper_to_m_idxmap, lower_to_m_idxmap, lower_primal_dual_map, lower_dual_idxmap
 end
 
 function add_strong_duality(
