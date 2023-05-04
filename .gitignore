@@ -5,6 +5,7 @@ deps/deps.jl
 Manifest.toml
 docs/build
 docs/src/examples/*.md
+docs/src/tutorials/*.md
 docs/src/.DS_Store
 .DS_Store
 gurobi.log

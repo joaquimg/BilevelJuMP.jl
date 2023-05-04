@@ -56,6 +56,14 @@ end
 literate_directory(_EXAMPLE_DIR)
 literate_directory(_TUTORIAL_DIR)
 
+_REPL_FILES = ["getting_started.md",]
+for file in _REPL_FILES
+    filename = joinpath(@__DIR__, "src", "tutorials", file)
+    content = read(filename, String)
+    content = replace(content, "@example" => "@repl")
+    write(filename, content)
+end
+
 makedocs(;
     modules = [BilevelJuMP],
     doctest = false,
