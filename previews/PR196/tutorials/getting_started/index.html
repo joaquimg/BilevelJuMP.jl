@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting started with BilevelJuMP · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../manual/">Manual</a></li><li><span class="tocitem">Tutorials</span><ul><li class="is-active"><a class="tocitem" href>Getting started with BilevelJuMP</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#A-first-example"><span>A first example</span></a></li><li><a class="tocitem" href="#Step-by-step"><span>Step-by-step</span></a></li><li><a class="tocitem" href="#Model-basics"><span>Model basics</span></a></li><li><a class="tocitem" href="#Solver-options"><span>Solver options</span></a></li></ul></li><li><a class="tocitem" href="../lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../conic_lower/">Conic Bilevel and Mixed Mode</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../../examples/DTMP_example1/">Example 8</a></li><li><a class="tocitem" href="../../examples/FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1</a></li><li><a class="tocitem" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Example 2</a></li><li><a class="tocitem" href="../../examples/FOBP_example3/">Foundations of Bilevel Programming: Example 3</a></li><li><a class="tocitem" href="../../examples/FOBP_example4/">Foundations of Bilevel Programming: Example 4</a></li><li><a class="tocitem" href="../../examples/FOBP_example5/">Foundations of Bilevel Programming: Example 5</a></li><li><a class="tocitem" href="../../examples/MibS_example1/">Example on MibS</a></li><li><a class="tocitem" href="../../examples/MibS_example2/">Example 2 on MibS</a></li><li><a class="tocitem" href="../../examples/PHTP_example1/">Foundations of Bilevel Programming: Example 6</a></li><li><a class="tocitem" href="../../examples/PHTP_example2/">Example 7</a></li><li><a class="tocitem" href="../../examples/SOCBLP_example1/">Example 10</a></li></ul></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Getting started with BilevelJuMP</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Getting started with BilevelJuMP</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Getting-started-with-BilevelJuMP"><a class="docs-heading-anchor" href="#Getting-started-with-BilevelJuMP">Getting started with BilevelJuMP</a><a id="Getting-started-with-BilevelJuMP-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-started-with-BilevelJuMP" title="Permalink"></a></h1><p>This is a quick introduction to modeling and solving bilevel optimization with BilevelJuMP.</p><p>If you are new to Julia, start with the <a href="https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_julia/">Getting started with Julia</a> from the JuMP documentation.</p><p>If you are new to JuMP, start with the <a href="https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_JuMP/">Getting started with JuMP</a> from the JuMP documentation.</p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>BilevelJuMP is a JuMP extension that be installed by using the built-in package manager.</p><pre><code class="language-julia">import Pkg
+Pkg.add(&quot;BilevelJuMP&quot;)</code></pre><p>That is all you need to model a bilevel optimization problem, but we want to also <em>solve</em> the problems. Therefore we need a solver, one such solver is <code>HiGHS.Optimizer</code>, which is provided by the <a href="https://github.com/jump-dev/HiGHS.jl">HiGHS.jl</a> package.</p><pre><code class="language-julia">import Pkg
+Pkg.add(&quot;HiGHS&quot;)</code></pre><h2 id="A-first-example"><a class="docs-heading-anchor" href="#A-first-example">A first example</a><a id="A-first-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-first-example" title="Permalink"></a></h2><p>We will solve the following bilevel optimization problem using BilevelJuMP and HiGHS. First we take a look in the entire code then we go through it step-by-step.</p><p>Here is the example from Dempe (2002), Chapter 3.2, Page 25:</p><p class="math-container">\[\begin{align*}
+    &amp;\min_{x, y} &amp;&amp; 3x + y \\
+    &amp;\st &amp;&amp; x \leq 5 \\
+    &amp;    &amp;&amp; y \leq 8 \\
+    &amp;    &amp;&amp; y \geq 0 \\
+    &amp;    &amp;&amp; x(y) \in
+     \begin{aligned}[t]
+        &amp;\argmin_{x} &amp;&amp; -x\\
+            &amp;\st &amp;&amp; x + y \leq 8\\
+            &amp;    &amp;&amp; 4x + y \geq 8\\
+            &amp;    &amp;&amp; 2x + y \leq 13\\
+            &amp;    &amp;&amp; 2x - 7y \leq 0
+     \end{aligned}
+\end{align*}\]</p><p>Here is the complete code to model, solve and query results from the example:</p><pre><code class="language-julia">using BilevelJuMP
+using HiGHS
+
+model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
+
+@variable(Lower(model), x)
+
+@variable(Upper(model), y)
+
+@objective(Upper(model), Min, 3x + y)
+
+@constraint(Upper(model), u1, x &lt;= 5)
+@constraint(Upper(model), u2, y &lt;= 8)
+@constraint(Upper(model), u3, y &gt;= 0)
+
+@objective(Lower(model), Min, -x)
+
+@constraint(Lower(model), l1, x +  y &lt;= 8)
+@constraint(Lower(model), l2, 4x +  y &gt;= 8)
+@constraint(Lower(model), l3, 2x +  y &lt;= 13)
+@constraint(Lower(model), l4, 2x - 7y &lt;= 0)
+
+print(model)
+
+optimize!(model)
+
+termination_status(model)
+
+primal_status(model)
+
+dual_status(Lower(model))
+
+dual_status(Upper(model))
+
+objective_value(model)
+
+objective_value(Lower(model))
+
+objective_value(Upper(model))
+
+value(x)
+
+value(y)
+
+dual(l1)
+
+dual(l2)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 49.75</pre><h2 id="Step-by-step"><a class="docs-heading-anchor" href="#Step-by-step">Step-by-step</a><a id="Step-by-step-1"></a><a class="docs-heading-anchor-permalink" href="#Step-by-step" title="Permalink"></a></h2><p>Once installed, BilevelJuMP can be loaded into julia:</p><pre><code class="language-julia">using BilevelJuMP</code></pre><p>Note that JuMP comes inside BilevelJuMP, and does not need to be installed separately. Once loaded, all JuMP functions are exported along with the BilevelJuMP additional functions.</p><p>We include a solver, in this case HiGHS:</p><pre><code class="language-julia">using HiGHS</code></pre><p>Just like regular JuMP has the <code>Model</code> function to initialize an optimization problem, BilevelJuMP has the <code>BilevelModel</code> function that takes a solver as a first positional argument, in this case <code>HiGHS.Optimizer</code> and a <code>mode</code> keyword argument that selects a bilevel solution method, in this case, <code>BilevelJuMP.FortunyAmatMcCarlMode</code>. Note that <code>BilevelJuMP.FortunyAmatMcCarlMode</code> takes two optional keyword arguments: <code>primal_big_M</code> and <code>dual_big_M</code> which have to be larger than the value of all primal and dual variavle sof the lower level respectively to guarantee that the solution is no eliminated.</p><pre><code class="language-julia">model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.FortunyAmatMcCarlMode{Float64}(false, 100.0, 100.0, BilevelJuMP.ComplementBoundCache(Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.ConstraintIndex, BilevelJuMP.BilevelConstraintInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}()))
+Solver name: HiGHS</pre><p>For more on <code>mode</code>s and solutions methods, see XXX.</p><p>We can proceed, as usual in JuMP models and incrementally build our bilevel problem. We use the same macros as JuMP.</p><p>Variables are modeled using the <code>@variable</code> macro, but in bilevel problems we must define which level the variable is decided, then we use the <code>Upper</code> and <code>Lower</code> constructors to direct variable to the proper levels:</p><pre><code class="language-julia">@variable(Lower(model), x)
+
+@variable(Upper(model), y)</code></pre><p class="math-container">\[ y \]</p><p>The same goes for objective that are modeled with the <code>@objective</code> macro:</p><pre><code class="language-julia">@objective(Upper(model), Min, 3x + y)</code></pre><p class="math-container">\[ 3 x + y \]</p><p>and constraints that are modeled with the <code>@objective</code> macro:</p><pre><code class="language-julia">@constraint(Upper(model), u1, x &lt;= 5)
+@constraint(Upper(model), u2, y &lt;= 8)
+@constraint(Upper(model), u3, y &gt;= 0)</code></pre><p>u3 : $ y \geq 0.0 $</p><p>repeat for the lower level:</p><pre><code class="language-julia">@objective(Lower(model), Min, -x)
+
+@constraint(Lower(model), l1, x +  y &lt;= 8)
+@constraint(Lower(model), l2, 4x +  y &gt;= 8)
+@constraint(Lower(model), l3, 2x +  y &lt;= 13)
+@constraint(Lower(model), l4, 2x - 7y &lt;= 0)</code></pre><p>l4 : $ 2 x - 7 y \leq 0.0 $</p><p>display the model</p><pre><code class="language-julia">print(model)</code></pre><pre class="documenter-example-output">Upper level:
+Min 3 x + y
+Subject to
+ u3 : y ≥ 0.0
+ u1 : x ≤ 5.0
+ u2 : y ≤ 8.0
+
+Lower level:
+Min -x
+Subject to
+ l2 : 4 x + y ≥ 8.0
+ l1 : x + y ≤ 8.0
+ l3 : 2 x + y ≤ 13.0
+ l4 : 2 x - 7 y ≤ 0.0</pre><p>solve the bilevel problem, which will combine a <code>mode</code> (in this case <code>FortunyAmatMcCarlMode</code>) and a solver (in this case <code>HiGHS</code>):</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
+Copyright (c) 2023 HiGHS under MIT licence terms
+WARNING: Row      0 has         infeasibility of           1 from [lower, value, upper] = [             -1;               0;              -1]
+WARNING: Row      2 has         infeasibility of           8 from [lower, value, upper] = [              8;               0;             inf]
+Solution has               num          max          sum
+Col     infeasibilities      0            0            0
+Integer infeasibilities      0            0            0
+Row     infeasibilities      4           13           30
+Row     residuals            0            0            0
+Attempting to find feasible solution of continuous variables for user-supplied values of discrete variables
+Presolving model
+13 rows, 6 cols, 24 nonzeros
+Problem status detected on presolve: Infeasible
+Model   status      : Infeasible
+Objective value     :  0.0000000000e+00
+HiGHS run time      :          0.00
+Presolving model
+13 rows, 10 cols, 32 nonzeros
+13 rows, 10 cols, 32 nonzeros
+
+Solving MIP model with:
+   13 rows
+   10 cols (4 binary, 0 integer, 0 implied int., 6 continuous)
+   32 nonzeros
+
+        Nodes      |    B&amp;B Tree     |            Objective Bounds              |  Dynamic Constraints |       Work
+     Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
+
+         0       0         0   0.00%   0               inf                  inf        0      0      0         0     0.0s
+ R       0       0         0   0.00%   6.133333333     6.133333333        0.00%        0      0      0         5     0.0s
+
+Solving report
+  Status            Optimal
+  Primal bound      6.13333333333
+  Dual bound        6.13333333333
+  Gap               0% (tolerance: 0.01%)
+  Solution status   feasible
+                    6.13333333333 (objective)
+                    0 (bound viol.)
+                    0 (int. viol.)
+                    0 (row viol.)
+  Timing            0.00 (total)
+                    0.00 (presolve)
+                    0.00 (postsolve)
+  Nodes             1
+  LP iterations     6 (total)
+                    0 (strong br.)
+                    0 (separation)
+                    0 (heuristics)</pre><p>check the <code>termination_status</code> to understand why the solver stopped:</p><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">OPTIMAL::TerminationStatusCode = 1</pre><p>check the <code>primal_status</code> to check if there is a feasible solution available:</p><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><p>check the <code>dual_status</code> to check if there is a dual solution available for the lower level:</p><pre><code class="language-julia">dual_status(Lower(model))</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><p>do the same for the upper level:</p><pre><code class="language-julia">dual_status(Upper(model))</code></pre><pre class="documenter-example-output">NO_SOLUTION::ResultStatusCode = 0</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>Most method will not support upper level duals.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>JuMP&#39;s <code>dual_status</code> is not available to <code>BilevelModel</code>&#39;s although you can query <code>dual_status</code> of each level.</p></div></div><p>Query the objecive value of the bilevel model</p><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">6.133333333333333</pre><p>Query the objective value of the lower level and the upper level</p><pre><code class="language-julia">objective_value(Lower(model))
+
+objective_value(Upper(model))</code></pre><pre class="documenter-example-output">6.133333333333333</pre><p>Obtain primal solutions:</p><pre><code class="language-julia">value(x)
+
+value(y)</code></pre><pre class="documenter-example-output">0.5333333333333332</pre><p>and dual solutions:</p><pre><code class="language-julia">dual(l1)
+
+dual(l2)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 49.75</pre><h2 id="Model-basics"><a class="docs-heading-anchor" href="#Model-basics">Model basics</a><a id="Model-basics-1"></a><a class="docs-heading-anchor-permalink" href="#Model-basics" title="Permalink"></a></h2><p>We created a BilevelModel passing the optimizer and mode and initialization:</p><pre><code class="language-julia">model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.FortunyAmatMcCarlMode{Float64}(false, 100.0, 100.0, BilevelJuMP.ComplementBoundCache(Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.ConstraintIndex, BilevelJuMP.BilevelConstraintInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}()))
+Solver name: HiGHS</pre><p>We could do piece by piece</p><pre><code class="language-julia">model = BilevelModel()
+
+set_optimizer(model, HiGHS.Optimizer)
+
+BilevelJuMP.set_mode(model,
+    BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.FortunyAmatMcCarlMode{Float64}(false, 100.0, 100.0, BilevelJuMP.ComplementBoundCache(Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}(), Dict{MathOptInterface.ConstraintIndex, BilevelJuMP.BilevelConstraintInfo}(), Dict{MathOptInterface.VariableIndex, BilevelJuMP.BilevelVariableInfo}()))
+Solver name: HiGHS</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Both <code>BilevelModel</code> and <code>set_optimizer</code> take a optimizer <em>constructor</em>, in this case <code>HiGHS.Optimizer</code>. Note that <code>HiGHS.Optimizer()</code> returns an instance of the <code>HiGHS.Optimizer</code>. Hence, and alternative way to pass this solver would be: <code>set_optimizer(model, () -&gt; HiGHS.Optimizer())</code>.</p><p><code>() -&gt; HiGHS.Optimizer()</code> is a an anonymous function that returns an instance of the <code>HiGHS.Optimizer</code>.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>There is no equivalent of JuMP&#39;s <code>direct_model</code> in BilevelJuMP.</p></div></div><h2 id="Solver-options"><a class="docs-heading-anchor" href="#Solver-options">Solver options</a><a id="Solver-options-1"></a><a class="docs-heading-anchor-permalink" href="#Solver-options" title="Permalink"></a></h2><p>it is also possible to pass optimizers with attributes:</p><pre><code class="language-julia">model = BilevelModel(
+    optimizer_with_attributes(HiGHS.Optimizer, &quot;output_flag&quot; =&gt; false))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.SOS1Mode{Float64}()
+Solver name: HiGHS</pre><p>or set such attributes separately:</p><pre><code class="language-julia">model = BilevelModel(HiGHS.Optimizer)
+
+set_attribute(model, &quot;output_flag&quot;, false)
+
+get_attribute(model, &quot;output_flag&quot;)</code></pre><pre class="documenter-example-output">false</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../lower_duals/">Dual variables of the lower level »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 4 May 2023 05:08">Thursday 4 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
