@@ -77,10 +77,10 @@ model = BilevelModel(
 
 @objective(Lower(model), Min, -x)
 
-@constraints(Lower(model), l1, x +  y <= 8)
-@constraints(Lower(model), l2, 4x +  y >= 8)
-@constraints(Lower(model), l3, 2x +  y <= 13)
-@constraints(Lower(model), l4, 2x - 7y <= 0)
+@constraint(Lower(model), l1, x +  y <= 8)
+@constraint(Lower(model), l2, 4x +  y >= 8)
+@constraint(Lower(model), l3, 2x +  y <= 13)
+@constraint(Lower(model), l4, 2x - 7y <= 0)
 
 print(model)
 
@@ -90,7 +90,15 @@ termination_status(model)
 
 primal_status(model)
 
+dual_status(Lower(model))
+
+dual_status(Upper(model))
+
 objective_value(model)
+
+objective_value(Lower(model))
+
+objective_value(Upper(model))
 
 value(x)
 
@@ -155,7 +163,106 @@ model = BilevelModel(
 
 @objective(Lower(model), Min, -x)
 
-@constraints(Lower(model), l1, x +  y <= 8)
-@constraints(Lower(model), l2, 4x +  y >= 8)
-@constraints(Lower(model), l3, 2x +  y <= 13)
-@constraints(Lower(model), l4, 2x - 7y <= 0)
+@constraint(Lower(model), l1, x +  y <= 8)
+@constraint(Lower(model), l2, 4x +  y >= 8)
+@constraint(Lower(model), l3, 2x +  y <= 13)
+@constraint(Lower(model), l4, 2x - 7y <= 0)
+
+# display the model
+
+print(model)
+
+# solve the bilevel problem, which will combine a `mode` (in this case 
+# `FortunyAmatMcCarlMode`) and a solver (in this case `HiGHS`):
+
+optimize!(model)
+
+# check the `termination_status` to understand why the solver stopped:
+
+termination_status(model)
+
+# check the `primal_status` to check if there is a feasible solution available:
+
+primal_status(model)
+
+# check the `dual_status` to check if there is a dual solution available for the 
+# lower level:
+
+dual_status(Lower(model))
+
+# do the same for the upper level:
+
+dual_status(Upper(model))
+
+# !!! info
+#     Most method will not support upper level duals.
+
+# !!! info
+#     JuMP's `dual_status` is not available to `BilevelModel`'s although
+#     you can query `dual_status` of each level.
+
+# Query the objecive value of the bilevel model
+
+objective_value(model)
+
+# Query the objective value of the lower level and the upper level
+
+objective_value(Lower(model))
+
+objective_value(Upper(model))
+
+# Obtain primal solutions:
+
+value(x)
+
+value(y)
+
+# and dual solutions:
+
+dual(l1)
+
+dual(l2)
+
+# ## Model basics
+
+# We created a BilevelModel passing the optimizer and mode and initialization:
+
+model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
+
+# We could do piece by piece
+
+model = BilevelModel()
+
+set_optimizer(model, HiGHS.Optimizer)
+
+BilevelJuMP.set_mode(model,
+    BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
+
+# !!! warning
+#     Both `BilevelModel` and `set_optimizer` take a optimizer *constructor*,
+#     in this case `HiGHS.Optimizer`. Note that `HiGHS.Optimizer()` returns an
+#     instance of the `HiGHS.Optimizer`. Hence, and alternative way to pass this
+#     solver would be: `set_optimizer(model, () -> HiGHS.Optimizer())`.
+#
+#     `() -> HiGHS.Optimizer()` is a an anonymous function that returns an
+#     instance of the `HiGHS.Optimizer`.
+
+# !!! info
+#     There is no equivalent of JuMP's `direct_model` in BilevelJuMP.
+
+# ## Solver options
+
+# it is also possible to pass optimizers with attributes:
+
+model = BilevelModel(
+    optimizer_with_attributes(HiGHS.Optimizer, "output_flag" => false))
+
+# or set such attributes separately:
+
+model = BilevelModel(HiGHS.Optimizer)
+
+set_attribute(model, "output_flag", false)
+
+get_attribute(model, "output_flag")

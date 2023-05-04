@@ -68,15 +68,17 @@ makedocs(;
     authors = "Joaquim Garcia",
     pages = [
         "Home" => "index.md",
-        # "Manual" => "manual.md",
-        "Tutorials" => [
-            joinpath("tutorials", f) for
-            f in readdir(_TUTORIAL_DIR) if endswith(f, ".md")
-        ],
+        "Manual" => "manual.md",
+        "Tutorials" => joinpath.("tutorials", [
+            "getting_started.md",
+            "lower_duals.md",
+            "conic_lower.md",
+        ]),
         "Examples" => [
             joinpath("examples", f) for
             f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
         ],
+        "Troubleshooting" => "troubleshooting.md"
     ],
 )
 

@@ -156,7 +156,7 @@ not work properly with Cbc.
 
 * For anonymous variables with `DualOf` use:
 ```julia
-@variable(Upper(model, variable_type = DualOf(my_lower_constraint))
+@variable(Upper(model, variable_type = DualOf(my_lower_constraint)))
 ```
 
 * Nonconvex/nonconcave/nonpsd objective/constraint error in a MIP solver.

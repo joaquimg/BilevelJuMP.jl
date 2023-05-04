@@ -68,3 +68,27 @@ function JuMP.show_objective_function_summary(io::IO, model::BilevelModel)
     JuMP.show_objective_function_summary(io, Upper(model))
     return JuMP.show_objective_function_summary(io, Lower(model))
 end
+
+function Base.print(model::InnerBilevelModel)
+    return print(mylevel_model(model))
+end
+
+function Base.print(io::IO, model::InnerBilevelModel)
+    return print(io, mylevel_model(model))
+end
+
+function Base.print(model::BilevelModel)
+    println("Upper level:")
+    print(Upper(model))
+    println("\nLower level:")
+    print(Lower(model))
+    return
+end
+
+function Base.print(io::IO, model::BilevelModel)
+    println(io, "Upper level:")
+    print(io, Upper(model))
+    println(io, "\nLower level:")
+    print(io, Lower(model))
+    return
+end
