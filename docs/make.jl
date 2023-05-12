@@ -80,6 +80,7 @@ makedocs(;
         # "Manual" => "manual.md",
         "Tutorials" => joinpath.("tutorials", [
             "getting_started.md",
+            "modes.md",
             "lower_duals.md",
             "conic_lower.md",
             "quad_to_bin.md",
