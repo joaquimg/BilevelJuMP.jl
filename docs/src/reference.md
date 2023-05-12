@@ -35,9 +35,10 @@ UPPER_ONLY
 DUAL_OF_LOWER
 ```
 
-## Basic functions
+## Structs
 
 ```@docs
+BilevelVariableRef
 BilevelAffExpr
 BilevelQuadExpr
 ```

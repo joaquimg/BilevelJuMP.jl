@@ -16,7 +16,18 @@ in_lower(v::BilevelVariableRef) = in_lower(mylevel(v))
 upper_ref(v::BilevelVariableRef) = v.model.var_upper[v.idx]
 lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
 
+"""
+    BilevelVariableRef
+
+Alias for ``GenericAffExpr{Float64,BilevelVariableRef}``.
+"""
 const BilevelAffExpr = GenericAffExpr{Float64,BilevelVariableRef}
+
+"""
+    BilevelQuadExpr
+
+Alias for ``GenericQuadExpr{Float64,BilevelVariableRef}``.
+"""
 const BilevelQuadExpr = GenericQuadExpr{Float64,BilevelVariableRef}
 
 function jump_var_ref(v::BilevelVariableRef)

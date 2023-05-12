@@ -2,6 +2,49 @@ abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
 Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
 
+"""
+    BilevelModel()
+
+Create an empty BilevelModel with default settings,
+no ``solver`` and no solve ``mode``.
+
+## Example
+
+```jldoctest
+julia> model = BilevelModel()
+```
+
+    BilevelModel(solver::Function; mode = BilevelJuMP.SOS1Mode(), add_bridges::Bool = true)
+
+Create a BilevelModel with the given ``solver`` and solve ``mode``.
+
+* ``solver``: is a functions that takes no arguments and returns a JuMP solver object.
+* ``mode``: is a solve mode object that defines how the model is solved.
+* ``add_bridges``: if ``true`` (default) then bridges are added to the model.
+  If ``false`` then bridges are not added and the model is not modified.
+
+## Example
+
+```jldoctest
+julia> model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+which is equivalent to
+```jldoctest
+julia> model = BilevelModel(
+    ()->HiGHS.Optimizer(),
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+and equivalent to
+```jldoctest
+julia> model = BilevelModel()
+
+julia> BilevelJuMP.set_solver(model, HiGHS.Optimizer)
+
+julia> BilevelJuMP.set_mode(model, BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+"""
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     # JuMP models that hold data for each of the two levels
@@ -183,11 +226,39 @@ abstract type InnerBilevelModel <: AbstractBilevelModel end
 struct UpperModel <: InnerBilevelModel
     m::BilevelModel
 end
+
+"""
+    Upper(model::BilevelModel)
+
+Create a reference to the upper level of a bilevel model.
+
+# Example
+```jldoctest
+julia> model = BilevelModel();
+
+julia> @variable(Upper(model), x >= 0)
+```
+"""
 Upper(m::BilevelModel) = UpperModel(m)
+
 struct LowerModel <: InnerBilevelModel
     m::BilevelModel
 end
+
+"""
+    Lower(model::BilevelModel)
+
+Create a reference to the lower level of a bilevel model.
+
+# Example
+```jldoctest
+julia> model = BilevelModel();
+
+julia> @variable(Lower(model), x >= 0)
+```
+"""
 Lower(m::BilevelModel) = LowerModel(m)
+
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
@@ -221,15 +292,28 @@ function set_link!(
     return nothing
 end
 
-# Models to deal with variables that are not exchanged between models
 abstract type SingleBilevelModel <: AbstractBilevelModel end
 struct UpperOnlyModel <: SingleBilevelModel
     m::BilevelModel
 end
+
+"""
+    UpperOnly(model::BilevelModel)
+
+Create a special reference to the upper level of a bilevel model.
+Variables created with this reference will not be shared with the lower level.
+"""
 UpperOnly(m::BilevelModel) = UpperOnlyModel(m)
 struct LowerOnlyModel <: SingleBilevelModel
     m::BilevelModel
 end
+
+"""
+    LowerOnly(model::BilevelModel)
+
+Create a special reference to the lower level of a bilevel model.
+Variables created with this reference will not be shared with the upper level.
+"""
 LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
 
 bilevel_model(m::SingleBilevelModel) = m.m
@@ -263,6 +347,12 @@ end
 #### Model ####
 
 # Variables
+
+"""
+    BilevelVariableRef
+
+Holds a reference to a variable in a bilevel model.
+"""
 struct BilevelVariableRef <: JuMP.AbstractVariableRef
     model::BilevelModel # `model` owning the variable
     idx::Int       # Index in `model.variables`

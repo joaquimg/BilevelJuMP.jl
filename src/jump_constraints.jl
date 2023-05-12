@@ -240,6 +240,25 @@ function JuMP.num_constraints(model::BilevelModel, f, s)
            JuMP.num_constraints(Lower(model), f, s)
 end
 
+"""
+    DualOf(constraint::ConstraintRef)
+
+Get the dual variable associated with a constraint. This is only valid
+for constraints in the upper level of a bilevel model.
+
+## Examples
+
+```jldoctest
+julia> m = BilevelModel();
+
+julia> @variable(Lower(m), x >= 0);
+
+julia> @constraint(Lower(m), c, x <= 1);
+
+julia> @variable(Upper(m), y, DualOf(c));
+```
+"""
+
 struct DualOf
     ci::BilevelConstraintRef
 end
