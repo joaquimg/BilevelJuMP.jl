@@ -28,11 +28,11 @@ In BileveJuMP focus on the following bilevel problem form:
 ```math
 \begin{aligned}
     &\min_{x, \textbf{y}, z} && f_0(x, \textbf{y}, z) \\
-    &\st && f_i(x, \textbf{y}, z) \in \mathcal{S}_i, \quad i = 1 \ldots k, \\
+    &\textit{s.t.} && f_i(x, \textbf{y}, z) \in \mathcal{S}_i, \quad i = 1 \ldots k, \\
         &&& x(z), \textbf{y}(z) \in
      \begin{aligned}[t]
-        &\argmin_{x, \textbf{y}} && \frac{1}{2}{[x, z]}^{\top} Q {[x, z]} + {a_0}^{\top} x+ {d_0}^{\top} z + b_0\\
-            &\st && A_i x + D_i z + b_i \in \mathcal{C}_i \quad : \ y_i \quad, \quad i = 1 \ldots m,
+        &\arg\min_{x, \textbf{y}} && \frac{1}{2}{[x, z]}^{\top} Q {[x, z]} + {a_0}^{\top} x+ {d_0}^{\top} z + b_0\\
+            &\textit{s.t.} && A_i x + D_i z + b_i \in \mathcal{C}_i \quad : \ y_i \quad, \quad i = 1 \ldots m,
      \end{aligned}
 \end{aligned}
 ```
@@ -40,7 +40,7 @@ In BileveJuMP focus on the following bilevel problem form:
 where ``z \in {\mathbb{R}^l}`` and ``x \in {\mathbb{R}^n}`` are, respectively, from upper and lower-level primal decision variables. Vectors of lower level dual decision variables are represented individually, by ``y_1 \in \mathbb{R}^{p_1}, \ldots, y_m \in \mathbb{R}^{p_m}``, or jointly, by the ``m``-tuple ``\textbf{y} = (y_1, \ldots, y_m)``.
 The square brackets ``[\cdot, \cdot]`` represent the stacking of two vectors or scalars. Thus,
 ``[x,z]`` is a ``(n+l)``--vector with the elements of ``x`` and ``z`` stacked. The numbers of constraints in the upper and lower problems are given by ``k`` and ``m``, respectively. ``Q``, ``a_i``, ``d_i``, ``b_i``, ``A_i``, ``D_i`` are matrices (upper case) and vectors (lower case) of constants of the lower level problem and ``\mathcal{C}_i \subset \mathbb{R}^{p_i}`` are convex conic sets. The functions ``f_i`` can be linear, quadratic, or non-linear. The sets ``\mathcal{S}_i\in \mathbb{R}^{q_i}`` can be convex cones, as in the lower level, but can also represent other sets, such as the sets of integers or binary variables.
-We use the ``function-in-set'' notation following the MOI definition of mathematical optimization problems.
+We use the "function-in-set" notation following the MOI definition of mathematical optimization problems.
 As in traditional bilevel programming, ``z`` is decided in the upper level and passed to the lower level as a parameter and ``x`` might be seen as an upper-level variable constrained to be an optimal solution of the lower level.
 Also, we only consider optimistic bilevel problems. In short, the solution of the lower level will be the one that optimizes the upper level in case of degeneracy.
 
