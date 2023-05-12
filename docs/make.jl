@@ -81,6 +81,7 @@ makedocs(;
             "getting_started.md",
             "lower_duals.md",
             "conic_lower.md",
+            "quad_to_bin.md",
         ]),
         "Examples" => [
             joinpath("examples", f) for
