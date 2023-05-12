@@ -42,13 +42,13 @@
 # ```math
 # \begin{align*}
 #     &\min_{x, y} && 3x + y \\
-#     &\st && x \leq 5 \\
+#     &\textit{s.t.} && x \leq 5 \\
 #     &    && y \leq 8 \\
 #     &    && y \geq 0 \\
 #     &    && x(y) \in
 #      \begin{aligned}[t]
-#         &\argmin_{x} && -x\\
-#             &\st && x + y \leq 8\\
+#         &\arg\min_{x} && -x\\
+#             &\textit{s.t.} && x + y \leq 8\\
 #             &    && 4x + y \geq 8\\
 #             &    && 2x + y \leq 13\\
 #             &    && 2x - 7y \leq 0

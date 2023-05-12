@@ -1,4 +1,4 @@
-### Using QuadraticToBinary
+# # Using QuadraticToBinary
 
 # [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl) is a
 # package that converts quadratic terms in constraints and objective. To do so

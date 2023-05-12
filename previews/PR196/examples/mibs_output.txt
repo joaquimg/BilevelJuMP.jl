@@ -17,7 +17,7 @@ Build Date: Jun 18 2021
 ==  Distributed under the Eclipse Public License 1.0 
 ==  Version: 1.5
 ==  Build Date: Dec  4 2021
-Alps0030I Data file: /tmp/jl_bjIHHD/model.mps
+Alps0030I Data file: /tmp/jl_hxWV9k/model.mps
 Coin0001I At line 1 NAME
 Coin0001I At line 2 ROWS
 Coin0001I At line 10 COLUMNS
@@ -26,7 +26,7 @@ Coin0001I At line 34 RANGES
 Coin0001I At line 35 BOUNDS
 Coin0001I At line 39 ENDATA
 Coin0002I Problem no_name has 6 rows, 3 columns and 12 elements
-LL Data File: /tmp/jl_bjIHHD/model.aux
+LL Data File: /tmp/jl_hxWV9k/model.aux
 Number of LL Variables:   1
 
 =======================================
@@ -85,6 +85,6 @@ x[0] = 6
 y[0] = 5
 Number of problems (VF) solved = 12
 Number of problems (UB) solved = 0
-Time for solving problem (VF) = 0.00230098
+Time for solving problem (VF) = 0.00232697
 Time for solving problem (UB) = 0
 ============================================

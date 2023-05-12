@@ -16,9 +16,9 @@
 # ```math
 # \begin{align}
 #     &\max_{\lambda, q_S} \quad \lambda \cdot g_S \\
-#     &\st \quad 0 \leq q_S \leq 100\\
-#     &\hspace{28pt} (g_S, \lambda) \in \argmin_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
-#             & \hspace{70pt} \st \quad g_S \leq q_S \\
+#     &\textit{s.t.} \quad 0 \leq q_S \leq 100\\
+#     &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
+#             & \hspace{70pt} \textit{s.t.} \quad g_S \leq q_S \\
 #             & \hspace{88pt} \quad  0 \leq g_S \leq 100 \\
 #             & \hspace{88pt}\quad  0 \leq g_{1} \leq 40 \\
 #             & \hspace{88pt}\quad  0 \leq g_{2} \leq 40 \\
