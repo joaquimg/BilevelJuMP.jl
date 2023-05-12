@@ -12,16 +12,17 @@ This modeling feature enables the implementation of workflows where one
 constraint. In particular, in the energy sector, it is common to model the
 energy prices as the dual variable associated with the energy demand
 equilibrium constraint. One example of an application that uses this feature
-is Fanzeres et al. (2019), which focuses on strategic bidding in
+is [Fanzeres et al. (2019)](https://doi.org/10.1016/j.ejor.2018.07.027),
+which focuses on strategic bidding in
 auction-based energy markets. A small and simplified example of the modeled
 problem would be the model:
 
 ```math
 \begin{align}
     &\max_{\lambda, q_S} \quad \lambda \cdot g_S \\
-    &\st \quad 0 \leq q_S \leq 100\\
-    &\hspace{28pt} (g_S, \lambda) \in \argmin_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
-            & \hspace{70pt} \st \quad g_S \leq q_S \\
+    &\textit{s.t.} \quad 0 \leq q_S \leq 100\\
+    &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
+            & \hspace{70pt} \textit{s.t.} \quad g_S \leq q_S \\
             & \hspace{88pt} \quad  0 \leq g_S \leq 100 \\
             & \hspace{88pt}\quad  0 \leq g_{1} \leq 40 \\
             & \hspace{88pt}\quad  0 \leq g_{2} \leq 40 \\

@@ -14,3 +14,5 @@ test.jl
 
 *.mps
 *.aux
+/docs/src/tutorials/conic_lower.md
+/docs/src/tutorials/lower_duals.md

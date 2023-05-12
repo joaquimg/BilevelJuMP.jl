@@ -5,7 +5,8 @@ EditURL = "<unknown>/src/tutorials/conic_lower.jl"
 # Conic Bilevel and Mixed Mode
 
 Here we present a simple bilevel program with a conic lower level model
-described in example 3.3 from \cite{chi2014models}.
+described in example 3.3 from
+[Chi, et al. 2014](https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168).
 
 ```math
 \begin{align}
@@ -75,25 +76,28 @@ Mixing the two of them can be done with Mixed Mode.
 
 The following code describes how to solve the problem with a MISOCP based solver.
 
+```julia
 using Xpress
 using QuadraticToBinary
 set_optimizer(model,
     ()->QuadraticToBinary.Optimizer{Float64}(Xpress.Optimizer(),lb=-10,ub=10))
 BilevelJuMP.set_mode(model,
-    BilevelJuMP.MixedMode(default = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100)))
+    BilevelJuMP.MixedMode(default = BilevelJuMP.IndicatorMode()))
 BilevelJuMP.set_mode(con4, BilevelJuMP.ProductMode(1e-5))
 optimize!(model)
+```
+
+!!! info
+    This code was not executed because Xpress requires a commercial license.
+    Other solvers supporting MISOCP could be used such as Gurobi and CPLEX.
 
 We set the reformulation method as Mixed Mode and selected Indicator
 constraints to be the default for the case in which we do not explicitly
 specify the reformulation.
 Then we set product mode for the second order cone reformulation.
 
-```@example conic_lower
-#As described in Appendix \ref{ap-dual}, binary expansions require bounded
-```
-
-variables, hence the \texttt{QuadraticToBinary} meta-solver accepts fallback
+Binary expansions require bounded
+variables, hence the `QuadraticToBinary` meta-solver accepts fallback
 to upper and lower bounds (\texttt{ub} and \texttt{lb}),
 used for variables with no explicit bounds.
 
