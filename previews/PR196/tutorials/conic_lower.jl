@@ -1,7 +1,8 @@
 # # Conic Bilevel and Mixed Mode
 
 # Here we present a simple bilevel program with a conic lower level model
-# described in example 3.3 from \cite{chi2014models}.
+# described in example 3.3 from
+# [Chi, et al. 2014](https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168).
 
 # ```math
 # \begin{align}

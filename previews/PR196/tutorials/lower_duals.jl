@@ -8,7 +8,8 @@
 # constraint. In particular, in the energy sector, it is common to model the
 # energy prices as the dual variable associated with the energy demand
 # equilibrium constraint. One example of an application that uses this feature
-# is Fanzeres et al. (2019), which focuses on strategic bidding in
+# is [Fanzeres et al. (2019)](https://doi.org/10.1016/j.ejor.2018.07.027),
+# which focuses on strategic bidding in
 # auction-based energy markets. A small and simplified example of the modeled
 # problem would be the model:
 
