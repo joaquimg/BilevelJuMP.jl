@@ -87,9 +87,9 @@ makedocs(;
             joinpath("examples", f) for
             f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
         ],
-        "Background Information" => "background.md"
-        "API Reference" => "reference.md"
-        "Troubleshooting" => "troubleshooting.md"
+        "Background Information" => "background.md",
+        "API Reference" => "reference.md",
+        "Troubleshooting" => "troubleshooting.md",
     ],
 )
 
