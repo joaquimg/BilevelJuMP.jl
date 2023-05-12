@@ -1,0 +1,80 @@
+# [API](@id API)
+
+This section documents the BilevelJuMP API.
+
+As a JuMP extension, most JuMP functions should just work.
+Some JuMP function will return error saying they are not
+implemented for BileveJuMP structures such as `BilevelModel`.
+If that happens and you consider that function should be implemented,
+please, open an issue.
+
+## Constructors
+
+```@docs
+BilevelModel
+Upper
+Lower
+DualOf
+```
+
+### Advanced constructors
+
+```@docs
+UpperOnly
+LowerOnly
+```
+
+## Enums
+
+```@docs
+Level
+LOWER_BOTH
+UPPER_BOTH
+LOWER_ONLY
+UPPER_ONLY
+DUAL_OF_LOWER
+```
+
+## Basic functions
+
+```@docs
+BilevelAffExpr
+BilevelQuadExpr
+```
+
+## Modes
+
+```@docs
+BilevelJuMP.SOS1Mode
+BilevelJuMP.FortunyAmatMcCarlMode
+BilevelJuMP.IndicatorMode
+BilevelJuMP.ProductMode
+BilevelJuMP.StrongDualityEqualityMode
+BilevelJuMP.ComplementMode
+BilevelJuMP.MixedMode
+```
+
+## Bound hints
+
+```@docs
+BilevelJuMP.set_dual_upper_bound_hint
+BilevelJuMP.set_dual_lower_bound_hint
+BilevelJuMP.set_primal_upper_bound_hint
+BilevelJuMP.set_primal_lower_bound_hint
+```
+
+## Attributes getters and setters
+
+```@docs
+BilevelJuMP.lower_objective_value
+BilevelJuMP.build_time
+BilevelJuMP.set_mode
+BilevelJuMP.get_mode
+BilevelJuMP.unset_mode
+BilevelJuMP.set_copy_names
+BilevelJuMP.get_copy_names
+BilevelJuMP.unset_copy_names
+BilevelJuMP.set_pass_start
+BilevelJuMP.get_pass_start
+BilevelJuMP.unset_pass_start
+```

@@ -14,7 +14,7 @@ Many modeling features are available in BilevelJuMP, some of which are unique wh
 - MPEC reformulations with MIP or NLP solvers
 - MixedMode MPEC reformulation: select the best reformulation for each constraint separately
 
-<!-- - Primal and dual warmstarts -->
+The currently available methods are based on re-writing the problem using the KKT conditions of the lower level. For that we make strong use of [Dualization.jl](https://github.com/JuMP-dev/Dualization.jl)
 
 ## Installation
 
@@ -39,7 +39,7 @@ BilevelJuMP.jl is licensed under the [MIT License]().
 
 ## Citing `BilevelJuMP.jl`
 
-If you use SDDP.jl, we ask that you please cite the following:
+If you use BilevelJuMP.jl, we ask that you please cite the following:
 
 ```
 @article{diasgarcia2022bileveljump,
@@ -51,7 +51,3 @@ If you use SDDP.jl, we ask that you please cite the following:
 ```
 
 Here is the [pdf](https://arxiv.org/pdf/2205.02307.pdf).
-
-<!-- BilevelJuMP is built on top of [MathOptInterface](https://github.com/JuMP-dev/MathOptInterface.jl) and makes strong use of its features to reformulate the problem as a single level problem and solve it with available MIP, NLP, and other solvers.
-
-The currently available methods are based on re-writing the problem using the KKT conditions of the lower level. For that we make strong use of [Dualization.jl](https://github.com/JuMP-dev/Dualization.jl) -->
