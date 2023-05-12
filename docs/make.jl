@@ -71,6 +71,7 @@ makedocs(;
     format = Documenter.HTML(;
         mathengine = Documenter.MathJax2(),
         prettyurls = get(ENV, "CI", nothing) == "true",
+        collapselevel = 1,
     ),
     sitename = "BilevelJuMP.jl",
     authors = "Joaquim Garcia",
