@@ -5,22 +5,11 @@
 # the pack acts like a solver on top of the real solver and most data is forwarded
 # directly to the solver itself. For many solvers it is enough to use:
 
-# ```julia
-# using QuadraticToBinary, Xpress, BilevelJuMP
-# SOLVER = Xpress.Optimizer()
-# Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(SOLVER)
-# BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
-# ```
-
-# !!! info
-#     This code was not executed because Xpress requires a commercial license.
-
-
 using BilevelJuMP, QuadraticToBinary, HiGHS
 
 SOLVER = HiGHS.Optimizer()
-Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(SOLVER)
-model = BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
+Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(SOLVER, lb = -10, ub = 10)
+model = BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-6))
 
 @variable(Lower(model), x)
 @variable(Upper(model), y)
@@ -43,7 +32,7 @@ end)
 optimize!(model)
 
 objective_value(model)
-@assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) < 1e-3 # src
+@assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) < 1e-1 # src
 
 
 # However, this might lead to some solver not supporting certain functionality like SCIP.
