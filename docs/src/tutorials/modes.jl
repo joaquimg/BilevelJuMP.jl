@@ -2,7 +2,9 @@
 
 using BilevelJuMP, QuadraticToBinary, HiGHS
 
-model = BilevelModel(HiGHS.Optimizer, mode = BilevelJuMP.ProductMode(1e-6))
+model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
 
 @variable(Lower(model), x)
 @variable(Upper(model), y)
