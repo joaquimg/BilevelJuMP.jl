@@ -57,7 +57,7 @@
 
 # We start loading all libraries needed for this example.
 
-using BilevelJuMP, QuadraticToBinary, HiGHS, Ipopt
+using BilevelJuMP, HiGHS, Ipopt, SCIP
 
 # Now we create a bilevel model with the `BilevelModel` constructor with no
 # solver nor mode specified.
@@ -96,35 +96,33 @@ objective_value(model)
 
 # ## `SOS1Mode` and `SCIP.Optimizer`
 
-# ```julia
-# set_optimizer(model, SCIP.Optimizer)
-#
-# BilevelJuMP.set_mode(model, BilevelJuMP.SOS1Mode())
-#
-# optimize!(model)
-#
-# objective_value(model)
-# ```
+set_optimizer(model, SCIP.Optimizer)
 
-# !!! info
-#     This code was not executed because SCIP might have a non-standard
-#     intallation procedure in windows.
+BilevelJuMP.set_mode(model, BilevelJuMP.SOS1Mode())
+
+optimize!(model)
+
+objective_value(model)
+
+# !!! warning
+#     SCIP requires a non-standard installation procedure in windows.
+#     See [SCIP.jl](https://github.com/scipopt/SCIP.jl#custom-installations) for
+#     more details.
 
 # ## `IndicatorMode` and `SCIP.Optimizer`
 
-# ```julia
-# set_optimizer(model, SCIP.Optimizer)
-#
-# BilevelJuMP.set_mode(model, BilevelJuMP.IndicatorMode())
-#
-# optimize!(model)
-#
-# objective_value(model)
-# ```
+set_optimizer(model, SCIP.Optimizer)
 
-# !!! info
-#     This code was not executed because SCIP might have a non-standard
-#     intallation procedure in windows.
+BilevelJuMP.set_mode(model, BilevelJuMP.IndicatorMode())
+
+optimize!(model)
+
+objective_value(model)
+
+# !!! warning
+#     SCIP requires a non-standard installation procedure in windows.
+#     See [SCIP.jl](https://github.com/scipopt/SCIP.jl#custom-installations) for
+#     more details.
 
 # ## `ProductMode` and `Ipopt.Optimizer`
 
@@ -152,20 +150,19 @@ objective_value(model)
 
 # ## `MixedMode` and `SCIP.Optimizer`
 
-# ```julia
-# set_optimizer(model, SCIP.Optimizer)
-#
-# BilevelJuMP.set_mode(model, BilevelJuMP.MixedMode(default = SOS1Mode()))
-#
-# BilevelJuMP.set_mode(c1, BilevelJuMP.IndicatorMode())
-#
-# BilevelJuMP.set_mode(c3, BilevelJuMP.SOS1Mode())
-#
-# optimize!(model)
-#
-# objective_value(model)
-# ```
+set_optimizer(model, SCIP.Optimizer)
 
-# !!! info
-#     This code was not executed because SCIP might have a non-standard
-#     intallation procedure in windows.
+BilevelJuMP.set_mode(model, BilevelJuMP.MixedMode(default = BilevelJuMP.SOS1Mode()))
+
+BilevelJuMP.set_mode(c1, BilevelJuMP.IndicatorMode())
+
+BilevelJuMP.set_mode(c3, BilevelJuMP.SOS1Mode())
+
+optimize!(model)
+
+objective_value(model)
+
+# !!! warning
+#     SCIP requires a non-standard installation procedure in windows.
+#     See [SCIP.jl](https://github.com/scipopt/SCIP.jl#custom-installations) for
+#     more details.

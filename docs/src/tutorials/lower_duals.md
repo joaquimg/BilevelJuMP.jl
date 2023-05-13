@@ -93,7 +93,7 @@ set_upper_bound(lambda, 1000.0)
 ```
 
 Then, as before, we set a solver
-(now SCIP with the `QuadraticToBinary.jl` wrapper) and a solution method
+(now HiGHS with the `QuadraticToBinary.jl` wrapper) and a solution method
 (now Fortuny-Amat and McCarl):
 
 ```@example lower_duals
@@ -126,7 +126,7 @@ for i in 1:3
     var = @variable(Upper(model), variable_type = DualOf(reserves[i]))
     push!(my_duals, var)
 end
-my_duals
+my_duals # a vector of anonimous variables
 ```
 
 !!! info

@@ -11,9 +11,9 @@ described in example 3.3 from
 ```math
 \begin{align}
     &\max_{x \in \mathbb{R}} \quad x + 3y_1 \\
-    &\st \quad 2 \leq x \leq 6\\
-    & \hspace{28pt} y(x) \in \argmin_{y\in {\mathbb{R}^3}} -y_1\\
-            & \hspace{58pt} \st \quad x + y_1 \leq 8 \\
+    &\textit{s.t.} \quad 2 \leq x \leq 6\\
+    & \hspace{28pt} y(x) \in \arg\min_{y\in {\mathbb{R}^3}} -y_1\\
+            & \hspace{58pt} \textit{s.t.} \quad x + y_1 \leq 8 \\
             & \hspace{76pt} \quad x + 4y_1 \geq 8 \\
             & \hspace{76pt}  \quad x + 2y_1 \leq 12 \\
             & \hspace{76pt}  \quad y \in {SOC}_3 \label{eq-soc}

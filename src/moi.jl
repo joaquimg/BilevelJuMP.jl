@@ -168,24 +168,6 @@ function accept_vector_set(
     return nothing
 end
 
-function reset!(::AbstractBilevelSolverMode)
-    return nothing
-end
-
-ignore_dual_objective(::AbstractBilevelSolverMode{T}) where {T} = true
-
-function accept_vector_set(
-    mode::AbstractBilevelSolverMode{T},
-    con::Complement,
-) where {T}
-    if con.is_vec
-        error(
-            "Set $(typeof(con.set_w_zero)) is not accepted when solution method is $(typeof(mode))",
-        )
-    end
-    return nothing
-end
-
 #=
     ComplementBoundCache used in Big-M
 =#
