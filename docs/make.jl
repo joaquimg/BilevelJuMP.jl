@@ -85,10 +85,18 @@ makedocs(;
             "conic_lower.md",
             "quad_to_bin.md",
         ]),
-        "Examples" => [
-            joinpath("examples", f) for
-            f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
-        ],
+        "Tutorials" => joinpath.("tutorials", [
+            "FOBP_example2.md",
+            "FOBP_example3.md",
+            "FOBP_example4.md",
+            "FOBP_example5.md",
+            "DTMP_example1.md",
+            "PHTP_example1.md",
+            "PHTP_example2.md",
+            "SOCBLP_example2.md",
+            "MibS_example1.md",
+            "MibS_example2.md",
+        ]),
         "Background Information" => "background.md",
         "API Reference" => "reference.md",
         "Troubleshooting" => "troubleshooting.md",

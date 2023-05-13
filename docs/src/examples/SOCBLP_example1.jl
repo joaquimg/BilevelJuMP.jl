@@ -1,5 +1,8 @@
-# # Example 10
-# This example is from The models of bilevel programming with lower level second-order cone programs ([url](https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168) or [url](https://core.ac.uk/download/pdf/81261904.pdf))
+# # SOCBLP from Chi et al.: Example 3.1
+#
+# This example is from The models of bilevel programming with lower level
+# second-order cone programs
+# ([url](https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168) or [url](https://core.ac.uk/download/pdf/81261904.pdf))
 # SOCBLP stands for bilevel programming problem with lower level second-order cone program
 # Bold point(s): Using second-order cone in the lower level problem 
 
@@ -14,9 +17,9 @@
 # ```math
 # \min - y_1 + y_2,\\
 # \notag s.t.\\
-# y_1 - y_2 \leq  8,\\
-# 4y_1 - 4y_2 \geq  8,\\
-# 2y_1 - 2y_2 \leq  12,\\
+# x + y_1 - y_2 \leq  8,\\
+# x + 4(y_1 - y_2) \geq  8,\\
+# x + 2(y_1 - y_2) \leq  12,\\
 # y_1 \geq 0,\\
 # y_2 \geq 0,\\
 # y \in K^2\\
@@ -69,6 +72,7 @@ model = BilevelModel(
 # Defining bounds
 BilevelJuMP.set_dual_upper_bound_hint(soc_lw, +[5.0, 5.0])
 BilevelJuMP.set_dual_lower_bound_hint(soc_lw, -[5.0, 5.0])
+
 # require lower bounds
 for con in [con1, con3]
     BilevelJuMP.set_dual_lower_bound_hint(con, -15)
