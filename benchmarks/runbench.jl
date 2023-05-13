@@ -149,28 +149,28 @@ SOLVERS = [
     #=
         PrimalDual BIN 10
     =#
-    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "glpk_sd10"),
-    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "mosek_sd10"),
-    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "gurobi_sd10"),
-    # (()->QB(cpx(),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "cplex_sd10"),
-    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "xpress_sd10"),
-    # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "cbc_sd10"), #TODO
-    # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityEqualityMode(), "scip_sd10"),
+    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "glpk_sd10"),
+    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "mosek_sd10"),
+    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "gurobi_sd10"),
+    # (()->QB(cpx(),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "cplex_sd10"),
+    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "xpress_sd10"),
+    # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "cbc_sd10"), #TODO
+    # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-10,ub=10), BilevelJuMP.StrongDualityMode(), "scip_sd10"),
     #=
         PrimalDual BIN 100
     =#
-    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "glpk_sd100"),
-    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "mosek_sd100"),
-    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "gurobi_sd100"),
-    # (()->QB(cpx(),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "cplex_sd100"),
-    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "xpress_sd100"),
-    # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "cbc_sd100"),
-    # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityEqualityMode(), "scip_sd100"),
+    # (()->QB(GLPK.Optimizer(tm_lim=MAX_TIME*1_000),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "glpk_sd100"),
+    # (()->QB(Mosek.Optimizer(MIO_MAX_TIME=MAX_TIME*1.0,OPTIMIZER_MAX_TIME=MAX_TIME*1.0),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "mosek_sd100"),
+    # (()->QB(Gurobi.Optimizer(TimeLimit=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "gurobi_sd100"),
+    # (()->QB(cpx(),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "cplex_sd100"),
+    # (()->QB(Xpress.Optimizer(MAXTIME=-MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "xpress_sd100"),
+    # (()->QB(cache(Cbc.Optimizer(seconds=MAX_TIME*1.0)),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "cbc_sd100"),
+    # (()->QB(SCIP.Optimizer(limits_time=MAX_TIME*1),lb=-100,ub=100), BilevelJuMP.StrongDualityMode(), "scip_sd100"),
     #=
         PrimalDual NLP (DONE)
     =#
-    # (with_att(Ipopt.Optimizer, "max_cpu_time" => MAX_TIME*1.0), BilevelJuMP.StrongDualityEqualityMode(), "ipopt_sd"),
-    # (new_knitro, BilevelJuMP.StrongDualityEqualityMode(), "knitro_sd"),
+    # (with_att(Ipopt.Optimizer, "max_cpu_time" => MAX_TIME*1.0), BilevelJuMP.StrongDualityMode(), "ipopt_sd"),
+    # (new_knitro, BilevelJuMP.StrongDualityMode(), "knitro_sd"),
     #=
         Product NLP (DONE)
     =#
@@ -185,8 +185,8 @@ SOLVERS = [
     =#
     # (() -> AmplNLWriter.Optimizer("bonmin"), BilevelJuMP.ProductMode(1e-7), "bonmin_prod"),
     # (() -> AmplNLWriter.Optimizer("couenne"), BilevelJuMP.ProductMode(1e-7), "couenne_prod"),
-    # (() -> AmplNLWriter.Optimizer("bonmin"), BilevelJuMP.StrongDualityEqualityMode(), "bonmin_sd"),
-    # (() -> AmplNLWriter.Optimizer("couenne"), BilevelJuMP.StrongDualityEqualityMode(), "couenne_sd"),
+    # (() -> AmplNLWriter.Optimizer("bonmin"), BilevelJuMP.StrongDualityMode(), "bonmin_sd"),
+    # (() -> AmplNLWriter.Optimizer("couenne"), BilevelJuMP.StrongDualityMode(), "couenne_sd"),
 ]
 
 PROBLEMS = [:SVR, :TOLL, :FORECAST, :RAND]

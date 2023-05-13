@@ -30,7 +30,7 @@ The type of indicator function to use in the `IndicatorMode` mode.
 )
 
 """
-    IndicatorMode(method::IndicatorSetting = ONE_ONE)
+    IndicatorMode(method::IndicatorSetting = BilevelJuMP.ONE_ONE)
 
 Used to solve a bilevel problem with the
 MPEC reformulation using indicator constaints to convert complementarity

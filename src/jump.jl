@@ -216,6 +216,12 @@ function BilevelModel(
     JuMP.set_optimizer(bm, optimizer_constructor; add_bridges = add_bridges)
     return bm
 end
+
+"""
+    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)	
+
+Set the mode of a bilevel model.
+"""
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
     bm.mode = deepcopy(mode)
     reset!(bm.mode)
@@ -961,6 +967,12 @@ function check_mixed_mode(mode)
         "Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`",
     )
 end
+
+"""
+    set_mode(ci::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+
+Set the mode of a constraint. This is used in `MixedMode` reformulations.
+"""
 function set_mode(
     ci::BilevelConstraintRef,
     mode::AbstractBilevelSolverMode{T},
@@ -973,6 +985,13 @@ function set_mode(
     bm.mode.constraint_mode_map_c[ctr] = _mode
     return nothing
 end
+
+"""
+    unset_mode(ci::BilevelConstraintRef)
+
+Unset the mode of a constraint. This will use the default mode for the constraint.
+This is used in `MixedMode` reformulations.
+"""
 function unset_mode(ci::BilevelConstraintRef)
     bm = ci.model
     check_mixed_mode(bm.mode)
@@ -981,6 +1000,11 @@ function unset_mode(ci::BilevelConstraintRef)
     return nothing
 end
 
+"""
+    get_mode(ci::BilevelConstraintRef)
+
+Get the mode of a constraint. This is used in `MixedMode` reformulations.
+"""
 function get_mode(ci::BilevelConstraintRef)
     bm = ci.model
     check_mixed_mode(bm.mode)
@@ -999,7 +1023,12 @@ function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where {T}
     return error("Cant set StrongDualityMode in a specific constraint")
 end
 
-# mode for variable bounds
+"""
+    set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+
+Set the mode of the bounds of a variable.
+This is used in `MixedMode` reformulations.
+"""
 function set_mode(
     vi::BilevelVariableRef,
     mode::AbstractBilevelSolverMode{T},
@@ -1013,6 +1042,14 @@ function set_mode(
     bm.mode.constraint_mode_map_v[var] = _mode
     return nothing
 end
+
+"""
+    unset_mode(vi::BilevelVariableRef)
+
+Unset the mode of the bounds of a variable.
+This will use the default mode for the bounds.
+This is used in `MixedMode` reformulations.
+"""
 function unset_mode(vi::BilevelVariableRef)
     bm = vi.model
     check_mixed_mode(bm.mode)
@@ -1021,6 +1058,12 @@ function unset_mode(vi::BilevelVariableRef)
     return nothing
 end
 
+"""
+    get_mode(vi::BilevelVariableRef)
+
+Get the mode of the bounds of a variable.
+This is used in `MixedMode` reformulations.
+"""
 function get_mode(vi::BilevelVariableRef)
     bm = vi.model
     check_mixed_mode(bm.mode)

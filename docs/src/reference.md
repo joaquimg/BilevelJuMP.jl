@@ -27,12 +27,19 @@ LowerOnly
 ## Enums
 
 ```@docs
-Level
-LOWER_BOTH
-UPPER_BOTH
-LOWER_ONLY
-UPPER_ONLY
-DUAL_OF_LOWER
+BilevelJuMP.Level
+BilevelJuMP.LOWER_BOTH
+BilevelJuMP.UPPER_BOTH
+BilevelJuMP.LOWER_ONLY
+BilevelJuMP.UPPER_ONLY
+BilevelJuMP.DUAL_OF_LOWER
+```
+
+```@docs
+BilevelJuMP.IndicatorSetting
+BilevelJuMP.ZERO_ONE
+BilevelJuMP.ZERO_ZERO
+BilevelJuMP.ONE_ZERO
 ```
 
 ## Structs
@@ -50,7 +57,7 @@ BilevelJuMP.SOS1Mode
 BilevelJuMP.FortunyAmatMcCarlMode
 BilevelJuMP.IndicatorMode
 BilevelJuMP.ProductMode
-BilevelJuMP.StrongDualityEqualityMode
+BilevelJuMP.StrongDualityMode
 BilevelJuMP.ComplementMode
 BilevelJuMP.MixedMode
 ```
