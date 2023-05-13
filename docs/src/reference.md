@@ -59,9 +59,13 @@ BilevelJuMP.MixedMode
 
 ```@docs
 BilevelJuMP.set_dual_upper_bound_hint
+BilevelJuMP.get_dual_upper_bound_hint
 BilevelJuMP.set_dual_lower_bound_hint
+BilevelJuMP.get_dual_lower_bound_hint
 BilevelJuMP.set_primal_upper_bound_hint
+BilevelJuMP.get_primal_upper_bound_hint
 BilevelJuMP.set_primal_lower_bound_hint
+BilevelJuMP.get_primal_lower_bound_hint
 ```
 
 ## Attributes getters and setters

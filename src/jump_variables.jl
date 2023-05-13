@@ -9,10 +9,10 @@ function in_level(v::BilevelVariableRef, level::Level)
     )
 end
 
-in_level(v::BilevelVariableRef, ::UpperModel) = in_upper(v)
-in_level(v::BilevelVariableRef, ::LowerModel) = in_lower(v)
-in_upper(v::BilevelVariableRef) = in_upper(mylevel(v))
-in_lower(v::BilevelVariableRef) = in_lower(mylevel(v))
+in_level(v::BilevelVariableRef, ::UpperModel) = _in_upper(v)
+in_level(v::BilevelVariableRef, ::LowerModel) = _in_lower(v)
+_in_upper(v::BilevelVariableRef) = _in_upper(mylevel(v))
+_in_lower(v::BilevelVariableRef) = _in_lower(mylevel(v))
 upper_ref(v::BilevelVariableRef) = v.model.var_upper[v.idx]
 lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
 
@@ -71,7 +71,7 @@ function JuMP.add_variable(
     v_lower = JuMP.add_variable(m.lower, var_lower, name)
     m.var_lower[vref.idx] = v_lower
     set_link!(inner, v_upper, v_lower)
-    m.var_info[vref.idx] = empty_info(level_both(inner))
+    m.var_info[vref.idx] = _empty_info(level_both(inner))
     JuMP.set_name(vref, name)
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
@@ -88,7 +88,7 @@ function JuMP.add_variable(
     v_level = JuMP.add_variable(mylevel_model(single), v, name)
     mylevel_var_list(single)[vref.idx] = v_level
     push_single_level_variable!(single, v_level)
-    m.var_info[vref.idx] = empty_info(level(single))
+    m.var_info[vref.idx] = _empty_info(level(single))
     JuMP.set_name(vref, name)
     m.var_upper_rev = nothing
     m.var_lower_rev = nothing
@@ -127,7 +127,7 @@ end
 JuMP.num_variables(m::BilevelModel) = length(m.var_info)
 JuMP.num_variables(m::UpperModel) = length(m.m.var_upper)
 JuMP.num_variables(m::LowerModel) = length(m.m.var_lower)
-function empty_info(level::Level)
+function _empty_info(level::Level)
     return BilevelVariableInfo(level)
 end
 
@@ -273,8 +273,8 @@ function JuMP.set_start_value(vref::BilevelVariableRef, start)
         JuMP.set_dual_start_value(get_constrain_ref(vref), start)
         return
     end
-    in_upper(vref) && JuMP.set_start_value(upper_ref(vref), start)
-    in_lower(vref) && JuMP.set_start_value(lower_ref(vref), start)
+    _in_upper(vref) && JuMP.set_start_value(upper_ref(vref), start)
+    _in_lower(vref) && JuMP.set_start_value(lower_ref(vref), start)
     return
 end
 

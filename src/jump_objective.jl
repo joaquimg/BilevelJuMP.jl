@@ -43,11 +43,11 @@ end
 # JuMP.objective_function(m::InnerBilevelModel) = mylevel_obj_function(m)
 function JuMP.objective_function(m::InnerBilevelModel)
     f = JuMP.objective_function(mylevel_model(m))
-    return reverse_replace_variable(f, m)
+    return _reverse_replace_variable(f, m)
 end
 function JuMP.objective_function(m::InnerBilevelModel, FT::Type)
     f = JuMP.objective_function(mylevel_model(m), FT)
-    f2 = reverse_replace_variable(f, m)
+    f2 = _reverse_replace_variable(f, m)
     f2 isa FT ||
         error("The objective function is not of type $FT, show $(typeof(f2))")
     return f2

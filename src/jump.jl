@@ -324,13 +324,13 @@ level(::UpperOnlyModel) = UPPER_ONLY
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
-function in_upper(l::Level)
+function _in_upper(l::Level)
     return l == LOWER_BOTH ||
            l == UPPER_BOTH ||
            l == UPPER_ONLY ||
            l == DUAL_OF_LOWER
 end
-in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
+_in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
 
 function push_single_level_variable!(
     m::LowerOnlyModel,
@@ -394,7 +394,7 @@ end
 # Names
 function JuMP.name(vref::BilevelVariableRef)
     level = vref.model.var_info[vref.idx].level
-    var = if in_lower(level)
+    var = if _in_lower(level)
         vref.model.var_lower[vref.idx]
     else
         vref.model.var_upper[vref.idx]
@@ -403,11 +403,11 @@ function JuMP.name(vref::BilevelVariableRef)
 end
 function JuMP.set_name(vref::BilevelVariableRef, name::String)
     level = vref.model.var_info[vref.idx].level
-    if in_lower(level)
+    if _in_lower(level)
         var = vref.model.var_lower[vref.idx]
         JuMP.set_name(var, name)
     end
-    if in_upper(level)
+    if _in_upper(level)
         var = vref.model.var_upper[vref.idx]
         JuMP.set_name(var, name)
     end
@@ -428,7 +428,7 @@ function JuMP.variable_by_name(model::BilevelModel, name::String)
 end
 function JuMP.name(cref::BilevelConstraintRef)
     level = cref.model.ctr_info[cref.index].level
-    ctr = if in_lower(level)
+    ctr = if _in_lower(level)
         cref.model.ctr_lower[cref.index]
     else
         cref.model.ctr_upper[cref.index]
@@ -437,11 +437,11 @@ function JuMP.name(cref::BilevelConstraintRef)
 end
 function JuMP.set_name(cref::BilevelConstraintRef, name::String)
     level = cref.model.ctr_info[cref.index].level
-    if in_lower(level)
+    if _in_lower(level)
         ctr = cref.model.ctr_lower[cref.index]
         JuMP.set_name(ctr, name)
     end
-    if in_upper(level)
+    if _in_upper(level)
         ctr = cref.model.ctr_upper[cref.index]
         JuMP.set_name(ctr, name)
     end
@@ -451,14 +451,14 @@ function JuMP.constraint_by_name(model::BilevelModel, name::String)
     ctr = JuMP.constraint_by_name(model.upper, name)
     if ctr !== nothing
         if model.ctr_upper_rev === nothing
-            build_reverse_ctr_map!(Upper(model))
+            _build_reverse_ctr_map!(Upper(model))
         end
         return model.ctr_upper_rev[ctr]
     end
     ctr = JuMP.constraint_by_name(model.lower, name)
     if ctr !== nothing
         if model.ctr_lower_rev === nothing
-            build_reverse_ctr_map!(Lower(model))
+            _build_reverse_ctr_map!(Lower(model))
         end
         return model.ctr_lower_rev[ctr]
     end
@@ -523,7 +523,7 @@ function build_reverse_var_map!(lm::LowerModel)
 end
 get_reverse_var_map(m::UpperModel) = m.m.var_upper_rev
 get_reverse_var_map(m::LowerModel) = m.m.var_lower_rev
-function reverse_replace_variable(f, m::InnerBilevelModel)
+function _reverse_replace_variable(f, m::InnerBilevelModel)
     build_reverse_var_map!(m)
     return replace_variables(
         f,
