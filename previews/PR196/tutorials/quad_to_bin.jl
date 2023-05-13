@@ -38,15 +38,21 @@ objective_value(model)
 # However, this might lead to some solver not supporting certain functionality like SCIP.
 # In this case we need to:
 
-# ```julia
-# SOLVER = SCIP.Optimizer()
-# CACHED_SOLVER = MOI.Utilities.CachingOptimizer(
-#     MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()), SOLVER)
-# Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(CACHED_SOLVER)
-# BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
-# ```
+using SCIP
+
+# !!! warning
+#     SCIP requires a non-standard installation procedure in windows.
+#     See [SCIP.jl](https://github.com/scipopt/SCIP.jl#custom-installations) for
+#     more details.
+
+SOLVER = SCIP.Optimizer()
+
+CACHED_SOLVER = MOI.Utilities.CachingOptimizer(
+    MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()), SOLVER)
+
+Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(CACHED_SOLVER)
+
+BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
+
 # Note that we used `()->Q_SOLVER` instead of just `Q_SOLVER` because `BilevelModel`
 # requires as constructor and not an instance of an object.
-
-# !!! info
-#     This code was not executed to avoid excessive dependencies to build these docs.
