@@ -104,6 +104,8 @@ optimize!(model)
 
 objective_value(model)
 
+@assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) < 1e-1 # src
+
 # !!! warning
 #     SCIP requires a non-standard installation procedure in windows.
 #     See [SCIP.jl](https://github.com/scipopt/SCIP.jl#custom-installations) for
@@ -118,6 +120,8 @@ BilevelJuMP.set_mode(model, BilevelJuMP.IndicatorMode())
 optimize!(model)
 
 objective_value(model)
+
+@assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) < 1e-1 # src
 
 # !!! warning
 #     SCIP requires a non-standard installation procedure in windows.
@@ -161,6 +165,8 @@ BilevelJuMP.set_mode(c3, BilevelJuMP.SOS1Mode())
 optimize!(model)
 
 objective_value(model)
+
+@assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) < 1e-1 # src
 
 # !!! warning
 #     SCIP requires a non-standard installation procedure in windows.

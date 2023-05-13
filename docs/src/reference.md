@@ -39,7 +39,7 @@ BilevelJuMP.DUAL_OF_LOWER
 BilevelJuMP.IndicatorSetting
 BilevelJuMP.ZERO_ONE
 BilevelJuMP.ZERO_ZERO
-BilevelJuMP.ONE_ZERO
+BilevelJuMP.ONE_ONE
 ```
 
 ## Structs
