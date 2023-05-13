@@ -258,10 +258,10 @@ julia> @constraint(Lower(m), c, x <= 1);
 julia> @variable(Upper(m), y, DualOf(c));
 ```
 """
-
 struct DualOf
     ci::BilevelConstraintRef
 end
+
 function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
     return error(
         "If you are trying to do something like:\n" *
@@ -275,10 +275,12 @@ function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
         "@variable(Upper(m), variable_type = DualOf(my_constraint_vector[t]))",
     )
 end
+
 struct DualVariableInfo
     info::JuMP.VariableInfo
     ci::BilevelConstraintRef
 end
+
 function JuMP.build_variable(
     _error::Function,
     info::JuMP.VariableInfo,

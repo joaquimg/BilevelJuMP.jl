@@ -19,14 +19,14 @@ lower_ref(v::BilevelVariableRef) = v.model.var_lower[v.idx]
 """
     BilevelVariableRef
 
-Alias for ``GenericAffExpr{Float64,BilevelVariableRef}``.
+Alias for `GenericAffExpr{Float64,BilevelVariableRef}`.
 """
 const BilevelAffExpr = GenericAffExpr{Float64,BilevelVariableRef}
 
 """
     BilevelQuadExpr
 
-Alias for ``GenericQuadExpr{Float64,BilevelVariableRef}``.
+Alias for `GenericQuadExpr{Float64,BilevelVariableRef}`.
 """
 const BilevelQuadExpr = GenericQuadExpr{Float64,BilevelVariableRef}
 

@@ -6,7 +6,7 @@ Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
     BilevelModel()
 
 Create an empty BilevelModel with default settings,
-no ``solver`` and no solve ``mode``.
+no `solver` and no solve `mode`.
 
 ## Example
 
@@ -16,12 +16,12 @@ julia> model = BilevelModel()
 
     BilevelModel(solver::Function; mode = BilevelJuMP.SOS1Mode(), add_bridges::Bool = true)
 
-Create a BilevelModel with the given ``solver`` and solve ``mode``.
+Create a BilevelModel with the given `solver` and solve `mode`.
 
-* ``solver``: is a functions that takes no arguments and returns a JuMP solver object.
-* ``mode``: is a solve mode object that defines how the model is solved.
-* ``add_bridges``: if ``true`` (default) then bridges are added to the model.
-  If ``false`` then bridges are not added and the model is not modified.
+* `solver`: is a functions that takes no arguments and returns a JuMP solver object.
+* `mode`: is a solve mode object that defines how the model is solved.
+* `add_bridges`: if `true` (default) then bridges are added to the model.
+  If `false` then bridges are not added and the model is not modified.
 
 ## Example
 

@@ -3,12 +3,12 @@ module BilevelJuMP
 import Reexport
 Reexport.@reexport using JuMP
 
-using MathOptInterface
+import MathOptInterface
 const MOI = MathOptInterface
 const MOIU = MathOptInterface.Utilities
 
-using Dualization
-using LinearAlgebra
+import Dualization
+import LinearAlgebra
 
 export BilevelModel,
     Upper, Lower, UpperOnly, LowerOnly,
@@ -49,6 +49,13 @@ The level of a variable in a bilevel problem.
 
 include("intervals.jl")
 include("moi.jl")
+include("modes/sos1.jl")
+include("modes/big_m.jl")
+include("modes/complement.jl")
+include("modes/indicator.jl")
+include("modes/product.jl")
+include("modes/strong_duality.jl")
+include("modes/mixed.jl") # must be last because uses others
 include("moi_utilities.jl")
 
 include("jump.jl")
