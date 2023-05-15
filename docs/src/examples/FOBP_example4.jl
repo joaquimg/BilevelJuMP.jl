@@ -1,4 +1,5 @@
-# # Foundations of Bilevel Programming: Example 4
+# # Foundations of Bilevel Programming: Example Chapter 5.1, Page 127
+#
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 5.1, Page 127. [url](https://www.springer.com/gp/book/9781402006319)
 
@@ -19,7 +20,6 @@
 
 using BilevelJuMP
 using Ipopt
-using JuMP
 using Test
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))

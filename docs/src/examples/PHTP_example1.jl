@@ -1,8 +1,8 @@
-# # Foundations of Bilevel Programming: Example 6
-# This example is from the book Princeton Handbook of Test Problems in Local and Global Optimization
-# Dempe, Chapter 9.3.2 -parg 221 [url](https://www.springer.com/gp/book/9780792358015)
-
-# Here, only the second level is described
+# # Princeton Handbook of Test Problems: Test 9.3.2
+#
+# This example is from the book Princeton Handbook of Test Problems in Local
+# and Global Optimization, Floudas et al., Chapter 9.3.2, Page 221,
+# [url](https://www.springer.com/gp/book/9780792358015).
 
 # Model of the problem
 # First level
@@ -23,7 +23,6 @@
 
 using BilevelJuMP
 using Ipopt
-using JuMP
 using Test
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
@@ -46,7 +45,7 @@ atol = 1e-3
 
 # Upper level constraints
 @constraint(Upper(model), x >= 0)
-@constraint(Upper(model), y >= 0) # only in lowrrin GAMS
+@constraint(Upper(model), y >= 0)
 
 # Followed by the objective and constraints of the lower problem:
 
@@ -58,10 +57,9 @@ atol = 1e-3
 @constraint(Lower(model), x - 0.5y <= 4)
 @constraint(Lower(model), x + y <= 7)
 
-# Initial Starting conditions  #src
 
 # Now we can solve the problem and verify the solution again that reported by
-# Dempe.
+# the book.
 
 optimize!(model)
 primal_status(model)

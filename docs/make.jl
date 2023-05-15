@@ -4,6 +4,7 @@ using Literate
 using Test
 
 const _EXAMPLE_DIR = joinpath(@__DIR__, "src", "examples")
+const _TUTORIAL_DIR = joinpath(@__DIR__, "src", "tutorials")
 
 """
     _include_sandbox(filename)
@@ -53,6 +54,15 @@ function literate_directory(dir)
 end
 
 literate_directory(_EXAMPLE_DIR)
+literate_directory(_TUTORIAL_DIR)
+
+_REPL_FILES = ["getting_started.md",]
+for file in _REPL_FILES
+    filename = joinpath(@__DIR__, "src", "tutorials", file)
+    content = read(filename, String)
+    content = replace(content, "@example" => "@repl")
+    write(filename, content)
+end
 
 makedocs(;
     modules = [BilevelJuMP],
@@ -61,16 +71,35 @@ makedocs(;
     format = Documenter.HTML(;
         mathengine = Documenter.MathJax2(),
         prettyurls = get(ENV, "CI", nothing) == "true",
+        collapselevel = 1,
     ),
     sitename = "BilevelJuMP.jl",
     authors = "Joaquim Garcia",
     pages = [
         "Home" => "index.md",
-        "Manual" => "manual.md",
-        "Examples" => [
-            joinpath("examples", f) for
-            f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
-        ],
+        # "Manual" => "manual.md",
+        "Tutorials" => joinpath.("tutorials", [
+            "getting_started.md",
+            "modes.md",
+            "lower_duals.md",
+            "conic_lower.md",
+            "quad_to_bin.md",
+        ]),
+        "Tutorials" => joinpath.("examples", [
+            "FOBP_example2.md",
+            "FOBP_example3.md",
+            "FOBP_example4.md",
+            "FOBP_example5.md",
+            "DTMP_example1.md",
+            "PHTP_example1.md",
+            "PHTP_example2.md",
+            "SOCBLP_example1.md",
+            "MibS_example1.md",
+            "MibS_example2.md",
+        ]),
+        "Background Information" => "background.md",
+        "API Reference" => "reference.md",
+        "Troubleshooting" => "troubleshooting.md",
     ],
 )
 

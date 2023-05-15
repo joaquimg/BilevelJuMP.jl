@@ -1,5 +1,5 @@
 using Random
-using JuMP, BilevelJuMP
+using BilevelJuMP
 
 function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     rng = Random.MersenneTwister(seed)

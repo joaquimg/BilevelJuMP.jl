@@ -2,6 +2,49 @@ abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
 Base.broadcastable(model::AbstractBilevelModel) = Ref(model)
 
+"""
+    BilevelModel()
+
+Create an empty BilevelModel with default settings,
+no `solver` and no solve `mode`.
+
+## Example
+
+```jldoctest
+julia> model = BilevelModel()
+```
+
+    BilevelModel(solver::Function; mode = BilevelJuMP.SOS1Mode(), add_bridges::Bool = true)
+
+Create a BilevelModel with the given `solver` and solve `mode`.
+
+* `solver`: is a functions that takes no arguments and returns a JuMP solver object.
+* `mode`: is a solve mode object that defines how the model is solved.
+* `add_bridges`: if `true` (default) then bridges are added to the model.
+  If `false` then bridges are not added and the model is not modified.
+
+## Example
+
+```jldoctest
+julia> model = BilevelModel(
+    HiGHS.Optimizer,
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+which is equivalent to
+```jldoctest
+julia> model = BilevelModel(
+    ()->HiGHS.Optimizer(),
+    mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+and equivalent to
+```jldoctest
+julia> model = BilevelModel()
+
+julia> BilevelJuMP.set_solver(model, HiGHS.Optimizer)
+
+julia> BilevelJuMP.set_mode(model, BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
+```
+"""
 mutable struct BilevelModel <: AbstractBilevelModel
     # Structured data
     # JuMP models that hold data for each of the two levels
@@ -173,6 +216,12 @@ function BilevelModel(
     JuMP.set_optimizer(bm, optimizer_constructor; add_bridges = add_bridges)
     return bm
 end
+
+"""
+    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)	
+
+Set the mode of a bilevel model.
+"""
 function set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
     bm.mode = deepcopy(mode)
     reset!(bm.mode)
@@ -183,11 +232,39 @@ abstract type InnerBilevelModel <: AbstractBilevelModel end
 struct UpperModel <: InnerBilevelModel
     m::BilevelModel
 end
+
+"""
+    Upper(model::BilevelModel)
+
+Create a reference to the upper level of a bilevel model.
+
+# Example
+```jldoctest
+julia> model = BilevelModel();
+
+julia> @variable(Upper(model), x >= 0)
+```
+"""
 Upper(m::BilevelModel) = UpperModel(m)
+
 struct LowerModel <: InnerBilevelModel
     m::BilevelModel
 end
+
+"""
+    Lower(model::BilevelModel)
+
+Create a reference to the lower level of a bilevel model.
+
+# Example
+```jldoctest
+julia> model = BilevelModel();
+
+julia> @variable(Lower(model), x >= 0)
+```
+"""
 Lower(m::BilevelModel) = LowerModel(m)
+
 bilevel_model(m::InnerBilevelModel) = m.m
 mylevel_model(m::UpperModel) = bilevel_model(m).upper
 mylevel_model(m::LowerModel) = bilevel_model(m).lower
@@ -221,15 +298,28 @@ function set_link!(
     return nothing
 end
 
-# Models to deal with variables that are not exchanged between models
 abstract type SingleBilevelModel <: AbstractBilevelModel end
 struct UpperOnlyModel <: SingleBilevelModel
     m::BilevelModel
 end
+
+"""
+    UpperOnly(model::BilevelModel)
+
+Create a special reference to the upper level of a bilevel model.
+Variables created with this reference will not be shared with the lower level.
+"""
 UpperOnly(m::BilevelModel) = UpperOnlyModel(m)
 struct LowerOnlyModel <: SingleBilevelModel
     m::BilevelModel
 end
+
+"""
+    LowerOnly(model::BilevelModel)
+
+Create a special reference to the lower level of a bilevel model.
+Variables created with this reference will not be shared with the upper level.
+"""
 LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
 
 bilevel_model(m::SingleBilevelModel) = m.m
@@ -240,13 +330,13 @@ level(::UpperOnlyModel) = UPPER_ONLY
 mylevel_var_list(m::LowerOnlyModel) = bilevel_model(m).var_lower
 mylevel_var_list(m::UpperOnlyModel) = bilevel_model(m).var_upper
 
-function in_upper(l::Level)
+function _in_upper(l::Level)
     return l == LOWER_BOTH ||
            l == UPPER_BOTH ||
            l == UPPER_ONLY ||
            l == DUAL_OF_LOWER
 end
-in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
+_in_lower(l::Level) = l == LOWER_BOTH || l == UPPER_BOTH || l == LOWER_ONLY
 
 function push_single_level_variable!(
     m::LowerOnlyModel,
@@ -263,6 +353,12 @@ end
 #### Model ####
 
 # Variables
+
+"""
+    BilevelVariableRef
+
+Holds a reference to a variable in a bilevel model.
+"""
 struct BilevelVariableRef <: JuMP.AbstractVariableRef
     model::BilevelModel # `model` owning the variable
     idx::Int       # Index in `model.variables`
@@ -304,7 +400,7 @@ end
 # Names
 function JuMP.name(vref::BilevelVariableRef)
     level = vref.model.var_info[vref.idx].level
-    var = if in_lower(level)
+    var = if _in_lower(level)
         vref.model.var_lower[vref.idx]
     else
         vref.model.var_upper[vref.idx]
@@ -313,11 +409,11 @@ function JuMP.name(vref::BilevelVariableRef)
 end
 function JuMP.set_name(vref::BilevelVariableRef, name::String)
     level = vref.model.var_info[vref.idx].level
-    if in_lower(level)
+    if _in_lower(level)
         var = vref.model.var_lower[vref.idx]
         JuMP.set_name(var, name)
     end
-    if in_upper(level)
+    if _in_upper(level)
         var = vref.model.var_upper[vref.idx]
         JuMP.set_name(var, name)
     end
@@ -338,7 +434,7 @@ function JuMP.variable_by_name(model::BilevelModel, name::String)
 end
 function JuMP.name(cref::BilevelConstraintRef)
     level = cref.model.ctr_info[cref.index].level
-    ctr = if in_lower(level)
+    ctr = if _in_lower(level)
         cref.model.ctr_lower[cref.index]
     else
         cref.model.ctr_upper[cref.index]
@@ -347,11 +443,11 @@ function JuMP.name(cref::BilevelConstraintRef)
 end
 function JuMP.set_name(cref::BilevelConstraintRef, name::String)
     level = cref.model.ctr_info[cref.index].level
-    if in_lower(level)
+    if _in_lower(level)
         ctr = cref.model.ctr_lower[cref.index]
         JuMP.set_name(ctr, name)
     end
-    if in_upper(level)
+    if _in_upper(level)
         ctr = cref.model.ctr_upper[cref.index]
         JuMP.set_name(ctr, name)
     end
@@ -361,14 +457,14 @@ function JuMP.constraint_by_name(model::BilevelModel, name::String)
     ctr = JuMP.constraint_by_name(model.upper, name)
     if ctr !== nothing
         if model.ctr_upper_rev === nothing
-            build_reverse_ctr_map!(Upper(model))
+            _build_reverse_ctr_map!(Upper(model))
         end
         return model.ctr_upper_rev[ctr]
     end
     ctr = JuMP.constraint_by_name(model.lower, name)
     if ctr !== nothing
         if model.ctr_lower_rev === nothing
-            build_reverse_ctr_map!(Lower(model))
+            _build_reverse_ctr_map!(Lower(model))
         end
         return model.ctr_lower_rev[ctr]
     end
@@ -433,7 +529,7 @@ function build_reverse_var_map!(lm::LowerModel)
 end
 get_reverse_var_map(m::UpperModel) = m.m.var_upper_rev
 get_reverse_var_map(m::LowerModel) = m.m.var_lower_rev
-function reverse_replace_variable(f, m::InnerBilevelModel)
+function _reverse_replace_variable(f, m::InnerBilevelModel)
     build_reverse_var_map!(m)
     return replace_variables(
         f,
@@ -871,6 +967,12 @@ function check_mixed_mode(mode)
         "Cant set/get mode on a specific object because the base mode is $mode while it should be MixedMode in this case. Run `set_mode(model, BilevelJuMP.MixedMode())`",
     )
 end
+
+"""
+    set_mode(ci::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+
+Set the mode of a constraint. This is used in `MixedMode` reformulations.
+"""
 function set_mode(
     ci::BilevelConstraintRef,
     mode::AbstractBilevelSolverMode{T},
@@ -883,6 +985,13 @@ function set_mode(
     bm.mode.constraint_mode_map_c[ctr] = _mode
     return nothing
 end
+
+"""
+    unset_mode(ci::BilevelConstraintRef)
+
+Unset the mode of a constraint. This will use the default mode for the constraint.
+This is used in `MixedMode` reformulations.
+"""
 function unset_mode(ci::BilevelConstraintRef)
     bm = ci.model
     check_mixed_mode(bm.mode)
@@ -891,6 +1000,11 @@ function unset_mode(ci::BilevelConstraintRef)
     return nothing
 end
 
+"""
+    get_mode(ci::BilevelConstraintRef)
+
+Get the mode of a constraint. This is used in `MixedMode` reformulations.
+"""
 function get_mode(ci::BilevelConstraintRef)
     bm = ci.model
     check_mixed_mode(bm.mode)
@@ -909,7 +1023,12 @@ function set_mode(::BilevelConstraintRef, ::StrongDualityMode{T}) where {T}
     return error("Cant set StrongDualityMode in a specific constraint")
 end
 
-# mode for variable bounds
+"""
+    set_mode(vi::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+
+Set the mode of the bounds of a variable.
+This is used in `MixedMode` reformulations.
+"""
 function set_mode(
     vi::BilevelVariableRef,
     mode::AbstractBilevelSolverMode{T},
@@ -923,6 +1042,14 @@ function set_mode(
     bm.mode.constraint_mode_map_v[var] = _mode
     return nothing
 end
+
+"""
+    unset_mode(vi::BilevelVariableRef)
+
+Unset the mode of the bounds of a variable.
+This will use the default mode for the bounds.
+This is used in `MixedMode` reformulations.
+"""
 function unset_mode(vi::BilevelVariableRef)
     bm = vi.model
     check_mixed_mode(bm.mode)
@@ -931,6 +1058,12 @@ function unset_mode(vi::BilevelVariableRef)
     return nothing
 end
 
+"""
+    get_mode(vi::BilevelVariableRef)
+
+Get the mode of the bounds of a variable.
+This is used in `MixedMode` reformulations.
+"""
 function get_mode(vi::BilevelVariableRef)
     bm = vi.model
     check_mixed_mode(bm.mode)

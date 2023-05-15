@@ -1,5 +1,5 @@
 using SparseArrays, LinearAlgebra
-using JuMP, BilevelJuMP
+using BilevelJuMP
 using Random
 
 function bench_rand(rows, cols, density, optimizer, mode, seed = 1234)

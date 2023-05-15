@@ -25,16 +25,16 @@ function JuMP.objective_sense(m::InnerBilevelModel)
 end
 function JuMP.objective_function_type(m::InnerBilevelModel)
     tp = JuMP.objective_function_type(mylevel_model(m))
-    return bilevel_type(m, tp)
+    return _bilevel_type(m, tp)
 end
-bilevel_type(::InnerBilevelModel, ::Type{JuMP.VariableRef}) = BilevelVariableRef
-function bilevel_type(
+_bilevel_type(::InnerBilevelModel, ::Type{JuMP.VariableRef}) = BilevelVariableRef
+function _bilevel_type(
     ::InnerBilevelModel,
     ::Type{JuMP.GenericAffExpr{C,V}},
 ) where {C,V}
     return JuMP.GenericAffExpr{C,BilevelVariableRef}
 end
-function bilevel_type(
+function _bilevel_type(
     ::InnerBilevelModel,
     ::Type{JuMP.GenericQuadExpr{C,V}},
 ) where {C,V}
@@ -43,11 +43,11 @@ end
 # JuMP.objective_function(m::InnerBilevelModel) = mylevel_obj_function(m)
 function JuMP.objective_function(m::InnerBilevelModel)
     f = JuMP.objective_function(mylevel_model(m))
-    return reverse_replace_variable(f, m)
+    return _reverse_replace_variable(f, m)
 end
 function JuMP.objective_function(m::InnerBilevelModel, FT::Type)
     f = JuMP.objective_function(mylevel_model(m), FT)
-    f2 = reverse_replace_variable(f, m)
+    f2 = _reverse_replace_variable(f, m)
     f2 isa FT ||
         error("The objective function is not of type $FT, show $(typeof(f2))")
     return f2
@@ -77,16 +77,16 @@ function JuMP.set_objective(
     sense::MOI.OptimizationSense,
     f::JuMP.AbstractJuMPScalar,
 )
-    return bilevel_obj_error()
+    return _bilevel_obj_error()
 end
-JuMP.objective_sense(m::BilevelModel) = JuMP.objective_sense(m.upper)# bilevel_obj_error()
-JuMP.objective_function_type(model::BilevelModel) = bilevel_obj_error()
-JuMP.objective_function(model::BilevelModel) = bilevel_obj_error()
+JuMP.objective_sense(m::BilevelModel) = JuMP.objective_sense(m.upper)# _bilevel_obj_error()
+JuMP.objective_function_type(model::BilevelModel) = _bilevel_obj_error()
+JuMP.objective_function(model::BilevelModel) = _bilevel_obj_error()
 function JuMP.objective_function(model::BilevelModel, FT::Type)
-    return bilevel_obj_error()
+    return _bilevel_obj_error()
 end
 
-function bilevel_obj_error()
+function _bilevel_obj_error()
     return error(
         "There is no objective for BilevelModel use Upper(.) and Lower(.)",
     )
@@ -96,13 +96,20 @@ function JuMP.objective_value(model::BilevelModel)
     _check_solver(model)
     return MOI.get(model.solver, MOI.ObjectiveValue())
 end
+
 function JuMP.objective_value(model::UpperModel)
     return JuMP.objective_value(model.m)
 end
+
 function JuMP.objective_value(model::LowerModel)
     return lower_objective_value(model.m)
 end
 
+"""
+    lower_objective_value(model::BilevelModel; result::Int = 1)
+
+Return the value of the objective function of the lower level problem.
+"""
 function lower_objective_value(model::BilevelModel; result::Int = 1)
     f = JuMP.objective_function(Lower(model))
     # Evaluate the lower objective expression
