@@ -1,109 +1,19 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example 8 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../manual/">Manual</a></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Example 8</a></li><li><a class="tocitem" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1</a></li><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Example 2</a></li><li><a class="tocitem" href="../FOBP_example3/">Foundations of Bilevel Programming: Example 3</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example 4</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example 5</a></li><li><a class="tocitem" href="../MibS_example1/">Example on MibS</a></li><li><a class="tocitem" href="../MibS_example2/">Example 2 on MibS</a></li><li><a class="tocitem" href="../PHTP_example1/">Foundations of Bilevel Programming: Example 6</a></li><li><a class="tocitem" href="../PHTP_example2/">Example 7</a></li><li><a class="tocitem" href="../SOCBLP_example1/">Example 10</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Example 8</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example 8</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Example-8"><a class="docs-heading-anchor" href="#Example-8">Example 8</a><a id="Example-8-1"></a><a class="docs-heading-anchor-permalink" href="#Example-8" title="Permalink"></a></h1><p>This example is from the book Decomposition Techniques in Mathematical Programming Chapter 7.2, page 281, <a href="https://www.springer.com/gp/book/9783540276852">url</a></p><p>Bold points in example: Here, we are using upperonly, loweronly for defining variables. Also, we are using equality in constraints. Using upperonly/loweronly will create variables that will appear in the proper model. By this definition, we might have slightly smaller reformulated models in the algorithm.</p><p>Model of the problem First level</p><p class="math-container">\[\min -x + 4y + z,\\
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Decomposition Techniques in Mathematical Programming: Example 7.4 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorials/getting_started/">Getting started with BilevelJuMP</a></li><li><a class="tocitem" href="../../tutorials/modes/">Modes overview</a></li><li><a class="tocitem" href="../../tutorials/lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../../tutorials/conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../../tutorials/quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li class="is-active"><a class="tocitem" href>Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Decomposition Techniques in Mathematical Programming: Example 7.4</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Decomposition Techniques in Mathematical Programming: Example 7.4</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Decomposition-Techniques-in-Mathematical-Programming:-Example-7.4"><a class="docs-heading-anchor" href="#Decomposition-Techniques-in-Mathematical-Programming:-Example-7.4">Decomposition Techniques in Mathematical Programming: Example 7.4</a><a id="Decomposition-Techniques-in-Mathematical-Programming:-Example-7.4-1"></a><a class="docs-heading-anchor-permalink" href="#Decomposition-Techniques-in-Mathematical-Programming:-Example-7.4" title="Permalink"></a></h1><p>This example is from the book Decomposition Techniques in Mathematical Programming Chapter 7.2, page 281, <a href="https://www.springer.com/gp/book/9783540276852">url</a></p><p>Model of the problem First level</p><p class="math-container">\[\min -4y - x,\\
 \notag s.t.\\
-y + 2x + z \leq 9,\\
-z = 1,\\\]</p><p>Second level</p><p class="math-container">\[\min -x - y + w,\\
+y + 2x \leq 8,\\\]</p><p>Second level</p><p class="math-container">\[\min - y - x,\\
 \notag s.t.\\
-y \geq 0,\\
-x + y + w \leq 8,\\
-x \geq 0,\\
-x \leq 4,\\
-x = 1.\\\]</p><pre><code class="language-julia">using BilevelJuMP
+- y \leq 0,\\
+y + x \leq 7,\\
+- x \leq 0,\\
+x \leq 4,\\\]</p><pre><code class="language-julia">using BilevelJuMP
 using Ipopt
-using JuMP
-using Test
 
-model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
-Feasibility problem with:
-Variables: 0
-Upper Constraints: 0
-Lower Constraints: 0
-Bilevel Model
-Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
-Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
-@variable(UpperOnly(model), z)</code></pre><p class="math-container">\[ z \]</p><p>Lower level variables</p><pre><code class="language-julia">@variable(Lower(model), y)
-@variable(LowerOnly(model), w)</code></pre><p class="math-container">\[ w \]</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, -x + 4y + z)</code></pre><p class="math-container">\[ -x + 4 y + z \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), y + 2x + z &lt;= 9)
-@constraint(Upper(model), z == 1)</code></pre><p class="math-container">\[ z = 1.0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -x - y + w)</code></pre><p class="math-container">\[ -x - y + w \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), y &gt;= 0)
-@constraint(Lower(model), x + y + w &lt;= 8)
-@constraint(Lower(model), x &gt;= 0)
-@constraint(Lower(model), x &lt;= 4)
-@constraint(Lower(model), w == 1)</code></pre><p class="math-container">\[ w = 1.0 \]</p><p>Now we can solve the problem and verify the solution again that reported by book</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-5))
 
-Number of nonzeros in equality constraint Jacobian...:        6
-Number of nonzeros in inequality constraint Jacobian.:       23
-Number of nonzeros in Lagrangian Hessian.............:        6
+set_silent(model)</code></pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x, start = 1)</code></pre><p class="math-container">\[ x \]</p><p>Lower level variables</p><pre><code class="language-julia">@variable(Lower(model), y, start = 6)</code></pre><p class="math-container">\[ y \]</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, 4y - x)</code></pre><p class="math-container">\[ 4 y - x \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), y + 2x &lt;= 8)</code></pre><p class="math-container">\[ 2 x + y \leq 8.0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, - y -x )</code></pre><p class="math-container">\[ -y - x \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), - y &lt;= 0)
+@constraint(Lower(model), y + x &lt;= 7)
+@constraint(Lower(model), - x &lt;= 0)
+@constraint(Lower(model), x &lt;= 4)</code></pre><p class="math-container">\[ x \leq 4.0 \]</p><p>Now we can solve the problem and verify the solution again that reported by book</p><pre><code class="language-julia">optimize!(model)</code></pre><p>Auto testing</p><pre><code class="language-julia">value(x)
 
-Total number of variables............................:        9
-                     variables with only lower bounds:        2
-                variables with lower and upper bounds:        0
-                     variables with only upper bounds:        2
-Total number of equality constraints.................:        4
-Total number of inequality constraints...............:        9
-        inequality constraints with only lower bounds:        2
-   inequality constraints with lower and upper bounds:        0
-        inequality constraints with only upper bounds:        7
-
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-   0  0.0000000e+00 1.01e+00 1.48e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
-   1  1.1781455e-02 1.00e+00 7.42e+01  -1.0 1.31e+00    -  6.89e-01 9.87e-03h  1
-   2 -6.8005964e-02 9.99e-01 9.31e+00  -1.0 1.33e+02    -  1.96e-04 1.26e-03h  1
-   3 -2.4952958e-01 9.98e-01 8.45e+02  -1.0 1.19e+03    -  8.04e-03 3.06e-04h  1
-   4 -2.3018689e+00 9.95e-01 2.68e+02  -1.0 1.31e+03    -  4.36e-04 3.17e-03f  1
-   5 -3.8833130e+00 9.91e-01 4.77e+02  -1.0 7.71e+02    -  5.06e-03 4.28e-03f  1
-   6  1.2807159e-01 9.86e-01 5.49e+02  -1.0 2.13e+02    -  1.43e-04 4.69e-03h  1
-   7  2.4088281e-01 9.86e-01 5.49e+02  -1.0 8.81e+02    -  2.67e-04 1.13e-04h  1
-   8  5.1891683e+00 9.82e-01 5.20e+02  -1.0 2.52e+02    -  3.08e-04 4.36e-03h  3
-   9  7.0074086e+00 9.80e-01 5.42e+02  -1.0 1.73e+02    -  1.50e-03 2.33e-03h  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  10  1.3033182e+01 9.71e-01 4.58e+02  -1.0 1.47e+02    -  3.23e-02 9.10e-03h  1
-  11  2.0996330e+01 9.49e-01 3.67e+02  -1.0 7.86e+01    -  1.66e-02 2.24e-02h  1
-  12  2.6674083e+01 9.07e-01 3.25e+02  -1.0 2.81e+01    -  8.38e-04 4.43e-02h  1
-  13  2.6595930e+01 8.60e-01 3.09e+02  -1.0 1.81e+00    -  1.00e+00 5.23e-02h  1
-  14  2.4885884e+01 2.74e-01 1.27e+02  -1.0 1.71e+00    -  1.81e-01 6.82e-01f  1
-  15  2.4532710e+01 1.53e-01 2.09e+02  -1.0 5.44e-01    -  1.00e+00 4.40e-01h  1
-  16  2.4267788e+01 5.85e-02 4.04e+02  -1.0 3.05e-01    -  1.00e+00 6.18e-01h  1
-  17  2.4169490e+01 2.45e-02 1.09e+03  -1.0 1.16e-01    -  1.00e+00 5.81e-01h  1
-  18  2.4129303e+01 1.01e-02 2.55e+03  -1.0 4.88e-02    -  1.00e+00 5.90e-01h  1
-  19  2.4111907e+01 4.17e-03 6.25e+03  -1.0 2.00e-02    -  1.00e+00 5.85e-01h  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  20  2.4105272e+01 1.72e-03 1.50e+04  -1.0 8.31e-03    -  1.00e+00 5.87e-01h  1
-  21  2.4102150e+01 7.12e-04 3.60e+04  -1.0 3.43e-03    -  1.00e+00 5.87e-01h  1
-  22  2.4101136e+01 2.92e-04 8.58e+04  -1.0 1.42e-03    -  1.00e+00 5.90e-01h  1
-  23  2.4100488e+01 1.18e-04 2.02e+05  -1.0 5.80e-04    -  1.00e+00 5.95e-01h  1
-  24  2.4100442e+01 4.64e-05 4.54e+05  -1.0 2.36e-04    -  1.00e+00 6.08e-01h  1
-  25  2.4100338e+01 3.15e-05 1.74e+06  -1.0 9.22e-05    -  1.00e+00 3.20e-01f  2
-  26  2.4100558e+01 1.44e-06 1.94e+05  -1.0 6.52e-05    -  1.00e+00 9.54e-01h  1
-  27  2.4100311e+01 8.74e-07 5.52e+06  -1.0 1.26e-04    -  1.00e+00 3.94e-01f  2
-  28  2.4099866e+01 0.00e+00 4.72e+02  -1.0 8.94e-05    -  1.00e+00 1.00e+00h  1
-  29  2.4000309e+01 0.00e+00 3.40e+05  -3.8 1.99e-02    -  9.81e-01 1.00e+00f  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  30  2.4000150e+01 2.22e-16 2.71e+00  -3.8 3.17e-05    -  1.00e+00 1.00e+00f  1
-  31  2.4000150e+01 0.00e+00 1.24e-07  -3.8 7.42e-09    -  1.00e+00 1.00e+00h  1
-  32  2.4000000e+01 1.11e-16 3.40e+01  -8.6 3.01e-05    -  9.99e-01 1.00e+00f  1
-  33  2.3999999e+01 0.00e+00 2.04e-07  -8.6 9.09e-08    -  1.00e+00 1.00e+00f  1
-  34  2.3999999e+01 0.00e+00 7.46e-12  -8.6 5.50e-10    -  1.00e+00 1.00e+00f  1
-
-Number of Iterations....: 34
-
-                                   (scaled)                 (unscaled)
-Objective...............:   2.3999999455996647e+01    2.3999999455996647e+01
-Dual infeasibility......:   7.4613849636770105e-12    7.4613849636770105e-12
-Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   4.0833339750133923e-09    4.0833339750133923e-09
-Complementarity.........:   2.5133913251323197e-09    2.5133913251323197e-09
-Overall NLP error.......:   2.5133913251323197e-09    2.5133913251323197e-09
-
-
-Number of objective function evaluations             = 41
-Number of objective gradient evaluations             = 35
-Number of equality constraint evaluations            = 41
-Number of inequality constraint evaluations          = 41
-Number of equality constraint Jacobian evaluations   = 35
-Number of inequality constraint Jacobian evaluations = 35
-Number of Lagrangian Hessian evaluations             = 34
-Total seconds in IPOPT                               = 0.017
-
-EXIT: Optimal Solution Found.</pre><p>Auto testing</p><pre><code class="language-julia">@test value(x) ≈ 1 atol = 1e-2
-@test value(y) ≈ 6 atol = 1e-2
-@test value(z) ≈ 1 atol = 1e-2
-@test value(w) ≈ 1 atol = 1e-2</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manual/">« Manual</a><a class="docs-footer-nextpage" href="../FOBP_example2.2/">Foundations of Bilevel Programming: Example 2.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 27 February 2023 03:06">Monday 27 February 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+value(y)</code></pre><pre class="documenter-example-output">5.9999799010742905</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/DTMP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example5/">« Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a><a class="docs-footer-nextpage" href="../PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 15 May 2023 03:38">Monday 15 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

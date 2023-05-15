@@ -1,4 +1,4 @@
-# # Example 2 on MibS
+# # MibS: Example 2 (Experimental feature)
 
 # Model of the problem
 # First level
@@ -21,7 +21,6 @@
 # ```
 
 using BilevelJuMP
-using JuMP
 using Test
 using MibS_jll
 
