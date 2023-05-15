@@ -1,6 +1,7 @@
-# # Example 7
+# # Princeton Handbook of Test Problems: Test 9.3.4
+#
 # This example is from the book Princeton Handbook of Test Problems in Local and Global Optimization
-# Dempe, Chapter 9.3.2 -parg 223 [url](https://www.springer.com/gp/book/9780792358015)
+# Dempe, Chapter 9.3.4 -parg 223 [url](https://www.springer.com/gp/book/9780792358015)
 
 # Here, only the second level is described
 

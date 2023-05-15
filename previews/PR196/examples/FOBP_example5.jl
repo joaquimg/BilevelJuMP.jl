@@ -1,4 +1,5 @@
-# # Foundations of Bilevel Programming: Example 5
+# # Foundations of Bilevel Programming: Example Chapter 8.1, Page 255
+#
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
 # Dempe, Chapter 8.1, Page 255. [url](https://www.springer.com/gp/book/9781402006319)
 

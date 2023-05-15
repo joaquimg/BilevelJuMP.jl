@@ -1,7 +1,8 @@
-# # Foundations of Bilevel Programming: Example 2
+# # Foundations of Bilevel Programming: Chapter 3.2, Page 25
+#
 # This example is from the book _Foundations of Bilevel Programming_ by Stephan
-# Dempe, Chapter 3.2, Page 25. [url](https://www.springer.com/gp/book/9781402006319)
-# Moving the bound on x to lower level
+# Dempe, Chapter 3.2, Page 25
+# [url](https://www.springer.com/gp/book/9781402006319).
 
 # Model of the problem
 # First level
@@ -20,7 +21,6 @@
 # 4x + y >= 8,\\
 # 2x + y <= 13,\\
 # 2x - y <= 0,\\
-# x <= 5\\
 # ```
 
 using BilevelJuMP
@@ -32,6 +32,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 # First we need to define all of the variables in the upper and lower problems:
 
 @variable(Upper(model), y, start = 8 / 15)
+
 @variable(Lower(model), x, start = 3.5 * 8 / 15)
 
 # Then we can add the objective and constraints of the upper problem:
@@ -81,7 +82,7 @@ BilevelJuMP.set_primal_upper_bound_hint(y, 9)
 
 optimize!(model)
 
-# Automated testing
+# Test expected results
 
 @test objective_value(model) ≈ 3 * (3.5 * 8 / 15) + (8 / 15) atol = 1e-4
 @test BilevelJuMP.lower_objective_value(model) ≈ -3.5 * 8 / 15 atol = 1e-4
@@ -93,6 +94,3 @@ optimize!(model)
 @test dual(l1) ≈ [0] atol = 1e-4
 @test dual(l3) ≈ [0] atol = 1e-4
 
-# TODO: why are these commented out?    #src
-# @test dual(l2) #≈ [0] atol=atol       #src
-# @test dual(l4) #≈ [0] atol=atol       #src
