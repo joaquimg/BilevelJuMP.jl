@@ -93,7 +93,7 @@ makedocs(;
             "DTMP_example1.md",
             "PHTP_example1.md",
             "PHTP_example2.md",
-            "SOCBLP_example2.md",
+            "SOCBLP_example1.md",
             "MibS_example1.md",
             "MibS_example2.md",
         ]),
