@@ -85,7 +85,7 @@ makedocs(;
             "conic_lower.md",
             "quad_to_bin.md",
         ]),
-        "Tutorials" => joinpath.("examples", [
+        "Examples" => joinpath.("examples", [
             "FOBP_example2.md",
             "FOBP_example3.md",
             "FOBP_example4.md",
