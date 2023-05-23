@@ -82,19 +82,35 @@ BilevelJuMP.set_primal_upper_bound_hint(y, 9)
 
 optimize!(model)
 
+#
+
 objective_value(model)
+
+#
 
 objective_value(Lower(model))
 
+#
+
 value(x)
+
+#
 
 value(y)
 
+#
+
 value(u1)
+
+#
 
 value(l1)
 
+#
+
 dual(l1)
+
+#
 
 dual(l3)
 
