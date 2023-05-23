@@ -1,3 +1,4 @@
+import Pkg
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
 
@@ -25,6 +26,7 @@ CONFIG_2 = Config(; atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(; atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(; atol = 1e-3, rtol = 1e-3, start_value = true)
 CONFIG_3_hint = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true)
+CONFIG_3_hint_and_start = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true, start_value = true)
 CONFIG_4 = Config(; atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(; atol = 1e-5, rtol = 1e-5)
 
@@ -52,12 +54,15 @@ solvers_fa2 = OptModeType[] # explicit big-M at 100
 solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
-# include("solvers/scip.jl")
 # include("solvers/cbc.jl")
+if Sys.islinux()
+    Pkg.add(name="SCIP")#, version="0.11.12")
+    include("solvers/scip.jl")
+end
 if Sys.iswindows() && (
     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
     get(ENV, "XPRESSDIR", "") != ""
-)
+    )
     @info "Running Xpress in Tests"
     include("solvers/xpress.jl")
 end
@@ -131,7 +136,7 @@ include("jump_nlp.jl")
             jump_04(solver.opt, solver.mode, CONFIG_3_start)
             jump_05(solver.opt, solver.mode)
             jump_3SAT(solver.opt, solver.mode, CONFIG_3)
-            jump_06(solver.opt, solver.mode)
+            jump_06(solver.opt, solver.mode, CONFIG_3)
             # jump_06_sv(solver.opt, solver.mode, CONFIG_4) # fail in Ipopt
             jump_07(solver.opt, solver.mode, CONFIG_2)
             jump_08(solver.opt, solver.mode, CONFIG_3_start)
@@ -277,7 +282,7 @@ include("jump_nlp.jl")
 
     @testset "Sum aggregation_group" begin
         for solver in solvers_nlp_sum
-            jump_01_sum_agg(solver.opt)
+            jump_01_sum_agg(solver.opt, CONFIG_3_hint)
         end
     end
 
@@ -387,7 +392,7 @@ include("jump_nlp.jl")
     @testset "Bilevel Conic JuMP NLP" begin
         for solver in solvers_nlp_lowtol
             jump_conic01(solver.opt, solver.mode)
-            jump_conic02(solver.opt, solver.mode)
+            jump_conic02(solver.opt, solver.mode, bounds = true)
             jump_conic03(solver.opt, solver.mode)
             jump_conic04(solver.opt, solver.mode)
         end

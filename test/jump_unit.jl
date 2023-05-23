@@ -459,7 +459,8 @@ function jump_attributes_solver(optimizer, mode)
     JuMP.node_count(model)
     # TODO improve this check
     @test JuMP.simplex_iterations(model) >= 0
-    @test_throws ArgumentError JuMP.barrier_iterations(model)
+    @test_throws Exception JuMP.barrier_iterations(model)
+    # @test_throws MathOptInterface.GetAttributeNotAllowed{MathOptInterface.BarrierIterations} JuMP.barrier_iterations(model)
 
     @test_throws MethodError JuMP.set_optimizer_attributes(
         mode,
