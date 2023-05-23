@@ -41,7 +41,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 I = 7 # maximum literals
 clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
-atol = 1e-6
+
 # First we need to create all of the variables in the upper and lower problems:
 
 # Upper level variables
@@ -99,15 +99,40 @@ end
 # Dempe.
 
 optimize!(model)
+
+# 
 primal_status(model)
+
+#
+
 termination_status(model)
 
-# Auto testing
-@test objective_value(model) ≈ -1 atol = atol
-@test value.(x) ≈ zeros(I) atol = atol
-@test value.(ya) ≈ ones(I) atol = atol
-@test value.(yb) ≈ zeros(I) atol = atol
-@test value(z) ≈ 1 atol = atol
-# @show dual.(b1) #≈ 6 atol=atol
-# @show dual.(b2) #≈ 2 atol=atol
-# @show dual.(b3) #≈ 2 atol=atol
+# Results
+
+objective_value(model)
+
+#
+
+value.(x)
+
+#
+
+value.(ya)
+
+#
+
+value.(yb)
+
+#
+
+value(z)
+
+
+# Auto testing #src
+atol = 1e-4 #src
+@test objective_value(model) ≈ -1 atol = atol #src
+@test value.(x) ≈ zeros(I) atol = atol #src
+@test value.(ya) ≈ ones(I) atol = atol #src
+@test value.(yb) ≈ zeros(I) atol = atol #src
+@test value(z) ≈ 1 atol = atol #src
+

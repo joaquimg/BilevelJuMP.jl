@@ -90,12 +90,16 @@ end
 # Now we can solve the problem and verify the solution again that reported by
 
 optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
+
+objective_value(model)
 
 value.(y)
 
-@test objective_value(model) ≈ 12 atol = 1e-1
-@test value(x) ≈ 6 atol = 1e-3
-@test value(y[2]) >= 0 - 1e-3
-@test value(y[1]) - value(y[2]) ≈ 2 atol = 1e-3
+@test objective_value(model) ≈ 12 atol = 1e-1 #src
+@test value(x) ≈ 6 atol = 1e-3 #src
+@test value(y[2]) >= 0 - 1e-3 #src
+@test value(y[1]) - value(y[2]) ≈ 2 atol = 1e-3 #src

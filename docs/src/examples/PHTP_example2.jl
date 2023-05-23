@@ -61,12 +61,23 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 # Now we can solve the problem and verify the solution again that reported by the book
 
 optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
 
-# Auto testing
-@test objective_value(model) ≈ 0 atol = 1e-3
-sol = vcat(value.(x), value.(y))
-@test sol ≈ [0; 0; -10; -10] || sol ≈ [0; 30; -10; 10] #atol=1e-3
+objective_value(model)
 
-# # Like any other optimization problem, there is a chance in bilevel optimization to find multiple solutions with the same optimal value; based on the inherent stochasticity of the algorithm and random seed, we are expecting two optimal solutions for this problem. 
+value.(x)
+
+value.(y)
+
+# Auto testing #src
+@test objective_value(model) ≈ 0 atol = 1e-3 #src
+sol = vcat(value.(x), value.(y)) #src
+@test sol ≈ [0; 0; -10; -10] || sol ≈ [0; 30; -10; 10] #atol=1e-3 #src
+
+# # Like any other optimization problem, there is a chance in bilevel
+# optimization to find multiple solutions with the same optimal value;
+# based on the inherent stochasticity of the algorithm and random seed,
+# we are expecting two optimal solutions for this problem. 

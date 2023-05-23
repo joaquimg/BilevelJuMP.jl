@@ -59,5 +59,11 @@ atol = 1e-3
 # Dempe.
 
 optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
+
+value(x)
+
+value(y)

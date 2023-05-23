@@ -60,7 +60,7 @@ set_silent(model)
 
 optimize!(model)
 
-# Auto testing
+# Results
 
 value(x)
 
