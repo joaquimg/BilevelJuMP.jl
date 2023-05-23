@@ -40,44 +40,44 @@ julia&gt; @objective(Upper(model), Min, 3x + y)
 3 x + y
 
 julia&gt; @constraint(Upper(model), u1, x &lt;= 5)
-u1 : x ≤ 5.0
+u1 : x ≤ 5
 
 julia&gt; @constraint(Upper(model), u2, y &lt;= 8)
-u2 : y ≤ 8.0
+u2 : y ≤ 8
 
 julia&gt; @constraint(Upper(model), u3, y &gt;= 0)
-u3 : y ≥ 0.0
+u3 : y ≥ 0
 
 julia&gt; @objective(Lower(model), Min, -x)
 -x
 
 julia&gt; @constraint(Lower(model), l1, x +  y &lt;= 8)
-l1 : x + y ≤ 8.0
+l1 : x + y ≤ 8
 
 julia&gt; @constraint(Lower(model), l2, 4x +  y &gt;= 8)
-l2 : 4 x + y ≥ 8.0
+l2 : 4 x + y ≥ 8
 
 julia&gt; @constraint(Lower(model), l3, 2x +  y &lt;= 13)
-l3 : 2 x + y ≤ 13.0
+l3 : 2 x + y ≤ 13
 
 julia&gt; @constraint(Lower(model), l4, 2x - 7y &lt;= 0)
-l4 : 2 x - 7 y ≤ 0.0
+l4 : 2 x - 7 y ≤ 0
 
 julia&gt; print(model)
 Upper level:
 Min 3 x + y
 Subject to
- u3 : y ≥ 0.0
- u1 : x ≤ 5.0
- u2 : y ≤ 8.0
+ u3 : y ≥ 0
+ u1 : x ≤ 5
+ u2 : y ≤ 8
 
 Lower level:
 Min -x
 Subject to
- l2 : 4 x + y ≥ 8.0
- l1 : x + y ≤ 8.0
- l3 : 2 x + y ≤ 13.0
- l4 : 2 x - 7 y ≤ 0.0
+ l2 : 4 x + y ≥ 8
+ l1 : x + y ≤ 8
+ l3 : 2 x + y ≤ 13
+ l4 : 2 x - 7 y ≤ 0
 
 julia&gt; optimize!(model)
 Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
@@ -179,40 +179,40 @@ x
 julia&gt; @variable(Upper(model), y)
 y</code></pre><p>The same goes for objective that are modeled with the <code>@objective</code> macro:</p><pre><code class="language-julia-repl">julia&gt; @objective(Upper(model), Min, 3x + y)
 3 x + y</code></pre><p>and constraints that are modeled with the <code>@objective</code> macro:</p><pre><code class="language-julia-repl">julia&gt; @constraint(Upper(model), u1, x &lt;= 5)
-u1 : x ≤ 5.0
+u1 : x ≤ 5
 
 julia&gt; @constraint(Upper(model), u2, y &lt;= 8)
-u2 : y ≤ 8.0
+u2 : y ≤ 8
 
 julia&gt; @constraint(Upper(model), u3, y &gt;= 0)
-u3 : y ≥ 0.0</code></pre><p>repeat for the lower level:</p><pre><code class="language-julia-repl">julia&gt; @objective(Lower(model), Min, -x)
+u3 : y ≥ 0</code></pre><p>repeat for the lower level:</p><pre><code class="language-julia-repl">julia&gt; @objective(Lower(model), Min, -x)
 -x
 
 julia&gt; @constraint(Lower(model), l1, x +  y &lt;= 8)
-l1 : x + y ≤ 8.0
+l1 : x + y ≤ 8
 
 julia&gt; @constraint(Lower(model), l2, 4x +  y &gt;= 8)
-l2 : 4 x + y ≥ 8.0
+l2 : 4 x + y ≥ 8
 
 julia&gt; @constraint(Lower(model), l3, 2x +  y &lt;= 13)
-l3 : 2 x + y ≤ 13.0
+l3 : 2 x + y ≤ 13
 
 julia&gt; @constraint(Lower(model), l4, 2x - 7y &lt;= 0)
-l4 : 2 x - 7 y ≤ 0.0</code></pre><p>display the model</p><pre><code class="language-julia-repl">julia&gt; print(model)
+l4 : 2 x - 7 y ≤ 0</code></pre><p>display the model</p><pre><code class="language-julia-repl">julia&gt; print(model)
 Upper level:
 Min 3 x + y
 Subject to
- u3 : y ≥ 0.0
- u1 : x ≤ 5.0
- u2 : y ≤ 8.0
+ u3 : y ≥ 0
+ u1 : x ≤ 5
+ u2 : y ≤ 8
 
 Lower level:
 Min -x
 Subject to
- l2 : 4 x + y ≥ 8.0
- l1 : x + y ≤ 8.0
- l3 : 2 x + y ≤ 13.0
- l4 : 2 x - 7 y ≤ 0.0</code></pre><p>solve the bilevel problem, which will combine a <code>mode</code> (in this case <code>FortunyAmatMcCarlMode</code>) and a solver (in this case <code>HiGHS</code>):</p><pre><code class="language-julia-repl">julia&gt; optimize!(model)
+ l2 : 4 x + y ≥ 8
+ l1 : x + y ≤ 8
+ l3 : 2 x + y ≤ 13
+ l4 : 2 x - 7 y ≤ 0</code></pre><p>solve the bilevel problem, which will combine a <code>mode</code> (in this case <code>FortunyAmatMcCarlMode</code>) and a solver (in this case <code>HiGHS</code>):</p><pre><code class="language-julia-repl">julia&gt; optimize!(model)
 Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
 Copyright (c) 2023 HiGHS under MIT licence terms
 WARNING: Row      0 has         infeasibility of           1 from [lower, value, upper] = [             -1;               0;              -1]
@@ -341,4 +341,4 @@ Solver name: HiGHS
 julia&gt; set_attribute(model, &quot;output_flag&quot;, false)
 
 julia&gt; get_attribute(model, &quot;output_flag&quot;)
-false</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../modes/">Modes overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 18 May 2023 04:25">Thursday 18 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+false</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../modes/">Modes overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 01:53">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
