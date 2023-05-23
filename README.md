@@ -1,16 +1,9 @@
 # BilevelJuMP.jl
 
-[![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![Docs dev][docs-dev-img]][docs-dev-url] [![Docs stable][docs-stable-img]][docs-stable-url]
-
-
-[build-img]: https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master
-[build-url]: https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI
-[codecov-img]: http://codecov.io/github/joaquimg/BilevelJuMP.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/joaquimg/BilevelJuMP.jl?branch=master
-[docs-dev-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-dev-url]: https://joaquimg.github.io/BilevelJuMP.jl/dev/
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://joaquimg.github.io/BilevelJuMP.jl/stable/
+[![Build Status][https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master]][https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI]
+[![Codecov branch][http://codecov.io/github/joaquimg/BilevelJuMP.jl/coverage.svg?branch=master]][http://codecov.io/github/joaquimg/BilevelJuMP.jl?branch=master]
+[![Docs dev][https://img.shields.io/badge/docs-latest-blue.svg]][https://joaquimg.github.io/BilevelJuMP.jl/dev/]
+[![Docs stable][https://img.shields.io/badge/docs-stable-blue.svg]][https://joaquimg.github.io/BilevelJuMP.jl/stable/]
 
 [BilevelJuMP.jl](https://github.com/joaquimg/BilevelJuMP.jl) is a
 [JuMP](https://github.com/JuMP-dev/JuMP.jl) extension for
@@ -30,6 +23,16 @@ You can find the documentation at
 If you need help, please [open a GitHub issue](https://github.com/joaquimg/BilevelJuMP.jl/issues/new).
 
 ## Example
+
+### Install
+
+```julia
+import Pkg
+Pkg.add("BilevelJuMP")
+Pkg.add("HiGHS")
+```
+
+### Run
 
 ```julia
 using BilevelJuMP, HiGHS
