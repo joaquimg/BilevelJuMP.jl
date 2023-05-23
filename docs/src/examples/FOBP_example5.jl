@@ -22,12 +22,9 @@
 
 using BilevelJuMP
 using Ipopt
-using Test
+using Test #src
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
-
-# Global variables
-atol = 1e-3
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -53,11 +50,15 @@ atol = 1e-3
 @constraint(Lower(model), -4x + 5y <= 10)
 @constraint(Lower(model), -4x - 5y <= 10)
 
-# Initial Starting conditions  #src
-
 # Now we can solve the problem and verify the solution again that reported by
 # Dempe.
 
 optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
+
+value(x)
+
+value(y)
