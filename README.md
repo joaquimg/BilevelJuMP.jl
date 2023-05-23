@@ -1,10 +1,6 @@
 # BilevelJuMP.jl
 
-A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.jl) package.
-
-| **Build Status** |
-|:----------------:|
-| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![Docs dev][docs-dev-img]][docs-dev-url] [![Docs stable][docs-stable-img]][docs-stable-url]|
+[![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] [![Docs dev][docs-dev-img]][docs-dev-url] [![Docs stable][docs-stable-img]][docs-stable-url]
 
 
 [build-img]: https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master
@@ -16,7 +12,8 @@ A bilevel optimization extension of the [JuMP](https://github.com/JuMP-dev/JuMP.
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://joaquimg.github.io/BilevelJuMP.jl/stable/
 
-[BilevelJuMP.jl](https://github.com/joaquimg/BilevelJuMP.jl) is a JuMP extension for
+[BilevelJuMP.jl](https://github.com/joaquimg/BilevelJuMP.jl) is a
+[JuMP](https://github.com/JuMP-dev/JuMP.jl) extension for
 modeling and solving bilevel optimization problems.
 
 ## License
