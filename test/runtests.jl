@@ -1,3 +1,4 @@
+import Pkg
 using BilevelJuMP
 using Test, MathOptInterface, JuMP, Dualization
 
@@ -53,12 +54,15 @@ solvers_fa2 = OptModeType[] # explicit big-M at 100
 solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
-# include("solvers/scip.jl")
 # include("solvers/cbc.jl")
+if Sys.islinux()
+    Pkg.add(name="SCIP")#, version="0.11.12")
+    include("solvers/scip.jl")
+end
 if Sys.iswindows() && (
     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
     get(ENV, "XPRESSDIR", "") != ""
-)
+    )
     @info "Running Xpress in Tests"
     include("solvers/xpress.jl")
 end
