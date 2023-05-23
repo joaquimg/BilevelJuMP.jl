@@ -2852,16 +2852,16 @@ function jump_01_sum_agg(optimizer, config = Config())
     BilevelJuMP.set_mode(c2a, BilevelJuMP.ProductMode(1e-9, aggregation_group = 3))
     BilevelJuMP.set_mode(c2b, BilevelJuMP.ProductMode(1e-9, aggregation_group = 3))
 
-    # if config.bound_hint
-    #     for cref in [c1, c2, c3, c4]
-    #         BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
-    #         BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
-    #     end
-    #     BilevelJuMP.set_primal_lower_bound_hint(x, -1)
-    #     BilevelJuMP.set_primal_lower_bound_hint(y, -1)
-    #     BilevelJuMP.set_primal_upper_bound_hint(x, 5)
-    #     BilevelJuMP.set_primal_upper_bound_hint(y, 5)
-    # end
+    if config.bound_hint
+        # for cref in [c1, c2, c3, c4]
+        #     BilevelJuMP.set_dual_upper_bound_hint(cref, 10)
+        #     BilevelJuMP.set_dual_lower_bound_hint(cref, -10)
+        # end
+        BilevelJuMP.set_primal_lower_bound_hint(x, -1)
+        BilevelJuMP.set_primal_lower_bound_hint(y, -1)
+        BilevelJuMP.set_primal_upper_bound_hint(x, 5)
+        BilevelJuMP.set_primal_upper_bound_hint(y, 5)
+    end
 
     optimize!(model)
 

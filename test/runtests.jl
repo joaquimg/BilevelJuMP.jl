@@ -25,6 +25,7 @@ CONFIG_2 = Config(; atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(; atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(; atol = 1e-3, rtol = 1e-3, start_value = true)
 CONFIG_3_hint = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true)
+CONFIG_3_hint_and_start = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true, start_value = true)
 CONFIG_4 = Config(; atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(; atol = 1e-5, rtol = 1e-5)
 
@@ -277,7 +278,7 @@ include("jump_nlp.jl")
 
     @testset "Sum aggregation_group" begin
         for solver in solvers_nlp_sum
-            jump_01_sum_agg(solver.opt)
+            jump_01_sum_agg(solver.opt, CONFIG_3_hint)
         end
     end
 
@@ -387,7 +388,7 @@ include("jump_nlp.jl")
     @testset "Bilevel Conic JuMP NLP" begin
         for solver in solvers_nlp_lowtol
             jump_conic01(solver.opt, solver.mode)
-            jump_conic02(solver.opt, solver.mode)
+            jump_conic02(solver.opt, solver.mode, bounds = true)
             jump_conic03(solver.opt, solver.mode)
             jump_conic04(solver.opt, solver.mode)
         end
