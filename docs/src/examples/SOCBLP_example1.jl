@@ -32,7 +32,7 @@
 
 using BilevelJuMP
 using Ipopt
-using Test
+using Test #src
 
 model = BilevelModel(
     () -> MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer());
