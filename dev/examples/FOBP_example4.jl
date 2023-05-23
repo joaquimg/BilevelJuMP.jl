@@ -55,7 +55,11 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 optimize!(model)
 
+#
+
 primal_status(model)
+
+#
 
 termination_status(model)
 
@@ -63,7 +67,11 @@ termination_status(model)
 
 objective_value(model)
 
+#
+
 value(x)
+
+#
 
 value(y)
 

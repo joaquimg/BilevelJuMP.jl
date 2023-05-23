@@ -33,21 +33,76 @@ end)</code></pre><pre class="documenter-example-output">(u1 : x ≤ 5, u2 : y �
 end</code></pre><p>While we think the primal variables are in <code>[-10, 6]</code> for <code>x</code> and <code>[-1, 9]</code> for <code>y</code>. These hints are optional. But supplying them (e.g., from domain knowledge) can be helpful for the solver.</p><pre><code class="language-julia">BilevelJuMP.set_primal_lower_bound_hint(x, -10)
 BilevelJuMP.set_primal_upper_bound_hint(x, 6)
 BilevelJuMP.set_primal_lower_bound_hint(y, -1)
-BilevelJuMP.set_primal_upper_bound_hint(y, 9)</code></pre><pre class="documenter-example-output">9</pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)
+BilevelJuMP.set_primal_upper_bound_hint(y, 9)</code></pre><pre class="documenter-example-output">9</pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
-objective_value(model)
+Number of nonzeros in equality constraint Jacobian...:        4
+Number of nonzeros in inequality constraint Jacobian.:       30
+Number of nonzeros in Lagrangian Hessian.............:        8
 
-objective_value(Lower(model))
+Total number of variables............................:        6
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        6
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:        1
+Total number of inequality constraints...............:       11
+        inequality constraints with only lower bounds:        2
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        9
 
-value(x)
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  6.1333333e+00 9.90e-01 9.83e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  6.1396885e+00 9.25e-01 9.34e-01  -1.0 2.24e-01    -  7.40e-02 6.55e-02h  1
+   2  6.1741160e+00 5.48e-01 8.00e+00  -1.0 5.64e-01    -  2.88e-01 4.08e-01f  1
+   3  6.1425229e+00 4.63e-01 6.88e+00  -1.0 1.11e+00    -  1.97e-01 1.55e-01h  1
+   4  6.1250014e+00 3.31e-01 1.58e+01  -1.0 4.82e-01    -  6.65e-01 2.85e-01h  1
+   5  6.1271581e+00 2.32e-01 4.43e+01  -1.0 1.38e+00    -  4.34e-01 2.99e-01h  1
+   6  6.1359708e+00 8.87e-03 7.84e+02  -1.0 1.46e+00    -  4.29e-01 9.62e-01h  1
+   7  6.1355776e+00 7.95e-03 1.73e+03  -1.0 2.63e-01   0.0 1.00e+00 1.04e-01h  1
+   8  6.1340660e+00 2.80e-03 1.39e+03  -1.0 3.22e-01  -0.5 1.00e+00 6.48e-01h  1
+   9  6.1336643e+00 1.18e-03 3.23e+03  -1.0 3.18e-01    -  1.00e+00 5.78e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  6.1335518e+00 4.87e-04 7.48e+03  -1.0 7.59e-01    -  1.00e+00 5.87e-01h  1
+  11  6.1334654e+00 2.01e-04 1.79e+04  -1.0 5.91e-01    -  1.00e+00 5.86e-01h  1
+  12  6.1334216e+00 8.31e-05 4.30e+04  -1.0 5.94e-01    -  1.00e+00 5.88e-01h  1
+  13  6.1333943e+00 3.41e-05 1.02e+05  -1.0 4.31e-01    -  1.00e+00 5.90e-01h  1
+  14  6.1333898e+00 2.90e-05 5.05e+05  -1.0 3.28e-01    -  1.00e+00 1.49e-01f  3
+  15  6.1333666e+00 6.15e-06 2.25e+05  -1.0 3.66e-01    -  1.00e+00 7.88e-01h  1
+  16  6.1333658e+00 5.26e-06 2.13e+06  -1.0 7.14e-02    -  1.00e+00 1.45e-01f  3
+  17  6.1333531e+00 1.14e-06 5.93e+05  -1.0 1.25e-01    -  1.00e+00 8.64e-01h  1
+  18  6.1333516e+00 9.44e-07 6.01e+06  -1.0 4.71e-02    -  1.00e+00 1.95e-01f  3
+  19  6.1333413e+00 1.32e-07 1.12e+05  -1.0 5.27e-02    -  1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  6.1333412e+00 1.28e-07 2.35e+06  -1.0 2.43e-03    -  1.00e+00 1.38e-01f  2
+  21  6.1333371e+00 2.05e-08 4.82e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
+  22  6.1333345e+00 0.00e+00 3.65e+05  -1.0 7.66e-03    -  1.00e+00 1.00e+00h  1
+  23  6.1333351e+00 0.00e+00 2.36e+06  -1.0 3.69e-03    -  1.00e+00 5.00e-01f  2
+  24  6.1333351e+00 5.94e-11 1.77e+05  -1.0 5.09e-05   7.4 1.00e+00 1.22e-04f 14
+  25  6.1333346e+00 1.11e-16 8.99e+03  -1.0 7.58e-04    -  1.00e+00 1.00e+00h  1
+  26  6.1333344e+00 1.11e-16 6.78e+06  -1.7 1.64e-03    -  9.77e-01 5.00e-01f  2
+  27  6.1333343e+00 2.22e-16 1.24e+00  -1.7 1.21e-07   6.9 1.00e+00 1.00e+00f  1
+Cannot call restoration phase at point that is almost feasible (violation 2.220446e-16).
+Abort in line search due to no other fall back.
 
-value(y)
+Number of Iterations....: 27
 
-value(u1)
+                                   (scaled)                 (unscaled)
+Objective...............:   6.1333343270975025e+00    6.1333343270975025e+00
+Dual infeasibility......:   1.2398820255530894e+00    1.2398820255530894e+00
+Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
+Variable bound violation:   4.3702288154321385e-09    4.3702288154321385e-09
+Complementarity.........:   2.1052967034654684e-02    2.1052967034654684e-02
+Overall NLP error.......:   1.8299829025848836e-04    1.2398820255530894e+00
 
-value(l1)
 
-dual(l1)
+Number of objective function evaluations             = 67
+Number of objective gradient evaluations             = 29
+Number of equality constraint evaluations            = 67
+Number of inequality constraint evaluations          = 67
+Number of equality constraint Jacobian evaluations   = 29
+Number of inequality constraint Jacobian evaluations = 29
+Number of Lagrangian Hessian evaluations             = 28
+Total seconds in IPOPT                               = 0.073
 
-dual(l3)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
- 4.3702290096589556e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../tutorials/quad_to_bin/">« Using QuadraticToBinary</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 02:49">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Error in step computation!</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">6.1333343270975025</pre><pre><code class="language-julia">objective_value(Lower(model))</code></pre><pre class="documenter-example-output">-1.8666669688637174</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">1.8666669688637174</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">0.5333334205063504</pre><pre><code class="language-julia">value(u1)</code></pre><pre class="documenter-example-output">1.8666669688637174</pre><pre><code class="language-julia">value(l1)</code></pre><pre class="documenter-example-output">2.4000003893700677</pre><pre><code class="language-julia">dual(l1)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 4.017857008328578e-9</pre><pre><code class="language-julia">dual(l3)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 4.3702288154321385e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../tutorials/quad_to_bin/">« Using QuadraticToBinary</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 17:55">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
