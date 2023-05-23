@@ -8,7 +8,6 @@ y \geq 0,\\\]</p><p>Second level</p><p class="math-container">\[\min (y-1)^2-1.5
 x-0.5y \leq 4,\\
 x+y \leq 7,\\\]</p><pre><code class="language-julia">using BilevelJuMP
 using Ipopt
-using Test
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
 Feasibility problem with:
@@ -17,15 +16,18 @@ Upper Constraints: 0
 Lower Constraints: 0
 Bilevel Model
 Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
-Solver name: Ipopt</pre><p>Global variables</p><pre><code class="language-julia">atol = 1e-3</code></pre><pre class="documenter-example-output">0.001</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
+Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x)
 
 #Lower level variables
 @variable(Lower(model), y)</code></pre><p class="math-container">\[ y \]</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, (x - 5)^2 + (2y + 1)^2)</code></pre><p class="math-container">\[ x^2 + 4 y^2 - 10 x + 4 y + 26 \]</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), x &gt;= 0)
 @constraint(Upper(model), y &gt;= 0)</code></pre><p class="math-container">\[ y \geq 0 \]</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, (y - 1)^2 - 1.5 * x * y)</code></pre><p class="math-container">\[ y^2 - 1.5 y\times x - 2 y + 1 \]</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), -3x + y &lt;= -3)
 @constraint(Lower(model), x - 0.5y &lt;= 4)
 @constraint(Lower(model), x + y &lt;= 7)</code></pre><p class="math-container">\[ x + y \leq 7 \]</p><p>Now we can solve the problem and verify the solution again that reported by the book.</p><pre><code class="language-julia">optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
 
-@test value(x) ≈ 1 atol = atol
-@test value(y) ≈ 0 atol = atol</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../DTMP_example1/">« Decomposition Techniques in Mathematical Programming: Example 7.4</a><a class="docs-footer-nextpage" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 02:11">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+value(x)
+
+value(y)</code></pre><pre class="documenter-example-output">-8.120572244645416e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../DTMP_example1/">« Decomposition Techniques in Mathematical Programming: Example 7.4</a><a class="docs-footer-nextpage" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 02:49">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

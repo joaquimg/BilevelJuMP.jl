@@ -10,7 +10,6 @@ y_1 \geq 0,\\
 y_2 \geq 0,\\
 y \in K^2\\\]</p><p>Here, <span>$K^2$</span> is second order cone and it represents:</p><p class="math-container">\[y \in \{y=(y_1,y_2)\in \mathbb{R}\times \mathbb{R}:y_1 \geq ||y_2||_2\}\\\]</p><pre><code class="language-julia">using BilevelJuMP
 using Ipopt
-using Test
 
 model = BilevelModel(
     () -&gt; MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(Ipopt.Optimizer());
@@ -44,12 +43,13 @@ end</code></pre><p>bounds defined in the upper level are not dualized</p><pre><c
     @constraint(Upper(model), y[i] in MOI.LessThan(+5.0))
     @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
 end</code></pre><p>Now we can solve the problem and verify the solution again that reported by</p><pre><code class="language-julia">optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
 
-value.(y)
+objective_value(model)
 
-@test objective_value(model) ≈ 12 atol = 1e-1
-@test value(x) ≈ 6 atol = 1e-3
-@test value(y[2]) &gt;= 0 - 1e-3
-@test value(y[1]) - value(y[2]) ≈ 2 atol = 1e-3</code></pre><pre class="documenter-example-output">Test Passed</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example2/">« Princeton Handbook of Test Problems: Test 9.3.4</a><a class="docs-footer-nextpage" href="../MibS_example1/">MibS: Example 1 (Experimental feature) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 02:11">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+value.(y)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+ 2.003942027385547
+ 0.0039420963049603365</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/SOCBLP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example2/">« Princeton Handbook of Test Problems: Test 9.3.4</a><a class="docs-footer-nextpage" href="../MibS_example1/">MibS: Example 1 (Experimental feature) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 02:49">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

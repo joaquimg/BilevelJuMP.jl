@@ -20,12 +20,9 @@
 
 using BilevelJuMP
 using Ipopt
-using Test
+using Test #src
 
 model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
-
-# Global variables
-atol = 1e-3
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -57,10 +54,21 @@ atol = 1e-3
 # Dempe.
 
 optimize!(model)
+
 primal_status(model)
+
 termination_status(model)
 
-# Auto testing
-@test objective_value(model) ≈ 0 atol = atol
-@test value(x) ≈ 0 atol = atol
-@test value(y) ≈ 0 atol = atol
+# Results
+
+objective_value(model)
+
+value(x)
+
+value(y)
+
+# Auto testing #src
+atol = 1e-3 # src
+@test objective_value(model) ≈ 0 atol = atol #src
+@test value(x) ≈ 0 atol = atol #src
+@test value(y) ≈ 0 atol = atol #src
