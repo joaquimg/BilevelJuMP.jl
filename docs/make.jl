@@ -83,6 +83,7 @@ makedocs(;
             "modes.md",
             "lower_duals.md",
             "conic_lower.md",
+            "non_linear.md",
             "quad_to_bin.md",
         ]),
         "Examples" => joinpath.("examples", [
