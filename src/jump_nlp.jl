@@ -31,7 +31,10 @@ end
 no_nlp() = error("Nonlinear data must be passed to the Upper(.) model")
 function no_nlp_lower()
     return error(
-        "Nonlinear data (objective, constraints, parameters) is not allowed in the lower level",
+        "Nonlinear data (objective, constraints, parameters) is not allowed in the lower level. " *
+        "If you are trying to use the @NLconstraint or @NLobjective macros for quadratic expressions, " *
+        "please use the @constraint or @objective macros instead. " *
+        "Expressions that are not quadratic nor linear are not supported in the lower level."
     )
 end
 
