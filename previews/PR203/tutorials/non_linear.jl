@@ -32,7 +32,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 
 @objective(Lower(model), Min, y^2)
 
-# -
+#-
 
 optimize!(model)
 
@@ -46,19 +46,19 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 @variable(Upper(model), x >= 2)
 @variable(Lower(model), 3 <= y <= 5)
 
-# -
+#-
 
 @objective(Upper(model), Min, x^2 - y)
 
-# -
+#-
 
 @constraint(Upper(model), x^2 + y^2 <= 100)
 
-# -
+#-
 
 @objective(Lower(model), Min, y^2)
 
-# -
+#-
 
 optimize!(model)
 
@@ -73,19 +73,19 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 @variable(Upper(model), x >= 2)
 @variable(Lower(model), 3 <= y <= 5)
 
-# -
+#-
 
 @NLobjective(Upper(model), Min, x^4 - sin(y))
 
-# -
+#-
 
 @NLconstraint(Upper(model), x^3 + y^3 <= 1000)
 
-# -
+#-
 
 @objective(Lower(model), Min, y^2)
 
-# -
+#-
 
 optimize!(model)
 
