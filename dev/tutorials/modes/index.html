@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Modes overview · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../getting_started/">Getting started with BilevelJuMP</a></li><li class="is-active"><a class="tocitem" href>Modes overview</a><ul class="internal"><li><a class="tocitem" href="#BigMMode-and-HiGHS.Optimizer"><span><code>BigMMode</code> and <code>HiGHS.Optimizer</code></span></a></li><li><a class="tocitem" href="#SOS1Mode-and-SCIP.Optimizer"><span><code>SOS1Mode</code> and <code>SCIP.Optimizer</code></span></a></li><li><a class="tocitem" href="#IndicatorMode-and-SCIP.Optimizer"><span><code>IndicatorMode</code> and <code>SCIP.Optimizer</code></span></a></li><li><a class="tocitem" href="#ProductMode-and-Ipopt.Optimizer"><span><code>ProductMode</code> and <code>Ipopt.Optimizer</code></span></a></li><li><a class="tocitem" href="#StrongDualityMode-and-Ipopt.Optimizer"><span><code>StrongDualityMode</code> and <code>Ipopt.Optimizer</code></span></a></li><li><a class="tocitem" href="#MixedMode-and-SCIP.Optimizer"><span><code>MixedMode</code> and <code>SCIP.Optimizer</code></span></a></li></ul></li><li><a class="tocitem" href="../lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../../examples/FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../../examples/FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../../examples/FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../../examples/DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../../examples/PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../../examples/PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../../examples/SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../../examples/MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../../examples/MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Modes overview</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Modes overview</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Modes-overview"><a class="docs-heading-anchor" href="#Modes-overview">Modes overview</a><a id="Modes-overview-1"></a><a class="docs-heading-anchor-permalink" href="#Modes-overview" title="Permalink"></a></h1><p>There are several ways to solve bilevel problems with BilevelJuMP. The main difference between them is the way the complementarity constraints are reformulated. The reformulation method is set with the <code>mode</code> option of the <code>BilevelModel</code> constructor.</p><p>The <code>mode</code>s available are:</p><ul><li><p><code>BilevelJuMP.SOS1Mode()</code>: uses SOS1 constraints to model complementarity constraints and solve the problem with MIP solvers (Cbc, Xpress, Gurobi, CPLEX, SCIP).</p></li><li><p><code>BilevelJuMP.IndicatorMode()</code>: uses Indicator constraints to model   complementarity constraints and solve the problem with MIP solvers (Cbc,   Xpress, Gurobi, CPLEX, SCIP).</p></li><li><p><code>BilevelJuMP.BigMMode()</code>: uses the Fortuny-Amat and McCarl   reformulation that requires a MIP solver with very basic functionality,   i.e., just binary variables are needed. The main drawback of this method is   that one must provide bounds for all primal and dual variables. However, if   good bounds are provided, this method can be more efficient than the   previous. Bound hints to compute the big-Ms can be passed with the methods:   <code>set_primal_(upper\lower)_bound_hint(variable, bound)</code>, for primals; and   <code>set_dual_(upper\lower)_bound_hint(constraint, bound)</code> for duals. We can   also call <code>FortunyAmatMcCarlMode(primal_big_M = vp, dual_big_M = vd)</code>,   where <code>vp</code> and <code>vd</code> are, respectively, the big M fallback values for   primal and dual variables, these are used when some variables have no given   bounds, otherwise the given bounds are used instead.</p></li><li><p><code>BilevelJuMP.ProductMode()</code>: reformulates the complementarity constraints as   products so that the problem can be solved by NLP (Ipopt, KNITRO) solvers or   even MIP solvers with the aid of binary expansions   (see <code>QuadraticToBinary.jl</code>). Note that binary expansions require variables   to have upper and lower bounds. Also, note that the <code>Gurobi</code> solver supports   products, but requires   <a href="https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd">setting the <code>&quot;NonConvex&quot;</code> options</a>.</p></li><li><p><code>BilevelJuMP.MixedMode(default = mode)</code>: where <code>mode</code> is one of the other   modes described above. With this method it is possible to set complementarity   reformulations per constraint with <code>BilevelJuMP.set_mode(constraint, mode)</code>,   where <code>constraint</code> is a constraint of the bilevel problem and <code>mode</code> is one   of the modes described above. If no mode is set for a constraint, the   <code>default</code> mode is used instead. To set a mode to reformulate variables   bounds use: <code>BilevelJuMP.set_mode(variable, mode)</code>.</p></li><li><p><code>BilevelJuMP.StrongDualityMode</code>: this mode is not a complementarity   reformulation method, instead, all complementarity constraints are replaced   by constraints enforcing the strong duality.   This mode is especially amenable for NLP solvers (Ipopt, KNITRO).   MIP solvers can also be used but they will have to deal with the products   of variables crated or the will have to be used in conjunction with   <code>QuadraticToBinary.jl</code>.</p></li></ul><p>The following example shows how to solve a classic bilevel problem.</p><p>We start loading all libraries needed for this example.</p><pre><code class="language-julia">using BilevelJuMP, HiGHS, Ipopt, SCIP</code></pre><p>Now we create a bilevel model with the <code>BilevelModel</code> constructor with no solver nor mode specified.</p><pre><code class="language-julia">model = BilevelModel()
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Modes overview · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../getting_started/">Getting started with BilevelJuMP</a></li><li class="is-active"><a class="tocitem" href>Modes overview</a><ul class="internal"><li><a class="tocitem" href="#BigMMode-and-HiGHS.Optimizer"><span><code>BigMMode</code> and <code>HiGHS.Optimizer</code></span></a></li><li><a class="tocitem" href="#SOS1Mode-and-SCIP.Optimizer"><span><code>SOS1Mode</code> and <code>SCIP.Optimizer</code></span></a></li><li><a class="tocitem" href="#IndicatorMode-and-SCIP.Optimizer"><span><code>IndicatorMode</code> and <code>SCIP.Optimizer</code></span></a></li><li><a class="tocitem" href="#ProductMode-and-Ipopt.Optimizer"><span><code>ProductMode</code> and <code>Ipopt.Optimizer</code></span></a></li><li><a class="tocitem" href="#StrongDualityMode-and-Ipopt.Optimizer"><span><code>StrongDualityMode</code> and <code>Ipopt.Optimizer</code></span></a></li><li><a class="tocitem" href="#MixedMode-and-SCIP.Optimizer"><span><code>MixedMode</code> and <code>SCIP.Optimizer</code></span></a></li></ul></li><li><a class="tocitem" href="../lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../non_linear/">Non Linear models</a></li><li><a class="tocitem" href="../quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../../examples/FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../../examples/FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../../examples/FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../../examples/DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../../examples/PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../../examples/PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../../examples/SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../../examples/MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../../examples/MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Modes overview</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Modes overview</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Modes-overview"><a class="docs-heading-anchor" href="#Modes-overview">Modes overview</a><a id="Modes-overview-1"></a><a class="docs-heading-anchor-permalink" href="#Modes-overview" title="Permalink"></a></h1><p>There are several ways to solve bilevel problems with BilevelJuMP. The main difference between them is the way the complementarity constraints are reformulated. The reformulation method is set with the <code>mode</code> option of the <code>BilevelModel</code> constructor.</p><p>The <code>mode</code>s available are:</p><ul><li><p><code>BilevelJuMP.SOS1Mode()</code>: uses SOS1 constraints to model complementarity constraints and solve the problem with MIP solvers (Cbc, Xpress, Gurobi, CPLEX, SCIP).</p></li><li><p><code>BilevelJuMP.IndicatorMode()</code>: uses Indicator constraints to model   complementarity constraints and solve the problem with MIP solvers (Cbc,   Xpress, Gurobi, CPLEX, SCIP).</p></li><li><p><code>BilevelJuMP.BigMMode()</code>: uses the Fortuny-Amat and McCarl   reformulation that requires a MIP solver with very basic functionality,   i.e., just binary variables are needed. The main drawback of this method is   that one must provide bounds for all primal and dual variables. However, if   good bounds are provided, this method can be more efficient than the   previous. Bound hints to compute the big-Ms can be passed with the methods:   <code>set_primal_(upper\lower)_bound_hint(variable, bound)</code>, for primals; and   <code>set_dual_(upper\lower)_bound_hint(constraint, bound)</code> for duals. We can   also call <code>FortunyAmatMcCarlMode(primal_big_M = vp, dual_big_M = vd)</code>,   where <code>vp</code> and <code>vd</code> are, respectively, the big M fallback values for   primal and dual variables, these are used when some variables have no given   bounds, otherwise the given bounds are used instead.</p></li><li><p><code>BilevelJuMP.ProductMode()</code>: reformulates the complementarity constraints as   products so that the problem can be solved by NLP (Ipopt, KNITRO) solvers or   even MIP solvers with the aid of binary expansions   (see <code>QuadraticToBinary.jl</code>). Note that binary expansions require variables   to have upper and lower bounds. Also, note that the <code>Gurobi</code> solver supports   products, but requires   <a href="https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd">setting the <code>&quot;NonConvex&quot;</code> options</a>.</p></li><li><p><code>BilevelJuMP.MixedMode(default = mode)</code>: where <code>mode</code> is one of the other   modes described above. With this method it is possible to set complementarity   reformulations per constraint with <code>BilevelJuMP.set_mode(constraint, mode)</code>,   where <code>constraint</code> is a constraint of the bilevel problem and <code>mode</code> is one   of the modes described above. If no mode is set for a constraint, the   <code>default</code> mode is used instead. To set a mode to reformulate variables   bounds use: <code>BilevelJuMP.set_mode(variable, mode)</code>.</p></li><li><p><code>BilevelJuMP.StrongDualityMode</code>: this mode is not a complementarity   reformulation method, instead, all complementarity constraints are replaced   by constraints enforcing the strong duality.   This mode is especially amenable for NLP solvers (Ipopt, KNITRO).   MIP solvers can also be used but they will have to deal with the products   of variables crated or the will have to be used in conjunction with   <code>QuadraticToBinary.jl</code>.</p></li></ul><p>The following example shows how to solve a classic bilevel problem.</p><p>We start loading all libraries needed for this example.</p><pre><code class="language-julia">using BilevelJuMP, HiGHS, Ipopt, SCIP</code></pre><p>Now we create a bilevel model with the <code>BilevelModel</code> constructor with no solver nor mode specified.</p><pre><code class="language-julia">model = BilevelModel()
 
 @variable(Lower(model), x)
 @variable(Upper(model), y)
@@ -201,73 +201,70 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   29  6.1333430e+00 0.00e+00 2.44e+03  -1.0 2.20e-04    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   30  6.1333427e+00 0.00e+00 3.07e+03  -2.5 3.24e-05    -  1.00e+00 1.00e+00f  1
-  31  6.1333393e+00 1.11e-16 2.13e+01  -2.5 3.73e-05   4.0 1.00e+00 1.00e+00f  1
-  32  6.1333392e+00 0.00e+00 3.41e+00  -3.8 1.25e-06   3.5 1.00e+00 1.00e+00h  1
-  33  6.1333391e+00 1.11e-16 9.88e+02  -3.8 1.70e-02    -  9.26e-02 2.91e-03f  6
+  31  6.1333393e+00 2.22e-16 2.13e+01  -2.5 3.73e-05   4.0 1.00e+00 1.00e+00f  1
+  32  6.1333392e+00 1.11e-16 3.41e+00  -3.8 1.25e-06   3.5 1.00e+00 1.00e+00h  1
+  33  6.1333391e+00 0.00e+00 9.91e+02  -3.8 1.70e-02    -  9.31e-02 2.92e-03f  6
   34  6.1333382e+00 0.00e+00 9.80e-02  -3.8 7.87e-06   3.0 1.00e+00 1.00e+00f  1
-  35  6.1333381e+00 0.00e+00 9.60e+01  -5.7 6.67e-06   2.6 9.97e-01 1.00e+00h  1
+  35  6.1333381e+00 1.11e-16 9.60e+01  -5.7 6.67e-06   2.6 9.97e-01 1.00e+00h  1
   36  6.1333337e+00 0.00e+00 4.05e-01  -5.7 4.35e-04    -  1.00e+00 1.00e+00f  1
-  37  6.1333346e+00 1.11e-16 2.76e-01  -5.7 1.08e-03    -  1.00e+00 1.00e+00h  1
-  38  6.1333337e+00 2.22e-16 2.52e-01  -5.7 6.01e-03    -  1.00e+00 1.00e+00H  1
-  39  6.1333335e+00 2.22e-16 1.90e+00  -5.7 5.19e-02    -  3.11e-01 1.86e-01h  2
+  37  6.1333345e+00 1.11e-16 2.02e-02  -5.7 1.07e-03    -  1.00e+00 1.00e+00h  1
+  38  6.1333339e+00 0.00e+00 4.44e+00  -5.7 6.73e-03    -  8.93e-01 4.60e-01h  2
+  39  6.1333342e+00 1.11e-16 4.24e-04  -5.7 1.38e-06   2.1 1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  40  6.1333337e+00 2.22e-16 3.58e-05  -5.7 2.98e-07   2.1 1.00e+00 1.00e+00h  1
-  41  6.1333335e+00 2.22e-16 1.94e+00  -5.7 1.59e-02    -  1.00e+00 1.00e+00F  1
-  42  6.1333335e+00 0.00e+00 5.56e-05  -5.7 4.42e-07   1.6 1.00e+00 1.00e+00h  1
-  43  6.1333333e+00 0.00e+00 7.24e+01  -5.7 5.90e-02    -  6.44e-01 1.00e+00F  1
-  44  6.1333334e+00 2.22e-16 4.00e-04  -5.7 1.19e-06   1.1 1.00e+00 1.00e+00h  1
-  45  6.1333333e+00 2.22e-16 1.89e+01  -5.7 1.15e+00    -  7.72e-02 5.26e-02f  2
-  46  6.1333334e+00 0.00e+00 4.94e-05  -5.7 2.19e-06   0.6 1.00e+00 1.00e+00h  1
-  47  6.1333334e+00 0.00e+00 7.48e+01  -5.7 3.87e-01    -  8.39e-01 1.00e+00F  1
-  48  6.1333334e+00 6.45e-09 7.17e+01  -5.7 2.25e+00    -  2.21e-01 7.97e-02h  2
-  49  6.1333334e+00 0.00e+00 6.89e+01  -5.7 5.09e-01    -  1.00e+00 1.48e-01h  3
+  40  6.1333340e+00 3.06e-14 6.10e-02  -5.7 3.78e-03    -  1.00e+00 1.00e+00f  1
+  41  6.1333337e+00 2.02e-14 6.91e+01  -5.7 1.91e-02    -  9.05e-01 3.35e-01h  2
+  42  6.1333337e+00 0.00e+00 7.66e-05  -5.7 9.72e-07   1.6 1.00e+00 1.00e+00h  1
+  43  6.1333336e+00 3.77e-15 1.20e+00  -5.7 1.27e-02    -  1.00e+00 5.00e-01f  2
+  44  6.1333336e+00 1.11e-16 2.53e-05  -5.7 1.90e-06   1.1 1.00e+00 1.00e+00h  1
+  45  6.1333334e+00 2.22e-16 5.30e+00  -5.7 2.25e-02    -  9.60e-01 1.00e+00F  1
+  46  6.1333335e+00 1.11e-16 6.57e-04  -5.7 3.53e-06   0.6 1.00e+00 1.00e+00h  1
+  47  6.1333334e+00 2.22e-16 5.81e+00  -5.7 1.17e-01    -  3.82e-01 1.07e-01h  3
+  48  6.1333334e+00 0.00e+00 1.86e-04  -5.7 9.06e-06   0.2 1.00e+00 1.00e+00h  1
+  49  6.1333333e+00 0.00e+00 9.38e+01  -5.7 1.39e-01    -  6.30e-01 1.00e+00F  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  50  6.1333333e+00 0.00e+00 1.37e+02  -5.7 3.72e-01    -  1.00e+00 1.00e+00h  1
-  51  6.1333333e+00 0.00e+00 2.51e+03  -5.7 2.18e+00    -  3.18e-01 1.00e+00h  1
-  52  6.1333333e+00 0.00e+00 1.71e+03  -5.7 4.23e-06   0.2 1.00e+00 3.20e-01h  2
-  53  6.1333333e+00 8.88e-16 2.14e-03  -5.7 5.32e-06  -0.3 1.00e+00 1.00e+00h  1
-  54  6.1333333e+00 0.00e+00 1.65e+03  -5.7 3.56e+00    -  8.31e-01 1.00e+00f  1
-  55  6.1333333e+00 0.00e+00 9.18e+03  -5.7 2.52e+01    -  4.52e-01 1.00e+00h  1
-  56  6.1333333e+00 0.00e+00 1.06e-06  -5.7 2.00e-07  -0.8 1.00e+00 1.00e+00h  1
-  57  6.1333333e+00 7.11e-15 3.47e+00  -8.6 4.08e-02    -  9.93e-01 1.00e+00h  1
-  58  6.1333333e+00 0.00e+00 6.46e-02  -8.6 6.19e-01    -  1.00e+00 1.00e+00h  1
-  59  6.1333333e+00 0.00e+00 2.08e+00  -8.6 2.85e+01    -  7.75e-01 1.00e+00h  1
+  50  6.1333333e+00 0.00e+00 3.08e+02  -5.7 1.75e+01    -  3.69e-02 3.04e-02h  2
+  51  6.1333334e+00 3.92e-07 1.22e+04  -5.7 5.00e+00    -  3.24e-01 1.00e+00h  1
+  52  6.1333333e+00 8.88e-16 6.07e+03  -5.7 3.25e+00    -  3.62e-01 1.00e+00h  1
+  53  6.1333334e+00 6.75e-08 4.94e+03  -5.7 1.51e-05  -0.3 1.00e+00 1.86e-01h  2
+  54  6.1333333e+00 0.00e+00 6.63e-04  -5.7 5.76e-06  -0.8 1.00e+00 1.00e+00h  1
+  55  6.1333333e+00 1.78e-15 8.88e+02  -5.7 3.08e+00    -  7.88e-01 1.00e+00f  1
+  56  6.1333334e+00 3.36e-07 1.51e+03  -5.7 3.08e+01    -  3.71e-01 1.00e+00H  1
+  57  6.1333333e+00 0.00e+00 1.01e-03  -5.7 1.14e-05  -1.3 1.00e+00 1.00e+00h  1
+  58  6.1333333e+00 0.00e+00 2.95e+03  -5.7 1.71e+01    -  8.31e-01 1.00e+00f  1
+  59  6.1333333e+00 1.69e-07 4.27e+03  -5.7 1.31e+02    -  2.80e-01 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  60  6.1333333e+00 0.00e+00 3.44e+00  -8.6 1.25e+02    -  6.32e-01 1.00e+00h  1
-  61  6.1333333e+00 4.34e-07 7.93e+00  -8.6 3.79e+02    -  3.97e-01 1.00e+00h  1
-  62  6.1333333e+00 0.00e+00 1.09e+01  -8.6 1.52e+04    -  3.09e-02 5.52e-02h  2
-  63  6.1333333e+00 0.00e+00 7.21e+00  -8.6 1.42e-05  -1.3 1.00e+00 3.37e-01h  2
-  64  6.1333333e+00 0.00e+00 1.84e+00  -8.6 1.56e+03    -  5.33e-01 1.00e+00h  1
-  65  6.1333333e+00 0.00e+00 9.34e-08  -8.6 5.11e-06  -1.7 1.00e+00 1.00e+00h  1
-  66  6.1333333e+00 0.00e+00 9.70e-01  -8.6 3.08e+03    -  9.63e-01 1.00e+00h  1
-  67  6.1333333e+00 0.00e+00 1.28e+02  -8.6 4.81e+04    -  1.54e-01 1.00e+00h  1
-  68  6.1333333e+00 0.00e+00 2.39e-07  -8.6 3.92e-05  -2.2 1.00e+00 1.00e+00h  1
-  69  6.1333333e+00 0.00e+00 2.31e+00  -8.6 4.16e+04    -  1.00e+00 1.00e+00h  1
+  60  6.1333333e+00 0.00e+00 9.56e-06  -5.7 6.92e-07  -1.7 1.00e+00 1.00e+00h  1
+  61  6.1333333e+00 0.00e+00 2.89e+00  -8.6 2.17e-01    -  9.93e-01 1.00e+00h  1
+  62  6.1333333e+00 0.00e+00 9.18e-02  -8.6 5.14e+00    -  1.00e+00 1.00e+00h  1
+  63  6.1333333e+00 0.00e+00 2.56e+00  -8.6 1.53e+02    -  7.49e-01 1.00e+00h  1
+  64  6.1333333e+00 0.00e+00 1.88e+00  -8.6 6.47e+02    -  6.22e-01 1.00e+00h  1
+  65  6.1333333e+00 0.00e+00 4.64e+00  -8.6 1.76e+03    -  4.37e-01 1.00e+00h  1
+  66  6.1333333e+00 0.00e+00 1.90e+01  -8.6 3.84e+03    -  4.96e-01 1.00e+00h  1
+  67  6.1333333e+00 0.00e+00 2.25e-07  -8.6 3.69e-05  -2.2 1.00e+00 1.00e+00h  1
+  68  6.1333333e+00 0.00e+00 3.85e+00  -8.6 4.48e+03    -  9.56e-01 1.00e+00h  1
+  69  6.1333333e+00 1.46e-11 5.88e+00  -8.6 2.37e+04    -  6.90e-01 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  70  6.1333333e+00 5.82e-11 8.97e-01  -8.6 1.59e+05    -  1.00e+00 1.00e+00h  1
-  71  6.1333333e+00 0.00e+00 5.25e-02  -8.6 1.21e+04    -  1.00e+00 1.00e+00h  1
-  72  6.1333333e+00 0.00e+00 1.19e-05  -8.6 5.93e+01    -  1.00e+00 1.00e+00h  1
-  73  6.1333333e+00 0.00e+00 2.71e-12  -8.6 2.94e-02    -  1.00e+00 1.00e+00h  1
+  70  6.1333333e+00 0.00e+00 1.27e-09  -8.6 6.25e-07  -2.7 1.00e+00 1.00e+00h  1
 
-Number of Iterations....: 73
+Number of Iterations....: 70
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333332742314868e+00    6.1333332742314868e+00
-Dual infeasibility......:   2.7117197376469448e-12    2.7117197376469448e-12
+Objective...............:   6.1333332742197308e+00    6.1333332742197308e+00
+Dual infeasibility......:   1.2679002335357878e-09    1.2679002335357878e-09
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   4.4274809187392945e-09    4.4274809187392945e-09
-Complementarity.........:   2.5059035597463280e-09    2.5059035597463280e-09
-Overall NLP error.......:   2.5059035597463280e-09    2.5059035597463280e-09
+Variable bound violation:   4.4274809187403955e-09    4.4274809187403955e-09
+Complementarity.........:   2.5060467420022482e-09    2.5060467420022482e-09
+Overall NLP error.......:   2.5060467420022482e-09    2.5060467420022482e-09
 
 
-Number of objective function evaluations             = 115
-Number of objective gradient evaluations             = 74
-Number of equality constraint evaluations            = 115
-Number of inequality constraint evaluations          = 115
-Number of equality constraint Jacobian evaluations   = 74
-Number of inequality constraint Jacobian evaluations = 74
-Number of Lagrangian Hessian evaluations             = 73
-Total seconds in IPOPT                               = 0.031
+Number of objective function evaluations             = 114
+Number of objective gradient evaluations             = 71
+Number of equality constraint evaluations            = 114
+Number of inequality constraint evaluations          = 114
+Number of equality constraint Jacobian evaluations   = 71
+Number of inequality constraint Jacobian evaluations = 71
+Number of Lagrangian Hessian evaluations             = 70
+Total seconds in IPOPT                               = 0.039
 
 EXIT: Optimal Solution Found.</pre><h2 id="StrongDualityMode-and-Ipopt.Optimizer"><a class="docs-heading-anchor" href="#StrongDualityMode-and-Ipopt.Optimizer"><code>StrongDualityMode</code> and <code>Ipopt.Optimizer</code></a><a id="StrongDualityMode-and-Ipopt.Optimizer-1"></a><a class="docs-heading-anchor-permalink" href="#StrongDualityMode-and-Ipopt.Optimizer" title="Permalink"></a></h2><pre><code class="language-julia">set_optimizer(model, Ipopt.Optimizer)
 
@@ -307,73 +304,67 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   10  6.1317629e+00 9.14e-03 2.51e+02  -1.7 1.45e+01    -  6.09e-01 3.74e-01h  1
   11  6.1326207e+00 8.08e-03 3.75e+02  -1.7 7.78e+01    -  5.24e-01 3.34e-01f  1
-  12  6.1330471e+00 4.49e-03 5.09e+02  -1.7 5.06e+01    -  5.84e-01 4.01e-01H  1
-  13  6.1330042e+00 4.19e-03 2.11e+02  -1.7 2.41e+02    -  3.12e-01 4.81e-01F  1
-  14  6.1332031e+00 4.02e-03 2.42e+02  -1.7 3.17e+02    -  3.74e-01 3.74e-01H  1
-  15  6.1332221e+00 6.22e-04 6.68e+02  -1.7 5.37e+02    -  5.47e-01 4.62e-01H  1
-  16  6.1332962e+00 6.45e-04 4.79e+02  -1.7 9.70e+02    -  4.48e-01 4.99e-01H  1
-  17  6.1333059e+00 6.51e-03 1.24e+04  -1.7 1.92e+03    -  7.43e-01 3.38e-01f  2
-  18  6.1333095e+00 6.49e-03 3.42e+04  -1.7 3.05e+03    -  6.23e-01 1.25e-01h  4
-  19  6.1333111e+00 6.32e-03 6.60e+04  -1.7 4.20e+03    -  7.09e-01 6.25e-02h  5
+  12  6.1330471e+00 4.49e-03 5.42e+02  -1.7 5.06e+01    -  5.84e-01 4.01e-01H  1
+  13  6.1330042e+00 4.19e-03 2.38e+02  -1.7 2.41e+02    -  3.12e-01 4.80e-01F  1
+  14  6.1332031e+00 4.03e-03 2.43e+02  -1.7 3.17e+02    -  3.74e-01 3.74e-01H  1
+  15  6.1332221e+00 6.18e-04 7.32e+02  -1.7 5.37e+02    -  5.47e-01 4.62e-01H  1
+  16  6.1332962e+00 6.48e-04 5.28e+02  -1.7 9.70e+02    -  4.48e-01 4.99e-01H  1
+  17  6.1333059e+00 6.51e-03 1.37e+04  -1.7 1.92e+03    -  7.43e-01 3.38e-01f  2
+  18  6.1333095e+00 6.49e-03 3.75e+04  -1.7 3.05e+03    -  6.23e-01 1.25e-01h  4
+  19  6.1333111e+00 6.32e-03 7.22e+04  -1.7 4.20e+03    -  7.09e-01 6.25e-02h  5
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  20  6.1333127e+00 6.18e-03 9.67e+04  -1.7 4.53e+03    -  6.98e-01 6.25e-02h  5
-  21  6.1333141e+00 6.05e-03 1.28e+05  -1.7 4.98e+03    -  7.11e-01 6.25e-02h  5
-  22  6.1333155e+00 5.93e-03 1.59e+05  -1.7 5.43e+03    -  7.12e-01 6.25e-02h  5
-  23  6.1333167e+00 5.81e-03 1.89e+05  -1.7 5.95e+03    -  7.18e-01 6.25e-02h  5
-  24  6.1333179e+00 5.70e-03 2.20e+05  -1.7 6.52e+03    -  7.21e-01 6.25e-02h  5
-  25  6.1333190e+00 5.60e-03 2.50e+05  -1.7 7.14e+03    -  7.25e-01 6.25e-02h  5
-  26  6.1333200e+00 5.50e-03 2.80e+05  -1.7 7.81e+03    -  7.28e-01 6.25e-02h  5
-  27  6.1333348e+00 6.40e-02 1.90e+04  -1.7 8.54e+03    -  7.31e-01 1.00e+00w  1
-  28  6.1333342e+00 1.11e-02 1.84e+05  -1.7 4.04e+03    -  1.00e+00 8.78e-01w  1
-  29  6.1333333e+00 8.74e-03 1.16e+05  -1.7 6.41e+03    -  1.00e+00 5.31e-01w  1
+  20  6.1333127e+00 6.18e-03 1.06e+05  -1.7 4.53e+03    -  6.98e-01 6.25e-02h  5
+  21  6.1333141e+00 6.05e-03 1.40e+05  -1.7 4.98e+03    -  7.11e-01 6.25e-02h  5
+  22  6.1333155e+00 5.93e-03 1.73e+05  -1.7 5.43e+03    -  7.12e-01 6.25e-02h  5
+  23  6.1333167e+00 5.81e-03 2.06e+05  -1.7 5.95e+03    -  7.18e-01 6.25e-02h  5
+  24  6.1333179e+00 5.70e-03 2.39e+05  -1.7 6.52e+03    -  7.21e-01 6.25e-02h  5
+  25  6.1333190e+00 5.60e-03 2.71e+05  -1.7 7.14e+03    -  7.25e-01 6.25e-02h  5
+  26  6.1333200e+00 5.50e-03 3.03e+05  -1.7 7.81e+03    -  7.28e-01 6.25e-02h  5
+  27  6.1333348e+00 6.40e-02 2.04e+04  -1.7 8.54e+03    -  7.31e-01 1.00e+00w  1
+  28  6.1333342e+00 1.11e-02 1.79e+05  -1.7 4.06e+03    -  1.00e+00 8.78e-01w  1
+  29  6.1333333e+00 8.76e-03 1.17e+05  -1.7 6.43e+03    -  1.00e+00 5.33e-01w  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  30  6.1333204e+00 5.39e-03 3.21e+05  -1.7 3.50e+03    -  7.31e-01 3.12e-02h  5
-  31  6.1333207e+00 5.32e-03 3.68e+05  -1.7 9.06e+03    -  7.54e-01 1.56e-02h  7
-  32  6.1333209e+00 5.25e-03 4.14e+05  -1.7 9.23e+03    -  7.56e-01 1.56e-02h  7
-  33  6.1333209e+00 5.24e-03 4.64e+05  -1.7 9.42e+03    -  7.58e-01 1.95e-03h 10
-  34  6.1333209e+00 5.24e-03 5.14e+05  -1.7 9.49e+03    -  7.67e-01 9.77e-04h 11
-  35  6.1333218e+00 5.18e-03 5.26e+05  -1.7 9.47e+03    -  7.63e-01 6.25e-02h  5
-  36  6.1333226e+00 5.11e-03 5.36e+05  -1.7 1.01e+04    -  7.30e-01 6.25e-02h  5
-  37  6.1333234e+00 5.03e-03 5.48e+05  -1.7 1.12e+04    -  7.51e-01 6.25e-02h  5
-  38  6.1333240e+00 4.96e-03 5.60e+05  -1.7 1.21e+04    -  7.43e-01 6.25e-02h  5
-  39  6.1333247e+00 4.89e-03 5.72e+05  -1.7 1.33e+04    -  7.52e-01 6.25e-02h  5
+  30  6.1333204e+00 5.39e-03 3.47e+05  -1.7 3.49e+03    -  7.31e-01 3.12e-02h  5
+  31  6.1333209e+00 5.28e-03 3.91e+05  -1.7 9.06e+03    -  7.54e-01 3.12e-02h  6
+  32  6.1333211e+00 5.22e-03 4.39e+05  -1.7 9.36e+03    -  7.46e-01 1.56e-02h  7
+  33  6.1333213e+00 5.15e-03 4.87e+05  -1.7 9.68e+03    -  7.64e-01 1.56e-02h  7
+  34  6.1333214e+00 5.13e-03 5.38e+05  -1.7 9.81e+03    -  7.57e-01 3.91e-03h  9
+  35  6.1333222e+00 5.08e-03 5.53e+05  -1.7 9.95e+03    -  7.71e-01 6.25e-02h  5
+  36  6.1333230e+00 5.01e-03 5.65e+05  -1.7 1.05e+04    -  7.30e-01 6.25e-02h  5
+  37  6.1333237e+00 4.95e-03 5.79e+05  -1.7 1.17e+04    -  7.55e-01 6.25e-02h  5
+  38  6.1333244e+00 4.88e-03 5.92e+05  -1.7 1.27e+04    -  7.45e-01 6.25e-02h  5
+  39  6.1333250e+00 4.81e-03 6.05e+05  -1.7 1.39e+04    -  7.55e-01 6.25e-02h  5
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  40  6.1333341e+00 6.14e-02 1.72e+04  -1.7 1.45e+04    -  7.53e-01 1.00e+00w  1
-  41  6.1333339e+00 1.20e-02 1.61e+05  -1.7 9.30e+03    -  1.00e+00 8.40e-01w  1
-  42  6.1333333e+00 1.15e-02 4.15e+05  -1.7 1.50e+04    -  1.00e+00 7.15e-01w  1
-  43  6.1333335e+00 2.89e-03 1.76e+05  -1.7 5.97e+03    -  1.00e+00 8.77e-01h  1
-  44  6.1333334e+00 2.89e-07 2.90e-02  -1.7 1.78e-03  -2.5 1.00e+00 1.00e+00f  1
-  45  6.1333333e+00 1.28e-07 1.01e+02  -8.6 5.36e-01    -  1.00e+00 1.00e+00h  1
-  46  6.1333333e+00 3.64e-12 4.62e+02  -8.6 6.28e+00    -  1.00e+00 1.00e+00h  1
-  47  6.1333333e+00 0.00e+00 3.20e-09  -8.6 3.35e-07  -3.0 1.00e+00 1.00e+00h  1
-  48  6.1333333e+00 3.29e-05 8.20e-01  -9.0 3.65e+03    -  7.19e-01 1.00e+00h  1
-  49  6.1333333e+00 3.64e-12 1.96e-08  -9.0 5.29e-05  -3.4 1.00e+00 1.00e+00h  1
-iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  50  6.1333333e+00 2.07e-05 3.81e-01  -9.0 1.13e+04    -  9.74e-01 1.00e+00h  1
-  51  6.1333333e+00 2.07e-05 3.81e-01  -9.0 1.60e+05    -  2.07e-01 2.74e-05h  2
-  52  6.1333333e+00 1.90e-03 1.48e+00  -9.0 1.39e+05    -  3.04e-01 1.00e+00h  1
-  53  6.1333333e+00 1.69e-03 1.32e+00  -9.0 3.12e-03  -3.9 1.00e+00 1.08e-01h  2
-  54  6.1333333e+00 0.00e+00 8.90e-09  -9.0 2.16e-04  -4.4 1.00e+00 1.00e+00h  1
+  40  6.1333340e+00 6.12e-02 1.79e+04  -1.7 1.51e+04    -  7.55e-01 1.00e+00w  1
+  41  6.1333339e+00 1.21e-02 1.51e+05  -1.7 1.01e+04    -  1.00e+00 8.38e-01w  1
+  42  6.1333333e+00 1.18e-02 4.68e+05  -1.7 1.61e+04    -  1.00e+00 7.36e-01w  1
+  43  6.1333335e+00 2.87e-03 1.85e+05  -1.7 6.35e+03    -  1.00e+00 8.95e-01h  1
+  44  6.1333334e+00 3.03e-07 3.16e-02  -1.7 1.83e-03  -2.5 1.00e+00 1.00e+00f  1
+  45  6.1333333e+00 4.87e-07 3.54e+02  -8.6 1.85e+00    -  1.00e+00 1.00e+00h  1
+  46  6.1333333e+00 0.00e+00 1.62e+03  -8.6 2.25e+01    -  9.99e-01 1.00e+00h  1
+  47  6.1333333e+00 0.00e+00 3.32e-09  -8.6 9.69e-08  -3.0 1.00e+00 1.00e+00h  1
+  48  6.1333333e+00 3.32e-05 8.33e-01  -9.0 3.63e+03    -  7.14e-01 1.00e+00h  1
+  49  6.1333333e+00 3.64e-12 7.72e-09  -9.0 2.08e-05  -3.4 1.00e+00 1.00e+00h  1
 
-Number of Iterations....: 54
+Number of Iterations....: 49
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333332728984509e+00    6.1333332728984509e+00
-Dual infeasibility......:   8.8973708916711822e-09    8.8973708916711822e-09
-Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
+Objective...............:   6.1333332728272785e+00    6.1333332728272785e+00
+Dual infeasibility......:   7.7153502585296349e-09    7.7153502585296349e-09
+Constraint violation....:   3.6379788070917130e-12    3.6379788070917130e-12
 Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   9.7539618186006916e-10    9.7539618186006916e-10
-Overall NLP error.......:   8.8973708916711822e-09    8.8973708916711822e-09
+Complementarity.........:   1.4317498150955074e-09    1.4317498150955074e-09
+Overall NLP error.......:   7.7153502585296349e-09    7.7153502585296349e-09
 
 
-Number of objective function evaluations             = 192
-Number of objective gradient evaluations             = 55
-Number of equality constraint evaluations            = 192
-Number of inequality constraint evaluations          = 192
-Number of equality constraint Jacobian evaluations   = 55
-Number of inequality constraint Jacobian evaluations = 55
-Number of Lagrangian Hessian evaluations             = 54
-Total seconds in IPOPT                               = 0.026
+Number of objective function evaluations             = 179
+Number of objective gradient evaluations             = 50
+Number of equality constraint evaluations            = 179
+Number of inequality constraint evaluations          = 179
+Number of equality constraint Jacobian evaluations   = 50
+Number of inequality constraint Jacobian evaluations = 50
+Number of Lagrangian Hessian evaluations             = 49
+Total seconds in IPOPT                               = 0.030
 
 EXIT: Optimal Solution Found.</pre><h2 id="MixedMode-and-SCIP.Optimizer"><a class="docs-heading-anchor" href="#MixedMode-and-SCIP.Optimizer"><code>MixedMode</code> and <code>SCIP.Optimizer</code></a><a id="MixedMode-and-SCIP.Optimizer-1"></a><a class="docs-heading-anchor-permalink" href="#MixedMode-and-SCIP.Optimizer" title="Permalink"></a></h2><pre><code class="language-julia">set_optimizer(model, SCIP.Optimizer)
 
@@ -411,4 +402,4 @@ Solving Time (sec) : 0.00
 Solving Nodes      : 1
 Primal Bound       : +6.13333333333333e+00 (1 solutions)
 Dual Bound         : +6.13333333333333e+00
-Gap                : 0.00 %</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting started with BilevelJuMP</a><a class="docs-footer-nextpage" href="../lower_duals/">Dual variables of the lower level »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 May 2023 17:55">Tuesday 23 May 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Gap                : 0.00 %</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting started with BilevelJuMP</a><a class="docs-footer-nextpage" href="../lower_duals/">Dual variables of the lower level »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 26 June 2023 01:39">Monday 26 June 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
