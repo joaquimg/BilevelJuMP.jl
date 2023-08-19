@@ -98,7 +98,8 @@ Presolving Time: 0.00
  time | node  | left  |LP iter|LP it/n|mem/heur|mdpt |vars |cons |rows |cuts |sepa|confs|strbr|  dualbound   | primalbound  |  gap   | compl.
   0.0s|     1 |     0 |     5 |     - |   639k |   0 |  10 |  10 |   6 |   0 |  0 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
   0.0s|     1 |     0 |     6 |     - |   639k |   0 |  10 |  10 |   7 |   1 |  2 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
-* 0.0s|     1 |     0 |     6 |     - |    LP  |   0 |  10 |  10 |   7 |   1 |  4 |   0 |   0 | 6.133333e+00 | 6.133333e+00 |   0.00%| unknown
+  0.0s|     1 |     0 |     7 |     - |   639k |   0 |  10 |  10 |   8 |   2 |  4 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
+* 0.0s|     1 |     0 |     7 |     - |    LP  |   0 |  10 |  10 |   8 |   2 |  6 |   0 |   0 | 6.133333e+00 | 6.133333e+00 |   0.00%| unknown
 
 SCIP Status        : problem is solved [optimal solution found]
 Solving Time (sec) : 0.00
@@ -130,17 +131,14 @@ presolved problem has 14 variables (4 bin, 0 int, 0 impl, 10 cont) and 17 constr
 Presolving Time: 0.00
 
  time | node  | left  |LP iter|LP it/n|mem/heur|mdpt |vars |cons |rows |cuts |sepa|confs|strbr|  dualbound   | primalbound  |  gap   | compl.
-  0.0s|     1 |     0 |    18 |     - |   754k |   0 |  14 |  17 |   9 |   0 |  0 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
-  0.0s|     1 |     0 |    20 |     - |   761k |   0 |  14 |  17 |  11 |   2 |  1 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
-  0.0s|     1 |     0 |    21 |     - |   765k |   0 |  14 |  17 |  12 |   3 |  2 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
-  0.0s|     1 |     0 |    22 |     - |   766k |   0 |  14 |  17 |  13 |   4 |  4 |   0 |   0 | 6.133333e+00 |      --      |    Inf | unknown
-r 0.0s|     1 |     0 |    22 |     - |randroun|   0 |  14 |  17 |  13 |   0 |  4 |   0 |   0 | 6.133333e+00 | 6.133333e+00 |   0.00%| unknown
-  0.0s|     1 |     0 |    22 |     - |   766k |   0 |  14 |  17 |  13 |   4 |  4 |   0 |   0 | 6.133333e+00 | 6.133333e+00 |   0.00%| unknown
+p 0.0s|     1 |     0 |     5 |     - |  clique|   0 |  14 |  17 |   9 |   0 |  0 |   0 |   0 | 0.000000e+00 | 1.800000e+01 |    Inf | unknown
+p 0.0s|     1 |     0 |    11 |     - |   locks|   0 |  14 |  17 |   9 |   0 |  0 |   0 |   0 | 0.000000e+00 | 6.133333e+00 |    Inf | unknown
+  0.0s|     1 |     0 |    17 |     - |   754k |   0 |  14 |  15 |   9 |   0 |  0 |   0 |   0 | 6.133333e+00 | 6.133333e+00 |   0.00%| unknown
 
 SCIP Status        : problem is solved [optimal solution found]
 Solving Time (sec) : 0.00
 Solving Nodes      : 1
-Primal Bound       : +6.13333333333333e+00 (1 solutions)
+Primal Bound       : +6.13333333333333e+00 (2 solutions)
 Dual Bound         : +6.13333333333333e+00
 Gap                : 0.00 %</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><h2 id="ProductMode-and-Ipopt.Optimizer"><a class="docs-heading-anchor" href="#ProductMode-and-Ipopt.Optimizer"><code>ProductMode</code> and <code>Ipopt.Optimizer</code></a><a id="ProductMode-and-Ipopt.Optimizer-1"></a><a class="docs-heading-anchor-permalink" href="#ProductMode-and-Ipopt.Optimizer" title="Permalink"></a></h2><pre><code class="language-julia">set_optimizer(model, Ipopt.Optimizer)
 
@@ -198,73 +196,75 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   26  6.1333604e+00 5.74e-08 3.18e+05  -1.0 4.19e-03    -  1.00e+00 3.61e-01f  2
   27  6.1333559e+00 3.78e-08 2.30e+05  -1.0 6.97e-04    -  1.00e+00 8.11e-01h  1
   28  6.1333447e+00 3.25e-09 1.96e+06  -1.0 2.95e-03    -  1.00e+00 4.96e-01f  2
-  29  6.1333430e+00 0.00e+00 2.44e+03  -1.0 2.20e-04    -  1.00e+00 1.00e+00h  1
+  29  6.1333430e+00 1.11e-16 2.44e+03  -1.0 2.20e-04    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   30  6.1333427e+00 0.00e+00 3.07e+03  -2.5 3.24e-05    -  1.00e+00 1.00e+00f  1
-  31  6.1333393e+00 2.22e-16 2.13e+01  -2.5 3.73e-05   4.0 1.00e+00 1.00e+00f  1
+  31  6.1333393e+00 1.11e-16 2.13e+01  -2.5 3.73e-05   4.0 1.00e+00 1.00e+00f  1
   32  6.1333392e+00 1.11e-16 3.41e+00  -3.8 1.25e-06   3.5 1.00e+00 1.00e+00h  1
-  33  6.1333391e+00 0.00e+00 9.91e+02  -3.8 1.70e-02    -  9.31e-02 2.92e-03f  6
-  34  6.1333382e+00 0.00e+00 9.80e-02  -3.8 7.87e-06   3.0 1.00e+00 1.00e+00f  1
-  35  6.1333381e+00 1.11e-16 9.60e+01  -5.7 6.67e-06   2.6 9.97e-01 1.00e+00h  1
-  36  6.1333337e+00 0.00e+00 4.05e-01  -5.7 4.35e-04    -  1.00e+00 1.00e+00f  1
-  37  6.1333345e+00 1.11e-16 2.02e-02  -5.7 1.07e-03    -  1.00e+00 1.00e+00h  1
-  38  6.1333339e+00 0.00e+00 4.44e+00  -5.7 6.73e-03    -  8.93e-01 4.60e-01h  2
-  39  6.1333342e+00 1.11e-16 4.24e-04  -5.7 1.38e-06   2.1 1.00e+00 1.00e+00h  1
+  33  6.1333391e+00 1.11e-16 9.88e+02  -3.8 1.70e-02    -  9.27e-02 2.91e-03f  6
+  34  6.1333382e+00 0.00e+00 1.20e+00  -3.8 6.54e-04    -  1.00e+00 1.00e+00H  1
+  35  6.1333369e+00 2.22e-16 2.65e+02  -3.8 3.07e-03    -  5.55e-01 1.38e-01h  3
+  36  6.1333368e+00 0.00e+00 1.52e-03  -3.8 7.86e-07   3.0 1.00e+00 1.00e+00h  1
+  37  6.1333350e+00 0.00e+00 2.27e+04  -5.7 1.04e-02    -  4.98e-01 1.00e+00F  1
+  38  6.1333347e+00 0.00e+00 1.38e+04  -5.7 9.35e-06   2.6 5.21e-01 1.00e+00h  1
+  39  6.1333347e+00 0.00e+00 1.63e-01  -5.7 1.67e-06   2.1 1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  40  6.1333340e+00 3.06e-14 6.10e-02  -5.7 3.78e-03    -  1.00e+00 1.00e+00f  1
-  41  6.1333337e+00 2.02e-14 6.91e+01  -5.7 1.91e-02    -  9.05e-01 3.35e-01h  2
-  42  6.1333337e+00 0.00e+00 7.66e-05  -5.7 9.72e-07   1.6 1.00e+00 1.00e+00h  1
-  43  6.1333336e+00 3.77e-15 1.20e+00  -5.7 1.27e-02    -  1.00e+00 5.00e-01f  2
-  44  6.1333336e+00 1.11e-16 2.53e-05  -5.7 1.90e-06   1.1 1.00e+00 1.00e+00h  1
-  45  6.1333334e+00 2.22e-16 5.30e+00  -5.7 2.25e-02    -  9.60e-01 1.00e+00F  1
-  46  6.1333335e+00 1.11e-16 6.57e-04  -5.7 3.53e-06   0.6 1.00e+00 1.00e+00h  1
-  47  6.1333334e+00 2.22e-16 5.81e+00  -5.7 1.17e-01    -  3.82e-01 1.07e-01h  3
-  48  6.1333334e+00 0.00e+00 1.86e-04  -5.7 9.06e-06   0.2 1.00e+00 1.00e+00h  1
-  49  6.1333333e+00 0.00e+00 9.38e+01  -5.7 1.39e-01    -  6.30e-01 1.00e+00F  1
+  40  6.1333339e+00 2.22e-16 1.21e-01  -5.7 3.08e-03    -  1.00e+00 1.00e+00F  1
+  41  6.1333337e+00 0.00e+00 6.51e+01  -5.7 2.09e-02    -  8.29e-01 1.77e-01h  3
+  42  6.1333338e+00 0.00e+00 6.09e-05  -5.7 1.52e-06   1.6 1.00e+00 1.00e+00h  1
+  43  6.1333336e+00 1.11e-16 8.92e-02  -5.7 7.79e-03    -  1.00e+00 1.00e+00H  1
+  44  6.1333336e+00 0.00e+00 1.03e-04  -5.7 2.03e-06   1.1 1.00e+00 1.00e+00h  1
+  45  6.1333335e+00 0.00e+00 4.56e+00  -5.7 1.96e-02    -  9.71e-01 1.00e+00F  1
+  46  6.1333335e+00 0.00e+00 6.99e-04  -5.7 3.80e-06   0.6 1.00e+00 1.00e+00h  1
+  47  6.1333333e+00 0.00e+00 7.01e+01  -5.7 7.78e-02    -  6.48e-01 1.00e+00F  1
+  48  6.1333334e+00 1.11e-16 3.10e-03  -5.7 9.56e-06   0.2 1.00e+00 1.00e+00h  1
+  49  6.1333335e+00 7.12e-09 1.38e+02  -5.7 1.11e+00    -  6.41e-01 1.00e+00F  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  50  6.1333333e+00 0.00e+00 3.08e+02  -5.7 1.75e+01    -  3.69e-02 3.04e-02h  2
-  51  6.1333334e+00 3.92e-07 1.22e+04  -5.7 5.00e+00    -  3.24e-01 1.00e+00h  1
-  52  6.1333333e+00 8.88e-16 6.07e+03  -5.7 3.25e+00    -  3.62e-01 1.00e+00h  1
-  53  6.1333334e+00 6.75e-08 4.94e+03  -5.7 1.51e-05  -0.3 1.00e+00 1.86e-01h  2
-  54  6.1333333e+00 0.00e+00 6.63e-04  -5.7 5.76e-06  -0.8 1.00e+00 1.00e+00h  1
-  55  6.1333333e+00 1.78e-15 8.88e+02  -5.7 3.08e+00    -  7.88e-01 1.00e+00f  1
-  56  6.1333334e+00 3.36e-07 1.51e+03  -5.7 3.08e+01    -  3.71e-01 1.00e+00H  1
-  57  6.1333333e+00 0.00e+00 1.01e-03  -5.7 1.14e-05  -1.3 1.00e+00 1.00e+00h  1
-  58  6.1333333e+00 0.00e+00 2.95e+03  -5.7 1.71e+01    -  8.31e-01 1.00e+00f  1
-  59  6.1333333e+00 1.69e-07 4.27e+03  -5.7 1.31e+02    -  2.80e-01 1.00e+00h  1
+  50  6.1333333e+00 0.00e+00 1.17e-02  -5.7 2.42e-05  -0.3 1.00e+00 1.00e+00h  1
+  51  6.1333333e+00 0.00e+00 3.04e+01  -5.7 1.69e-01    -  8.58e-01 1.00e+00h  1
+  52  6.1333333e+00 1.11e-16 2.10e-03  -5.7 4.27e-05  -0.8 1.00e+00 1.00e+00h  1
+  53  6.1333333e+00 2.22e-16 3.83e+02  -5.7 6.44e-01    -  4.88e-01 1.00e+00f  1
+  54  6.1333333e+00 8.88e-16 9.60e+02  -5.7 1.54e+00    -  4.59e-01 1.00e+00h  1
+  55  6.1333333e+00 0.00e+00 1.15e-03  -5.7 3.13e-06  -1.3 1.00e+00 1.00e+00h  1
+  56  6.1333333e+00 1.78e-15 1.24e+03  -5.7 2.77e+00    -  9.01e-01 1.00e+00f  1
+  57  6.1333334e+00 3.02e-07 1.49e+03  -5.7 3.13e+01    -  3.27e-01 1.00e+00H  1
+  58  6.1333333e+00 0.00e+00 1.60e-03  -5.7 1.64e-05  -1.7 1.00e+00 1.00e+00h  1
+  59  6.1333333e+00 0.00e+00 4.01e+03  -5.7 2.10e+01    -  7.27e-01 1.00e+00f  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  60  6.1333333e+00 0.00e+00 9.56e-06  -5.7 6.92e-07  -1.7 1.00e+00 1.00e+00h  1
-  61  6.1333333e+00 0.00e+00 2.89e+00  -8.6 2.17e-01    -  9.93e-01 1.00e+00h  1
-  62  6.1333333e+00 0.00e+00 9.18e-02  -8.6 5.14e+00    -  1.00e+00 1.00e+00h  1
-  63  6.1333333e+00 0.00e+00 2.56e+00  -8.6 1.53e+02    -  7.49e-01 1.00e+00h  1
-  64  6.1333333e+00 0.00e+00 1.88e+00  -8.6 6.47e+02    -  6.22e-01 1.00e+00h  1
-  65  6.1333333e+00 0.00e+00 4.64e+00  -8.6 1.76e+03    -  4.37e-01 1.00e+00h  1
-  66  6.1333333e+00 0.00e+00 1.90e+01  -8.6 3.84e+03    -  4.96e-01 1.00e+00h  1
-  67  6.1333333e+00 0.00e+00 2.25e-07  -8.6 3.69e-05  -2.2 1.00e+00 1.00e+00h  1
-  68  6.1333333e+00 0.00e+00 3.85e+00  -8.6 4.48e+03    -  9.56e-01 1.00e+00h  1
-  69  6.1333333e+00 1.46e-11 5.88e+00  -8.6 2.37e+04    -  6.90e-01 1.00e+00h  1
+  60  6.1333333e+00 1.70e-07 7.07e+03  -5.7 7.79e+01    -  3.25e-01 1.00e+00h  1
+  61  6.1333333e+00 0.00e+00 1.12e-04  -5.7 3.05e-06  -2.2 1.00e+00 1.00e+00h  1
+  62  6.1333333e+00 5.68e-14 1.64e+03  -5.7 1.24e+02    -  9.23e-01 1.00e+00h  1
+  63  6.1333333e+00 4.55e-13 2.19e+04  -5.7 1.23e+03    -  2.74e-01 1.00e+00h  1
+  64  6.1333333e+00 0.00e+00 9.75e-06  -5.7 3.95e-06  -2.7 1.00e+00 1.00e+00h  1
+  65  6.1333333e+00 0.00e+00 3.55e+00  -8.6 1.88e+00    -  9.92e-01 1.00e+00h  1
+  66  6.1333333e+00 0.00e+00 2.78e-01  -8.6 8.86e+01    -  1.00e+00 1.00e+00h  1
+  67  6.1333333e+00 0.00e+00 2.50e+00  -8.6 1.02e+03    -  9.03e-01 1.00e+00h  1
+  68  6.1333333e+00 0.00e+00 8.89e+00  -8.6 8.89e+03    -  4.96e-01 1.00e+00h  1
+  69  6.1333333e+00 0.00e+00 1.03e-08  -8.6 1.52e-05  -3.2 1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  70  6.1333333e+00 0.00e+00 1.27e-09  -8.6 6.25e-07  -2.7 1.00e+00 1.00e+00h  1
+  70  6.1333333e+00 0.00e+00 1.19e+00  -9.0 3.67e+03    -  9.99e-01 1.00e+00h  1
+  71  6.1333333e+00 5.82e-11 1.20e+01  -9.0 1.67e+05    -  1.94e-01 1.00e+00h  1
+  72  6.1333333e+00 0.00e+00 9.91e-09  -9.0 4.40e-05  -3.6 1.00e+00 1.00e+00h  1
 
-Number of Iterations....: 70
+Number of Iterations....: 72
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333332742197308e+00    6.1333332742197308e+00
-Dual infeasibility......:   1.2679002335357878e-09    1.2679002335357878e-09
+Objective...............:   6.1333332727089962e+00    6.1333332727089962e+00
+Dual infeasibility......:   9.9137211336243301e-09    9.9137211336243301e-09
 Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   4.4274809187403955e-09    4.4274809187403955e-09
-Complementarity.........:   2.5060467420022482e-09    2.5060467420022482e-09
-Overall NLP error.......:   2.5060467420022482e-09    2.5060467420022482e-09
+Variable bound violation:   4.4274809188099167e-09    4.4274809188099167e-09
+Complementarity.........:   9.5469302236289038e-10    9.5469302236289038e-10
+Overall NLP error.......:   9.9137211336243301e-09    9.9137211336243301e-09
 
 
-Number of objective function evaluations             = 114
-Number of objective gradient evaluations             = 71
-Number of equality constraint evaluations            = 114
-Number of inequality constraint evaluations          = 114
-Number of equality constraint Jacobian evaluations   = 71
-Number of inequality constraint Jacobian evaluations = 71
-Number of Lagrangian Hessian evaluations             = 70
-Total seconds in IPOPT                               = 0.039
+Number of objective function evaluations             = 116
+Number of objective gradient evaluations             = 73
+Number of equality constraint evaluations            = 116
+Number of inequality constraint evaluations          = 116
+Number of equality constraint Jacobian evaluations   = 73
+Number of inequality constraint Jacobian evaluations = 73
+Number of Lagrangian Hessian evaluations             = 72
+Total seconds in IPOPT                               = 0.048
 
 EXIT: Optimal Solution Found.</pre><h2 id="StrongDualityMode-and-Ipopt.Optimizer"><a class="docs-heading-anchor" href="#StrongDualityMode-and-Ipopt.Optimizer"><code>StrongDualityMode</code> and <code>Ipopt.Optimizer</code></a><a id="StrongDualityMode-and-Ipopt.Optimizer-1"></a><a class="docs-heading-anchor-permalink" href="#StrongDualityMode-and-Ipopt.Optimizer" title="Permalink"></a></h2><pre><code class="language-julia">set_optimizer(model, Ipopt.Optimizer)
 
@@ -364,7 +364,7 @@ Number of inequality constraint evaluations          = 179
 Number of equality constraint Jacobian evaluations   = 50
 Number of inequality constraint Jacobian evaluations = 50
 Number of Lagrangian Hessian evaluations             = 49
-Total seconds in IPOPT                               = 0.030
+Total seconds in IPOPT                               = 0.036
 
 EXIT: Optimal Solution Found.</pre><h2 id="MixedMode-and-SCIP.Optimizer"><a class="docs-heading-anchor" href="#MixedMode-and-SCIP.Optimizer"><code>MixedMode</code> and <code>SCIP.Optimizer</code></a><a id="MixedMode-and-SCIP.Optimizer-1"></a><a class="docs-heading-anchor-permalink" href="#MixedMode-and-SCIP.Optimizer" title="Permalink"></a></h2><pre><code class="language-julia">set_optimizer(model, SCIP.Optimizer)
 
@@ -380,7 +380,7 @@ objective_value(model)
 
 @assert abs(objective_value(model) - (3 * (3.5 * 8/15) + 8/15)) &lt; 1e-1 # src</code></pre><pre class="documenter-example-output">presolving:
 (round 1, fast)       2 del vars, 5 del conss, 0 add conss, 5 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
-(round 2, fast)       2 del vars, 5 del conss, 0 add conss, 8 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+(round 2, fast)       2 del vars, 5 del conss, 0 add conss, 9 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
 (round 3, fast)       2 del vars, 5 del conss, 0 add conss, 10 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
 (round 4, exhaustive) 2 del vars, 7 del conss, 0 add conss, 10 chg bounds, 2 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
    (0.0s) probing cycle finished: starting next cycle
@@ -402,4 +402,4 @@ Solving Time (sec) : 0.00
 Solving Nodes      : 1
 Primal Bound       : +6.13333333333333e+00 (1 solutions)
 Dual Bound         : +6.13333333333333e+00
-Gap                : 0.00 %</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting started with BilevelJuMP</a><a class="docs-footer-nextpage" href="../lower_duals/">Dual variables of the lower level »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 26 June 2023 01:39">Monday 26 June 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Gap                : 0.00 %</pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/modes.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting started with BilevelJuMP</a><a class="docs-footer-nextpage" href="../lower_duals/">Dual variables of the lower level »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 19 August 2023 20:56">Saturday 19 August 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

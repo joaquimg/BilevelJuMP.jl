@@ -67,9 +67,9 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   23  1.7086696e+01 1.66e-09 3.81e+05  -1.0 1.36e-04    -  1.00e+00 9.47e-01h  1
   24  1.7085702e+01 1.05e-09 2.11e+06  -1.0 2.26e-03    -  1.00e+00 3.69e-01f  2
   25  1.7083926e+01 0.00e+00 3.59e+03  -1.0 1.50e-03    -  1.00e+00 1.00e+00h  1
-  26  1.7018660e+01 4.44e-16 3.12e+05  -2.5 6.08e-02    -  1.00e+00 1.00e+00f  1
+  26  1.7018660e+01 6.66e-16 3.12e+05  -2.5 6.08e-02    -  1.00e+00 1.00e+00f  1
   27  1.7003709e+01 2.22e-16 1.30e+03  -2.5 1.60e-02    -  1.00e+00 1.00e+00f  1
-  28  1.7002810e+01 4.44e-16 7.98e-01  -2.5 9.96e-04    -  1.00e+00 1.00e+00f  1
+  28  1.7002810e+01 2.22e-16 7.98e-01  -2.5 9.96e-04    -  1.00e+00 1.00e+00f  1
   29  1.7000041e+01 2.22e-16 4.53e+02  -5.7 3.09e-03    -  1.00e+00 1.00e+00f  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   30  1.7000002e+01 4.44e-16 5.14e-03  -5.7 4.42e-05    -  1.00e+00 1.00e+00f  1
@@ -80,11 +80,11 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
 Number of Iterations....: 33
 
                                    (scaled)                 (unscaled)
-Objective...............:   1.6999999980907578e+01    1.6999999980907578e+01
+Objective...............:   1.6999999980907575e+01    1.6999999980907575e+01
 Dual infeasibility......:   8.9958724913685728e-09    8.9958724913685728e-09
 Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
-Variable bound violation:   4.0833333485561393e-09    4.0833333485561393e-09
-Complementarity.........:   4.8883842466694050e-09    4.8883842466694050e-09
+Variable bound violation:   4.0833333485561410e-09    4.0833333485561410e-09
+Complementarity.........:   4.8883843122563192e-09    4.8883843122563192e-09
 Overall NLP error.......:   8.9958724913685728e-09    8.9958724913685728e-09
 
 
@@ -95,6 +95,6 @@ Number of inequality constraint evaluations          = 38
 Number of equality constraint Jacobian evaluations   = 34
 Number of inequality constraint Jacobian evaluations = 34
 Number of Lagrangian Hessian evaluations             = 33
-Total seconds in IPOPT                               = 0.016
+Total seconds in IPOPT                               = 0.019
 
-EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">0.9999999983262665</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">-8.120572244645412e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../DTMP_example1/">« Decomposition Techniques in Mathematical Programming: Example 7.4</a><a class="docs-footer-nextpage" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 26 June 2023 01:39">Monday 26 June 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">0.9999999983262666</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">-8.12057224464541e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example1.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../DTMP_example1/">« Decomposition Techniques in Mathematical Programming: Example 7.4</a><a class="docs-footer-nextpage" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 19 August 2023 20:56">Saturday 19 August 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
