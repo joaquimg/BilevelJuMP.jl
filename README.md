@@ -71,7 +71,7 @@ value(y) # = 8/15 # = 0.53...
 
 If you use BilevelJuMP.jl, we ask that you please cite the following [paper](https://pubsonline.informs.org/doi/10.1287/ijoc.2022.0135):
 
-```
+```bibtex
 @article{diasgarcia2023bileveljump,
     title={{BilevelJuMP.jl}: {M}odeling and {S}olving {B}ilevel {O}ptimization {P}roblems in {J}ulia},
     author={{Dias Garcia}, Joaquim and Bodin, Guilherme and Street, Alexandre},
