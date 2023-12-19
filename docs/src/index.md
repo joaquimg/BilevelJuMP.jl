@@ -20,7 +20,7 @@ while others are also not widely available. The main features supported are:
 constraint separately
 
 The currently available methods are based on re-writing the problem using the
-KKT conditions of the lower level. For that we make strong use of
+KKT conditions of the lower level. For that, we make strong use of
 [Dualization.jl](https://github.com/JuMP-dev/Dualization.jl)
 
 ## Installation
@@ -51,15 +51,16 @@ BilevelJuMP.jl is licensed under the
 
 ## Citing `BilevelJuMP.jl`
 
-If you use BilevelJuMP.jl, we ask that you please cite the following:
+If you use BilevelJuMP.jl, we ask that you please cite the following [paper](https://pubsonline.informs.org/doi/10.1287/ijoc.2022.0135):
 
 ```
-@article{diasgarcia2022bileveljump,
-    title={{BilevelJuMP.jl}: {M}odeling and solving bilevel optimization in {J}ulia},
+@article{diasgarcia2023bileveljump,
+    title={{BilevelJuMP.jl}: {M}odeling and {S}olving {B}ilevel {O}ptimization {P}roblems in {J}ulia},
     author={{Dias Garcia}, Joaquim and Bodin, Guilherme and Street, Alexandre},
-    journal={arXiv preprint arXiv:2205.02307},
-    year={2022}
+    journal={INFORMS Journal on Computing},
+    pages={1-9},
+    year={2023}
 }
 ```
 
-Here is the [pdf](https://arxiv.org/pdf/2205.02307.pdf).
+Here is an earlier [preprint](https://arxiv.org/pdf/2205.02307.pdf).
