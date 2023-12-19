@@ -67,3 +67,19 @@ value(x) # = 3.5 * 8/15 # = 1.86...
 value(y) # = 8/15 # = 0.53...
 ```
 
+## Citing BilevelJuMP
+
+If you use BilevelJuMP.jl, we ask that you please cite the following [paper](https://pubsonline.informs.org/doi/10.1287/ijoc.2022.0135):
+
+```
+@article{diasgarcia2023bileveljump,
+    title={{BilevelJuMP.jl}: {M}odeling and {S}olving {B}ilevel {O}ptimization {P}roblems in {J}ulia},
+    author={{Dias Garcia}, Joaquim and Bodin, Guilherme and Street, Alexandre},
+    journal={INFORMS Journal on Computing},
+    doi={https://doi.org/10.1287/ijoc.2022.0135},
+    pages={1-9},
+    year={2023}
+}
+```
+
+Here is an earlier [preprint](https://arxiv.org/pdf/2205.02307.pdf).
