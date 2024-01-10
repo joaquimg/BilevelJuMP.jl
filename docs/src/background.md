@@ -2,9 +2,9 @@
 
 Bilevel optimization is a vast discipline with a long (50+ years) history.
 We will not attempt to present a bilevel optimization introduction here.
-Instead, we point the reader to the excelent text:
+Instead, we point the reader to the excellent text:
 
-[A Gentle and Incomplete Introduction to Bilevel Optimization](https://optimization-online.org/wp-content/uploads/2021/06/8450-1.pdf)
+[A Gentle and Incomplete Introduction to Bilevel Optimization](https://optimization-online.org/wp-content/uploads/2021/06/bilevel-optimization.pdf)
 
 by Yasmine Beck and Martin Schmidt.
 
