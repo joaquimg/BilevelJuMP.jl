@@ -80,7 +80,12 @@ end
 function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
     i = 0
     dict = Dict{MOI.ConstraintIndex,Int}()
-    for (S, _) in MOI.FileFormats.MPS.SET_TYPES
+    for S in (
+        MOI.GreaterThan{Float64},
+        MOI.LessThan{Float64},
+        MOI.EqualTo{Float64},
+        MOI.Interval{Float64},
+    )
         for ci in MOI.get(
             model,
             MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64},S}(),
