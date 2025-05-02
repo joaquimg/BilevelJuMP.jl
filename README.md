@@ -1,6 +1,6 @@
 # BilevelJuMP.jl
 
-[![Build Status](https://github.com/joaquimg/BilevelJuMP.jl/workflows/CI/badge.svg?branch=master)](https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI)
+[![Build Status](https://github.com/joaquimg/BilevelJuMP.jl/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/joaquimg/BilevelJuMP.jl/actions?query=workflow%3ACI)
 [![Codecov branch](http://codecov.io/github/joaquimg/BilevelJuMP.jl/coverage.svg?branch=master)](http://codecov.io/github/joaquimg/BilevelJuMP.jl?branch=master)
 [![Docs dev](https://img.shields.io/badge/docs-latest-blue.svg)](https://joaquimg.github.io/BilevelJuMP.jl/dev/)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://joaquimg.github.io/BilevelJuMP.jl/stable/)
