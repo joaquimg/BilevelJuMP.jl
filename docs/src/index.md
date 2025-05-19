@@ -16,8 +16,7 @@ while others are also not widely available. The main features supported are:
 - Conic constraints and quadratic objectives in the lower-level
 - Dual variables of the lower level in the upper level
 - MPEC reformulations with MIP or NLP solvers
-- MixedMode MPEC reformulation: select the best reformulation for each
-constraint separately
+- MixedMode MPEC reformulation: select the best reformulation for each constraint separately
 
 The currently available methods are based on re-writing the problem using the
 KKT conditions of the lower level. For that, we make strong use of
