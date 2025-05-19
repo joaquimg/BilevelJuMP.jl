@@ -7,7 +7,7 @@ using AmplNLWriter, Bonmin_jll
 
 BONMIN_OPT = AmplNLWriter.Optimizer(Bonmin_jll.amplexe)
 # MOI.set(BONMIN_OPT, MOI.Silent(), true)
-# MOI.set(BONMIN_OPT, MOI.TimeLimitSec(), 5)
+# MOI.set(BONMIN_OPT, MOI.TimeLimitSec(), 60)
 # BONMIN_OPT = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(BONMIN_OPT)
 
 push!(solvers_nlp, (opt = BONMIN_OPT, mode = BilevelJuMP.ProductMode(1e-5)))

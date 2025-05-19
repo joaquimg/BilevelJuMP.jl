@@ -5,7 +5,7 @@ using KNITRO
 
 KNITRO_OPT = KNITRO.Optimizer()
 MOI.set(KNITRO_OPT, MOI.Silent(), true)
-MOI.set(KNITRO_OPT, MOI.TimeLimitSec(), 5)
+MOI.set(KNITRO_OPT, MOI.TimeLimitSec(), 60)
 # KNITRO_OPT = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(KNITRO_OPT)
 
 push!(solvers_complements, (opt = KNITRO_OPT, mode = BilevelJuMP.ComplementMode()))
