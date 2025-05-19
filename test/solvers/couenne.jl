@@ -7,7 +7,7 @@ using AmplNLWriter, Couenne_jll
 
 COUENNE_OPT = AmplNLWriter.Optimizer(Couenne_jll.amplexe)
 # MOI.set(COUENNE_OPT, MOI.Silent(), true)
-# MOI.set(COUENNE_OPT, MOI.TimeLimitSec(), 5)
+# MOI.set(COUENNE_OPT, MOI.TimeLimitSec(), 60)
 # COUENNE_OPT = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(COUENNE_OPT)
 
 push!(solvers_nlp, (opt = COUENNE_OPT, mode = BilevelJuMP.ProductMode(1e-5)))

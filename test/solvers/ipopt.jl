@@ -2,7 +2,7 @@ using Ipopt
 
 IPO_OPT = Ipopt.Optimizer()
 MOI.set(IPO_OPT, MOI.Silent(), true)
-MOI.set(IPO_OPT, MOI.TimeLimitSec(), 5)
+MOI.set(IPO_OPT, MOI.TimeLimitSec(), 60)
 IPO = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(IPO_OPT)
 
 push!(solvers_nlp_lowtol, (opt = IPO, mode = BilevelJuMP.ProductMode(1e-5)))

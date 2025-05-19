@@ -5,7 +5,7 @@ using GAMS
 
 GAMS_OPT = GAMS.Optimizer()
 MOI.set(GAMS_OPT, MOI.Silent(), true)
-MOI.set(GAMS_OPT, MOI.TimeLimitSec(), 5)
+MOI.set(GAMS_OPT, MOI.TimeLimitSec(), 60)
 # GAMS_OPT = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(GAMS_OPT)
 
 push!(solvers_complements, (opt = GAMS_OPT, mode = BilevelJuMP.ComplementMode()))

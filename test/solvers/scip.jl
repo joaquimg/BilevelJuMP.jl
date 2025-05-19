@@ -3,7 +3,7 @@ using QuadraticToBinary
 
 SCIPopt = SCIP.Optimizer()
 MOI.set(SCIPopt, MOI.Silent(), true)
-MOI.set(SCIPopt, MOI.TimeLimitSec(), 5)
+MOI.set(SCIPopt, MOI.TimeLimitSec(), 60)
 SCIPopt_CACHED = MOIU.CachingOptimizer(MOIU.UniversalFallback(MOIU.Model{Float64}()), SCIPopt)
 
 push!(solvers, (opt = SCIPopt, mode = BilevelJuMP.SOS1Mode()))
