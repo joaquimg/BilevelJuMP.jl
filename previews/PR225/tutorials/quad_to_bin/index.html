@@ -41,27 +41,27 @@ Solving MIP model with:
      Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
 
          0       0         0   0.00%   0               inf                  inf        0      0      0         0     0.0s
-         0       0         0   0.00%   6.133333333     inf                  inf        0      0      4        86     0.0s
- L       0       0         0   0.00%   6.133333333     6.133333333        0.00%      347     73     47       311     0.1s
+         0       0         0   0.00%   6.133333333     inf                  inf        0      0      4        87     0.0s
+ T      61       0        21   6.72%   6.133333333     6.133333333        0.00%      434     58    347      6056     0.5s
 
 Solving report
   Status            Optimal
-  Primal bound      6.13333333335
+  Primal bound      6.13333333333
   Dual bound        6.13333333333
   Gap               0% (tolerance: 0.01%)
   Solution status   feasible
-                    6.13333333335 (objective)
+                    6.13333333333 (objective)
                     0 (bound viol.)
-                    0 (int. viol.)
+                    2.55351295664e-14 (int. viol.)
                     0 (row viol.)
-  Timing            0.07 (total)
+  Timing            0.50 (total)
                     0.00 (presolve)
                     0.00 (postsolve)
-  Nodes             1
-  LP iterations     320 (total)
-                    0 (strong br.)
-                    225 (separation)
-                    9 (heuristics)</pre><p>However, this might lead to some solver not supporting certain functionality like SCIP. In this case we need to:</p><pre><code class="language-julia">using SCIP</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><pre><code class="language-julia">SOLVER = SCIP.Optimizer()
+  Nodes             63
+  LP iterations     6089 (total)
+                    218 (strong br.)
+                    232 (separation)
+                    3905 (heuristics)</pre><p>However, this might lead to some solver not supporting certain functionality like SCIP. In this case we need to:</p><pre><code class="language-julia">using SCIP</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><pre><code class="language-julia">SOLVER = SCIP.Optimizer()
 
 CACHED_SOLVER = MOI.Utilities.CachingOptimizer(
     MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()), SOLVER)
@@ -75,4 +75,4 @@ Upper Constraints: 0
 Lower Constraints: 0
 Bilevel Model
 Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-5, false, 0, nothing)
-Solver name: QuadraticToBinary [SCIP]</pre><p>Note that we used <code>()-&gt;Q_SOLVER</code> instead of just <code>Q_SOLVER</code> because <code>BilevelModel</code> requires as constructor and not an instance of an object.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/quad_to_bin.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../non_linear/">« Non Linear models</a><a class="docs-footer-nextpage" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 22:41">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Solver name: QuadraticToBinary [SCIP]</pre><p>Note that we used <code>()-&gt;Q_SOLVER</code> instead of just <code>Q_SOLVER</code> because <code>BilevelModel</code> requires as constructor and not an instance of an object.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/quad_to_bin.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../non_linear/">« Non Linear models</a><a class="docs-footer-nextpage" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 22:55">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
