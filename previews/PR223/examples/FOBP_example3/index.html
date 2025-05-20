@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Foundations of Bilevel Programming: Chapter 3.7, Page 59 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorials/getting_started/">Getting started with BilevelJuMP</a></li><li><a class="tocitem" href="../../tutorials/modes/">Modes overview</a></li><li><a class="tocitem" href="../../tutorials/lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../../tutorials/conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../../tutorials/non_linear/">Non Linear models</a></li><li><a class="tocitem" href="../../tutorials/quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li class="is-active"><a class="tocitem" href>Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Foundations-of-Bilevel-Programming:-Chapter-3.7,-Page-59"><a class="docs-heading-anchor" href="#Foundations-of-Bilevel-Programming:-Chapter-3.7,-Page-59">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a><a id="Foundations-of-Bilevel-Programming:-Chapter-3.7,-Page-59-1"></a><a class="docs-heading-anchor-permalink" href="#Foundations-of-Bilevel-Programming:-Chapter-3.7,-Page-59" title="Permalink"></a></h1><p>This example is from the book <em>Foundations of Bilevel Programming</em> by Stephan Dempe, Chapter 3.7, Page 59. <a href="https://www.springer.com/gp/book/9781402006319">url</a></p><p>Model of the problem</p><p>First level</p><p class="math-container">\[\min \sum_{i\in I} x_i - z,\\
+\notag s.t.\\
+y^a_i\geq 0, \forall i \in I,\\
+y^a_i\leq 1, \forall i \in I,\\
+y^b_i\geq 0, \forall i \in I,\\
+y^b_i\leq 1, \forall i \in I,\\
+y^a_i + y^b_i = 1, \forall i \in I,\\
+z\geq 0,\\
+z\leq 1,\\
+y^a_1 + y^a_2 + y^a_3 \geq z,\\
+-y^b_1 - y^b_4 + y^a_3 \geq z,\\
+y^b_7 - y^b_6 + y^a_4 \geq z,\\
+y^a_5 + y^a_6 + y^a_7 \geq z.\\\]</p><p>Second level</p><p class="math-container">\[\min -\sum_{i\in I}x_i,\\
+\notag s.t.\\
+\sum x_i \geq 0,\\
+x_i \leq y^a_i, \forall i\in I,\\
+x_i \leq y^b_i, \forall i\in I,\\
+I = \{1,...,7\}\]</p><pre><code class="language-julia">using BilevelJuMP
+using Ipopt
+
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
+Solver name: Ipopt</pre><p>Global variables</p><pre><code class="language-julia">I = 7 # maximum literals
+clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]</code></pre><pre class="documenter-example-output">4-element Vector{Vector{Int64}}:
+ [1, 2, 3]
+ [-1, -4, 3]
+ [7, -6, 4]
+ [5, 6, 7]</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), ya[i = 1:I])
+@variable(Upper(model), yb[i = 1:I])
+@variable(Upper(model), z)
+
+#Lower level variables
+@variable(Lower(model), x[i = 1:I])</code></pre><pre class="documenter-example-output">7-element Vector{BilevelVariableRef}:
+ x[1]
+ x[2]
+ x[3]
+ x[4]
+ x[5]
+ x[6]
+ x[7]</pre><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)</code></pre><p>$ x<em>{1} + x</em>{2} + x<em>{3} + x</em>{4} + x<em>{5} + x</em>{6} + x_{7} - z $</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), ca, z &lt;= 1)
+@constraint(Upper(model), cb, z &gt;= 0)
+@constraint(Upper(model), c1[i = 1:I], ya[i] &gt;= 0)
+@constraint(Upper(model), c2[i = 1:I], ya[i] &lt;= 1)
+@constraint(Upper(model), c3[i = 1:I], yb[i] &gt;= 0)
+@constraint(Upper(model), c4[i = 1:I], yb[i] &lt;= 1)
+@constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)</code></pre><pre class="documenter-example-output">7-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ c5[1] : ya[1] + yb[1] = 1
+ c5[2] : ya[2] + yb[2] = 1
+ c5[3] : ya[3] + yb[3] = 1
+ c5[4] : ya[4] + yb[4] = 1
+ c5[5] : ya[5] + yb[5] = 1
+ c5[6] : ya[6] + yb[6] = 1
+ c5[7] : ya[7] + yb[7] = 1</pre><p>for c in clauses</p><pre><code class="language-julia">@constraint(
+    Upper(model),
+    cc[k in eachindex(clauses)],
+    sum(i &gt; 0 ? ya[i] : yb[-i] for i in clauses[k]) &gt;= z
+)</code></pre><pre class="documenter-example-output">4-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ cc[1] : ya[1] + ya[2] + ya[3] - z ≥ 0
+ cc[2] : ya[3] + yb[1] + yb[4] - z ≥ 0
+ cc[3] : ya[4] + ya[7] + yb[6] - z ≥ 0
+ cc[4] : ya[5] + ya[6] + ya[7] - z ≥ 0</pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, -sum(x[i] for i in 1:I))</code></pre><p>$ -x<em>{1} - x</em>{2} - x<em>{3} - x</em>{4} - x<em>{5} - x</em>{6} - x_{7} $</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), b1[i = 1:I], x[i] &gt;= 0)
+@constraint(Lower(model), b2[i = 1:I], x[i] &lt;= ya[i])
+@constraint(Lower(model), b3[i = 1:I], x[i] &lt;= yb[i])</code></pre><pre class="documenter-example-output">7-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ b3[1] : -yb[1] + x[1] ≤ 0
+ b3[2] : -yb[2] + x[2] ≤ 0
+ b3[3] : -yb[3] + x[3] ≤ 0
+ b3[4] : -yb[4] + x[4] ≤ 0
+ b3[5] : -yb[5] + x[5] ≤ 0
+ b3[6] : -yb[6] + x[6] ≤ 0
+ b3[7] : -yb[7] + x[7] ≤ 0</pre><p>Initial Starting conditions</p><pre><code class="language-julia">JuMP.set_start_value.(x, 0)
+JuMP.set_start_value.(ya, 1)
+JuMP.set_start_value.(yb, 0)
+JuMP.set_start_value(z, 1)
+for i in 1:I
+    JuMP.set_dual_start_value.(b1, 0)
+    JuMP.set_dual_start_value.(b2, 0)
+    JuMP.set_dual_start_value.(b3, -1)
+end</code></pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:       35
+Number of nonzeros in inequality constraint Jacobian.:      151
+Number of nonzeros in Lagrangian Hessian.............:       35
+
+Total number of variables............................:       43
+                     variables with only lower bounds:        7
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:       14
+Total number of equality constraints.................:       14
+Total number of inequality constraints...............:       76
+        inequality constraints with only lower bounds:       26
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:       50
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0 -1.0000000e+00 1.00e-02 1.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1 -5.2248049e-01 4.77e-03 3.99e+00  -1.0 2.38e-01    -  2.41e-01 6.17e-01f  1
+   2 -4.5537742e-01 3.78e-03 2.04e+01  -1.0 1.77e-01    -  9.29e-01 2.26e-01h  1
+   3 -3.1013603e-01 1.40e-03 9.72e+00  -1.0 2.14e-01    -  6.37e-01 5.95e-01h  1
+   4 -1.7909111e-01 6.25e-04 4.90e+01  -1.0 8.54e-02    -  1.00e+00 5.30e-01h  1
+   5 -5.2635494e-02 2.78e-04 1.17e+02  -1.0 1.39e-01    -  1.00e+00 5.91e-01h  1
+   6  4.8964938e-02 1.47e-04 6.07e+02  -1.0 1.00e-01    -  1.00e+00 4.74e-01h  1
+   7  4.3376478e-02 5.11e-05 7.49e+02  -1.0 1.68e-02    -  1.00e+00 6.42e-01h  1
+   8  1.3432903e-01 2.35e-05 2.28e+03  -1.0 8.17e-02    -  1.00e+00 5.62e-01h  1
+   9  1.0943512e-01 8.11e-06 3.70e+03  -1.0 2.46e-02    -  1.00e+00 6.45e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.9575626e-01 3.99e-06 1.16e+04  -1.0 7.13e-02    -  1.00e+00 5.69e-01h  1
+  11  1.1573775e-01 1.14e-06 2.02e+04  -1.0 6.21e-02    -  1.00e+00 6.60e-01h  1
+  12  1.3932121e-01 9.80e-07 1.25e+05  -1.0 7.48e-02    -  1.00e+00 1.47e-01f  3
+  13  3.0922874e-01 3.60e-07 6.62e+04  -1.0 1.06e-01    -  1.00e+00 7.60e-01h  1
+  14  2.9797374e-01 2.66e-07 5.55e+05  -1.0 3.64e-02    -  1.00e+00 1.48e-01f  3
+  15  1.6647532e-02 2.23e-08 1.70e+05  -1.0 1.54e-01    -  1.00e+00 8.49e-01h  1
+  16  1.9033881e-02 2.06e-08 3.39e+06  -1.0 6.15e-02    -  1.00e+00 1.75e-02f  6
+  17  1.0546868e-01 1.11e-08 6.84e+05  -1.0 4.30e-02    -  1.00e+00 8.78e-01h  1
+  18  1.2957235e-01 1.87e-13 4.55e+06  -1.0 3.44e-02    -  1.00e+00 3.38e-01f  2
+  19  1.1729935e-01 9.48e-14 6.80e+04  -1.0 1.79e-02    -  1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  2.0688419e-01 1.11e-16 3.19e+04  -1.0 4.11e-02    -  1.00e+00 1.00e+00f  1
+  21 -5.0650203e-01 2.22e-16 3.04e+06  -1.7 2.52e-01    -  7.50e-01 1.00e+00f  1
+  22 -7.1215007e-01 1.11e-16 7.06e+04  -1.7 1.15e-01    -  1.00e+00 1.00e+00f  1
+  23 -6.9110326e-01 1.11e-16 4.17e+04  -1.7 2.12e-02    -  1.00e+00 1.00e+00f  1
+  24 -6.9625189e-01 2.22e-16 2.86e+03  -1.7 4.13e-03    -  1.00e+00 1.00e+00f  1
+  25 -6.9564015e-01 2.22e-16 1.74e+01  -1.7 7.17e-04    -  1.00e+00 1.00e+00h  1
+  26 -9.7277264e-01 1.89e-14 1.52e+06  -3.8 8.89e-02    -  5.22e-01 9.68e-01f  1
+  27 -9.8930021e-01 2.22e-16 1.98e+06  -3.8 7.30e-03    -  2.50e-01 1.00e+00f  1
+  28 -9.9199990e-01 2.22e-16 2.08e+06  -3.8 2.47e-03    -  3.28e-01 1.00e+00f  1
+  29 -9.9200876e-01 2.22e-16 1.24e+05  -3.8 4.91e-05   4.0 8.47e-01 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  30 -9.9212721e-01 2.22e-16 3.24e-01  -3.8 3.94e-05   3.5 1.00e+00 1.00e+00f  1
+  31 -9.9243733e-01 2.22e-16 9.31e-01  -3.8 1.16e-04   3.0 1.00e+00 1.00e+00f  1
+  32 -9.9528003e-01 2.22e-16 1.70e+02  -3.8 1.02e-02    -  2.88e-01 1.44e-01f  2
+  33 -9.9624613e-01 2.22e-16 1.65e+05  -3.8 8.40e-03    -  1.00e+00 7.62e-02f  2
+  34 -9.9731688e-01 2.22e-16 2.15e+04  -3.8 6.72e-04    -  9.00e-01 1.00e+00f  1
+  35 -9.9755343e-01 2.22e-16 1.78e+00  -3.8 1.80e-04    -  1.00e+00 1.00e+00f  1
+  36 -9.9756559e-01 2.22e-16 7.69e-02  -3.8 2.70e-05    -  1.00e+00 1.00e+00f  1
+  37 -9.9984090e-01 2.22e-16 1.21e+04  -5.7 7.73e-04    -  4.89e-01 9.34e-01f  1
+  38 -9.9993263e-01 3.60e-07 8.98e+02  -5.7 1.04e-01    -  9.26e-01 1.00e+00f  1
+  39 -9.9995849e-01 2.22e-16 3.09e+03  -5.7 5.13e-05   2.6 4.90e-01 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  40 -9.9993600e-01 7.55e-10 2.21e+03  -5.7 3.22e-04    -  2.48e-02 1.00e+00f  1
+  41 -9.9995555e-01 1.72e-07 3.49e+03  -5.7 3.83e-03    -  7.70e-02 2.83e-01h  1
+  42 -9.9995742e-01 8.72e-08 1.67e+03  -5.7 1.08e-02    -  6.33e-01 3.99e-01f  2
+  43 -9.9995710e-01 7.57e-12 9.48e+01  -5.7 4.91e-03    -  5.95e-01 1.00e+00h  1
+  44 -9.9995843e-01 6.84e-10 4.83e+02  -5.7 1.53e-02    -  1.00e+00 7.12e-02h  1
+  45 -9.9996716e-01 2.22e-16 2.23e-03  -5.7 1.13e-05   2.1 1.00e+00 1.00e+00f  1
+  46 -9.9996866e-01 2.22e-16 1.29e-03  -5.7 3.12e-05   1.6 1.00e+00 1.00e+00h  1
+  47 -9.9997008e-01 2.57e-08 6.36e+00  -5.7 6.50e-02    -  1.00e+00 1.00e+00h  1
+  48 -9.9997025e-01 2.22e-16 4.51e-04  -5.7 3.29e-05   1.1 1.00e+00 1.00e+00h  1
+  49 -9.9997077e-01 2.22e-16 7.51e-04  -5.7 7.62e-05   0.7 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  50 -9.9997172e-01 2.22e-16 2.28e-03  -5.7 1.51e-04   0.2 1.00e+00 1.00e+00h  1
+  51r-9.9997172e-01 2.22e-16 5.75e+02  -5.7 0.00e+00    -  0.00e+00 4.57e-07R 19
+  52r-9.9995167e-01 9.54e-11 3.13e+01  -5.7 4.42e-03    -  9.36e-01 1.00e+00f  1
+  53r-9.9988732e-01 9.47e-11 6.53e+01  -5.7 2.46e-03   0.0 1.80e-01 3.70e-01f  1
+  54r-9.9979850e-01 9.40e-11 3.82e+01  -5.7 9.67e-04   0.4 5.96e-01 5.40e-01h  1
+  55r-9.9973263e-01 9.40e-11 4.15e+01  -5.7 3.58e-03    -  4.15e-02 1.70e-02h  1
+  56r-9.9739329e-01 9.37e-11 3.00e+01  -5.7 1.79e-02    -  1.36e-02 1.30e-01f  1
+  57r-9.9625050e-01 6.84e-09 2.48e+01  -5.7 9.54e-04  -0.1 8.08e-01 9.04e-01f  1
+  58r-9.9614434e-01 9.31e-11 1.29e-02  -5.7 8.51e-05   2.2 1.00e+00 1.00e+00f  1
+  59r-9.9594342e-01 9.31e-11 2.41e-02  -5.7 1.46e-04   1.7 1.00e+00 1.00e+00H  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  60r-9.9390618e-01 9.25e-11 2.72e+01  -5.7 3.34e-03    -  5.68e-01 4.54e-01h  1
+  61r-9.9295891e-01 9.25e-11 3.52e+01  -5.7 3.27e-02    -  1.48e-01 4.29e-02h  1
+  62r-9.8529343e-01 9.24e-11 3.14e+01  -5.7 1.20e-01    -  7.60e-02 8.56e-02f  1
+  63r-9.6873142e-01 9.21e-11 3.21e+01  -5.7 3.33e-02    -  5.95e-01 4.27e-01h  1
+  64r-9.6594437e-01 9.21e-11 3.21e+01  -5.7 2.31e-01    -  3.89e-02 1.70e-02h  1
+  65r-9.1063764e-01 9.21e-11 3.04e+01  -5.7 7.59e-01    -  2.02e-01 1.28e-01f  1
+  66r-8.2998848e-01 3.79e-09 2.60e+01  -5.7 5.12e-01    -  4.00e-01 2.85e-01f  1
+  67r-8.1549071e-01 3.28e-09 1.23e+02  -5.7 4.84e-01    -  7.10e-01 6.08e-02h  1
+  68r-8.1546883e-01 9.20e-11 1.16e-03  -5.7 2.92e-05   1.2 1.00e+00 1.00e+00h  1
+  69r-8.5405490e-01 4.32e-09 1.95e+01  -5.7 1.09e-01    -  9.37e-01 8.34e-01f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  70r-8.3833139e-01 2.13e-09 1.38e+01  -5.7 1.02e-01    -  2.39e-01 1.78e-01h  1
+  71r-8.2472124e-01 1.67e-09 4.12e+02  -5.7 2.93e-01    -  2.14e-01 8.93e-02F  1
+  72r-8.0237039e-01 9.18e-11 6.15e+01  -5.7 5.00e-02    -  1.00e+00 4.04e-01h  1
+  73r-7.7387547e-01 9.17e-11 7.30e+02  -5.7 2.40e-02    -  3.93e-01 1.00e+00f  1
+  74r-7.7387715e-01 9.17e-11 1.84e-03  -5.7 3.55e-06   0.7 1.00e+00 1.00e+00h  1
+  75r-7.7374144e-01 9.17e-11 1.57e-02  -5.7 2.02e-03    -  1.00e+00 1.00e+00f  1
+  76r-7.7379411e-01 9.17e-11 5.01e-05  -5.7 1.48e-04    -  1.00e+00 1.00e+00h  1
+  77r-8.4125940e-01 1.57e-12 5.51e+01  -8.6 4.18e-02    -  7.75e-01 6.08e-01f  1
+  78r-8.4126090e-01 1.73e-11 2.10e+01  -8.6 5.66e-07   0.3 9.54e-01 8.93e-01f  1
+  79r-8.4126377e-01 6.66e-16 7.04e-06  -8.6 9.15e-07  -0.2 1.00e+00 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  80 -8.4127318e-01 1.28e-14 3.23e+02  -5.7 5.80e-01    -  1.00e+00 1.36e-05f 13
+  81 -8.4127690e-01 2.75e-13 3.99e+02  -5.7 8.22e-01    -  1.00e+00 2.35e-05f 14
+  82 -8.4128356e-01 3.52e-13 4.46e+02  -5.7 7.89e-02    -  1.00e+00 4.19e-05f 15
+  83 -8.4128547e-01 4.06e-13 4.48e+02  -5.7 6.97e-02    -  1.00e+00 1.20e-05f 17
+  84 -8.4128741e-01 4.21e-13 5.00e+01  -5.7 8.17e-02    -  1.00e+00 1.23e-05f 17
+  85 -8.7151846e-01 1.28e-11 3.21e+02  -5.7 8.30e-01    -  1.00e+00 1.91e-01f  1
+  86 -9.8238886e-01 2.93e-09 7.08e+01  -5.7 1.08e-01    -  1.00e+00 8.63e-01f  1
+  87 -9.9683409e-01 2.52e-13 1.32e+01  -5.7 1.02e-02  -0.3 9.74e-01 8.45e-01f  1
+  88 -9.9707415e-01 2.86e-06 8.42e+00  -5.7 2.48e-01  -0.8 9.71e-02 7.67e-02f  1
+  89 -9.9753847e-01 2.01e-04 3.00e+03  -5.7 2.24e+01    -  3.70e-02 1.61e-01f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  90 -9.9986155e-01 4.53e-07 1.78e+02  -5.7 5.15e-02  -0.3 1.00e+00 9.52e-01f  1
+  91 -9.9997371e-01 1.19e-07 1.51e+00  -5.7 1.30e-03  -0.8 1.00e+00 9.92e-01h  1
+  92 -9.9997710e-01 4.07e-08 1.45e+02  -5.7 2.34e-03  -1.3 1.00e+00 4.85e-01f  2
+  93 -9.9997708e-01 2.22e-08 8.89e+01  -5.7 3.58e-02  -1.8 4.03e-01 3.50e-01h  1
+  94 -9.9997713e-01 2.19e-08 2.68e+02  -5.7 2.55e+00    -  1.50e-01 1.07e-02f  4
+  95 -9.9999002e-01 3.76e-03 5.40e+06  -5.7 3.49e+02    -  3.68e-03 1.00e+00f  1
+  96 -9.9998992e-01 3.73e-03 5.35e+06  -5.7 4.04e-03   1.4 1.00e+00 8.31e-03h  1
+  97 -9.9997960e-01 1.34e-05 2.17e+04  -5.7 8.75e-03   0.9 1.00e+00 9.96e-01h  1
+  98 -9.9997958e-01 1.32e-05 2.06e+04  -5.7 1.65e-04   0.4 1.58e-02 5.09e-02f  2
+  99 -9.9997917e-01 2.22e-16 2.25e-02  -5.7 5.08e-04  -0.1 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 100 -9.9997804e-01 1.11e-16 1.47e-01  -5.7 1.15e-03  -0.5 1.00e+00 1.00e+00f  1
+ 101 -9.9997792e-01 3.70e-11 2.99e-04  -5.7 2.07e-04  -1.0 1.00e+00 1.00e+00h  1
+ 102 -9.9997791e-01 3.50e-11 9.44e-05  -5.7 2.67e-04  -1.5 1.00e+00 1.00e+00H  1
+ 103 -9.9997791e-01 2.22e-16 9.72e-04  -5.7 8.06e-04  -2.0 1.00e+00 1.00e+00h  1
+ 104 -9.9997791e-01 1.55e-10 9.56e-04  -5.7 2.50e-03  -2.5 1.00e+00 1.00e+00h  1
+ 105 -9.9997795e-01 7.73e-10 8.72e+02  -5.7 3.55e+02    -  9.93e-01 1.00e+00h  1
+ 106 -9.9997793e-01 6.56e-10 1.90e-02  -5.7 3.52e-03  -2.9 1.00e+00 1.00e+00h  1
+ 107 -9.9997793e-01 6.96e-10 4.46e-02  -5.7 1.19e-02  -3.4 1.00e+00 1.00e+00h  1
+ 108 -9.9997795e-01 4.30e-10 8.69e+02  -5.7 7.07e+02    -  9.99e-01 1.00e+00h  1
+ 109 -9.9997794e-01 1.67e-09 1.15e-01  -5.7 1.97e-02  -3.9 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 110 -9.9997791e-01 7.29e-09 3.18e+00  -5.7 1.68e-01  -4.4 1.00e+00 1.00e+00h  1
+ 111 -9.9997786e-01 1.00e-08 2.43e+00  -5.7 1.33e-01  -3.9 1.00e+00 1.00e+00h  1
+ 112 -9.9997782e-01 1.15e-08 4.35e+00  -5.7 1.73e+01  -3.5 2.84e-03 1.39e-03h  2
+ 113 -9.9997547e-01 2.11e-08 9.52e+01  -5.7 1.11e-02  -1.3 2.99e-01 1.00e+00h  1
+ 114 -9.9997672e-01 7.66e-09 9.90e+01  -5.7 1.37e-02  -0.9 1.00e+00 1.58e-01h  2
+ 115 -9.9997691e-01 3.92e-09 1.76e-02  -5.7 5.32e-03  -1.3 1.00e+00 1.00e+00h  1
+ 116 -9.9997705e-01 5.72e-10 5.55e-03  -5.7 1.41e-03  -0.9 1.00e+00 1.00e+00h  1
+ 117 -9.9997611e-01 1.71e-14 3.61e+01  -5.7 6.18e-03  -1.4 8.98e-01 1.00e+00H  1
+ 118 -9.9997422e-01 3.73e-11 3.48e+01  -5.7 1.75e-02  -1.0 1.11e-01 8.16e-02h  2
+ 119 -9.9997052e-01 1.96e-10 2.07e-03  -5.7 1.44e-04   0.4 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 120 -9.9997458e-01 2.70e-11 8.62e+02  -5.7 1.41e+03    -  1.00e+00 1.00e+00h  1
+ 121 -9.9997429e-01 5.82e-11 1.08e+04  -5.7 2.65e+05    -  1.59e-01 1.00e+00f  1
+ 122 -9.9997431e-01 6.65e-12 2.25e-05  -5.7 5.73e-06  -0.1 1.00e+00 1.00e+00h  1
+ 123 -9.9997429e-01 2.91e-11 1.00e+02  -5.7 9.08e+04    -  1.00e+00 1.00e+00h  1
+ 124 -9.9997429e-01 6.47e-12 6.90e-03  -5.7 2.30e+04    -  1.00e+00 1.00e+00h  1
+ 125 -9.9997429e-01 6.18e-12 4.35e-05  -5.7 3.81e-01    -  1.00e+00 1.00e+00h  1
+ 126 -9.9997429e-01 5.91e-12 3.50e-05  -5.7 1.19e-04    -  1.00e+00 1.00e+00h  1
+ 127 -9.9997429e-01 4.80e-12 3.18e-03  -5.7 2.11e-03    -  1.00e+00 1.00e+00h  1
+ 128 -9.9997429e-01 1.78e-12 1.59e-06  -5.7 1.42e-05    -  1.00e+00 1.00e+00h  1
+ 129 -1.0000000e+00 3.97e-09 2.67e+01  -8.6 1.87e+00    -  7.57e-01 9.99e-01f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 130 -1.0000000e+00 4.55e-09 2.24e+01  -8.6 5.81e-05  -0.6 8.64e-01 1.00e+00f  1
+ 131 -1.0000000e+00 4.25e-09 1.77e+01  -8.6 1.27e+05    -  6.99e-02 6.69e-02h  2
+ 132 -1.0000000e+00 6.02e-12 3.51e+02  -8.6 6.12e+04    -  1.64e-01 1.00e+00h  1
+ 133 -1.0000000e+00 2.22e-16 2.17e-01  -8.6 3.95e-05  -1.1 9.90e-01 1.00e+00h  1
+ 134 -1.0000000e+00 2.22e-16 5.35e-01  -8.6 1.49e+04    -  9.98e-01 1.00e+00h  1
+ 135 -1.0000000e+00 2.22e-16 5.33e-01  -8.6 3.61e+04    -  2.93e-03 2.96e-03h  2
+ 136 -1.0000000e+00 2.22e-16 1.38e+00  -8.6 5.29e+04    -  2.92e-01 1.00e+00h  1
+ 137 -1.0000000e+00 9.84e-09 3.03e+00  -8.6 5.34e+03    -  5.57e-01 1.00e+00h  1
+ 138 -1.0000000e+00 4.44e-16 3.25e-07  -8.6 1.12e-05  -1.5 1.00e+00 1.00e+00h  1
+ 139 -1.0000000e+00 1.78e-15 1.57e+00  -8.6 7.12e+03    -  4.43e-01 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 140 -1.0000000e+00 8.83e-08 3.49e+00  -8.6 1.81e+02    -  4.83e-01 1.00e+00h  1
+ 141 -1.0000000e+00 2.22e-16 2.76e-07  -8.6 2.86e-05  -2.0 1.00e+00 1.00e+00h  1
+ 142 -1.0000000e+00 7.11e-15 1.66e+00  -8.6 2.92e+02    -  8.34e-01 1.00e+00h  1
+ 143 -1.0000000e+00 1.32e-06 4.59e+00  -8.6 4.44e+02    -  2.60e-01 1.00e+00h  1
+ 144 -1.0000000e+00 0.00e+00 2.38e-07  -8.6 7.41e-05  -2.5 1.00e+00 1.00e+00h  1
+ 145 -1.0000000e+00 1.11e-16 1.48e+00  -8.6 5.80e+02    -  9.69e-01 1.00e+00h  1
+ 146 -1.0000000e+00 3.31e-05 2.99e+01  -8.6 1.69e+04    -  1.22e-01 1.00e+00h  1
+ 147 -1.0000000e+00 2.22e-16 2.22e-08  -8.6 2.07e-05  -3.0 1.00e+00 1.00e+00h  1
+ 148 -1.0000000e+00 1.82e-12 4.73e-01  -9.0 5.85e+03    -  7.47e-01 1.00e+00h  1
+ 149 -1.0000000e+00 3.64e-12 1.10e+00  -9.0 2.54e+04    -  8.13e-01 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+ 150 -1.0000001e+00 4.31e-05 6.35e+00  -9.0 6.21e+04    -  2.23e-01 1.00e+00h  1
+ 151 -1.0000001e+00 2.22e-16 4.27e-08  -9.0 1.20e-04  -3.4 1.00e+00 1.00e+00h  1
+ 152 -1.0000001e+00 1.46e-11 6.32e-01  -9.0 5.05e+04    -  1.00e+00 1.00e+00h  1
+ 153 -1.0000001e+00 2.91e-11 1.03e-01  -9.0 1.31e+05    -  1.00e+00 1.00e+00h  1
+ 154 -1.0000001e+00 1.11e-16 2.19e-03  -9.0 4.21e+03    -  1.00e+00 1.00e+00h  1
+ 155 -1.0000001e+00 0.00e+00 8.99e-07  -9.0 7.16e+01    -  1.00e+00 1.00e+00h  1
+ 156 -1.0000001e+00 1.11e-16 2.01e-14  -9.0 4.27e-03    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 156
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -1.0000000509214182e+00   -1.0000000509214182e+00
+Dual infeasibility......:   2.0095036745715333e-14    2.0095036745715333e-14
+Constraint violation....:   1.1102230246251565e-16    1.1102230246251565e-16
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   9.0909092573993425e-10    9.0909092573993425e-10
+Overall NLP error.......:   9.0909092573993425e-10    9.0909092573993425e-10
+
+
+Number of objective function evaluations             = 298
+Number of objective gradient evaluations             = 130
+Number of equality constraint evaluations            = 298
+Number of inequality constraint evaluations          = 298
+Number of equality constraint Jacobian evaluations   = 158
+Number of inequality constraint Jacobian evaluations = 158
+Number of Lagrangian Hessian evaluations             = 156
+Total seconds in IPOPT                               = 0.172
+
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><p>Results</p><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-1.0000000509214182</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ -4.3148599695271345e-9
+ -6.874163281129641e-9
+ -7.629683537334404e-9
+ -4.314859959443855e-9
+ -6.874163291146031e-9
+ -6.874163285076307e-9
+ -6.874163292374517e-9</pre><pre><code class="language-julia">value.(ya)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ 1.0000000051056661
+ 1.0000000078391384
+ 1.0000000087149856
+ 1.0000000051056663
+ 1.0000000078391384
+ 1.0000000078391384
+ 1.0000000078391384</pre><pre><code class="language-julia">value.(yb)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ -5.105666247148429e-9
+ -7.83913836441992e-9
+ -8.714985576936834e-9
+ -5.10566623653529e-9
+ -7.8391383755754e-9
+ -7.839138368815413e-9
+ -7.839138376943592e-9</pre><pre><code class="language-julia">value(z)</code></pre><pre class="documenter-example-output">1.0000000071653616</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Chapter 3.2, Page 25</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 03:57">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

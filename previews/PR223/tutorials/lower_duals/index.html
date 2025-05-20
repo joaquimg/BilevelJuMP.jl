@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Dual variables of the lower level · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../getting_started/">Getting started with BilevelJuMP</a></li><li><a class="tocitem" href="../modes/">Modes overview</a></li><li class="is-active"><a class="tocitem" href>Dual variables of the lower level</a><ul class="internal"><li><a class="tocitem" href="#NLP-solution"><span>NLP solution</span></a></li><li><a class="tocitem" href="#MIP-solution"><span>MIP solution</span></a></li><li><a class="tocitem" href="#More-on-DualOf-usage"><span>More on <code>DualOf</code> usage</span></a></li></ul></li><li><a class="tocitem" href="../conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../non_linear/">Non Linear models</a></li><li><a class="tocitem" href="../quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../../examples/FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../../examples/FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../../examples/FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../../examples/DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../../examples/PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../../examples/PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../../examples/SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../../examples/MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../../examples/MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Dual variables of the lower level</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Dual variables of the lower level</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/lower_duals.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Dual-variables-of-the-lower-level"><a class="docs-heading-anchor" href="#Dual-variables-of-the-lower-level">Dual variables of the lower level</a><a id="Dual-variables-of-the-lower-level-1"></a><a class="docs-heading-anchor-permalink" href="#Dual-variables-of-the-lower-level" title="Permalink"></a></h1><p>This is a quick introduction to modeling and solving bilevel optimization with BilevelJuMP.</p><p>This modeling feature enables the implementation of workflows where one (or more) of the upper-level variables is the dual of a lower-level constraint. In particular, in the energy sector, it is common to model the energy prices as the dual variable associated with the energy demand equilibrium constraint. One example of an application that uses this feature is <a href="https://doi.org/10.1016/j.ejor.2018.07.027">Fanzeres et al. (2019)</a>, which focuses on strategic bidding in auction-based energy markets. A small and simplified example of the modeled problem would be the model:</p><p class="math-container">\[\begin{align}
+    &amp;\max_{\lambda, q_S} \quad \lambda \cdot g_S \\
+    &amp;\textit{s.t.} \quad 0 \leq q_S \leq 100\\
+    &amp;\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
+            &amp; \hspace{70pt} \textit{s.t.} \quad g_S \leq q_S \\
+            &amp; \hspace{88pt} \quad  0 \leq g_S \leq 100 \\
+            &amp; \hspace{88pt}\quad  0 \leq g_{1} \leq 40 \\
+            &amp; \hspace{88pt}\quad  0 \leq g_{2} \leq 40 \\
+            &amp; \hspace{88pt}\quad  0 \leq g_{D} \leq 100 \\
+    &amp; \hspace{88pt}\quad  g_S + g_{1} + g_{2} + g_D = 100 \quad  : \quad \lambda \label{eq-dual-lambda}
+\end{align}\]</p><p>Where <span>$\lambda$</span> is the dual of the load balance constraint (last constraint in the lower part), <span>$g_S$</span>, <span>$g_{1}$</span>, <span>$g_2$</span> represent the generation of the strategic bidder and from two other (non-strategic) plants. <span>$g_D$</span> represents the deficit in generation. Finally, <span>$q_S$</span> is the quantity bid optimized by the strategic generator.</p><p>load packages</p><pre><code class="language-julia">using BilevelJuMP
+using Ipopt
+using QuadraticToBinary
+using HiGHS</code></pre><p>BilevelJuMP.jl allows users to implement similar models using the function <code>DualOf</code> that binds a new variable in the upper level to an existing constraint in the lower level. The model can be written as:</p><pre><code class="language-julia">model = BilevelModel()
+@variable(Upper(model), 0 &lt;= qS &lt;= 100)
+@variable(Lower(model), 0 &lt;= gS &lt;= 100)
+@variable(Lower(model), 0 &lt;= gR1 &lt;= 40)
+@variable(Lower(model), 0 &lt;= gR2 &lt;= 40)
+@variable(Lower(model), 0 &lt;= gD &lt;= 100)
+@objective(Lower(model), Min, 50gR1 + 100gR2 + 1000gD)
+@constraint(Lower(model), gS &lt;= qS)
+@constraint(Lower(model), demand_equilibrium, gS + gR1 + gR2 + gD == 100)
+@variable(Upper(model), lambda, DualOf(demand_equilibrium))
+@objective(Upper(model), Max, lambda*gS)</code></pre><p>$ lambda\times gS $</p><h2 id="NLP-solution"><a class="docs-heading-anchor" href="#NLP-solution">NLP solution</a><a id="NLP-solution-1"></a><a class="docs-heading-anchor-permalink" href="#NLP-solution" title="Permalink"></a></h2><p>This model, can be solved by selecting a reformulation and a solver. Here we select Strong-Duality reformulation, the Ipopt solver and call optimizes to perform the reformulation and solve it.</p><pre><code class="language-julia">BilevelJuMP.set_mode(model, BilevelJuMP.StrongDualityMode())
+set_optimizer(model, Ipopt.Optimizer)
+optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:       17
+Number of nonzeros in inequality constraint Jacobian.:       22
+Number of nonzeros in Lagrangian Hessian.............:        3
+
+Total number of variables............................:       15
+                     variables with only lower bounds:        4
+                variables with lower and upper bounds:        5
+                     variables with only upper bounds:        5
+Total number of equality constraints.................:        5
+Total number of inequality constraints...............:        3
+        inequality constraints with only lower bounds:        1
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        2
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 1.00e+03 1.28e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  9.4967374e-05 1.00e+03 1.27e+00  -1.0 3.44e+02    -  2.88e-05 2.90e-05h  1
+   2  8.1838617e-04 1.00e+03 1.67e+00  -1.0 9.37e+02    -  2.13e-05 4.45e-04f  1
+   3  2.6260004e-03 9.99e+02 1.64e+00  -1.0 9.16e+02    -  5.75e-04 5.48e-04h  1
+   4  4.2939366e-01 9.72e+02 3.70e+00  -1.0 9.08e+02    -  7.13e-04 2.68e-02f  1
+   5  8.9922740e-01 9.69e+02 3.69e+00  -1.0 7.99e+02    -  4.77e-03 3.50e-03f  1
+   6  1.5988102e+00 9.68e+02 3.69e+00  -1.0 8.64e+02    -  4.71e-04 3.58e-04f  1
+   7  8.1726295e+00 9.67e+02 3.65e+00  -1.0 1.79e+03    -  3.47e-04 1.12e-03f  1
+   8  9.1199253e+00 9.67e+02 3.70e+00  -1.0 9.95e+02    -  8.44e-04 2.73e-04f  1
+   9  1.1465721e+01 9.66e+02 3.60e+00  -1.0 2.01e+03    -  8.77e-05 6.96e-04f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.4960863e+01 9.64e+02 3.55e+00  -1.0 6.96e+02   0.0 1.22e-03 2.64e-03f  1
+  11  1.6509553e+01 9.63e+02 5.48e+00  -1.0 6.42e+02  -0.5 9.07e-03 9.47e-04f  1
+  12  2.0601057e+01 9.61e+02 5.71e+00  -1.0 5.08e+02  -1.0 2.37e-03 1.83e-03f  1
+  13  2.8419542e+01 9.61e+02 5.09e+00  -1.0 1.48e+06    -  9.26e-07 1.35e-06f  1
+  14  4.1802970e+01 9.61e+02 5.47e+00  -1.0 4.68e+06    -  8.13e-07 7.30e-07f  1
+  15  7.4957309e+01 9.61e+02 4.56e+00  -1.0 2.03e+07    -  3.72e-07 4.18e-07f  1
+  16  1.3881250e+02 9.61e+02 5.16e+00  -1.0 9.66e+06    -  1.75e-06 1.69e-06f  1
+  17  1.5193761e+02 9.61e+02 5.21e+01  -1.0 1.00e+06    -  5.04e-05 3.34e-06f  1
+  18  1.5247861e+02 9.61e+02 1.20e+02  -1.0 1.57e+03    -  4.47e-02 5.47e-05f  1
+  19  8.6224578e+04 6.37e+04 7.78e+02  -1.0 9.64e+02    -  4.68e-04 9.24e-01f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  8.6928452e+04 6.37e+04 7.83e+02  -1.0 1.39e+06    -  4.65e-05 1.36e-04f  1
+  21  8.6931703e+04 6.37e+04 7.49e+02  -1.0 1.16e+04    -  7.85e-02 1.58e-04f  1
+  22  8.6310221e+04 6.22e+04 7.75e+02  -1.0 4.34e+02    -  3.75e-01 2.32e-02h  1
+  23  8.6303985e+04 6.22e+04 9.11e+02  -1.0 4.25e+02    -  3.24e-01 2.37e-04h  1
+  24  8.6265395e+04 6.21e+04 7.98e+02  -1.0 7.31e+01    -  8.46e-06 7.03e-04h  1
+  25  6.8704198e+04 4.52e+04 5.79e+02  -1.0 8.35e+01    -  6.37e-04 2.67e-01h  1
+  26  5.4467029e+04 3.14e+04 4.06e+02  -1.0 5.85e+01    -  3.38e-01 2.99e-01h  1
+  27  5.4323041e+04 3.13e+04 4.45e+02  -1.0 3.94e+01    -  2.91e-01 4.44e-03h  1
+  28  5.4102419e+04 3.11e+04 4.01e+02  -1.0 4.12e+01    -  5.49e-05 6.40e-03h  1
+  29  3.3729198e+04 1.25e+04 2.41e+02  -1.0 4.12e+01    -  2.15e-02 5.81e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  30  2.5938021e+04 5.43e+03 8.48e+01  -1.0 1.60e+01    -  9.96e-01 5.61e-01h  1
+  31  2.0420516e+04 3.86e+02 6.64e+00  -1.0 6.82e+00    -  1.00e+00 9.22e-01h  1
+  32  2.0336070e+04 3.09e+02 2.51e+02  -1.0 5.14e-01    -  1.00e+00 2.00e-01h  1
+  33  2.0109529e+04 1.01e+02 1.91e+02  -1.0 4.11e-01    -  1.00e+00 6.72e-01h  1
+  34  2.0046678e+04 4.36e+01 5.31e+02  -1.0 1.35e-01    -  1.00e+00 5.69e-01h  1
+  35  2.0018605e+04 1.79e+01 1.20e+03  -1.0 5.80e-02    -  1.00e+00 5.90e-01h  1
+  36  2.0007221e+04 7.43e+00 2.93e+03  -1.0 2.38e-02    -  1.00e+00 5.84e-01h  1
+  37  2.0002490e+04 3.07e+00 7.02e+03  -1.0 9.86e-03    -  1.00e+00 5.86e-01h  1
+  38  2.0000590e+04 1.27e+00 1.70e+04  -1.0 4.00e-03    -  1.00e+00 5.86e-01h  1
+  39  1.9999939e+04 5.66e-01 4.39e+04  -1.0 1.37e-03    -  1.00e+00 5.56e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  40  1.9999916e+04 5.10e-01 2.05e+05  -1.0 2.97e-03    -  1.00e+00 9.97e-02f  3
+  41  1.9999819e+04 1.55e-01 1.25e+05  -1.0 3.12e-03    -  1.00e+00 6.96e-01h  1
+  42  1.9999819e+04 1.43e-01 7.31e+05  -1.0 1.22e-03    -  1.00e+00 7.51e-02f  4
+  43  1.9999806e+04 2.90e-02 2.92e+05  -1.0 1.08e-03    -  1.00e+00 7.98e-01h  1
+  44  1.9999805e+04 2.55e-02 3.26e+06  -1.0 1.66e-04    -  1.00e+00 1.21e-01f  3
+  45  1.9999800e+04 6.64e-03 1.82e+06  -1.0 1.64e-04    -  1.00e+00 7.39e-01h  1
+  46  1.9999800e+04 6.11e-03 1.31e+07  -1.0 5.25e-05    -  1.00e+00 8.04e-02f  4
+  47  1.9999800e+04 9.57e-04 3.47e+06  -1.0 4.59e-05    -  1.00e+00 8.59e-01h  1
+  48  1.9999800e+04 6.28e-04 2.79e+07  -1.0 9.71e-06    -  1.00e+00 3.06e-01f  2
+  49  1.9999799e+04 8.69e-05 3.54e+07  -1.0 1.15e-05    -  1.00e+00 2.50e-01h  3
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  50  1.9999800e+04 4.22e-06 4.18e+07  -1.0 1.12e-05    -  1.00e+00 3.12e-02h  6
+  51  1.9999800e+04 5.78e-07 4.41e+07  -1.0 1.30e-05    -  1.00e+00 1.95e-03h 10
+  52  1.9999800e+04 5.78e-07 4.47e+07  -1.0 1.29e-05    -  1.00e+00 1.22e-04h 14
+  53  1.9999808e+04 7.72e-03 8.23e-03  -1.0 1.40e-05    -  1.00e+00 1.00e+00s 22
+  54  1.9999997e+04 4.41e-07 4.92e+00  -5.7 4.93e-03    -  1.00e+00 1.00e+00f  1
+  55  1.9999999e+04 1.48e-10 1.25e+03  -5.7 4.82e-05    -  9.51e-01 9.97e-01f  1
+  56  2.0000000e+04 7.82e-13 6.55e+00  -5.7 4.65e-06    -  1.00e+00 9.95e-01f  1
+  57  2.0000000e+04 9.99e-14 4.70e-10  -5.7 5.51e-08    -  1.00e+00 1.00e+00f  1
+  58  2.0000000e+04 1.14e-13 7.81e+01  -8.6 9.21e-08    -  9.58e-01 1.00e+00f  1
+  59  6.1246727e+04 3.72e+04 2.78e+13  -8.6 1.21e+78    -  5.73e-30 2.12e-18F  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  60  6.1246728e+04 3.72e+04 2.78e+13  -8.6 4.52e+04    -  8.31e-03 2.19e-10h  1
+  61  6.1144734e+04 3.71e+04 2.55e+13  -8.6 3.92e+03    -  5.75e-02 8.18e-02h  1
+  62r 6.1144734e+04 3.71e+04 1.00e+03   3.6 0.00e+00    -  0.00e+00 4.41e-11R  2
+  63r 6.2346762e+04 3.83e+04 2.03e+03   3.6 2.30e+12    -  9.22e-10 4.86e-11f  6
+  64r 6.0677876e+04 3.62e+04 2.03e+03   1.5 2.55e+06    -  6.82e-04 6.06e-04f  1
+  65r 5.9593573e+04 3.42e+04 2.03e+03   1.5 8.11e+05    -  6.73e-06 1.29e-03f  1
+  66r 3.3177905e+04 9.07e+03 2.03e+03   1.5 1.34e+06    -  1.42e-05 1.87e-03f  1
+  67  3.3166193e+04 9.06e+03 9.99e+02  -8.6 9.04e+02    -  6.37e-01 8.98e-04h  1
+  68  2.4771237e+04 3.28e+03 3.62e+02  -8.6 9.03e+02    -  6.52e-01 6.37e-01h  1
+  69  2.2863803e+04 1.97e+03 2.33e+02  -8.6 3.28e+02    -  9.40e-01 4.00e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  70  2.0069449e+04 4.78e+01 5.64e+00  -8.6 1.97e+02    -  9.71e-01 9.76e-01h  1
+  71  2.0000010e+04 6.84e-03 8.52e-04  -8.6 4.78e+00    -  1.00e+00 1.00e+00h  1
+  72  2.0000000e+04 1.35e-13 6.10e-10  -8.6 6.95e-04    -  1.00e+00 1.00e+00h  1
+  73  2.0000000e+04 1.42e-14 6.61e-14  -8.6 2.77e-11    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 73
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -2.0000000046430814e+04    2.0000000046430814e+04
+Dual infeasibility......:   6.6055616324458369e-14    6.6055616324458369e-14
+Constraint violation....:   1.4210854715202004e-14    1.4210854715202004e-14
+Variable bound violation:   3.9995490652700028e-07    3.9995490652700028e-07
+Complementarity.........:   2.5441766264890888e-09    2.5441766264890888e-09
+Overall NLP error.......:   2.2463137571874334e-09    2.5441766264890888e-09
+
+
+Number of objective function evaluations             = 149
+Number of objective gradient evaluations             = 71
+Number of equality constraint evaluations            = 149
+Number of inequality constraint evaluations          = 149
+Number of equality constraint Jacobian evaluations   = 75
+Number of inequality constraint Jacobian evaluations = 75
+Number of Lagrangian Hessian evaluations             = 73
+Total seconds in IPOPT                               = 0.028
+
+EXIT: Optimal Solution Found.</pre><h2 id="MIP-solution"><a class="docs-heading-anchor" href="#MIP-solution">MIP solution</a><a id="MIP-solution-1"></a><a class="docs-heading-anchor-permalink" href="#MIP-solution" title="Permalink"></a></h2><p>It is also possible to solve such problem by using a MIP formulation. The main issue is the product of variable in the upper level objective. However, this can be easily handled by using the package <code>QuadraticToBinary.jl</code> for automatic binary expansions. Because binary expansions require bounds on variables, we add the following lines:</p><pre><code class="language-julia">set_lower_bound(lambda, 0.0)
+set_upper_bound(lambda, 1000.0)</code></pre><p>Then, as before, we set a solver (now HiGHS with the <code>QuadraticToBinary.jl</code> wrapper) and a solution method (now Fortuny-Amat and McCarl):</p><pre><code class="language-julia">set_optimizer(model,
+    ()-&gt;QuadraticToBinary.Optimizer{Float64}(HiGHS.Optimizer()))
+BilevelJuMP.set_mode(model,
+    BilevelJuMP.FortunyAmatMcCarlMode(dual_big_M = 100))
+optimize!(model)</code></pre><pre class="documenter-example-output">Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
+Copyright (c) 2023 HiGHS under MIT licence terms
+Presolving model
+71 rows, 69 cols, 193 nonzeros
+Presolve: Infeasible
+
+Solving report
+  Status            Infeasible
+  Primal bound      -inf
+  Dual bound        inf
+  Gap               0% (tolerance: 0.01%)
+  Solution status   -
+  Timing            0.00 (total)
+                    0.00 (presolve)
+                    0.00 (postsolve)
+  Nodes             0
+  LP iterations     0 (total)
+                    0 (strong br.)
+                    0 (separation)
+                    0 (heuristics)
+ERROR:   No invertible representation for getDualRay</pre><h2 id="More-on-DualOf-usage"><a class="docs-heading-anchor" href="#More-on-DualOf-usage">More on <code>DualOf</code> usage</a><a id="More-on-DualOf-usage-1"></a><a class="docs-heading-anchor-permalink" href="#More-on-DualOf-usage" title="Permalink"></a></h2><p>You might have a problem where you want duals of a vector of constraints like:</p><pre><code class="language-julia">@constraint(Lower(model), reserves[i=1:3], (40 - gR1) + (40 - gR2) == 10 * i)</code></pre><pre class="documenter-example-output">3-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ reserves[1] : -gR1 - gR2 = -70
+ reserves[2] : -gR1 - gR2 = -60
+ reserves[3] : -gR1 - gR2 = -50</pre><p>then you can do</p><pre><code class="language-julia">@variable(Upper(model), reserve_dual[i=1:3], DualOf(reserves[i]))</code></pre><pre class="documenter-example-output">3-element Vector{BilevelVariableRef}:
+ reserve_dual[1]
+ reserve_dual[2]
+ reserve_dual[3]</pre><p>or use anonymous variables</p><pre><code class="language-julia">my_duals = []
+for i in 1:3
+    var = @variable(Upper(model), variable_type = DualOf(reserves[i]))
+    push!(my_duals, var)
+end
+my_duals # a vector of anonimous variables</code></pre><pre class="documenter-example-output">3-element Vector{Any}:
+ anon
+ anon
+ anon</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/lower_duals.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../modes/">« Modes overview</a><a class="docs-footer-nextpage" href="../conic_lower/">Conic Bilevel and Mixed Mode »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 03:57">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

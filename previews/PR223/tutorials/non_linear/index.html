@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Non Linear models · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../getting_started/">Getting started with BilevelJuMP</a></li><li><a class="tocitem" href="../modes/">Modes overview</a></li><li><a class="tocitem" href="../lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../conic_lower/">Conic Bilevel and Mixed Mode</a></li><li class="is-active"><a class="tocitem" href>Non Linear models</a><ul class="internal"><li><a class="tocitem" href="#Quadratic-constraints-and-objectives"><span>Quadratic constraints and objectives</span></a></li><li><a class="tocitem" href="#General-non-linear-constraints-and-objectives"><span>General non-linear constraints and objectives</span></a></li></ul></li><li><a class="tocitem" href="../quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../../examples/FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../../examples/FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../../examples/FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../../examples/DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../../examples/PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li><a class="tocitem" href="../../examples/PHTP_example2/">Princeton Handbook of Test Problems: Test 9.3.4</a></li><li><a class="tocitem" href="../../examples/SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../../examples/MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../../examples/MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Non Linear models</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Non Linear models</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/non_linear.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Non-Linear-models"><a class="docs-heading-anchor" href="#Non-Linear-models">Non Linear models</a><a id="Non-Linear-models-1"></a><a class="docs-heading-anchor-permalink" href="#Non-Linear-models" title="Permalink"></a></h1><p>BilevelJuMP has limited support for non-linear models. The <code>@NLconstraint</code> and the <code>@NLobjective</code> macros are supported for the upper level, but not for the lower level. Moreover, these macros can only be used if the selected solver supports non-linear constraints and objectives.</p><p>The <code>@constraint</code> and <code>@objective</code> macros can be used for both levels to represent linear and quadratic constraints and objectives</p><h2 id="Quadratic-constraints-and-objectives"><a class="docs-heading-anchor" href="#Quadratic-constraints-and-objectives">Quadratic constraints and objectives</a><a id="Quadratic-constraints-and-objectives-1"></a><a class="docs-heading-anchor-permalink" href="#Quadratic-constraints-and-objectives" title="Permalink"></a></h2><pre><code class="language-julia">using BilevelJuMP, Ipopt
+model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
+
+@variable(Upper(model), x &gt;= 2)
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><p>We can add a non-linear objective to the upper level with <code>@NLobjective</code></p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^2 - y)</code></pre><p>We can also add a non-linear constraint to the upper level with <code>@NLconstraint</code></p><pre><code class="language-julia">@NLconstraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ (x ^ {2.0} + y ^ {2.0}) - 100.0 \leq 0 \]</p><p><code>@NLobjective</code> is <em>not supported</em> in the lower level, but we can use <code>@constraint</code> to add a quadratic objective to the lower level.</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:        3
+Number of nonzeros in inequality constraint Jacobian.:        8
+Number of nonzeros in Lagrangian Hessian.............:        5
+
+Total number of variables............................:        4
+                     variables with only lower bounds:        2
+                variables with lower and upper bounds:        1
+                     variables with only upper bounds:        1
+Total number of equality constraints.................:        1
+Total number of inequality constraints...............:        3
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        3
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  1.0603999e+00 6.04e+00 1.92e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  1.0812189e+00 5.99e+00 1.91e+00  -1.0 1.52e+01    -  1.42e-02 7.80e-03h  1
+   2  1.1009516e+00 2.41e+00 2.17e+01  -1.0 6.05e+00    -  9.94e-01 5.98e-01f  1
+   3  1.1079890e+00 1.31e+00 8.34e+00  -1.0 2.34e+00    -  6.07e-01 4.58e-01h  1
+   4  1.1069894e+00 8.19e-01 4.31e+01  -1.0 1.28e+00    -  1.00e+00 3.73e-01h  1
+   5  1.1018085e+00 4.02e-01 6.84e+01  -1.0 8.23e-01    -  1.00e+00 5.10e-01h  1
+   6  1.1008006e+00 1.63e-01 1.07e+02  -1.0 3.97e-01    -  1.00e+00 5.95e-01h  1
+   7  1.0997554e+00 7.12e-02 2.56e+02  -1.0 1.63e-01    -  1.00e+00 5.62e-01h  1
+   8  1.0995471e+00 2.88e-02 5.33e+02  -1.0 7.05e-02    -  1.00e+00 5.95e-01h  1
+   9  1.0993558e+00 1.19e-02 1.23e+03  -1.0 2.89e-02    -  1.00e+00 5.89e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.0993204e+00 4.67e-03 2.74e+03  -1.0 1.17e-02    -  1.00e+00 6.06e-01h  1
+  11  1.0992867e+00 1.72e-03 5.75e+03  -1.0 4.69e-03    -  1.00e+00 6.31e-01h  1
+  12  1.0992814e+00 5.11e-04 9.28e+03  -1.0 1.70e-03    -  1.00e+00 7.03e-01h  1
+  13  1.0992784e+00 2.83e-04 2.64e+04  -1.0 5.15e-04    -  1.00e+00 4.47e-01f  2
+  14  1.0992757e+00 2.64e-16 2.25e+00  -1.0 2.82e-04    -  1.00e+00 1.00e+00h  1
+  15  1.0014454e+00 5.67e-16 5.59e-05  -3.8 9.84e-02    -  1.00e+00 1.00e+00f  1
+  16  1.0000011e+00 1.36e-16 8.75e-08  -5.7 8.54e-04    -  1.00e+00 1.00e+00h  1
+  17  9.9999884e-01 2.85e-16 3.44e-01  -8.6 1.12e-06    -  8.33e-01 1.00e+00h  1
+  18  9.9999826e-01 3.93e-16 6.79e-08  -8.6 3.53e-06    -  1.00e+00 1.00e+00h  1
+  19  9.9999826e-01 6.21e-16 3.91e-13  -8.6 7.97e-09    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 19
+
+                                   (scaled)                 (unscaled)
+Objective...............:   9.9999825667536113e-01    9.9999825667536113e-01
+Dual infeasibility......:   3.9084190917551010e-13    3.9084190917551010e-13
+Constraint violation....:   6.2147357911463731e-16    6.2147357911463731e-16
+Variable bound violation:   1.9373524118293517e-08    1.9373524118293517e-08
+Complementarity.........:   2.5069412948618523e-09    2.5069412948618523e-09
+Overall NLP error.......:   2.5069412948618523e-09    2.5069412948618523e-09
+
+
+Number of objective function evaluations             = 21
+Number of objective gradient evaluations             = 20
+Number of equality constraint evaluations            = 21
+Number of inequality constraint evaluations          = 21
+Number of equality constraint Jacobian evaluations   = 20
+Number of inequality constraint Jacobian evaluations = 20
+Number of Lagrangian Hessian evaluations             = 19
+Total seconds in IPOPT                               = 0.006
+
+EXIT: Optimal Solution Found.</pre><p>All the quadratic objectives and constraints of the upper level can also be added with the <code>@constraint</code> and <code>@objective</code> macros. Hence, we can write the quivalent model:</p><pre><code class="language-julia">using BilevelJuMP, Ipopt
+model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
+
+@variable(Upper(model), x &gt;= 2)
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@objective(Upper(model), Min, x^2 - y)</code></pre><p>$ x^2 - y $</p><pre><code class="language-julia">@constraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ x^2 + y^2 \leq 100 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:        3
+Number of nonzeros in inequality constraint Jacobian.:        8
+Number of nonzeros in Lagrangian Hessian.............:        5
+
+Total number of variables............................:        4
+                     variables with only lower bounds:        2
+                variables with lower and upper bounds:        1
+                     variables with only upper bounds:        1
+Total number of equality constraints.................:        1
+Total number of inequality constraints...............:        3
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        3
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  1.0603999e+00 6.04e+00 1.92e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  1.0812189e+00 5.99e+00 1.91e+00  -1.0 1.52e+01    -  1.42e-02 7.80e-03h  1
+   2  1.1009516e+00 2.41e+00 2.17e+01  -1.0 6.05e+00    -  9.94e-01 5.98e-01f  1
+   3  1.1079890e+00 1.31e+00 8.34e+00  -1.0 2.34e+00    -  6.07e-01 4.58e-01h  1
+   4  1.1069894e+00 8.19e-01 4.31e+01  -1.0 1.28e+00    -  1.00e+00 3.73e-01h  1
+   5  1.1018085e+00 4.02e-01 6.84e+01  -1.0 8.23e-01    -  1.00e+00 5.10e-01h  1
+   6  1.1008006e+00 1.63e-01 1.07e+02  -1.0 3.97e-01    -  1.00e+00 5.95e-01h  1
+   7  1.0997554e+00 7.12e-02 2.56e+02  -1.0 1.63e-01    -  1.00e+00 5.62e-01h  1
+   8  1.0995471e+00 2.88e-02 5.33e+02  -1.0 7.05e-02    -  1.00e+00 5.95e-01h  1
+   9  1.0993558e+00 1.19e-02 1.23e+03  -1.0 2.89e-02    -  1.00e+00 5.89e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.0993204e+00 4.67e-03 2.74e+03  -1.0 1.17e-02    -  1.00e+00 6.06e-01h  1
+  11  1.0992867e+00 1.72e-03 5.75e+03  -1.0 4.69e-03    -  1.00e+00 6.31e-01h  1
+  12  1.0992814e+00 5.11e-04 9.28e+03  -1.0 1.70e-03    -  1.00e+00 7.03e-01h  1
+  13  1.0992784e+00 2.83e-04 2.64e+04  -1.0 5.15e-04    -  1.00e+00 4.47e-01f  2
+  14  1.0992757e+00 6.25e-16 2.25e+00  -1.0 2.82e-04    -  1.00e+00 1.00e+00h  1
+  15  1.0014454e+00 5.67e-16 5.59e-05  -3.8 9.84e-02    -  1.00e+00 1.00e+00f  1
+  16  1.0000011e+00 7.52e-16 8.75e-08  -5.7 8.54e-04    -  1.00e+00 1.00e+00h  1
+  17  9.9999884e-01 2.85e-16 3.44e-01  -8.6 1.12e-06    -  8.33e-01 1.00e+00h  1
+  18  9.9999826e-01 4.95e-16 6.79e-08  -8.6 3.53e-06    -  1.00e+00 1.00e+00h  1
+  19  9.9999826e-01 2.67e-16 3.91e-13  -8.6 7.97e-09    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 19
+
+                                   (scaled)                 (unscaled)
+Objective...............:   9.9999825667536113e-01    9.9999825667536113e-01
+Dual infeasibility......:   3.9084646282463454e-13    3.9084646282463454e-13
+Constraint violation....:   2.6681283728626284e-16    2.6681283728626284e-16
+Variable bound violation:   1.9373524118293517e-08    1.9373524118293517e-08
+Complementarity.........:   2.5069412962253321e-09    2.5069412962253321e-09
+Overall NLP error.......:   2.5069412962253321e-09    2.5069412962253321e-09
+
+
+Number of objective function evaluations             = 21
+Number of objective gradient evaluations             = 20
+Number of equality constraint evaluations            = 21
+Number of inequality constraint evaluations          = 21
+Number of equality constraint Jacobian evaluations   = 20
+Number of inequality constraint Jacobian evaluations = 20
+Number of Lagrangian Hessian evaluations             = 19
+Total seconds in IPOPT                               = 0.006
+
+EXIT: Optimal Solution Found.</pre><h2 id="General-non-linear-constraints-and-objectives"><a class="docs-heading-anchor" href="#General-non-linear-constraints-and-objectives">General non-linear constraints and objectives</a><a id="General-non-linear-constraints-and-objectives-1"></a><a class="docs-heading-anchor-permalink" href="#General-non-linear-constraints-and-objectives" title="Permalink"></a></h2><p>General non quadratic objectives and general non-linear constraints <em>can not</em> be added to the lower level, but they can be added to the upper level.</p><pre><code class="language-julia">using BilevelJuMP, Ipopt
+model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
+
+@variable(Upper(model), x &gt;= 2)
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^4 - sin(y))</code></pre><pre><code class="language-julia">@NLconstraint(Upper(model), x^3 + y^3 &lt;= 1000)</code></pre><p class="math-container">\[ (x ^ {3.0} + y ^ {3.0}) - 1000.0 \leq 0 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:        3
+Number of nonzeros in inequality constraint Jacobian.:        8
+Number of nonzeros in Lagrangian Hessian.............:        6
+
+Total number of variables............................:        4
+                     variables with only lower bounds:        2
+                variables with lower and upper bounds:        1
+                     variables with only upper bounds:        1
+Total number of equality constraints.................:        1
+Total number of inequality constraints...............:        3
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        3
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  1.6528370e+01 6.04e+00 1.74e+01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  1.6431443e+01 6.00e+00 1.70e+01  -1.0 7.75e+01    -  2.13e-02 7.36e-03h  1
+   2  1.5866572e+01 5.55e+00 1.38e+01  -1.0 6.03e+00    -  9.88e-01 7.42e-02f  1
+   3  1.5874426e+01 5.11e+00 1.28e+01  -1.0 5.48e+00    -  7.73e-02 7.98e-02h  1
+   4  1.5930765e+01 2.67e+00 3.99e+01  -1.0 5.12e+00    -  3.66e-01 4.77e-01f  1
+   5  1.5944050e+01 1.41e+00 1.72e+01  -1.0 2.65e+00    -  1.00e+00 4.73e-01h  1
+   6  1.5948686e+01 9.93e-01 1.78e+02  -1.0 1.41e+00    -  1.00e+00 2.94e-01h  1
+   7  1.5953508e+01 4.94e-01 3.39e+02  -1.0 9.90e-01    -  1.00e+00 5.03e-01h  1
+   8  1.5956468e+01 2.15e-01 7.73e+02  -1.0 4.93e-01    -  1.00e+00 5.65e-01h  1
+   9  1.5957763e+01 8.46e-02 1.51e+03  -1.0 2.14e-01    -  1.00e+00 6.06e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.5958299e+01 3.40e-02 3.86e+03  -1.0 8.45e-02    -  1.00e+00 5.98e-01h  1
+  11  1.5958521e+01 1.17e-02 7.08e+03  -1.0 3.39e-02    -  1.00e+00 6.55e-01h  1
+  12  1.5958615e+01 2.90e-03 9.56e+03  -1.0 1.17e-02    -  1.00e+00 7.52e-01h  1
+  13  1.5958643e+01 4.46e-16 2.32e+01  -1.0 2.90e-03    -  1.00e+00 1.00e+00h  1
+  14  1.5862147e+01 1.74e-16 7.82e-04  -2.5 3.62e-02    -  1.00e+00 1.00e+00f  1
+  15  1.5858882e+01 3.36e-17 4.63e-07  -5.7 1.17e-03    -  1.00e+00 1.00e+00h  1
+  16  1.5858879e+01 3.90e-16 5.78e-02  -8.6 2.00e-06    -  9.73e-01 1.00e+00h  1
+  17  1.5858879e+01 1.41e-16 2.02e-09  -8.6 2.75e-06    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 17
+
+                                   (scaled)                 (unscaled)
+Objective...............:   1.5858879327088321e+01    1.5858879327088321e+01
+Dual infeasibility......:   2.0157012165842801e-09    2.0157012165842801e-09
+Constraint violation....:   1.4095602330200900e-16    1.4095602330200900e-16
+Variable bound violation:   2.7634276644761258e-08    2.7634276644761258e-08
+Complementarity.........:   2.6660361270476364e-09    2.6660361270476364e-09
+Overall NLP error.......:   2.6660361270476364e-09    2.6660361270476364e-09
+
+
+Number of objective function evaluations             = 18
+Number of objective gradient evaluations             = 18
+Number of equality constraint evaluations            = 18
+Number of inequality constraint evaluations          = 18
+Number of equality constraint Jacobian evaluations   = 18
+Number of inequality constraint Jacobian evaluations = 18
+Number of Lagrangian Hessian evaluations             = 17
+Total seconds in IPOPT                               = 0.006
+
+EXIT: Optimal Solution Found.</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>Conic constraints are supported in the lower level (see Conic Bilevel tutorial).</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/non_linear.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../conic_lower/">« Conic Bilevel and Mixed Mode</a><a class="docs-footer-nextpage" href="../quad_to_bin/">Using QuadraticToBinary »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 03:57">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
