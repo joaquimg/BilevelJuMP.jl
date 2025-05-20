@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 function _in_upper(cref::BilevelConstraintRef)
     return cref.model.ctr_info[cref.index].level == UPPER_ONLY
 end

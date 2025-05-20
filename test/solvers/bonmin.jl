@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 # name = "Bonmin_jll"
 # Bonmin_jll = "29cba6d7-6840-5cf2-a2fa-9bdfccfe29ea"
 # name = "AmplNLWriter"
