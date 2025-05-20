@@ -63,17 +63,10 @@ solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
 # include("solvers/cbc.jl")
-if Sys.islinux()
-    Pkg.add(; name = "SCIP")#, version="0.11.12")
-    include("solvers/scip.jl")
-end
-if Sys.iswindows() && (
-    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
-    get(ENV, "XPRESSDIR", "") != ""
-)
-    @info "Running Xpress in Tests"
-    include("solvers/xpress.jl")
-end
+include("solvers/scip.jl")
+# TODO(odow): FIXME
+# include("solvers/xpress.jl")
+
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
