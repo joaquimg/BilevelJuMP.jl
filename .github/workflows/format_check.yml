@@ -19,7 +19,8 @@ jobs:
           using Pkg
           Pkg.add(PackageSpec(name="JuliaFormatter", version="2"))
           using JuliaFormatter
-          format(".", verbose=true)
+          format("src"; verbose = true)
+          format("test"; verbose = true)
           out = String(read(Cmd(`git diff`)))
           if isempty(out)
               exit(0)
