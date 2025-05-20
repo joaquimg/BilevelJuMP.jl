@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Princeton Handbook of Test Problems: Test 9.3.4 · BilevelJuMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BilevelJuMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorials/getting_started/">Getting started with BilevelJuMP</a></li><li><a class="tocitem" href="../../tutorials/modes/">Modes overview</a></li><li><a class="tocitem" href="../../tutorials/lower_duals/">Dual variables of the lower level</a></li><li><a class="tocitem" href="../../tutorials/conic_lower/">Conic Bilevel and Mixed Mode</a></li><li><a class="tocitem" href="../../tutorials/non_linear/">Non Linear models</a></li><li><a class="tocitem" href="../../tutorials/quad_to_bin/">Using QuadraticToBinary</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FOBP_example2/">Foundations of Bilevel Programming: Chapter 3.2, Page 25</a></li><li><a class="tocitem" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59</a></li><li><a class="tocitem" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a></li><li><a class="tocitem" href="../FOBP_example5/">Foundations of Bilevel Programming: Example Chapter 8.1, Page 255</a></li><li><a class="tocitem" href="../DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4</a></li><li><a class="tocitem" href="../PHTP_example1/">Princeton Handbook of Test Problems: Test 9.3.2</a></li><li class="is-active"><a class="tocitem" href>Princeton Handbook of Test Problems: Test 9.3.4</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel"><span>Like any other optimization problem, there is a chance in bilevel</span></a></li></ul></li><li><a class="tocitem" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1</a></li><li><a class="tocitem" href="../MibS_example1/">MibS: Example 1 (Experimental feature)</a></li><li><a class="tocitem" href="../MibS_example2/">MibS: Example 2 (Experimental feature)</a></li></ul></li><li><a class="tocitem" href="../../background/">Background Information</a></li><li><a class="tocitem" href="../../reference/">API Reference</a></li><li><a class="tocitem" href="../../troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Princeton Handbook of Test Problems: Test 9.3.4</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Princeton Handbook of Test Problems: Test 9.3.4</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example2.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Princeton-Handbook-of-Test-Problems:-Test-9.3.4"><a class="docs-heading-anchor" href="#Princeton-Handbook-of-Test-Problems:-Test-9.3.4">Princeton Handbook of Test Problems: Test 9.3.4</a><a id="Princeton-Handbook-of-Test-Problems:-Test-9.3.4-1"></a><a class="docs-heading-anchor-permalink" href="#Princeton-Handbook-of-Test-Problems:-Test-9.3.4" title="Permalink"></a></h1><p>This example is from the book Princeton Handbook of Test Problems in Local and Global Optimization Dempe, Chapter 9.3.4 -parg 223 <a href="https://www.springer.com/gp/book/9780792358015">url</a></p><p>Here, only the second level is described</p><p>Model of the problem First level</p><p class="math-container">\[\min 2x_1+2x_2-3y_1-3y_2-60,\\
+\notag s.t.\\
+x_1 + x_2 + y_1 -2y_2 -40\leq 0,\\
+0 \leq x_i \leq 50, \forall i \in I,\\
+-10 \leq y_j \leq 20, \forall j \in J,\\\]</p><p>Second level</p><p class="math-container">\[\min (-x_1 + y_1 + 40)^2 + (-x_2 + y_2 + 20)^2,\\
+\notag s.t.\\
+- x_i + 2y_j &lt;= -10,\forall (i,j) \in \{(i,j)|i\in I, j\in J, i=j\},\\
+-10 \leq y_j \leq 20, \forall j \in J.\\\]</p><pre><code class="language-julia">using BilevelJuMP
+using Ipopt
+
+model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))</code></pre><pre class="documenter-example-output">An Abstract JuMP Model
+Feasibility problem with:
+Variables: 0
+Upper Constraints: 0
+Lower Constraints: 0
+Bilevel Model
+Solution method: BilevelJuMP.ProductMode{Float64}(1.0e-9, false, 0, nothing)
+Solver name: Ipopt</pre><p>First we need to create all of the variables in the upper and lower problems:</p><p>Upper level variables</p><pre><code class="language-julia">@variable(Upper(model), x[i = 1:2], start = 0)</code></pre><pre class="documenter-example-output">2-element Vector{BilevelVariableRef}:
+ x[1]
+ x[2]</pre><p>Lower level variables</p><pre><code class="language-julia">@variable(Lower(model), y[i = 1:2], start = -10)</code></pre><pre class="documenter-example-output">2-element Vector{BilevelVariableRef}:
+ y[1]
+ y[2]</pre><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, 2x[1] + 2x[2] - 3y[1] - 3y[2] - 60)</code></pre><p>$ 2 x<em>{1} + 2 x</em>{2} - 3 y<em>{1} - 3 y</em>{2} - 60 $</p><p>Upper level constraints</p><pre><code class="language-julia">@constraint(Upper(model), x[1] + x[2] + y[1] - 2y[2] - 40 &lt;= 0)
+@constraint(Upper(model), [i = 1:2], x[i] &gt;= 0)
+@constraint(Upper(model), [i = 1:2], x[i] &lt;= 50)
+@constraint(Upper(model), [i = 1:2], y[i] &gt;= -10)
+@constraint(Upper(model), [i = 1:2], y[i] &lt;= 20)</code></pre><pre class="documenter-example-output">2-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ y[1] ≤ 20
+ y[2] ≤ 20</pre><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, (-x[1] + y[1] + 40)^2 + (-x[2] + y[2] + 20)^2)</code></pre><p>$ x<em>{1}^2 - 2 y</em>{1}\times x<em>{1} + y</em>{1}^2 + x<em>{2}^2 - 2 y</em>{2}\times x<em>{2} + y</em>{2}^2 - 80 x<em>{1} + 80 y</em>{1} - 40 x<em>{2} + 40 y</em>{2} + 2000 $</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), [i = 1:2], -x[i] + 2y[i] &lt;= -10)
+@constraint(Lower(model), [i = 1:2], y[i] &gt;= -10)
+@constraint(Lower(model), [i = 1:2], y[i] &lt;= 20)</code></pre><pre class="documenter-example-output">2-element Vector{ConstraintRef{BilevelModel, Int64, ScalarShape}}:
+ y[1] ≤ 20
+ y[2] ≤ 20</pre><p>Now we can solve the problem and verify the solution again that reported by the book</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+
+Number of nonzeros in equality constraint Jacobian...:       10
+Number of nonzeros in inequality constraint Jacobian.:       42
+Number of nonzeros in Lagrangian Hessian.............:        8
+
+Total number of variables............................:       10
+                     variables with only lower bounds:        2
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        4
+Total number of equality constraints.................:        2
+Total number of inequality constraints...............:       21
+        inequality constraints with only lower bounds:        6
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:       15
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 6.00e+01 9.57e-01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  4.4814823e-01 5.98e+01 1.28e+00  -1.0 5.21e+01    -  2.06e-03 4.18e-03h  1
+   2  1.6046697e+00 5.89e+01 2.12e+00  -1.0 4.35e+01    -  1.53e-03 1.42e-02h  1
+   3  1.6995414e+01 4.70e+01 1.06e+01  -1.0 3.84e+01    -  8.81e-03 2.02e-01h  1
+   4  1.9250234e+01 4.52e+01 3.77e+01  -1.0 3.00e+01    -  1.34e-01 3.79e-02h  1
+   5  3.5204890e+01 2.81e+01 6.90e+01  -1.0 2.11e+01    -  3.21e-02 3.78e-01h  1
+   6  3.7687463e+01 2.21e+01 1.93e+02  -1.0 1.84e+01   0.0 1.54e-02 2.14e-01h  1
+   7  3.8166798e+01 2.11e+01 8.95e+01  -1.0 1.36e+01   0.4 5.36e-01 4.66e-02h  1
+   8  3.4396171e+01 1.82e+01 3.30e+02  -1.0 5.43e+01    -  4.41e-01 1.37e-01f  1
+   9  3.3236150e+01 1.66e+01 2.79e+02  -1.0 2.52e+01    -  5.77e-02 8.71e-02f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  3.0766710e+01 1.60e+01 4.15e+02  -1.0 4.61e+01    -  3.12e-01 3.79e-02f  1
+  11  1.0078764e+01 1.11e+01 3.77e+02  -1.0 8.40e+01    -  5.03e-01 3.05e-01f  1
+  12  2.4302311e-01 9.16e+00 4.41e+02  -1.0 6.72e+01    -  2.05e-02 1.75e-01f  1
+  13  1.1671615e-01 4.12e+00 3.93e+02  -1.0 9.35e+00    -  1.00e+00 5.50e-01h  1
+  14  1.7254023e-01 1.32e+00 5.89e+02  -1.0 4.03e+00    -  1.00e+00 6.79e-01h  1
+  15  1.8014838e-01 7.75e-01 3.02e+03  -1.0 1.30e+00    -  1.00e+00 4.14e-01h  1
+  16  1.9235506e-01 2.03e-01 2.82e+03  -1.0 7.56e-01    -  1.00e+00 7.38e-01h  1
+  17  1.9390169e-01 1.15e-01 1.85e+04  -1.0 1.99e-01    -  1.00e+00 4.33e-01h  1
+  18  1.9562312e-01 3.19e-02 1.96e+04  -1.0 1.12e-01    -  1.00e+00 7.22e-01h  1
+  19  1.9604520e-01 1.79e-02 1.16e+05  -1.0 3.12e-02    -  1.00e+00 4.38e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  1.9619242e-01 4.98e-03 1.23e+05  -1.0 1.75e-02    -  1.00e+00 7.22e-01h  1
+  21  1.9632743e-01 3.88e-03 9.52e+05  -1.0 4.75e-03    -  1.00e+00 2.21e-01f  2
+  22  1.9565901e-01 1.07e-03 6.21e+05  -1.0 4.19e-03    -  1.00e+00 7.24e-01h  1
+  23  1.9573024e-01 1.02e-03 4.02e+06  -1.0 8.16e-04    -  1.00e+00 4.36e-02f  5
+  24  1.9569163e-01 1.11e-04 7.43e+05  -1.0 7.92e-04    -  1.00e+00 8.91e-01h  1
+  25  1.9645947e-01 8.32e-05 5.40e+06  -1.0 2.01e-03    -  1.00e+00 2.51e-01f  2
+  26  1.9874099e-01 1.42e-14 6.83e+02  -1.0 1.51e-03    -  1.00e+00 1.00e+00h  1
+  27  6.8772523e-03 1.42e-14 8.22e+04  -2.5 9.71e-02    -  1.00e+00 1.00e+00f  1
+  28  5.6568726e-03 1.42e-14 3.16e+00  -2.5 1.19e-03    -  1.00e+00 1.00e+00f  1
+  29  3.0104856e-04 0.00e+00 6.46e+01  -3.8 2.68e-03    -  1.00e+00 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  30  3.0100656e-04 0.00e+00 7.46e-07  -3.8 2.57e-07    -  1.00e+00 1.00e+00h  1
+  31  1.6349148e-07 1.42e-14 5.98e+00  -8.6 1.50e-04    -  1.00e+00 1.00e+00f  1
+  32 -3.6263714e-08 0.00e+00 5.60e-03  -8.6 2.01e-06    -  1.00e+00 9.89e-01h  1
+  33 -3.2290213e-08 7.11e-15 1.03e-12  -8.6 3.06e-08    -  1.00e+00 1.00e+00f  1
+
+Number of Iterations....: 33
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -3.2290213169972048e-08   -3.2290213169972048e-08
+Dual infeasibility......:   1.0298428776422952e-12    1.0298428776422952e-12
+Constraint violation....:   7.1054273576010019e-15    7.1054273576010019e-15
+Variable bound violation:   4.8166666662694828e-09    4.8166666662694828e-09
+Complementarity.........:   2.5157965760165203e-09    2.5157965760165203e-09
+Overall NLP error.......:   2.5157965760165203e-09    2.5157965760165203e-09
+
+
+Number of objective function evaluations             = 40
+Number of objective gradient evaluations             = 34
+Number of equality constraint evaluations            = 40
+Number of inequality constraint evaluations          = 40
+Number of equality constraint Jacobian evaluations   = 34
+Number of inequality constraint Jacobian evaluations = 34
+Number of Lagrangian Hessian evaluations             = 33
+Total seconds in IPOPT                               = 0.014
+
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-3.229021316997205e-8</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+ -8.74704822005564e-9
+ -8.747048220161989e-9</pre><pre><code class="language-julia">value.(y)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+ -10.000000000634325
+ -10.000000000265</pre><h1 id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel"><a class="docs-heading-anchor" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel">Like any other optimization problem, there is a chance in bilevel</a><a id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel-1"></a><a class="docs-heading-anchor-permalink" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel" title="Permalink"></a></h1><p>optimization to find multiple solutions with the same optimal value; based on the inherent stochasticity of the algorithm and random seed, we are expecting two optimal solutions for this problem.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example1/">« Princeton Handbook of Test Problems: Test 9.3.2</a><a class="docs-footer-nextpage" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 22:31">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
