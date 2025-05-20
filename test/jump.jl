@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 jump_01vec(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, true, mode, config)
 jump_01(optimizer, mode = BilevelJuMP.SOS1Mode(), config = Config()) = _jump_01(optimizer, false, mode, config)
 function _jump_01(optimizer, vectorized::Bool, mode, config)

@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 # name = "Couenne_jll"
 # Couenne_jll = "f09e9e23-9010-5c9e-b679-9f1d8f79b85c"
 # name = "AmplNLWriter"

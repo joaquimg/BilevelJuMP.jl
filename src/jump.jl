@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 abstract type AbstractBilevelModel <: JuMP.AbstractModel end
 
 Base.broadcastable(model::AbstractBilevelModel) = Ref(model)

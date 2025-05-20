@@ -1,3 +1,8 @@
+# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 using Pkg
 Pkg.add(name="Xpress")#, version="0.13.2")
 Pkg.build("Xpress")
