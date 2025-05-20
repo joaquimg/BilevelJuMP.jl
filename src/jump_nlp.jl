@@ -39,7 +39,7 @@ function no_nlp_lower()
         "Nonlinear data (objective, constraints, parameters) is not allowed in the lower level. " *
         "If you are trying to use the @NLconstraint or @NLobjective macros for quadratic expressions, " *
         "please use the @constraint or @objective macros instead. " *
-        "Expressions that are not quadratic nor linear are not supported in the lower level."
+        "Expressions that are not quadratic nor linear are not supported in the lower level.",
     )
 end
 

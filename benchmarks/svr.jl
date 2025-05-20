@@ -52,8 +52,8 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
     =#
 
     # absolute value extra variables
-    @variable(Upper(model), a_up_pos[i = OutSample] >= 0)
-    @variable(Upper(model), a_up_neg[i = OutSample] >= 0)
+    @variable(Upper(model), a_up_pos[i=OutSample] >= 0)
+    @variable(Upper(model), a_up_neg[i=OutSample] >= 0)
 
     for i in OutSample
         c = @constraint(
@@ -78,10 +78,10 @@ function bench_svr(dim, sample, optimizer, mode, seed = 1234)
         Lower level
     =#
 
-    @variable(Lower(model), a_lo_pos[i = InSample] >= 0)
-    @variable(Lower(model), a_lo_neg[i = InSample] >= 0)
+    @variable(Lower(model), a_lo_pos[i=InSample] >= 0)
+    @variable(Lower(model), a_lo_neg[i=InSample] >= 0)
 
-    @variable(Lower(model), a_lo_max[i = InSample] >= 0)
+    @variable(Lower(model), a_lo_max[i=InSample] >= 0)
 
     for i in InSample
         c = @constraint(

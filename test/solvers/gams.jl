@@ -13,4 +13,7 @@ MOI.set(GAMS_OPT, MOI.Silent(), true)
 MOI.set(GAMS_OPT, MOI.TimeLimitSec(), 60)
 # GAMS_OPT = MOI.Bridges.Constraint.SOCtoNonConvexQuad{Float64}(GAMS_OPT)
 
-push!(solvers_complements, (opt = GAMS_OPT, mode = BilevelJuMP.ComplementMode()))
+push!(
+    solvers_complements,
+    (opt = GAMS_OPT, mode = BilevelJuMP.ComplementMode()),
+)

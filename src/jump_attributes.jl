@@ -17,27 +17,20 @@ function build_time(bm::BilevelModel)
 end
 
 function JuMP.set_attribute(bm::BilevelModel, name::AbstractString, value)
-    return JuMP.set_attribute(
-        bm,
-        MOI.RawOptimizerAttribute(name),
-        value,
-    )
+    return JuMP.set_attribute(bm, MOI.RawOptimizerAttribute(name), value)
 end
 
 function JuMP.set_attribute(
     bm::BilevelModel,
     attr::MOI.AbstractOptimizerAttribute,
-    value
+    value,
 )
     _check_solver(bm)
     return MOI.set(bm.solver, attr, value)
 end
 
 function JuMP.get_attribute(bm::BilevelModel, name::AbstractString)
-    return JuMP.get_attribute(
-        bm,
-        MOI.RawOptimizerAttribute(name),
-    )
+    return JuMP.get_attribute(bm, MOI.RawOptimizerAttribute(name))
 end
 
 function JuMP.get_attribute(

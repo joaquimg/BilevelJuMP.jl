@@ -56,13 +56,13 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     =#
 
     # buying quantity is the only
-    v = @variable(Lower(model), 0 <= q_b[p = 1:Products, t = Samples] <= u)
+    v = @variable(Lower(model), 0 <= q_b[p=1:Products, t=Samples] <= u)
     push!(vars, vec(v))
 
     #
-    v = @variable(Lower(model), 0 <= q_s[p = 1:Products, t = Samples] <= u)
+    v = @variable(Lower(model), 0 <= q_s[p=1:Products, t=Samples] <= u)
     push!(vars, vec(v))
-    v = @variable(Lower(model), 0 <= q_r[p = 1:Products, t = Samples] <= u)
+    v = @variable(Lower(model), 0 <= q_r[p=1:Products, t=Samples] <= u)
     push!(vars, vec(v))
 
     c = @constraint(
@@ -100,9 +100,9 @@ function bench_forecast(prods, samples, optimizer, mode, seed = 1234)
     =#
 
     #
-    v = @variable(Upper(model), 0 <= q2_s[p = 1:Products, t = Samples] <= u)
+    v = @variable(Upper(model), 0 <= q2_s[p=1:Products, t=Samples] <= u)
     push!(vars, vec(v))
-    v = @variable(Upper(model), 0 <= q2_r[p = 1:Products, t = Samples] <= u)
+    v = @variable(Upper(model), 0 <= q2_r[p=1:Products, t=Samples] <= u)
     push!(vars, vec(v))
 
     c = @constraint(

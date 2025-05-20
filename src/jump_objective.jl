@@ -32,7 +32,9 @@ function JuMP.objective_function_type(m::InnerBilevelModel)
     tp = JuMP.objective_function_type(mylevel_model(m))
     return _bilevel_type(m, tp)
 end
-_bilevel_type(::InnerBilevelModel, ::Type{JuMP.VariableRef}) = BilevelVariableRef
+function _bilevel_type(::InnerBilevelModel, ::Type{JuMP.VariableRef})
+    return BilevelVariableRef
+end
 function _bilevel_type(
     ::InnerBilevelModel,
     ::Type{JuMP.GenericAffExpr{C,V}},

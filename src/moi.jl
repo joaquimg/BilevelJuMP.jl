@@ -325,12 +325,14 @@ function build_bilevel(
     # 1.1) primal variables
     for (lower_primal_var_key, lower_dual_quad_slack_val) in
         lower_primal_dual_map.primal_var_dual_quad_slack
+
         lower_dual_idxmap[lower_dual_quad_slack_val] =
             lower_idxmap[lower_primal_var_key]
     end
     # 1.2) and to upper level variable which are lower level parameters
     for (lower_primal_param_key, lower_dual_param_val) in
         lower_primal_dual_map.primal_parameter
+
         lower_dual_idxmap[lower_dual_param_val] =
             lower_idxmap[lower_primal_param_key]
     end

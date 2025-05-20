@@ -8,17 +8,20 @@ module BilevelJuMP
 import Reexport
 Reexport.@reexport using JuMP
 
-import MathOptInterface
-const MOI = MathOptInterface
-const MOIU = MathOptInterface.Utilities
-
+import MathOptInterface as MOI
+import MathOptInterface.Utilities as MOIU
 import Dualization
 import LinearAlgebra
 
 export BilevelModel,
-    Upper, Lower, UpperOnly, LowerOnly,
+    Upper,
+    Lower,
+    UpperOnly,
+    LowerOnly,
     DualOf,
-    BilevelVariableRef, BilevelAffExpr, BilevelQuadExpr
+    BilevelVariableRef,
+    BilevelAffExpr,
+    BilevelQuadExpr
 
 """
     Level

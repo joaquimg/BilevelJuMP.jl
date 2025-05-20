@@ -39,7 +39,7 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
 
     v = @variable(
         Upper(model),
-        0 <= F[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= cap
+        0 <= F[n=1:Nodes, w=1:Nodes, s=1:Fares; n > w] <= cap
     )
     for vv in v
         push!(vars, vv)
@@ -60,7 +60,7 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
 
     v = @variable(
         Lower(model),
-        0 <= f[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= cap
+        0 <= f[n=1:Nodes, w=1:Nodes, s=1:Fares; n > w] <= cap
     )
     for vv in v
         push!(vars, vv)
@@ -68,7 +68,7 @@ function bench_toll(nodes, optimizer, mode, seed = 1234)
 
     v = @variable(
         Lower(model),
-        0 <= a[n = 1:Nodes, w = 1:Nodes, s = 1:Fares; n > w] <= 100
+        0 <= a[n=1:Nodes, w=1:Nodes, s=1:Fares; n > w] <= 100
     )
     for vv in v
         push!(vars, vv)

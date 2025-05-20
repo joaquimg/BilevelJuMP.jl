@@ -165,7 +165,8 @@ function add_complement(
             LinearAlgebra.dot,
             T,
             f_dest,
-            _only_variable_functions(dual))
+            _only_variable_functions(dual),
+        )
         if mode.aggregation_group == 0
             new_f1 = MOIU.operate(-, T, new_f, eps)
             c1 = MOIU.normalize_and_add_constraint(
@@ -226,4 +227,6 @@ function add_function_to_cache(mode::ProductMode{T}, func) where {T}
 end
 
 _only_variable_functions(v::MOI.VariableIndex) = v
-_only_variable_functions(v::Vector{MOI.VariableIndex}) = MOI.VectorOfVariables(v)
+function _only_variable_functions(v::Vector{MOI.VariableIndex})
+    return MOI.VectorOfVariables(v)
+end
