@@ -75,25 +75,25 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   23  1.9573024e-01 1.02e-03 4.02e+06  -1.0 8.16e-04    -  1.00e+00 4.36e-02f  5
   24  1.9569163e-01 1.11e-04 7.43e+05  -1.0 7.92e-04    -  1.00e+00 8.91e-01h  1
   25  1.9645947e-01 8.32e-05 5.40e+06  -1.0 2.01e-03    -  1.00e+00 2.51e-01f  2
-  26  1.9874099e-01 7.11e-15 6.83e+02  -1.0 1.51e-03    -  1.00e+00 1.00e+00h  1
-  27  6.8772523e-03 7.11e-15 8.22e+04  -2.5 9.71e-02    -  1.00e+00 1.00e+00f  1
-  28  5.6568726e-03 7.11e-15 3.16e+00  -2.5 1.19e-03    -  1.00e+00 1.00e+00f  1
+  26  1.9874099e-01 1.42e-14 6.83e+02  -1.0 1.51e-03    -  1.00e+00 1.00e+00h  1
+  27  6.8772523e-03 1.42e-14 8.22e+04  -2.5 9.71e-02    -  1.00e+00 1.00e+00f  1
+  28  5.6568726e-03 1.42e-14 3.16e+00  -2.5 1.19e-03    -  1.00e+00 1.00e+00f  1
   29  3.0104856e-04 1.42e-14 6.46e+01  -3.8 2.68e-03    -  1.00e+00 1.00e+00f  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  30  3.0100656e-04 1.42e-14 7.46e-07  -3.8 2.57e-07    -  1.00e+00 1.00e+00h  1
+  30  3.0100656e-04 0.00e+00 7.46e-07  -3.8 2.57e-07    -  1.00e+00 1.00e+00h  1
   31  1.6349148e-07 1.42e-14 5.98e+00  -8.6 1.50e-04    -  1.00e+00 1.00e+00f  1
-  32 -3.6263703e-08 7.11e-15 5.60e-03  -8.6 2.01e-06    -  1.00e+00 9.89e-01h  1
-  33 -3.2290213e-08 1.42e-14 1.03e-12  -8.6 3.06e-08    -  1.00e+00 1.00e+00f  1
+  32 -3.6259753e-08 7.11e-15 5.60e-03  -8.6 2.01e-06    -  1.00e+00 9.89e-01h  1
+  33 -3.2290167e-08 7.11e-15 1.03e-12  -8.6 3.05e-08    -  1.00e+00 1.00e+00f  1
 
 Number of Iterations....: 33
 
                                    (scaled)                 (unscaled)
-Objective...............:  -3.2290213169972048e-08   -3.2290213169972048e-08
-Dual infeasibility......:   1.0302869668521453e-12    1.0302869668521453e-12
-Constraint violation....:   1.4210854715202004e-14    1.4210854715202004e-14
-Variable bound violation:   4.8166666662694828e-09    4.8166666662694828e-09
-Complementarity.........:   2.5157965233502185e-09    2.5157965233502185e-09
-Overall NLP error.......:   2.5157965233502185e-09    2.5157965233502185e-09
+Objective...............:  -3.2290166984694224e-08   -3.2290166984694224e-08
+Dual infeasibility......:   1.0293987884324451e-12    1.0293987884324451e-12
+Constraint violation....:   7.1054273576010019e-15    7.1054273576010019e-15
+Variable bound violation:   4.8166666662694803e-09    4.8166666662694803e-09
+Complementarity.........:   2.5157965771599382e-09    2.5157965771599382e-09
+Overall NLP error.......:   2.5157965771599382e-09    2.5157965771599382e-09
 
 
 Number of objective function evaluations             = 40
@@ -105,8 +105,8 @@ Number of inequality constraint Jacobian evaluations = 34
 Number of Lagrangian Hessian evaluations             = 33
 Total seconds in IPOPT                               = 0.014
 
-EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-3.229021316997205e-8</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-3.2290166984694224e-8</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
  -8.747048220055642e-9
  -8.747048220161989e-9</pre><pre><code class="language-julia">value.(y)</code></pre><pre class="documenter-example-output">2-element Vector{Float64}:
- -10.000000000634325
- -10.000000000265</pre><h1 id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel"><a class="docs-heading-anchor" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel">Like any other optimization problem, there is a chance in bilevel</a><a id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel-1"></a><a class="docs-heading-anchor-permalink" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel" title="Permalink"></a></h1><p>optimization to find multiple solutions with the same optimal value; based on the inherent stochasticity of the algorithm and random seed, we are expecting two optimal solutions for this problem.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example1/">« Princeton Handbook of Test Problems: Test 9.3.2</a><a class="docs-footer-nextpage" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 03:46">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ -10.000000000634342
+ -10.000000000264999</pre><h1 id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel"><a class="docs-heading-anchor" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel">Like any other optimization problem, there is a chance in bilevel</a><a id="Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel-1"></a><a class="docs-heading-anchor-permalink" href="#Like-any-other-optimization-problem,-there-is-a-chance-in-bilevel" title="Permalink"></a></h1><p>optimization to find multiple solutions with the same optimal value; based on the inherent stochasticity of the algorithm and random seed, we are expecting two optimal solutions for this problem.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/PHTP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PHTP_example1/">« Princeton Handbook of Test Problems: Test 9.3.2</a><a class="docs-footer-nextpage" href="../SOCBLP_example1/">SOCBLP from Chi et al.: Example 3.1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 May 2025 22:39">Tuesday 20 May 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
