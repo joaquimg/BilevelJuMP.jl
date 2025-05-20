@@ -3,7 +3,7 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-module TestJuMPInput
+module TestMIBS
 
 using BilevelJuMP
 using Test
@@ -11,17 +11,16 @@ using MibS_jll
 
 function runtests()
     for name in names(@__MODULE__; all = true)
-        # if startswith("$(name)", "test_")
         if startswith("$(name)", "test_")
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
             end
         end
     end
+    return
 end
 
 function test_basic_example_1()
-    # using BilevelJuMP, MibS_jll
     model = BilevelModel()
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)
@@ -464,6 +463,6 @@ function test_Writing_MibS_input_v6()
     return
 end
 
-end  # module
+end  # module TestMIBS
 
-TestJuMPInput.runtests()
+TestMIBS.runtests()

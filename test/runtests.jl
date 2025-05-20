@@ -87,14 +87,14 @@ end
 # include("solvers/juniper.jl") # require NLP from JuMP
 # include("solvers/path.jl") # require LCP method
 
-include("moi.jl")
-include("jump.jl")
+include("problems/jump.jl")
+include("problems/jump_nlp.jl")
+include("problems/moi.jl")
 include("jump_unit.jl")
-include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
     @testset "MibS" begin
-        include("mibs.jl")
+        include("test_mibs.jl")
     end
 
     @testset "nlp" begin
