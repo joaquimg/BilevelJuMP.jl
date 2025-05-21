@@ -9,7 +9,6 @@ using JuMP
 using Test
 
 import MathOptInterface as MOI
-import Pkg
 
 struct Config
     atol::Float64
