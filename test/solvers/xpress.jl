@@ -3,9 +3,12 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-using Pkg
-Pkg.add(; name = "Xpress")#, version="0.13.2")
-Pkg.build("Xpress")
+import Xpress_jll
+ENV["XPRESS_JL_LIBRARY"] = Xpress_jll.libxprs
+xpauth_xpr = joinpath(@__DIR__, "xpauth.xpr")
+write(xpauth_xpr, ENV["XPAUTH_XPR"])
+ENV["XPAUTH_PATH"] = xpauth_xpr
+
 using Xpress
 using QuadraticToBinary
 
