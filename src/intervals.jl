@@ -20,12 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import Base.:+, Base.:-, Base.:*
-
 struct Interval{T}
     lo::T
     hi::T
 end
+
 function Interval(lo::T, hi::T) where {T<:Real}
     # if hi < lo <= hi + eps(T)
     #     lo = hi
@@ -38,31 +37,34 @@ function Base.iszero(a::Interval)
     return iszero(a.hi) && iszero(a.lo)
 end
 
-+(a::Interval) = a
--(a::Interval) = Interval(-a.hi, -a.lo)
+Base.:+(a::Interval) = a
 
-function +(a::Interval{T}, b::T) where {T<:Real}
+Base.:-(a::Interval) = Interval(-a.hi, -a.lo)
+
+function Base.:+(a::Interval{T}, b::T) where {T<:Real}
     return Interval(a.lo + b, a.hi + b)
 end
-+(b::T, a::Interval{T}) where {T<:Real} = a + b
 
-function -(a::Interval{T}, b::T) where {T<:Real}
+Base.:+(b::T, a::Interval{T}) where {T<:Real} = a + b
+
+function Base.:-(a::Interval{T}, b::T) where {T<:Real}
     return Interval(a.lo - b, a.hi - b)
 end
-function -(b::T, a::Interval{T}) where {T<:Real}
+
+function Base.:-(b::T, a::Interval{T}) where {T<:Real}
     return Interval(b - a.hi, b - a.lo)
 end
 
-function +(a::Interval{T}, b::Interval{T}) where {T<:Real}
+function Base.:+(a::Interval{T}, b::Interval{T}) where {T<:Real}
     return Interval(a.lo + b.lo, a.hi + b.hi)
 end
 
-function -(a::Interval{T}, b::Interval{T}) where {T<:Real}
+function Base.:-(a::Interval{T}, b::Interval{T}) where {T<:Real}
     return Interval(a.lo - b.hi, a.hi - b.lo)
 end
 
 ## Multiplication
-function *(x::T, a::Interval{T}) where {T<:Real}
+function Base.:*(x::T, a::Interval{T}) where {T<:Real}
     (iszero(a) || iszero(x)) && return Interval(zero(T), zero(T))
     if x ≥ 0.0
         return Interval(a.lo * x, a.hi * x)
@@ -71,4 +73,4 @@ function *(x::T, a::Interval{T}) where {T<:Real}
     end
 end
 
-*(a::Interval{T}, x::T) where {T<:Real} = x * a
+Base.:*(a::Interval{T}, x::T) where {T<:Real} = x * a

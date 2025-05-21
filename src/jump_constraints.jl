@@ -200,7 +200,6 @@ function set_dual_upper_bound_hint(
     return copyto!(array, value)
 end
 
-
 """
     get_dual_upper_bound_hint(cref)
 

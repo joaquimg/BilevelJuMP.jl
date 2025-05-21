@@ -129,11 +129,15 @@ function ptable(df, modes)
                                 df,
                                 :mode,
                                 mode,
-                            ).&fnd(
+                            ) .& fnd(
                                 df,
                                 :opt,
                                 opt,
-                            ).&fnd(df, :prob, p).&fnd(df, :inst, i1, i2),
+                            ) .& fnd(
+                                df,
+                                :prob,
+                                p,
+                            ) .& fnd(df, :inst, i1, i2),
                             :obj,
                         ],
                     )
@@ -147,11 +151,15 @@ function ptable(df, modes)
                                 df,
                                 :mode,
                                 mode,
-                            ).&fnd(
+                            ) .& fnd(
                                 df,
                                 :opt,
                                 opt,
-                            ).&fnd(df, :prob, p).&fnd(df, :inst, i1, i2),
+                            ) .& fnd(
+                                df,
+                                :prob,
+                                p,
+                            ) .& fnd(df, :inst, i1, i2),
                             :gap,
                         ],
                     )
@@ -165,11 +173,15 @@ function ptable(df, modes)
                                 df,
                                 :mode,
                                 mode,
-                            ).&fnd(
+                            ) .& fnd(
                                 df,
                                 :opt,
                                 opt,
-                            ).&fnd(df, :prob, p).&fnd(df, :inst, i1, i2),
+                            ) .& fnd(
+                                df,
+                                :prob,
+                                p,
+                            ) .& fnd(df, :inst, i1, i2),
                             :time,
                         ],
                     )

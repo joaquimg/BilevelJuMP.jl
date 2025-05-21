@@ -61,7 +61,7 @@ end
 literate_directory(_EXAMPLE_DIR)
 literate_directory(_TUTORIAL_DIR)
 
-_REPL_FILES = ["getting_started.md",]
+_REPL_FILES = ["getting_started.md"]
 for file in _REPL_FILES
     filename = joinpath(@__DIR__, "src", "tutorials", file)
     content = read(filename, String)
@@ -83,26 +83,32 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         # "Manual" => "manual.md",
-        "Tutorials" => joinpath.("tutorials", [
-            "getting_started.md",
-            "modes.md",
-            "lower_duals.md",
-            "conic_lower.md",
-            "non_linear.md",
-            "quad_to_bin.md",
-        ]),
-        "Examples" => joinpath.("examples", [
-            "FOBP_example2.md",
-            "FOBP_example3.md",
-            "FOBP_example4.md",
-            "FOBP_example5.md",
-            "DTMP_example1.md",
-            "PHTP_example1.md",
-            "PHTP_example2.md",
-            "SOCBLP_example1.md",
-            "MibS_example1.md",
-            "MibS_example2.md",
-        ]),
+        "Tutorials" => joinpath.(
+            "tutorials",
+            [
+                "getting_started.md",
+                "modes.md",
+                "lower_duals.md",
+                "conic_lower.md",
+                "non_linear.md",
+                "quad_to_bin.md",
+            ],
+        ),
+        "Examples" => joinpath.(
+            "examples",
+            [
+                "FOBP_example2.md",
+                "FOBP_example3.md",
+                "FOBP_example4.md",
+                "FOBP_example5.md",
+                "DTMP_example1.md",
+                "PHTP_example1.md",
+                "PHTP_example2.md",
+                "SOCBLP_example1.md",
+                "MibS_example1.md",
+                "MibS_example2.md",
+            ],
+        ),
         "Background Information" => "background.md",
         "API Reference" => "reference.md",
         "Troubleshooting" => "troubleshooting.md",

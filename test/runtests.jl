@@ -3,16 +3,13 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-# Copyright (c) 2019: Joaquim Dias Garcia, and contributors
-#
-# Use of this source code is governed by an MIT-style license that can be found
-# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
-
-import Pkg
 using BilevelJuMP
-using Test, MathOptInterface, JuMP, Dualization
+using Dualization
+using JuMP
+using Test
 
-const MOI = MathOptInterface
+import MathOptInterface as MOI
+import Pkg
 
 struct Config
     atol::Float64
@@ -36,7 +33,8 @@ CONFIG_2 = Config(; atol = 1e-2, rtol = 1e-2)
 CONFIG_3 = Config(; atol = 1e-3, rtol = 1e-3)
 CONFIG_3_start = Config(; atol = 1e-3, rtol = 1e-3, start_value = true)
 CONFIG_3_hint = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true)
-CONFIG_3_hint_and_start = Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true, start_value = true)
+CONFIG_3_hint_and_start =
+    Config(; atol = 1e-3, rtol = 1e-3, bound_hint = true, start_value = true)
 CONFIG_4 = Config(; atol = 1e-4, rtol = 1e-4)
 CONFIG_5 = Config(; atol = 1e-5, rtol = 1e-5)
 
@@ -66,13 +64,13 @@ solvers_complements = OptModeType[]
 include("solvers/ipopt.jl")
 # include("solvers/cbc.jl")
 if Sys.islinux()
-    Pkg.add(name="SCIP")#, version="0.11.12")
+    Pkg.add(; name = "SCIP")#, version="0.11.12")
     include("solvers/scip.jl")
 end
 if Sys.iswindows() && (
     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
     get(ENV, "XPRESSDIR", "") != ""
-    )
+)
     @info "Running Xpress in Tests"
     include("solvers/xpress.jl")
 end
@@ -89,14 +87,14 @@ end
 # include("solvers/juniper.jl") # require NLP from JuMP
 # include("solvers/path.jl") # require LCP method
 
-include("moi.jl")
-include("jump.jl")
+include("problems/jump.jl")
+include("problems/jump_nlp.jl")
+include("problems/moi.jl")
 include("jump_unit.jl")
-include("jump_nlp.jl")
 
 @testset "BilevelJuMP tests" begin
     @testset "MibS" begin
-        include("mibs.jl")
+        include("test_mibs.jl")
     end
 
     @testset "nlp" begin

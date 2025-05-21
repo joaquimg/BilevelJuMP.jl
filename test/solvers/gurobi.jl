@@ -19,9 +19,22 @@ push!(solvers_sos, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 push!(solvers_sos_quad, (opt = GRB_BRIDGED, mode = BilevelJuMP.SOS1Mode()))
 
-push!(solvers_fa2, (opt = GRB_BRIDGED, mode = BilevelJuMP.FortunyAmatMcCarlMode(with_slack = false, primal_big_M = 100, dual_big_M = 100)))
+push!(
+    solvers_fa2,
+    (
+        opt = GRB_BRIDGED,
+        mode = BilevelJuMP.FortunyAmatMcCarlMode(;
+            with_slack = false,
+            primal_big_M = 100,
+            dual_big_M = 100,
+        ),
+    ),
+)
 
-
-push!(solvers_sos_quad_bin, (
-    opt = QuadraticToBinary.Optimizer{Float64}(GRB_BRIDGED),
-    mode = BilevelJuMP.SOS1Mode()))
+push!(
+    solvers_sos_quad_bin,
+    (
+        opt = QuadraticToBinary.Optimizer{Float64}(GRB_BRIDGED),
+        mode = BilevelJuMP.SOS1Mode(),
+    ),
+)

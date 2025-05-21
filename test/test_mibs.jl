@@ -3,7 +3,7 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-module TestJuMPInput
+module TestMIBS
 
 using BilevelJuMP
 using Test
@@ -11,17 +11,16 @@ using MibS_jll
 
 function runtests()
     for name in names(@__MODULE__; all = true)
-        # if startswith("$(name)", "test_")
         if startswith("$(name)", "test_")
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
             end
         end
     end
+    return
 end
 
 function test_basic_example_1()
-    # using BilevelJuMP, MibS_jll
     model = BilevelModel()
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)
@@ -88,18 +87,18 @@ function test_basic_example_4()
     model = BilevelModel()
     I = 7 # maximum literals
     clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
-    @variable(Upper(model), ya[i = 1:I])          #7 variables
-    @variable(Upper(model), yb[i = 1:I])          #7 variables
+    @variable(Upper(model), ya[i=1:I])          #7 variables
+    @variable(Upper(model), yb[i=1:I])          #7 variables
     @variable(Upper(model), z)                  #1 variable
-    @variable(Lower(model), x[i = 1:I])           #7 variables
+    @variable(Lower(model), x[i=1:I])           #7 variables
     @objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
     @constraint(Upper(model), ca, z <= 1)                       #1 LessThan
     @constraint(Upper(model), cb, z >= 0)                       #1 GreaterThan
-    @constraint(Upper(model), c1[i = 1:I], ya[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c2[i = 1:I], ya[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c3[i = 1:I], yb[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c4[i = 1:I], yb[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)    #7 Equlity
+    @constraint(Upper(model), c1[i=1:I], ya[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c2[i=1:I], ya[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c3[i=1:I], yb[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c4[i=1:I], yb[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)    #7 Equlity
     @constraint(
         Upper(model),
         cc[k in eachindex(clauses)],
@@ -113,9 +112,9 @@ function test_basic_example_4()
     #   31  Total
     #---------------------------------------------------------
     @objective(Lower(model), Max, sum(x[i] for i in 1:I))
-    @constraint(Lower(model), b1[i = 1:I], x[i] >= 0)         #7  GreaterThan
-    @constraint(Lower(model), b2[i = 1:I], x[i] <= ya[i])     #7  LessThan
-    @constraint(Lower(model), b3[i = 1:I], x[i] <= yb[i])     #7  LessThan
+    @constraint(Lower(model), b1[i=1:I], x[i] >= 0)         #7  GreaterThan
+    @constraint(Lower(model), b2[i=1:I], x[i] <= ya[i])     #7  LessThan
+    @constraint(Lower(model), b3[i=1:I], x[i] <= yb[i])     #7  LessThan
     #---------------------------------------------------------
     #   7   GreaterThan
     #   14  LessThan
@@ -168,18 +167,18 @@ function test_basic_example_5_integer_in_lower_level()
     model = BilevelModel()
     I = 7 # maximum literals
     clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
-    @variable(Upper(model), ya[i = 1:I])          #7 variables
-    @variable(Upper(model), yb[i = 1:I])          #7 variables
+    @variable(Upper(model), ya[i=1:I])          #7 variables
+    @variable(Upper(model), yb[i=1:I])          #7 variables
     @variable(Upper(model), z)                  #1 variable
-    @variable(Lower(model), x[i = 1:I], Int)           #7 variables
+    @variable(Lower(model), x[i=1:I], Int)           #7 variables
     @objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
     @constraint(Upper(model), ca, z <= 1)                       #1 LessThan
     @constraint(Upper(model), cb, z >= 0)                       #1 GreaterThan
-    @constraint(Upper(model), c1[i = 1:I], ya[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c2[i = 1:I], ya[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c3[i = 1:I], yb[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c4[i = 1:I], yb[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)    #7 Equlity
+    @constraint(Upper(model), c1[i=1:I], ya[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c2[i=1:I], ya[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c3[i=1:I], yb[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c4[i=1:I], yb[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)    #7 Equlity
     @constraint(
         Upper(model),
         cc[k in eachindex(clauses)],
@@ -193,9 +192,9 @@ function test_basic_example_5_integer_in_lower_level()
     #   31  Total
     #---------------------------------------------------------
     @objective(Lower(model), Max, sum(x[i] for i in 1:I))
-    @constraint(Lower(model), b1[i = 1:I], x[i] >= 0)         #7  GreaterThan
-    @constraint(Lower(model), b2[i = 1:I], x[i] <= ya[i])     #7  LessThan
-    @constraint(Lower(model), b3[i = 1:I], x[i] <= yb[i])     #7  LessThan
+    @constraint(Lower(model), b1[i=1:I], x[i] >= 0)         #7  GreaterThan
+    @constraint(Lower(model), b2[i=1:I], x[i] <= ya[i])     #7  LessThan
+    @constraint(Lower(model), b3[i=1:I], x[i] <= yb[i])     #7  LessThan
     #---------------------------------------------------------
     #   7   GreaterThan
     #   14  LessThan
@@ -248,18 +247,18 @@ function test_basic_example_6_integer_in_lower_level()
     model = BilevelModel()
     I = 7 # maximum literals
     clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
-    @variable(Upper(model), ya[i = 1:I])                          #7 variables
-    @variable(Upper(model), yb[i = 1:I], Int)                     #7 variables
+    @variable(Upper(model), ya[i=1:I])                          #7 variables
+    @variable(Upper(model), yb[i=1:I], Int)                     #7 variables
     @variable(Upper(model), z, Int)                             #1 variable
-    @variable(Lower(model), x[i = 1:I])                           #7 variables
+    @variable(Lower(model), x[i=1:I])                           #7 variables
     @objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
     @constraint(Upper(model), ca, z <= 1)                       #1 LessThan
     @constraint(Upper(model), cb, z >= 0)                       #1 GreaterThan
-    @constraint(Upper(model), c1[i = 1:I], ya[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c2[i = 1:I], ya[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c3[i = 1:I], yb[i] >= 0)            #7 GreaterThan
-    @constraint(Upper(model), c4[i = 1:I], yb[i] <= 1)            #7 LessThan
-    @constraint(Upper(model), c5[i = 1:I], ya[i] + yb[i] == 1)    #7 Equlity
+    @constraint(Upper(model), c1[i=1:I], ya[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c2[i=1:I], ya[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c3[i=1:I], yb[i] >= 0)            #7 GreaterThan
+    @constraint(Upper(model), c4[i=1:I], yb[i] <= 1)            #7 LessThan
+    @constraint(Upper(model), c5[i=1:I], ya[i] + yb[i] == 1)    #7 Equlity
     @constraint(
         Upper(model),
         cc[k in eachindex(clauses)],
@@ -273,9 +272,9 @@ function test_basic_example_6_integer_in_lower_level()
     #   31  Total
     #---------------------------------------------------------
     @objective(Lower(model), Max, sum(x[i] for i in 1:I))
-    @constraint(Lower(model), b1[i = 1:I], x[i] >= 0)         #7  GreaterThan
-    @constraint(Lower(model), b2[i = 1:I], x[i] <= ya[i])     #7  LessThan
-    @constraint(Lower(model), b3[i = 1:I], x[i] <= yb[i])     #7  LessThan
+    @constraint(Lower(model), b1[i=1:I], x[i] >= 0)         #7  GreaterThan
+    @constraint(Lower(model), b2[i=1:I], x[i] <= ya[i])     #7  LessThan
+    @constraint(Lower(model), b3[i=1:I], x[i] <= yb[i])     #7  LessThan
     #---------------------------------------------------------
     #   7   GreaterThan
     #   14  LessThan
@@ -464,6 +463,6 @@ function test_Writing_MibS_input_v6()
     return
 end
 
-end  # module
+end  # module TestMIBS
 
-TestJuMPInput.runtests()
+TestMIBS.runtests()

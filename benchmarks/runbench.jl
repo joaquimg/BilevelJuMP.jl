@@ -7,9 +7,8 @@ using Random
 using Dates
 using BilevelJuMP
 
-using MathOptInterface
-MOI = MathOptInterface
-MOIU = MOI.Utilities
+import MathOptInterface as MOI
+import MathOptInterface.Utilities as MOIU
 
 MAX_TIME = 600
 
