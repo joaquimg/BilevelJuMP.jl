@@ -220,7 +220,6 @@ function add_function_to_cache(mode::ProductMode{T}, func) where {T}
     if mode.function_cache === nothing
         mode.function_cache = func
     else
-        mode.function_cache, func
         mode.function_cache = MOIU.operate(+, T, mode.function_cache, func)
     end
     return nothing
