@@ -11,7 +11,7 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
-Dualization = "0.5.6"
+Dualization = "0.5.6, 0.6, 0.7"
 JuMP = "1.7.0"
 MathOptInterface = "1.2"
 Reexport = "1"
