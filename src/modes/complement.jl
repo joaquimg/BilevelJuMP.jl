@@ -62,7 +62,7 @@ function add_complement(
         c = MOI.add_constraint(
             m,
             MOI.VectorOfVariables([slack, dual]),
-            MOI.Complements(1),
+            MOI.Complements(2),
         )
         if copy_names
             nm = MOI.get(m, MOI.VariableName(), dual)
@@ -79,7 +79,7 @@ function add_complement(
     else
         new_f = MOIU.operate(vcat, T, f_dest, dual)
 
-        c = MOI.add_constraint(m, new_f, MOI.Complements(1))
+        c = MOI.add_constraint(m, new_f, MOI.Complements(2))
 
         if copy_names
             nm = MOI.get(m, MOI.VariableName(), dual)
