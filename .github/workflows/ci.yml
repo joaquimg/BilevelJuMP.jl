@@ -13,22 +13,14 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     env:
-      SECRET_XPRS_WIN_8110: ${{ secrets.XPRS_WIN_8110 }}
-      SECRET_XPRL_WIN_8110: ${{ secrets.XPRL_WIN_8110 }}
-      SECRET_XPRA_WIN_8130: ${{ secrets.XPAUTH_XPR }}
+      XPAUTH_XPR: ${{ secrets.XPAUTH_XPR }}
+      XPRESS_JL_SKIP_LIB_CHECK: "true"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - version: '1.6'
-            os: windows-latest
-            arch: x64
-          - version: '1.6'
-            os: ubuntu-latest
-            arch: x64
-          - version: '1'
-            os: ubuntu-latest
-            arch: x64     
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        version: ['1.10', '1']
+        arch: [x64]
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
