@@ -3,7 +3,11 @@
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 
 @variable(Upper(model), x &gt;= 2)
-@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><p>We can add a non-linear objective to the upper level with <code>@NLobjective</code></p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^2 - y)</code></pre><p>We can also add a non-linear constraint to the upper level with <code>@NLconstraint</code></p><pre><code class="language-julia">@NLconstraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ (x ^ {2.0} + y ^ {2.0}) - 100.0 \leq 0 \]</p><p><code>@NLobjective</code> is <em>not supported</em> in the lower level, but we can use <code>@constraint</code> to add a quadratic objective to the lower level.</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><p>We can add a non-linear objective to the upper level with <code>@NLobjective</code></p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^2 - y)</code></pre><p>We can also add a non-linear constraint to the upper level with <code>@NLconstraint</code></p><pre><code class="language-julia">@NLconstraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ (x ^ {2.0} + y ^ {2.0}) - 100.0 \leq 0 \]</p><p><code>@NLobjective</code> is <em>not supported</em> in the lower level, but we can use <code>@constraint</code> to add a quadratic objective to the lower level.</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
+This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:        3
 Number of nonzeros in inequality constraint Jacobian.:        8
@@ -60,13 +64,17 @@ Number of inequality constraint evaluations          = 21
 Number of equality constraint Jacobian evaluations   = 20
 Number of inequality constraint Jacobian evaluations = 20
 Number of Lagrangian Hessian evaluations             = 19
-Total seconds in IPOPT                               = 0.006
+Total seconds in IPOPT                               = 0.008
 
 EXIT: Optimal Solution Found.</pre><p>All the quadratic objectives and constraints of the upper level can also be added with the <code>@constraint</code> and <code>@objective</code> macros. Hence, we can write the quivalent model:</p><pre><code class="language-julia">using BilevelJuMP, Ipopt
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 
 @variable(Upper(model), x &gt;= 2)
-@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@objective(Upper(model), Min, x^2 - y)</code></pre><p>$ x^2 - y $</p><pre><code class="language-julia">@constraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ x^2 + y^2 \leq 100 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@objective(Upper(model), Min, x^2 - y)</code></pre><p>$ x^2 - y $</p><pre><code class="language-julia">@constraint(Upper(model), x^2 + y^2 &lt;= 100)</code></pre><p class="math-container">\[ x^2 + y^2 \leq 100 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
+This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:        3
 Number of nonzeros in inequality constraint Jacobian.:        8
@@ -123,13 +131,17 @@ Number of inequality constraint evaluations          = 21
 Number of equality constraint Jacobian evaluations   = 20
 Number of inequality constraint Jacobian evaluations = 20
 Number of Lagrangian Hessian evaluations             = 19
-Total seconds in IPOPT                               = 0.006
+Total seconds in IPOPT                               = 0.008
 
 EXIT: Optimal Solution Found.</pre><h2 id="General-non-linear-constraints-and-objectives"><a class="docs-heading-anchor" href="#General-non-linear-constraints-and-objectives">General non-linear constraints and objectives</a><a id="General-non-linear-constraints-and-objectives-1"></a><a class="docs-heading-anchor-permalink" href="#General-non-linear-constraints-and-objectives" title="Permalink"></a></h2><p>General non quadratic objectives and general non-linear constraints <em>can not</em> be added to the lower level, but they can be added to the upper level.</p><pre><code class="language-julia">using BilevelJuMP, Ipopt
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 
 @variable(Upper(model), x &gt;= 2)
-@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^4 - sin(y))</code></pre><pre><code class="language-julia">@NLconstraint(Upper(model), x^3 + y^3 &lt;= 1000)</code></pre><p class="math-container">\[ (x ^ {3.0} + y ^ {3.0}) - 1000.0 \leq 0 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+@variable(Lower(model), 3 &lt;= y &lt;= 5)</code></pre><p>$ y $</p><pre><code class="language-julia">@NLobjective(Upper(model), Min, x^4 - sin(y))</code></pre><pre><code class="language-julia">@NLconstraint(Upper(model), x^3 + y^3 &lt;= 1000)</code></pre><p class="math-container">\[ (x ^ {3.0} + y ^ {3.0}) - 1000.0 \leq 0 \]</p><pre><code class="language-julia">@objective(Lower(model), Min, y^2)</code></pre><p>$ y^2 $</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
+This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:        3
 Number of nonzeros in inequality constraint Jacobian.:        8
@@ -184,6 +196,6 @@ Number of inequality constraint evaluations          = 18
 Number of equality constraint Jacobian evaluations   = 18
 Number of inequality constraint Jacobian evaluations = 18
 Number of Lagrangian Hessian evaluations             = 17
-Total seconds in IPOPT                               = 0.005
+Total seconds in IPOPT                               = 0.007
 
-EXIT: Optimal Solution Found.</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>Conic constraints are supported in the lower level (see Conic Bilevel tutorial).</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/non_linear.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../conic_lower/">« Conic Bilevel and Mixed Mode</a><a class="docs-footer-nextpage" href="../quad_to_bin/">Using QuadraticToBinary »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 7 October 2025 03:29">Tuesday 7 October 2025</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>Conic constraints are supported in the lower level (see Conic Bilevel tutorial).</p></div></div><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/non_linear.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../conic_lower/">« Conic Bilevel and Mixed Mode</a><a class="docs-footer-nextpage" href="../quad_to_bin/">Using QuadraticToBinary »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 2 March 2026 15:06">Monday 2 March 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
