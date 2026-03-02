@@ -693,7 +693,7 @@ function JuMP.optimize!(
             # this fails for vector-constrained variables due dualization 0.3.5
             # because of constrained variables that change the dual
             pre_duals =
-                lower_primal_dual_map.primal_con_dual_var[JuMP.index(ctr)] # vector
+                lower_primal_dual_map.primal_constraint_data[JuMP.index(ctr)].dual_variables # vector
             duals = map(x -> lower_dual_to_sblm[x], pre_duals)
             pass_dual_info(single_blm, duals, info)
         end

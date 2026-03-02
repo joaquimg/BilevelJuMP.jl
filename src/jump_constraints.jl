@@ -497,7 +497,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
         con_lower_idx = con_lower_ref.index
         # Dual variable associated with constraint index
         model_var_idxs =
-            cref.model.lower_primal_dual_map.primal_con_dual_var[con_lower_idx]
+            cref.model.lower_primal_dual_map.primal_constraint_data[con_lower_idx].dual_variables
         # Single bilevel model variable associated with the dual variable
         sblm_var_idxs = MOI.VariableIndex[]
         for vi in model_var_idxs
