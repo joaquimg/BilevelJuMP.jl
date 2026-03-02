@@ -90,7 +90,7 @@ struct Complement#{M1 <: MOI.ModelLike, M2 <: MOI.ModelLike, F, S}
 end
 
 function get_canonical_complements(primal_model, primal_dual_map)
-    map = primal_dual_map.primal_con_dual_var
+    map = primal_dual_map.primal_constraint_data
     out = Complement[]
     for ci in keys(map)
         con = get_canonical_complement(primal_model, map, ci)
@@ -114,7 +114,8 @@ function get_canonical_complement(
     #         Dualization.get_scalar_term(primal_model, ci, i)
     # end
     # todo - set dot on function
-    con = Complement(true, ci, func, _set_with_zero(set), map[ci])
+    con =
+        Complement(true, ci, func, _set_with_zero(set), map[ci].dual_variables)
     return con
 end
 
@@ -127,15 +128,21 @@ function get_canonical_complement(
     func = MOI.copy(MOI.get(primal_model, MOI.ConstraintFunction(), ci))::F
     set = MOI.copy(MOI.get(primal_model, MOI.ConstraintSet(), ci))::S
     constant =
-        Dualization.set_dot(1, set, T) *
-        Dualization.get_scalar_term(primal_model, ci)[]
+        -Dualization.set_dot(1, set, T) *
+        MOI.constant(MOI.get(primal_model, MOI.ConstraintSet(), ci))
     if F == MOI.VariableIndex
         func = MOIU.operate(+, T, func, constant)
     else
         func.constant = constant
     end
     # todo - set dot on function
-    con = Complement(false, ci, func, _set_with_zero(set), map[ci][1])
+    con = Complement(
+        false,
+        ci,
+        func,
+        _set_with_zero(set),
+        map[ci].dual_variables[1],
+    )
     return con
 end
 
@@ -219,7 +226,7 @@ function _build_bound_map!(
         mode.map[lower_idxmap[k]] = v
     end
     for (k, v) in mode.ldual
-        vec = lower_primal_dual_map.primal_con_dual_var[k]#[1] # TODO check this scalar
+        vec = lower_primal_dual_map.primal_constraint_data[k].dual_variables#[1] # TODO check this scalar
         for var in vec
             mode.map[lower_dual_idxmap[var]] = BilevelVariableInfo(v)
         end
@@ -338,7 +345,8 @@ function build_bilevel(
     end
     # 2) Dual variables might appear in the upper level
     for (upper_var, lower_con) in upper_var_to_lower_ctr
-        var = lower_primal_dual_map.primal_con_dual_var[lower_con][1] # TODO check this scalar
+        var =
+            lower_primal_dual_map.primal_constraint_data[lower_con].dual_variables[1] # TODO check this scalar
         lower_dual_idxmap[var] = upper_idxmap[upper_var]
     end
 
