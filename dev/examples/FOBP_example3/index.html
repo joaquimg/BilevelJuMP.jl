@@ -81,7 +81,11 @@ for i in 1:I
     JuMP.set_dual_start_value.(b1, 0)
     JuMP.set_dual_start_value.(b2, 0)
     JuMP.set_dual_start_value.(b3, -1)
-end</code></pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+end</code></pre><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
+This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:       35
 Number of nonzeros in inequality constraint Jacobian.:      151
@@ -115,24 +119,24 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   13  3.0922874e-01 3.60e-07 6.62e+04  -1.0 1.06e-01    -  1.00e+00 7.60e-01h  1
   14  2.9797374e-01 2.66e-07 5.55e+05  -1.0 3.64e-02    -  1.00e+00 1.48e-01f  3
   15  1.6647530e-02 2.23e-08 1.70e+05  -1.0 1.54e-01    -  1.00e+00 8.49e-01h  1
-  16  1.9033881e-02 2.06e-08 3.39e+06  -1.0 6.15e-02    -  1.00e+00 1.75e-02f  6
+  16  1.9033879e-02 2.06e-08 3.39e+06  -1.0 6.15e-02    -  1.00e+00 1.75e-02f  6
   17  1.0546869e-01 1.11e-08 6.84e+05  -1.0 4.30e-02    -  1.00e+00 8.78e-01h  1
-  18  1.2957235e-01 4.46e-13 4.55e+06  -1.0 3.44e-02    -  1.00e+00 3.38e-01f  2
-  19  1.1729935e-01 3.13e-13 6.80e+04  -1.0 1.79e-02    -  1.00e+00 1.00e+00h  1
+  18  1.2957235e-01 1.58e-13 4.55e+06  -1.0 3.44e-02    -  1.00e+00 3.38e-01f  2
+  19  1.1729935e-01 3.36e-13 6.80e+04  -1.0 1.79e-02    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  20  2.0688419e-01 1.11e-16 3.19e+04  -1.0 4.11e-02    -  1.00e+00 1.00e+00f  1
+  20  2.0688419e-01 2.22e-16 3.19e+04  -1.0 4.11e-02    -  1.00e+00 1.00e+00f  1
   21 -5.0650203e-01 2.22e-16 3.04e+06  -1.7 2.52e-01    -  7.50e-01 1.00e+00f  1
-  22 -7.1215007e-01 1.11e-16 7.06e+04  -1.7 1.15e-01    -  1.00e+00 1.00e+00f  1
-  23 -6.9110326e-01 1.11e-16 4.17e+04  -1.7 2.12e-02    -  1.00e+00 1.00e+00f  1
+  22 -7.1215007e-01 2.22e-16 7.06e+04  -1.7 1.15e-01    -  1.00e+00 1.00e+00f  1
+  23 -6.9110326e-01 2.22e-16 4.17e+04  -1.7 2.12e-02    -  1.00e+00 1.00e+00f  1
   24 -6.9625189e-01 2.22e-16 2.86e+03  -1.7 4.13e-03    -  1.00e+00 1.00e+00f  1
   25 -6.9564015e-01 2.22e-16 1.74e+01  -1.7 7.17e-04    -  1.00e+00 1.00e+00h  1
-  26 -9.7277264e-01 6.55e-14 1.52e+06  -3.8 8.89e-02    -  5.22e-01 9.68e-01f  1
+  26 -9.7277264e-01 3.00e-14 1.52e+06  -3.8 8.89e-02    -  5.22e-01 9.68e-01f  1
   27 -9.8930021e-01 2.22e-16 1.98e+06  -3.8 7.30e-03    -  2.50e-01 1.00e+00f  1
   28 -9.9199990e-01 2.22e-16 2.08e+06  -3.8 2.47e-03    -  3.28e-01 1.00e+00f  1
-  29 -9.9200876e-01 1.11e-16 1.24e+05  -3.8 4.91e-05   4.0 8.47e-01 1.00e+00f  1
+  29 -9.9200876e-01 2.22e-16 1.24e+05  -3.8 4.91e-05   4.0 8.47e-01 1.00e+00f  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   30 -9.9212721e-01 2.22e-16 3.24e-01  -3.8 3.94e-05   3.5 1.00e+00 1.00e+00f  1
-  31 -9.9243733e-01 1.11e-16 9.31e-01  -3.8 1.16e-04   3.0 1.00e+00 1.00e+00f  1
+  31 -9.9243733e-01 2.22e-16 9.31e-01  -3.8 1.16e-04   3.0 1.00e+00 1.00e+00f  1
   32 -9.9528003e-01 2.22e-16 1.70e+02  -3.8 1.02e-02    -  2.88e-01 1.44e-01f  2
   33 -9.9624613e-01 2.22e-16 1.65e+05  -3.8 8.40e-03    -  1.00e+00 7.62e-02f  2
   34 -9.9731688e-01 1.11e-16 2.15e+04  -3.8 6.72e-04    -  9.00e-01 1.00e+00f  1
@@ -140,63 +144,88 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   36 -9.9756559e-01 2.22e-16 7.69e-02  -3.8 2.70e-05    -  1.00e+00 1.00e+00f  1
   37 -9.9984090e-01 2.22e-16 1.21e+04  -5.7 7.73e-04    -  4.89e-01 9.34e-01f  1
   38 -9.9993263e-01 3.60e-07 8.98e+02  -5.7 1.04e-01    -  9.26e-01 1.00e+00f  1
-  39 -9.9996236e-01 8.59e-08 2.95e+03  -5.7 4.67e-02    -  4.99e-01 1.00e+00h  1
+  39 -9.9996236e-01 8.58e-08 2.95e+03  -5.7 4.67e-02    -  4.99e-01 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  40 -9.9996194e-01 2.22e-16 3.48e+03  -5.7 2.58e-05   2.6 2.93e-01 1.00e+00h  1
-  41 -9.9996590e-01 1.11e-16 4.39e+00  -5.7 7.80e-04    -  1.00e+00 1.00e+00f  1
-  42 -9.9996625e-01 2.22e-16 2.04e-03  -5.7 1.65e-05   2.1 1.00e+00 1.00e+00h  1
-  43 -9.9996649e-01 2.22e-16 1.63e-03  -5.7 3.97e-05   1.6 1.00e+00 1.00e+00h  1
-  44 -9.9996706e-01 2.22e-16 1.16e-03  -5.7 8.47e-05   1.1 1.00e+00 1.00e+00h  1
-  45 -9.9996817e-01 2.22e-16 3.03e-03  -5.7 1.45e-04   0.7 1.00e+00 1.00e+00h  1
-  46 -9.9996991e-01 2.22e-16 6.01e-03  -5.7 2.26e-04   0.2 1.00e+00 1.00e+00h  1
-  47 -9.9997193e-01 2.22e-16 8.72e-03  -5.7 2.95e-04  -0.3 1.00e+00 1.00e+00h  1
-  48 -9.9997383e-01 1.35e-09 2.06e+01  -5.7 5.14e-02    -  1.00e+00 1.00e+00H  1
-  49 -9.9997385e-01 1.31e-09 5.52e+02  -5.7 3.57e-01    -  1.00e+00 2.48e-02h  5
+  40 -9.9996194e-01 2.22e-16 1.07e+04  -5.7 2.58e-05   2.6 1.29e-01 1.00e+00h  1
+  41 -9.9996751e-01 7.09e-13 3.31e+00  -5.7 1.08e-03    -  1.00e+00 1.00e+00f  1
+  42r-9.9996751e-01 7.09e-13 5.85e+02  -5.7 0.00e+00    -  0.00e+00 3.36e-07R  4
+  43r-9.9994287e-01 1.04e-09 2.54e+01  -5.7 1.47e-02    -  9.71e-01 9.51e-01f  1
+  44 -9.9994715e-01 7.17e-10 5.57e+01  -5.7 4.15e-02    -  1.00e+00 3.28e-02h  2
+  45 -9.9994721e-01 2.20e-11 3.72e+02  -5.7 2.49e-01    -  1.00e+00 2.27e-03h  2
+  46 -9.9996064e-01 1.84e-08 5.53e-01  -5.7 1.72e-02    -  1.00e+00 1.00e+00h  1
+  47 -9.9997475e-01 1.11e-16 8.66e-04  -5.7 7.01e-06   2.1 1.00e+00 1.00e+00h  1
+  48 -9.9997438e-01 3.25e-10 4.02e+00  -5.7 1.40e-01    -  3.02e-01 2.21e-01f  2
+  49 -9.9997431e-01 3.03e-10 3.24e+01  -5.7 2.28e-01    -  1.23e-01 6.77e-02h  2
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  50 -9.9997386e-01 1.44e-09 3.29e+01  -5.7 1.54e-01    -  9.28e-01 2.42e-02h  6
-  51 -9.9997412e-01 2.22e-16 1.40e-02  -5.7 6.56e-05  -0.8 1.00e+00 1.00e+00h  1
-Cannot call restoration phase at point that is almost feasible (violation 2.220446e-16).
-Abort in line search due to no other fall back.
+  50 -9.9997473e-01 2.35e-10 4.03e+02  -5.7 5.25e-06   1.6 8.27e-01 2.24e-01h  2
+  51 -9.9997442e-01 1.83e-10 1.49e+02  -5.7 3.48e-02    -  4.24e-01 2.22e-01h  2
+  52 -9.9997547e-01 1.11e-16 5.96e-03  -5.7 1.58e-05   1.1 1.00e+00 1.00e+00h  1
+  53 -9.9997545e-01 2.22e-16 6.43e-03  -5.7 3.66e-05   0.7 1.00e+00 1.00e+00h  1
+  54 -9.9997507e-01 2.22e-16 9.16e-04  -5.7 1.13e-04   0.2 1.00e+00 1.00e+00h  1
+  55 -9.9997424e-01 1.11e-16 2.33e-03  -5.7 3.47e-04  -0.3 1.00e+00 1.00e+00h  1
+  56 -9.9997402e-01 8.46e-08 4.18e+02  -5.7 3.77e+02    -  1.41e-06 4.79e-06f  3
+  57 -9.9997362e-01 5.52e-08 2.99e+02  -5.7 1.42e-03  -0.8 1.00e+00 3.48e-01h  2
+  58 -9.9997261e-01 3.21e-08 1.99e+02  -5.7 5.87e-03  -1.2 1.00e+00 4.19e-01h  2
+  59 -9.9997090e-01 1.11e-16 1.14e-01  -5.7 4.79e-04   0.1 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  60 -9.9997168e-01 2.22e-16 2.78e-01  -5.7 1.17e-03    -  1.00e+00 1.00e+00H  1
+  61 -9.9997056e-01 2.22e-16 1.47e-01  -5.7 2.88e-03    -  1.00e+00 1.00e+00H  1
+  62 -9.9997066e-01 2.22e-16 2.49e-02  -5.7 2.07e-04    -  1.00e+00 1.00e+00h  1
+  63 -9.9997062e-01 2.22e-16 4.45e-03  -5.7 1.32e-04    -  1.00e+00 1.00e+00h  1
+  64 -9.9997062e-01 1.11e-16 8.43e-07  -5.7 1.06e-05    -  1.00e+00 1.00e+00h  1
+  65 -1.0000000e+00 2.22e-16 1.67e+02  -8.6 1.83e-03    -  4.99e-01 9.98e-01f  1
+  66 -1.0000000e+00 5.08e-14 4.38e+01  -8.6 2.53e-01    -  5.00e-01 1.44e-02h  1
+  67 -1.0000000e+00 5.18e-11 6.26e+01  -8.6 7.30e-03    -  1.82e-01 1.00e+00f  1
+  68 -1.0000000e+00 1.11e-16 8.02e+00  -8.6 9.23e-03    -  7.78e-01 1.00e+00h  1
+  69 -1.0000000e+00 2.22e-16 4.65e+00  -8.6 1.45e+00    -  4.17e-01 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  70 -1.0000000e+00 2.22e-16 6.92e-01  -8.6 2.35e-01    -  8.82e-01 1.00e+00h  1
+  71 -1.0000000e+00 1.11e-16 4.30e-01  -8.6 6.98e+00    -  3.92e-01 1.00e+00h  1
+  72 -1.0000000e+00 1.11e-16 4.94e-01  -8.6 3.31e+00    -  9.92e-01 1.00e+00h  1
+  73 -1.0000000e+00 2.22e-16 1.05e-08  -8.6 2.62e-08  -0.4 1.00e+00 1.00e+00h  1
+  74 -1.0000001e+00 2.22e-16 3.06e-01  -9.0 4.43e+00    -  7.99e-01 1.00e+00h  1
+  75 -1.0000001e+00 7.11e-15 1.73e+00  -9.0 3.00e+01    -  6.76e-01 1.00e+00h  1
+  76 -1.0000001e+00 2.22e-16 6.40e-09  -9.0 4.78e-08  -0.9 1.00e+00 1.00e+00h  1
 
-Number of Iterations....: 51
+Number of Iterations....: 76
 
                                    (scaled)                 (unscaled)
-Objective...............:  -9.9997411621812748e-01   -9.9997411621812748e-01
-Dual infeasibility......:   1.4034056465950462e-02    1.4034056465950462e-02
+Objective...............:  -1.0000000662663757e+00   -1.0000000662663757e+00
+Dual infeasibility......:   6.3954857963330336e-09    6.3954857963330336e-09
 Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
 Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
-Complementarity.........:   1.8485991303217613e-06    1.8485991303217613e-06
-Overall NLP error.......:   1.4034056465950462e-02    1.4034056465950462e-02
+Complementarity.........:   9.1121964979100597e-10    9.1121964979100597e-10
+Overall NLP error.......:   6.3954857963330336e-09    6.3954857963330336e-09
 
 
-Number of objective function evaluations             = 109
-Number of objective gradient evaluations             = 53
-Number of equality constraint evaluations            = 109
-Number of inequality constraint evaluations          = 109
-Number of equality constraint Jacobian evaluations   = 53
-Number of inequality constraint Jacobian evaluations = 53
-Number of Lagrangian Hessian evaluations             = 52
-Total seconds in IPOPT                               = 0.100
+Number of objective function evaluations             = 120
+Number of objective gradient evaluations             = 77
+Number of equality constraint evaluations            = 120
+Number of inequality constraint evaluations          = 120
+Number of equality constraint Jacobian evaluations   = 78
+Number of inequality constraint Jacobian evaluations = 78
+Number of Lagrangian Hessian evaluations             = 76
+Total seconds in IPOPT                               = 0.078
 
-EXIT: Error in step computation!</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">UNKNOWN_RESULT_STATUS::ResultStatusCode = 8</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">NUMERICAL_ERROR::TerminationStatusCode = 20</pre><p>Results</p><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-0.9999741162181275</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
- 4.679374238504724e-6
- 6.787327885290754e-8
- 3.055931746257999e-6
- 4.679125420940127e-6
- 3.6855751455369916e-6
- 3.689993590456975e-6
- 3.6906931371529234e-6</pre><pre><code class="language-julia">value.(ya)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
- 0.9999953201023675
- 0.9999999311624286
- 0.999996943548513
- 0.9999953203511845
- 0.9999963139032433
- 0.9999963094848145
- 0.9999963087852705</pre><pre><code class="language-julia">value.(yb)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
- 4.679897632567622e-6
- 6.883757137024605e-8
- 3.0564514870686416e-6
- 4.6796488155514335e-6
- 3.686096756722054e-6
- 3.690515185497148e-6
- 3.6912147295444167e-6</pre><pre><code class="language-julia">value(z)</code></pre><pre class="documenter-example-output">0.9999976647846852</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Chapter 3.2, Page 25</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 13 January 2026 17:58">Tuesday 13 January 2026</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><p>Results</p><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">-1.0000000662663757</pre><pre><code class="language-julia">value.(x)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ -8.071494051285382e-9
+ -8.412724093513812e-9
+ -7.774352178742658e-9
+ -8.07149336147738e-9
+ -8.412352191453918e-9
+ -8.4123523459866e-9
+ -8.412351996763966e-9</pre><pre><code class="language-julia">value.(ya)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ 1.0000000032563061
+ 1.0000000066681738
+ 1.0000000082402842
+ 1.0000000032563126
+ 1.000000006670129
+ 1.000000006670128
+ 1.0000000066701298</pre><pre><code class="language-julia">value.(yb)</code></pre><pre class="documenter-example-output">7-element Vector{Float64}:
+ -3.2563063175851066e-9
+ -6.668173898679216e-9
+ -8.240284308813859e-9
+ -3.2563123980593183e-9
+ -6.670128745704976e-9
+ -6.670127930990902e-9
+ -6.670129763780458e-9</pre><pre><code class="language-julia">value(z)</code></pre><pre class="documenter-example-output">1.0000000086992555</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example3.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example2/">« Foundations of Bilevel Programming: Chapter 3.2, Page 25</a><a class="docs-footer-nextpage" href="../FOBP_example4/">Foundations of Bilevel Programming: Example Chapter 5.1, Page 127 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 2 March 2026 15:05">Monday 2 March 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

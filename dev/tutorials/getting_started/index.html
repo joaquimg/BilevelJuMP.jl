@@ -80,6 +80,10 @@ Subject to
  l4 : 2 x - 7 y ≤ 0
 
 julia&gt; optimize!(model)
+┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
 Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
 Copyright (c) 2023 HiGHS under MIT licence terms
 WARNING: Row      0 has         infeasibility of           1 from [lower, value, upper] = [             -1;               0;              -1]
@@ -121,7 +125,7 @@ Solving report
                     0 (bound viol.)
                     0 (int. viol.)
                     0 (row viol.)
-  Timing            0.02 (total)
+  Timing            0.00 (total)
                     0.00 (presolve)
                     0.00 (postsolve)
   Nodes             1
@@ -213,6 +217,10 @@ Subject to
  l1 : x + y ≤ 8
  l3 : 2 x + y ≤ 13
  l4 : 2 x - 7 y ≤ 0</code></pre><p>solve the bilevel problem, which will combine a <code>mode</code> (in this case <code>FortunyAmatMcCarlMode</code>) and a solver (in this case <code>HiGHS</code>):</p><pre><code class="language-julia-repl">julia&gt; optimize!(model)
+┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
 Running HiGHS 1.5.1 [date: 1970-01-01, git hash: 93f1876e4]
 Copyright (c) 2023 HiGHS under MIT licence terms
 WARNING: Row      0 has         infeasibility of           1 from [lower, value, upper] = [             -1;               0;              -1]
@@ -254,7 +262,7 @@ Solving report
                     0 (bound viol.)
                     0 (int. viol.)
                     0 (row viol.)
-  Timing            0.01 (total)
+  Timing            0.00 (total)
                     0.00 (presolve)
                     0.00 (postsolve)
   Nodes             1
@@ -341,4 +349,4 @@ Solver name: HiGHS
 julia&gt; set_attribute(model, &quot;output_flag&quot;, false)
 
 julia&gt; get_attribute(model, &quot;output_flag&quot;)
-false</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../modes/">Modes overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 13 January 2026 17:58">Tuesday 13 January 2026</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+false</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/tutorials/getting_started.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../modes/">Modes overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 2 March 2026 15:05">Monday 2 March 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

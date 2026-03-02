@@ -20,7 +20,11 @@ Solver name: Ipopt</pre><p>First we need to create all of the variables in the u
 @variable(Lower(model), x, start = 0)</code></pre><p>$ x $</p><p>Then we can add the objective and constraints of the upper problem:</p><p>Upper level objecive function</p><pre><code class="language-julia">@objective(Upper(model), Min, 0 * y + 0)</code></pre><p>$ 0 $</p><p>Followed by the objective and constraints of the lower problem:</p><p>Lower objective function</p><pre><code class="language-julia">@objective(Lower(model), Min, x)</code></pre><p>$ x $</p><p>Lower constraints</p><pre><code class="language-julia">@constraint(Lower(model), x + y &lt;= 2)
 @constraint(Lower(model), x - y &lt;= 2)
 @constraint(Lower(model), -4x + 5y &lt;= 10)
-@constraint(Lower(model), -4x - 5y &lt;= 10)</code></pre><p class="math-container">\[ -5 y - 4 x \leq 10 \]</p><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
+@constraint(Lower(model), -4x - 5y &lt;= 10)</code></pre><p class="math-container">\[ -5 y - 4 x \leq 10 \]</p><p>Now we can solve the problem and verify the solution again that reported by Dempe.</p><pre><code class="language-julia">optimize!(model)</code></pre><pre class="documenter-example-output">┌ Warning: primal_var_dual_quad_slack field is deprecated, use primal_var_in_quad_obj_to_dual_slack_var instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:268
+┌ Warning: primal_parameter field is deprecated, use primal_parameter_to_dual_parameter instead
+└ @ Dualization ~/.julia/packages/Dualization/ihzlf/src/structures.jl:265
+This is Ipopt version 3.14.4, running with linear solver MUMPS 5.4.1.
 
 Number of nonzeros in equality constraint Jacobian...:        4
 Number of nonzeros in inequality constraint Jacobian.:       28
@@ -55,22 +59,22 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   14  0.0000000e+00 2.96e-04 6.01e+05  -1.0 1.11e-04    -  1.00e+00 6.70e-01h  1
   15  0.0000000e+00 5.74e-05 6.07e+05  -1.0 3.68e-05    -  1.00e+00 8.06e-01h  1
   16  0.0000000e+00 3.04e-05 1.70e+06  -1.0 7.13e-06    -  1.00e+00 4.71e-01f  2
-  17  0.0000000e+00 5.56e-07 4.14e+04  -1.0 4.16e-06    -  1.00e+00 9.82e-01h  1
-  18  0.0000000e+00 4.89e-07 9.77e+06  -1.0 4.70e-07    -  1.00e+00 1.22e-01f  2
-  19  0.0000000e+00 0.00e+00 3.31e-01  -1.0 3.86e-07    -  1.00e+00 1.00e+00h  1
+  17  0.0000000e+00 5.56e-07 4.14e+04  -1.0 3.77e-06    -  1.00e+00 9.82e-01h  1
+  18  0.0000000e+00 4.89e-07 9.77e+06  -1.0 2.78e-07    -  1.00e+00 1.22e-01f  2
+  19  0.0000000e+00 0.00e+00 6.07e-02  -1.0 6.24e-08    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
-  20  0.0000000e+00 0.00e+00 6.84e-01  -8.6 8.03e-09    -  1.00e+00 1.00e+00h  1
-  21  0.0000000e+00 0.00e+00 4.06e-10  -8.6 6.81e-10    -  1.00e+00 1.00e+00h  1
+  20  0.0000000e+00 0.00e+00 3.21e-03  -8.6 3.77e-11    -  1.00e+00 1.00e+00h  1
+  21  0.0000000e+00 1.11e-16 4.96e-11  -8.6 2.73e-10    -  1.00e+00 1.00e+00h  1
 
 Number of Iterations....: 21
 
                                    (scaled)                 (unscaled)
 Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
-Dual infeasibility......:   4.0633905962206285e-10    4.0633905962206285e-10
-Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
-Variable bound violation:   3.8149085927494298e-09    3.8149085927494298e-09
-Complementarity.........:   2.5208574363216334e-09    2.5208574363216334e-09
-Overall NLP error.......:   2.5208574363216334e-09    2.5208574363216334e-09
+Dual infeasibility......:   4.9610399122101967e-11    4.9610399122101967e-11
+Constraint violation....:   1.1102230246251565e-16    1.1102230246251565e-16
+Variable bound violation:   3.7777407618903988e-09    3.7777407618903988e-09
+Complementarity.........:   2.5059184508577800e-09    2.5059184508577800e-09
+Overall NLP error.......:   2.5059184508577800e-09    2.5059184508577800e-09
 
 
 Number of objective function evaluations             = 24
@@ -80,6 +84,6 @@ Number of inequality constraint evaluations          = 24
 Number of equality constraint Jacobian evaluations   = 22
 Number of inequality constraint Jacobian evaluations = 22
 Number of Lagrangian Hessian evaluations             = 21
-Total seconds in IPOPT                               = 0.008
+Total seconds in IPOPT                               = 0.010
 
-EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">-2.5000000015000046</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">3.1661775327358242e-15</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example5.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example4/">« Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a><a class="docs-footer-nextpage" href="../DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 13 January 2026 17:58">Tuesday 13 January 2026</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Optimal Solution Found.</pre><pre><code class="language-julia">primal_status(model)</code></pre><pre class="documenter-example-output">FEASIBLE_POINT::ResultStatusCode = 1</pre><pre><code class="language-julia">termination_status(model)</code></pre><pre class="documenter-example-output">LOCALLY_SOLVED::TerminationStatusCode = 4</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">-2.500000001499998</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">1.6974601166360806e-17</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example5.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FOBP_example4/">« Foundations of Bilevel Programming: Example Chapter 5.1, Page 127</a><a class="docs-footer-nextpage" href="../DTMP_example1/">Decomposition Techniques in Mathematical Programming: Example 7.4 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 2 March 2026 15:05">Monday 2 March 2026</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
