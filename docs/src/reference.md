@@ -3,8 +3,8 @@
 This section documents the BilevelJuMP API.
 
 As a JuMP extension, most JuMP functions should just work.
-Some JuMP function will return error saying they are not
-implemented for BileveJuMP structures such as `BilevelModel`.
+Some JuMP functions will return an error saying they are not
+implemented for BilevelJuMP structures such as `BilevelModel`.
 If that happens and you consider that function should be implemented,
 please, open an issue.
 
@@ -54,6 +54,7 @@ BilevelQuadExpr
 
 ```@docs
 BilevelJuMP.SOS1Mode
+BilevelJuMP.BigMMode
 BilevelJuMP.FortunyAmatMcCarlMode
 BilevelJuMP.IndicatorMode
 BilevelJuMP.ProductMode
@@ -89,4 +90,10 @@ BilevelJuMP.unset_copy_names
 BilevelJuMP.set_pass_start
 BilevelJuMP.get_pass_start
 BilevelJuMP.unset_pass_start
+```
+
+## Solving with MibS (experimental)
+
+```@docs
+BilevelJuMP.solve_with_MibS
 ```

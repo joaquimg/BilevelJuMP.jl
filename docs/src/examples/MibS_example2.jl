@@ -5,7 +5,7 @@
 # ```math
 # \min_{x} 2x -4y + 10z,\\
 # \notag s.t.\\
-# -3x + 2y + 2z \leq 12,\\ 
+# -3x + 2y + 2z \leq 12,\\
 # x + 2y \leq 20,\\
 # x \leq 10,\\
 # x \in \mathbb{Z}, z \in \mathbb{B},\\
@@ -37,7 +37,7 @@ model = BilevelModel()
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, 2x - 4y + 10z)
 
 # Upper constraints

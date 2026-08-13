@@ -23,7 +23,7 @@ julia> model = BilevelModel()
 
 Create a BilevelModel with the given `solver` and solve `mode`.
 
-* `solver`: is a functions that takes no arguments and returns a JuMP solver object.
+* `solver`: is a function that takes no arguments and returns a JuMP solver object.
 * `mode`: is a solve mode object that defines how the model is solved.
 * `add_bridges`: if `true` (default) then bridges are added to the model.
   If `false` then bridges are not added and the model is not modified.
@@ -45,7 +45,7 @@ and equivalent to
 ```jldoctest
 julia> model = BilevelModel()
 
-julia> BilevelJuMP.set_solver(model, HiGHS.Optimizer)
+julia> set_optimizer(model, HiGHS.Optimizer)
 
 julia> BilevelJuMP.set_mode(model, BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
 ```
@@ -66,7 +66,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
     # maps the BilevelVariableRef index
     # to JuMP variables of the correct level
-    # variable that appear in both levels are inboth dicts
+    # variable that appear in both levels are in both dicts
     var_upper::Dict{Int,JuMP.AbstractVariableRef}
     var_lower::Dict{Int,JuMP.AbstractVariableRef}
 
@@ -75,7 +75,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     var_info::Dict{Int,BilevelVariableInfo}
 
     # maps JuMP.VariableRef to BilevelVariableRef
-    # built upon necessity for getting contraints and functions
+    # built upon necessity for getting constraints and functions
     var_upper_rev::Union{
         Nothing,
         Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef},
@@ -121,7 +121,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     ctr_info::Dict{Int,BilevelConstraintInfo}
 
     # maps JuMP.ConstraintRef to BilevelConstraintRef
-    # built upon necessity for getting contraints and functions
+    # built upon necessity for getting constraints and functions
     ctr_upper_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
     ctr_lower_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
 
@@ -139,7 +139,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # from lower dual MOI indices
     # to mpec indices
     lower_dual_to_sblm::Any
-    # from mped indices to solver indices
+    # from mpec indices to solver indices
     sblm_to_solver::Any
     # lower primal to dual map
     # to obtain dual variables from primal constraints
@@ -223,7 +223,7 @@ function BilevelModel(
 end
 
 """
-    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)	
+    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
 
 Set the mode of a bilevel model.
 """
@@ -666,7 +666,7 @@ function JuMP.optimize!(
     moi_link = convert_indices(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
-    reset!(mode) # cleaup cached data
+    reset!(mode) # cleanup cached data
     # build bound for FortunyAmatMcCarlMode
     build_bounds!(model, mode)
 
@@ -723,7 +723,7 @@ function JuMP.optimize!(
         nlp_model = Model()
         nlp_model.moi_backend = solver
         nlp_model.nlp_model = model.upper.nlp_model
-        # TODO assert varible index ordering
+        # TODO assert variable index ordering
         vars_upper_orig = MOI.get(model.upper, MOI.ListOfVariableIndices())
         vars_in_solver = MOI.get(nlp_model, MOI.ListOfVariableIndices())
         for i in eachindex(vars_upper_orig) #less vars
@@ -974,7 +974,7 @@ function check_mixed_mode(mode)
 end
 
 """
-    set_mode(ci::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+    set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode)
 
 Set the mode of a constraint. This is used in `MixedMode` reformulations.
 """

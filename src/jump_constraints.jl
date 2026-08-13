@@ -168,7 +168,7 @@ end
 """
     set_dual_upper_bound_hint(cref, value)
 
-Set a upper bound to the dual variable of the constraint `cref` to `value`.
+Set an upper bound to the dual variable of the constraint `cref` to `value`.
 This bound will not be dualized.
 The dual upper bound hint is used to help the solution method.
 
@@ -178,7 +178,7 @@ Solution `mode`s can be benefitted from this hint:
   dual variable.
 
 * Other modes will be stabilized by the existence of the bounds on variables
-  that would otherwise no be bounded.
+  that would otherwise not be bounded.
 
 * Bounds that are not dualized are also useful for binary expansions of
   products of variables that can be done with `QuadraticToBinary.jl`.
@@ -223,7 +223,7 @@ Solution `mode`s can be benefitted from this hint:
   dual variable.
 
 * Other modes will be stabilized by the existence of the bounds on variables
-  that would otherwise no be bounded.
+  that would otherwise not be bounded.
 
 * Bounds that are not dualized are also useful for binary expansions of
   products of variables that can be done with `QuadraticToBinary.jl`.
@@ -258,7 +258,7 @@ end
 """
     set_primal_upper_bound_hint(vref, value)
 
-Set a upper bound to the prima variable `vref` to `value`.
+Set an upper bound to the primal variable `vref` to `value`.
 This bound will not be dualized.
 The upper bound hint is used to help the solution method.
 
@@ -268,7 +268,7 @@ Solution `mode`s can be benefitted from this hint:
   primal constraint variable.
 
 * Other modes will be stabilized by the existence of the bounds on variables
-  that would otherwise no be bounded.
+  that would otherwise not be bounded.
 
 * Bounds that are not dualized are also useful for binary expansions of
   products of variables that can be done with `QuadraticToBinary.jl`.
@@ -281,9 +281,9 @@ function set_primal_upper_bound_hint(
 end
 
 """
-    get_primal_upper_bound_hint(cref)
+    get_primal_upper_bound_hint(vref)
 
-Get the upper bound to the primal variable of the constraint `cref` that was
+Get the upper bound to the primal variable `vref` that was
 set with `set_primal_upper_bound_hint`.
 """
 function get_primal_upper_bound_hint(vref::BilevelVariableRef)
@@ -293,7 +293,7 @@ end
 """
     set_primal_lower_bound_hint(vref, value)
 
-Set a lower bound to the prima variable `vref` to `value`.
+Set a lower bound to the primal variable `vref` to `value`.
 This bound will not be dualized.
 The lower bound hint is used to help the solution method.
 
@@ -303,7 +303,7 @@ Solution `mode`s can be benefitted from this hint:
   primal constraint variable.
 
 * Other modes will be stabilized by the existence of the bounds on variables
-  that would otherwise no be bounded.
+  that would otherwise not be bounded.
 
 * Bounds that are not dualized are also useful for binary expansions of
   products of variables that can be done with `QuadraticToBinary.jl`.
@@ -316,9 +316,9 @@ function set_primal_lower_bound_hint(
 end
 
 """
-    get_primal_lower_bound_hint(cref)
+    get_primal_lower_bound_hint(vref)
 
-Get the lower bound to the primal variable of the constraint `cref` that was
+Get the lower bound to the primal variable `vref` that was
 set with `set_primal_lower_bound_hint`.
 """
 function get_primal_lower_bound_hint(vref::BilevelVariableRef)
@@ -397,7 +397,7 @@ function DualOf(::AbstractArray{<:T}) where {T<:JuMP.ConstraintRef}
         "Either do:\n" *
         "@variable(Upper(m), my_variable[t=1:N], " *
         "DualOf(my_constraint_vector[t]))\n" *
-        "Or use anonynous variables:\n" *
+        "Or use anonymous variables:\n" *
         "@variable(Upper(m), variable_type = DualOf(my_constraint_vector[t]))",
     )
 end
@@ -476,7 +476,7 @@ function JuMP.add_variable(
     return vref
 end
 
-function get_constrain_ref(vref::BilevelVariableRef)
+function get_constraint_ref(vref::BilevelVariableRef)
     model = vref.model
     ctr_ref = model.upper_var_to_lower_ctr_link[model.var_upper[vref.idx]]
     idx = -1
@@ -503,7 +503,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
         for vi in model_var_idxs
             push!(sblm_var_idxs, cref.model.lower_dual_to_sblm[vi])
         end
-        # Solver variable associated withe the sblm model
+        # Solver variable associated with the sblm model
         solver_var_idxs = MOI.VariableIndex[]
         for vi in sblm_var_idxs
             push!(solver_var_idxs, cref.model.sblm_to_solver[vi])
@@ -527,7 +527,7 @@ function JuMP.dual(cref::BilevelConstraintRef)
         )
     else
         error(
-            "Dual solutions of upper level constraints are not available. Either the solution method does nto porvide duals or or the solver failed to get one.",
+            "Dual solutions of upper level constraints are not available. Either the solution method does not provide duals or the solver failed to get one.",
         )
     end
 end

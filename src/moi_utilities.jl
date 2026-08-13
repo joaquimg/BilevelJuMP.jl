@@ -34,8 +34,8 @@ function append_to(
         This function follows closely the function `default_copy_to` defined in
         MathOptInterface.Utilities
         due to some caveats of this function we keep the commented functions
-        from the original function to highlight the differences and 
-        easen the burden of updating when `default_copy_to` is updated.
+        from the original function to highlight the differences and
+        ease the burden of updating when `default_copy_to` is updated.
     =#
 
     # MOI.empty!(dest)
@@ -63,12 +63,12 @@ function append_to(
         #     for S in single_variable_types
         # ]
     else
-        # the key asusmption here is that MOI keeps the following behaviour
+        # the key assumption here is that MOI keeps the following behaviour
         # "The copy is only done when
         # the variables to be copied are not already keys of `idxmap`. It returns a list
         # of the constraints copied and not copied."
         # from copy_single_variable and copy_vector_of_variables.
-        # this is very importante because variables are shered between
+        # this is very important because variables are shared between
         # upper, lower and lower dual levels
         constraints_not_added = Any[
             MOIU._try_constrain_variables_on_creation(dest, src, idxmap, S)
@@ -77,7 +77,7 @@ function append_to(
     end
 
     # MOIU.copy_free_variables(dest, idxmap, vis_src, MOI.add_variables)
-    # copy variables has a size check that dows not generalizes here
+    # copy variables has a size check that does not generalize here
     # because we have previously added variables
     for vi in vis_src
         if !haskey(idxmap.var_map, vi)

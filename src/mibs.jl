@@ -54,7 +54,7 @@ function _build_single_model(
         return upper_to_model_link[lower_to_upper_link[x]]
     end
 
-    # Testing if the model is MIP-MIP or not. 
+    # Testing if the model is MIP-MIP or not.
     if check_MIPMIP
         int_var = MOI.get(
             model,
@@ -109,7 +109,7 @@ function _index_to_column_link(model::MOI.FileFormats.MPS.Model)
     )
 end
 
-function _write_auxillary_file(
+function _write_auxiliary_file(
     new_model::MOI.FileFormats.MPS.Model,
     lower_variables::Vector{MOI.VariableIndex},
     lower_objective::MOI.ScalarAffineFunction,
@@ -256,24 +256,26 @@ end
 
 ## Inputs
 * `model::BilevelModel`: the model to optimize
-* `mibs_call`: shoul be `MibS_jll.mibs` remember to `import MibS_jll` before.
+* `mibs_call`: should be `MibS_jll.mibs`, remember to `import MibS_jll` before.
 * `verbose_results::Bool = false`: controls the verbosity of the solver output.
 If `verbose_results=false`, nothing is printed.
 Set to `true` to display the MibS output.
-* `verbose_file::Bool = false`: Writes MibS input files to screen.
+* `verbose_files::Bool = false`: Writes MibS input files to screen.
+* `debug_file_prefix::String = ""`: Prefix prepended to the names of the MibS
+input files saved to pwd() when `keep_files = true` or when MibS fails.
 * `keep_files::Bool = false`: Saves MibS input files to pwd().
 ## Outputs
 This function returns a `NamedTuple` with fields:
 * `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
 * `objective::Float64`: objective value (cost) of the upper problem
 * `nonzero_upper::Dict{Int, Float64}`: it returns `Dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here, the order of the variables is based on their order of appearance in the MPS file.
-* `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem. 
+* `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem.
 * `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
 * `all_lower::Dict{String, Float64}`: it has the same structure as the `all_upper` but is defined for lower variables.
-* `all_var::Dict{MOI.VariableIndex, Float64}`: it contains information on all variables (upper and lower) in the format of `MOI.VariableIndex` and their output values. 
+* `all_var::Dict{MOI.VariableIndex, Float64}`: it contains information on all variables (upper and lower) in the format of `MOI.VariableIndex` and their output values.
 
 !!! warning
-    Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error. 
+    Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error.
 """
 function solve_with_MibS(
     model::BilevelModel,
@@ -291,7 +293,7 @@ function solve_with_MibS(
             _build_single_model(model, true)
         # This MPS file must be strictly compliant with the format
         MOI.write_to_file(new_model, mps_filename)
-        _write_auxillary_file(
+        _write_auxiliary_file(
             new_model,
             variables,
             objective,

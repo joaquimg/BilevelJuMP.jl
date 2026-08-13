@@ -5,7 +5,7 @@
 # ```math
 # \min_{x} -3x -7y,\\
 # \notag s.t.\\
-# -3x + 2y \leq 12,\\ 
+# -3x + 2y \leq 12,\\
 # x + 2y \leq 20,\\
 # x \leq 10,\\
 # x \in \mathbb{Z},\\
@@ -36,7 +36,7 @@ model = BilevelModel()
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, -3x - 7y)
 
 # Upper constraints
