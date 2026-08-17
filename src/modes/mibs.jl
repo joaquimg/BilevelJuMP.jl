@@ -4,7 +4,7 @@
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
 """
-    MibSMode(mibs_call; verbose = false, check_integrality = true)
+    MibSMode(mibs_call; verbose = false, debug_dir = "", check_integrality = true)
 
 Solve the bilevel problem with [MibS](https://github.com/coin-or/MibS), an
 external mixed integer bilevel solver.
@@ -19,6 +19,10 @@ optimizer to attach and `set_optimizer` must not be called.
   and load it yourself, then pass `MibS_jll.mibs`.
 
 * `verbose` prints the MibS log.
+
+* `debug_dir` is a directory to copy the files given to MibS into, for
+  inspection. The default keeps them only when the solve fails, in which case
+  the error message reports where they were saved.
 
 * `check_integrality` errors if the model has a continuous variable. MibS may
   run forever instead of reporting an error on such a model, so this check is
@@ -59,12 +63,14 @@ value(y)
 mutable struct MibSMode{T} <: AbstractBilevelSolverMode{T}
     mibs_call::Any
     verbose::Bool
+    debug_dir::String
     check_integrality::Bool
     function MibSMode(
         mibs_call = nothing;
         verbose::Bool = false,
+        debug_dir::String = "",
         check_integrality::Bool = true,
     )
-        return new{Float64}(mibs_call, verbose, check_integrality)
+        return new{Float64}(mibs_call, verbose, debug_dir, check_integrality)
     end
 end

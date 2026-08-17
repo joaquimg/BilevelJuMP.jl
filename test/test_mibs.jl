@@ -7,12 +7,30 @@ module TestMIBS
 
 using BilevelJuMP
 using Test
-using MibS_jll
+
+# Tests named `test_solver_*` run the MibS binary; the rest only build the files
+# that would be handed to it, and so can run anywhere.
+const MIBS_AVAILABLE = try
+    @eval using MibS_jll
+    MibS_jll.is_available()
+catch
+    false
+end
+
+mibs_call() = MibS_jll.mibs
 
 function runtests()
+    if !MIBS_AVAILABLE
+        @warn "MibS is unavailable on this platform, running only the tests " *
+              "that do not need the binary."
+    end
     for name in names(@__MODULE__; all = true)
-        if startswith("$(name)", "test_")
-            @testset "$(name)" begin
+        s = "$(name)"
+        if startswith(s, "test_")
+            if startswith(s, "test_solver_") && !MIBS_AVAILABLE
+                continue
+            end
+            @testset "$(s)" begin
                 getfield(@__MODULE__, name)()
             end
         end
@@ -20,28 +38,12 @@ function runtests()
     return
 end
 
-function test_basic_example_1()
-    model = BilevelModel()
-    @variable(Upper(model), y, Int)
-    @variable(Upper(model), z, Int)
-    @variable(Lower(model), x, Int)
-    @objective(Upper(model), Min, 3x + y + z)
-    @constraints(Upper(model), begin
-        u1, x <= 5
-        u2, y <= 8
-        u3, y >= 0
-        u4, z >= 0
-    end)
-    @objective(Lower(model), Min, -x)
-    @constraint(Lower(model), l1, x + y <= 8)
-    @constraint(Lower(model), l2, 4x + y >= 8)
-    @constraint(Lower(model), l3, 2x + y <= 13)
-    @constraint(Lower(model), l4, 2x - 7y <= 0)
+function test_build_single_model_structure()
     new_model,
     lower_variables,
     lower_objective,
     lower_constraints,
-    lower_sense = BilevelJuMP._build_single_model(model)
+    lower_sense = BilevelJuMP._build_single_model(_mixed_sense_model())
     @test length(lower_variables) == 1
     @test MOI.get(new_model, MOI.NumberOfVariables()) == (2 + 1)
     @test length(lower_constraints) == (4 + 0)
@@ -63,23 +65,11 @@ function test_basic_example_1()
         new_model,
         MOI.NumberOfConstraints{MOI.VariableIndex,MOI.Integer}(),
     ) == 3
-    x = lower_variables[1]
     @test lower_objective ≈ MOI.ScalarAffineFunction{Float64}(
-        [MOI.ScalarAffineTerm(-1.0, x)],
+        [MOI.ScalarAffineTerm(-1.0, lower_variables[1])],
         0.0,
     )
     @test lower_sense == MOI.MIN_SENSE
-    solution = BilevelJuMP.solve_with_MibS(
-        model,
-        MibS_jll.mibs;
-        verbose_results = true,
-        verbose_files = true,
-        keep_files = true,
-    )
-    @test solution.status == true
-    @test solution.objective ≈ 8
-    @test solution.nonzero_upper == Dict(0 => 8)
-    @test solution.nonzero_lower == Dict{Int,Float64}()
     return
 end
 
@@ -323,8 +313,9 @@ function test_basic_example_6_integer_in_lower_level()
     return
 end
 
-function test_Writing_MibS_input_v1()
+function test_solver_example_1()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), y, Int)
     @variable(Upper(model), z, Int)
     @variable(Lower(model), x, Int)
@@ -340,17 +331,18 @@ function test_Writing_MibS_input_v1()
     @constraint(Lower(model), l2, 4x + y >= 8)
     @constraint(Lower(model), l3, 2x + y <= 13)
     @constraint(Lower(model), l4, 2x - 7y <= 0)
-    solution =
-        BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs; verbose_files = true)
-    @test solution.status == true
-    @test solution.objective ≈ 8
-    @test solution.nonzero_upper == Dict(0 => 8)
-    @test solution.nonzero_lower == Dict{Int,Float64}()
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ 8
+    @test value(y) ≈ 8
+    @test value(z) ≈ 0
+    @test value(x) ≈ 0
     return
 end
 
-function test_Writing_MibS_input_v2()
+function test_solver_example_2()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Lower(model), y, Int)
     @objective(Upper(model), Min, -3x - 7y)
@@ -363,18 +355,17 @@ function test_Writing_MibS_input_v2()
     @constraint(Lower(model), l1, 2x - y <= 7)
     @constraint(Lower(model), l2, -2x + 4y <= 16)
     @constraint(Lower(model), l3, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
-    @test solution.status == true
-    @test solution.objective ≈ -53
-    @test solution.nonzero_upper == Dict(0 => 6.0)
-    @test solution.nonzero_lower == Dict(0 => 5.0)
-    @test solution.all_upper["x"] == 6.0
-    @test solution.all_lower["y"] == 5.0
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ -53
+    @test value(x) ≈ 6
+    @test value(y) ≈ 5
     return
 end
 
-function test_Writing_MibS_input_v3()
+function test_solver_example_3()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Lower(model), y, Int)
     @objective(Upper(model), Min, -x - 10y)
@@ -385,16 +376,17 @@ function test_Writing_MibS_input_v3()
     @constraint(Lower(model), l3, 2x - y <= 15)
     @constraint(Lower(model), l4, -2x - 10y <= -15)
     @constraint(Lower(model), l5, y <= 5)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
-    @test solution.status == true
-    @test solution.objective ≈ -22
-    @test solution.nonzero_upper == Dict(0 => 2.0)
-    @test solution.nonzero_lower == Dict(0 => 2.0)
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ -22
+    @test value(x) ≈ 2
+    @test value(y) ≈ 2
     return
 end
 
-function test_Writing_MibS_input_v4()
+function test_solver_example_4()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Lower(model), y, Int)
     @objective(Upper(model), Min, -x - 10y)
@@ -403,16 +395,19 @@ function test_Writing_MibS_input_v4()
     @constraint(Lower(model), l2, x + 2y <= 10)
     @constraint(Lower(model), l3, 2x - y <= 15)
     @constraint(Lower(model), l4, -2x - 10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
-    @test solution.status == true
-    @test solution.objective ≈ -22
-    @test solution.nonzero_upper == Dict(0 => 2.0)
-    @test solution.nonzero_lower == Dict(0 => 2.0)
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ -22
+    @test value(x) ≈ 2
+    @test value(y) ≈ 2
     return
 end
 
-function test_Writing_MibS_input_v5()
+# Two upper level variables, which is what makes the per-variable values worth
+# asserting: they used to be read out by position within a block.
+function test_solver_example_5()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Upper(model), z, Int)
     @variable(Lower(model), y, Int)
@@ -425,20 +420,18 @@ function test_Writing_MibS_input_v5()
     @constraint(Lower(model), l2, x + 2y <= 10)
     @constraint(Lower(model), l3, 2x - y <= 15)
     @constraint(Lower(model), l4, -2x - 10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
-    @test solution.status == true
-    @test solution.objective ≈ -19
-    #@test solution.nonzero_upper == Dict(0 => 1.0)
-    #@test solution.nonzero_upper == Dict(0 => 2.0)
-    #@test solution.nonzero_lower == Dict(0 => 2.0)
-    @test solution.all_upper["x"] == 2
-    @test solution.all_upper["z"] == 1
-    @test solution.all_lower["y"] == 2
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ -19
+    @test value(x) ≈ 2
+    @test value(z) ≈ 1
+    @test value(y) ≈ 2
     return
 end
 
-function test_Writing_MibS_input_v6()
+function test_solver_example_6()
     model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Upper(model), z, Int)
     @variable(Lower(model), y, Int)
@@ -451,15 +444,30 @@ function test_Writing_MibS_input_v6()
     @constraint(Lower(model), l2, z + 2y <= 10)
     @constraint(Lower(model), l3, 2z - y <= 15)
     @constraint(Lower(model), l4, -2z - 10y <= -15)
-    solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
-    @test solution.status == true
-    @test solution.objective ≈ -19
-    #@test solution.nonzero_upper == Dict(0 => 2.0)
-    #@test solution.nonzero_upper == Dict(0 => 1.0)
-    #@test solution.nonzero_lower == Dict(0 => 2.0)
-    @test solution.all_upper["x"] == 1
-    @test solution.all_upper["z"] == 2
-    @test solution.all_lower["y"] == 2
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test objective_value(model) ≈ -19
+    @test value(x) ≈ 1
+    @test value(z) ≈ 2
+    @test value(y) ≈ 2
+    return
+end
+
+function test_solver_infeasible()
+    model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, x <= 1)
+    @constraint(Upper(model), u2, x >= 3)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1, y <= 5)
+    @constraint(Lower(model), l2, y >= 0)
+    optimize!(model)
+    @test termination_status(model) == MOI.INFEASIBLE
+    @test primal_status(model) == MOI.NO_SOLUTION
+    @test occursin("infeasible", raw_status(model))
     return
 end
 
@@ -682,7 +690,7 @@ end
 
 function _mode_model(; sense = MOI.MIN_SENSE)
     model = BilevelModel()
-    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(MibS_jll.mibs))
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Lower(model), y, Int)
     if sense == MOI.MAX_SENSE
@@ -702,7 +710,7 @@ function _mode_model(; sense = MOI.MIN_SENSE)
     return model, x, y, l1
 end
 
-function test_mode_solve_and_query()
+function test_solver_mode_solve_and_query()
     model, x, y, l1 = _mode_model()
     optimize!(model)
     @test termination_status(model) == MOI.OPTIMAL
@@ -723,7 +731,7 @@ end
 
 # The MPS file carries a negated objective when the upper level is a
 # maximization, so the value has to be evaluated rather than read from MibS.
-function test_mode_maximization_upper_objective()
+function test_solver_mode_maximization_upper_objective()
     model, x, y, _ = _mode_model(; sense = MOI.MAX_SENSE)
     optimize!(model)
     @test value(x) ≈ 6
@@ -732,9 +740,9 @@ function test_mode_maximization_upper_objective()
     return
 end
 
-function test_mode_binary_variable()
+function test_solver_mode_binary_variable()
     model = BilevelModel()
-    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(MibS_jll.mibs))
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(mibs_call()))
     @variable(Upper(model), x, Int)
     @variable(Upper(model), z, Bin)
     @variable(Lower(model), y, Int)
@@ -756,7 +764,7 @@ function test_mode_binary_variable()
     return
 end
 
-function test_mode_queries_that_need_an_optimizer()
+function test_solver_mode_queries_that_need_an_optimizer()
     model, x, _, l1 = _mode_model()
     optimize!(model)
     @test_throws ErrorException dual(l1)
@@ -782,7 +790,7 @@ function test_mode_requires_an_executable()
     return
 end
 
-function test_mode_results_before_optimize()
+function test_solver_mode_results_before_optimize()
     model, x, _, _ = _mode_model()
     @test_throws ErrorException termination_status(model)
     @test_throws ErrorException objective_value(model)
@@ -790,7 +798,7 @@ function test_mode_results_before_optimize()
     return
 end
 
-function test_mode_rejects_an_attached_optimizer()
+function test_solver_mode_rejects_an_attached_optimizer()
     model, _, _, _ = _mode_model()
     set_optimizer(
         model,

@@ -24,7 +24,12 @@ using BilevelJuMP
 using Test
 using MibS_jll
 
+# MibS is an external solver rather than a JuMP optimizer, so it is selected
+# with a `mode` and needs no `set_optimizer`. `MibS_jll` is not a dependency of
+# BilevelJuMP, so its executable is passed in explicitly.
+
 model = BilevelModel()
+BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(MibS_jll.mibs))
 
 # First we need to create all of the variables in the upper and lower problems:
 
@@ -56,13 +61,22 @@ end)
 @constraint(Lower(model), l2, -2x + 4y <= 16)
 @constraint(Lower(model), l3, y <= 5)
 
-# Using MibS Solver
-solution = BilevelJuMP.solve_with_MibS(model, MibS_jll.mibs)
+# Now we can solve the problem and query the solution with the usual JuMP
+# functions:
+
+optimize!(model)
+
+termination_status(model)
+
+objective_value(model)
+
+value(x)
+
+value(y)
 
 # Auto testing
-@test solution.status == true
-@test solution.objective ≈ -53
-@test solution.nonzero_upper == Dict(0 => 6.0)
-@test solution.nonzero_lower == Dict(0 => 5.0)
-@test solution.all_upper["x"] == 6.0
-@test solution.all_lower["y"] == 5.0
+@test termination_status(model) == MOI.OPTIMAL
+@test primal_status(model) == MOI.FEASIBLE_POINT
+@test objective_value(model) ≈ -53
+@test value(x) ≈ 6.0
+@test value(y) ≈ 5.0

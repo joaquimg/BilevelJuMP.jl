@@ -52,6 +52,15 @@
 #     of variables created or they will have to be used in conjunction with
 #     `QuadraticToBinary.jl`.
 #
+# - `BilevelJuMP.MibSMode(mibs_call)`: this mode is not a reformulation either.
+#     It hands the problem to [MibS](https://github.com/coin-or/MibS), an
+#     external mixed integer bilevel solver, so no `set_optimizer` call is
+#     needed. It requires both levels to be linear and every variable to be
+#     integer. The executable comes from the `MibS_jll` package, which is not a
+#     dependency of BilevelJuMP, so it is passed in explicitly:
+#     `BilevelJuMP.MibSMode(MibS_jll.mibs)`. Dual solutions are not available.
+#     See the MibS examples for a complete model.
+#
 #
 # The following example shows how to solve a classic bilevel problem.
 

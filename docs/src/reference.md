@@ -61,6 +61,7 @@ BilevelJuMP.ProductMode
 BilevelJuMP.StrongDualityMode
 BilevelJuMP.ComplementMode
 BilevelJuMP.MixedMode
+BilevelJuMP.MibSMode
 ```
 
 ## Bound hints
@@ -90,10 +91,4 @@ BilevelJuMP.unset_copy_names
 BilevelJuMP.set_pass_start
 BilevelJuMP.get_pass_start
 BilevelJuMP.unset_pass_start
-```
-
-## Solving with MibS (experimental)
-
-```@docs
-BilevelJuMP.solve_with_MibS
 ```

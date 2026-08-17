@@ -316,212 +316,55 @@ function _write_auxiliary_file(
     return ordered_variables
 end
 
+const _MIBS_OUTPUT_FILE = "mibs_output.txt"
+const _MIBS_ERROR_FILE = "mibs_errors.txt"
+
+# Returns the contents of MibS's standard output and standard error, and whether
+# the process exited with a non-zero code.
 function _call_mibs(mps_filename, aux_filename, mibs_call)
     #=
-    MibS fail randomly in win ci if io = IOBuffer()
-    writing to file has shown to be more robust
+    MibS fails randomly in win ci if io = IOBuffer(), writing to file has shown
+    to be more robust. The logs are written next to the input files, that is,
+    inside the temporary directory, so that nothing is left behind in the
+    working directory.
     =#
-    io = "mibs_output.txt"
-    # write(io, "\n BilevelJuMP Calling MibS \n")
-    io_err = "mibs_errors.txt"
-    mibs_call() do exe
-        return run(
-            pipeline(
-                `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`;
-                stdout = io,
-                stderr = io_err,
-            ),
-        )
+    dir = dirname(mps_filename)
+    io = joinpath(dir, _MIBS_OUTPUT_FILE)
+    io_err = joinpath(dir, _MIBS_ERROR_FILE)
+    failed = false
+    try
+        mibs_call() do exe
+            return run(
+                pipeline(
+                    `$(exe) -Alps_instance $(mps_filename) -MibS_auxiliaryInfoFile $(aux_filename)`;
+                    stdout = io,
+                    stderr = io_err,
+                ),
+            )
+        end
+    catch e
+        # A crashing MibS is reported by the caller, which has the log files it
+        # needs to say something useful about it.
+        e isa Base.ProcessFailedException || rethrow()
+        failed = true
     end
-    # seekstart(io_err)
-    # seekstart(io)
-    return read(io, String), read(io_err, String)
+    output = isfile(io) ? read(io, String) : ""
+    errors = isfile(io_err) ? read(io_err, String) : ""
+    return output, errors, failed
 end
 
-function _parse_output(
-    output::String,
-    new_model::MOI.FileFormats.MPS.Model,
-    lower_variables::Vector{MOI.VariableIndex},
-)
-    lines = split(output, '\n')
-    found_status = false
-    objective_value = NaN
-
-    upper = Dict{Int,Float64}()
-    lower = Dict{Int,Float64}()
-
-    all_var = MOI.get(new_model, MOI.ListOfVariableIndices())
-
-    CntU = 0
-    CntD = 0
-
-    Dict_Lower_Name = Dict()
-    Dict_Lower_Value = Dict()
-    Dict_Upper_Name = Dict()
-    Dict_Upper_Value = Dict()
-    Dict_Upper_IndexToModel = Dict()
-    Dict_Lower_IndexToModel = Dict()
-    Dict_All = Dict()
-
-    for (x, y) in MOI.enumerate(all_var)
-        nameofvar = MOI.get(new_model, MOI.VariableName(), y)
-        if y in lower_variables
-            Dict_Lower_Name[CntD] = nameofvar
-            Dict_Lower_Value[nameofvar] = 0
-            Dict_Lower_IndexToModel[CntD] = y
-            CntD = CntD + 1
-        else
-            Dict_Upper_Name[CntU] = nameofvar
-            Dict_Upper_Value[nameofvar] = 0
-            Dict_Upper_IndexToModel[CntU] = y
-            CntU = CntU + 1
-        end
-        Dict_All[y] = 0
-    end
-
-    for line in lines
-        if !found_status
-            if occursin("Optimal solution", line)
-                found_status = true
-            end
-            continue
-        end
-        m = match(r"([xy])\[([0-9]+)\] \= (.+)", line)
-        if m === nothing
-            m = match(r"Cost \= (.+)", line)
-            if m !== nothing
-                objective_value = parse(Float64, m[1])
-            end
-            continue
-        end
-
-        column = parse(Int, m[2])
-        value = parse(Float64, m[3])
-
-        if m[1] == "x"
-            upper[column] = value
-            nameofvar = Dict_Upper_Name[column]
-            Dict_Upper_Value[nameofvar] = value
-            indexofvar = Dict_Upper_IndexToModel[column]
-            Dict_All[indexofvar] = value
-        else
-            lower[column] = value
-            nameofvar = Dict_Lower_Name[column]
-            Dict_Lower_Value[nameofvar] = value
-            indexofvar = Dict_Lower_IndexToModel[column]
-            Dict_All[indexofvar] = value
+# The input files and logs live in a temporary directory that is deleted as soon
+# as the solve returns, so they have to be copied out before that happens.
+function _save_mibs_files(path::String, debug_dir::String)
+    destination = isempty(debug_dir) ? mktempdir(; cleanup = false) : debug_dir
+    mkpath(destination)
+    for name in ("model.mps", "model.aux", _MIBS_OUTPUT_FILE, _MIBS_ERROR_FILE)
+        source = joinpath(path, name)
+        if isfile(source)
+            cp(source, joinpath(destination, name); force = true)
         end
     end
-
-    return (
-        status = found_status,
-        objective = objective_value,
-        nonzero_upper = upper,
-        nonzero_lower = lower,
-        all_upper = Dict_Upper_Value,
-        all_lower = Dict_Lower_Value,
-        all_var = Dict_All,
-    )
-end
-
-"""
-    solve_with_MibS(model::BilevelModel, mibs_call; kwargs...)
-
-## Inputs
-* `model::BilevelModel`: the model to optimize
-* `mibs_call`: should be `MibS_jll.mibs`, remember to `import MibS_jll` before.
-* `verbose_results::Bool = false`: controls the verbosity of the solver output.
-If `verbose_results=false`, nothing is printed.
-Set to `true` to display the MibS output.
-* `verbose_files::Bool = false`: Writes MibS input files to screen.
-* `debug_file_prefix::String = ""`: Prefix prepended to the names of the MibS
-input files saved to pwd() when `keep_files = true` or when MibS fails.
-* `keep_files::Bool = false`: Saves MibS input files to pwd().
-* `check_integrality::Bool = true`: Errors if any variable is continuous. MibS
-may run forever instead of reporting an error on such a model, so this check is
-on by default. Set to `false` to attempt the solve anyway.
-## Outputs
-This function returns a `NamedTuple` with fields:
-* `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
-* `objective::Float64`: objective value (cost) of the upper problem
-* `nonzero_upper::Dict{Int, Float64}`: it returns `Dict{index => value}`, in which the `index` refers to the index of upper variables with non zero values and the index starts from `0`. Here, the order of the variables is based on their order of appearance in the MPS file.
-* `nonzero_lower::Dict{Int, Float64}`: it has the same structure as `nonzero_upper`, but it represents the index of non-zero variables in the lower problem.
-* `all_upper::Dict{String, Float64}`: it returns `Dict{name => value}` which contains all upper variables values (zero and non-zero). For recalling the variables, you need to use the same name as you used to define the variables, e.g., for `@variable(Upper(model), y, Int)`, we need to use `all_upper["y"]` to get the value of the variable `y`.
-* `all_lower::Dict{String, Float64}`: it has the same structure as the `all_upper` but is defined for lower variables.
-* `all_var::Dict{MOI.VariableIndex, Float64}`: it contains information on all variables (upper and lower) in the format of `MOI.VariableIndex` and their output values.
-
-!!! warning
-    Currently, `MibS` is designed to solve MIP-MIP problems only. Thus, if you define LP-MIP, MIP-LP, or LP-LP, it will throw an error.
-"""
-function solve_with_MibS(
-    model::BilevelModel,
-    mibs_call;
-    verbose_results::Bool = false,
-    verbose_files::Bool = false,
-    debug_file_prefix = "",
-    keep_files::Bool = false,
-    check_integrality::Bool = true,
-)
-    orig_path = pwd()
-    mktempdir() do path
-        mps_filename = joinpath(path, "model.mps")
-        aux_filename = joinpath(path, "model.aux")
-        new_model, variables, objective, constraints, sense =
-            _build_single_model(model, check_integrality)
-        # This MPS file must be strictly compliant with the format
-        MOI.write_to_file(new_model, mps_filename)
-        _write_auxiliary_file(
-            new_model,
-            variables,
-            objective,
-            constraints,
-            sense,
-            mps_filename,
-            aux_filename,
-        )
-        if verbose_files
-            @show mps_filename
-            print(read(mps_filename, String))
-            @show aux_filename
-            print(read(aux_filename, String))
-        end
-        output, err = _call_mibs(mps_filename, aux_filename, mibs_call)
-        if length(err) > 0 || keep_files
-            mps_db = joinpath(orig_path, debug_file_prefix * "model.mps")
-            aux_db = joinpath(orig_path, debug_file_prefix * "model.aux")
-            try
-                cp(mps_filename, mps_db; force = true)
-            catch e
-                println(
-                    "BilevelJuMP failed to write debug file $mps_db: with $e",
-                )
-            end
-            try
-                cp(aux_filename, aux_db; force = true)
-            catch e
-                println(
-                    "BilevelJuMP failed to write debug file $aux_db: with $e",
-                )
-            end
-        end
-        if length(err) > 0
-            mibs_error =
-                "MibS returned:\n\n" *
-                "$err\n\n" *
-                "MibS input files can be found at:\n" *
-                "* $mps_db\n" *
-                "* $aux_db\n\n" *
-                "Please include these files if you open an issue.\n"
-            error(mibs_error)
-        end
-        if length(output) == 0
-            error("MibS failed to return")
-        end
-        if verbose_results
-            println(output)
-        end
-        return _parse_output(output, new_model, variables)
-    end
+    return destination
 end
 
 #=
@@ -554,15 +397,21 @@ end
 
 # MibS reports values as `x[i]` for the upper level block and `y[i]` for the
 # lower level block, numbered from zero within each block, and only after it
-# announces an optimal solution.
+# announces an optimal solution. It reports infeasibility through the underlying
+# ALPS search, hence the two different markers.
 function _parse_mibs_solution(output::AbstractString, upper, lower)
     lines = split(output, '\n')
-    start = findfirst(l -> occursin("Optimal solution", l), lines)
     values = Dict{MOI.VariableIndex,Float64}()
+    start = findfirst(l -> occursin("Optimal solution", l), lines)
     if start === nothing
+        infeasible = findfirst(l -> occursin("Problem is infeasible", l), lines)
+        if infeasible !== nothing
+            raw = String(strip(lines[infeasible]))
+            return MOI.INFEASIBLE, MOI.NO_SOLUTION, raw, values
+        end
         last_line = findlast(l -> !isempty(strip(l)), lines)
-        raw = last_line === nothing ? "" : strip(lines[last_line])
-        return MOI.OTHER_ERROR, MOI.NO_SOLUTION, String(raw), values
+        raw = last_line === nothing ? "" : String(strip(lines[last_line]))
+        return MOI.OTHER_ERROR, MOI.NO_SOLUTION, raw, values
     end
     for v in vcat(upper, lower)
         values[v] = 0.0
@@ -620,16 +469,28 @@ function _optimize!(model::BilevelModel, mode::MibSMode; kwargs...)
         )
         t1 = time()
         model.build_time = t1 - t0
-        output, err = _call_mibs(mps_filename, aux_filename, mode.mibs_call)
+        output, err, failed =
+            _call_mibs(mps_filename, aux_filename, mode.mibs_call)
         model.solve_time = time() - t1
-        if length(err) > 0
-            error("MibS returned:\n\n$(err)\n")
-        end
-        if length(output) == 0
-            error("MibS failed to return")
-        end
         if mode.verbose
             println(output)
+        end
+        if !isempty(mode.debug_dir)
+            _save_mibs_files(path, mode.debug_dir)
+        end
+        if failed || length(err) > 0 || length(output) == 0
+            saved = _save_mibs_files(path, mode.debug_dir)
+            reason = if failed
+                "MibS exited with a non-zero status."
+            elseif length(err) > 0
+                "MibS wrote to standard error:\n\n$(err)"
+            else
+                "MibS produced no output."
+            end
+            error(
+                "$(reason)\n\nThe files given to MibS were saved to:\n" *
+                "  $(saved)\n\nPlease include them if you open an issue.",
+            )
         end
         _, columns = _mps_row_and_column_order(mps_filename)
         lower_set = Set(ordered_lower)
