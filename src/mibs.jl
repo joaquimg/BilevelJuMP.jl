@@ -9,6 +9,17 @@ function _build_single_model(
     model::BilevelModel,
     check_integrality::Bool = false,
 )
+    ret = _build_single_model_with_map(model, check_integrality)
+    return ret[1], ret[2], ret[3], ret[4], ret[5]
+end
+
+# As `_build_single_model`, but also returns the map from the upper level
+# variables to those of the merged model, which is what ties a solution
+# reported by MibS back to the `BilevelModel`.
+function _build_single_model_with_map(
+    model::BilevelModel,
+    check_integrality::Bool = false,
+)
     _assert_mibs_supported(model)
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
@@ -17,7 +28,7 @@ function _build_single_model(
     lower_only = Dict(
         JuMP.index(k) => JuMP.index(v) for (k, v) in model.lower_to_upper_link
     )
-    return _build_single_model(
+    return _build_single_model_with_map(
         upper,
         lower,
         lower_to_upper,
@@ -112,7 +123,7 @@ function _assert_supported_constraints(model::MOI.ModelLike, level::String)
     return
 end
 
-function _build_single_model(
+function _build_single_model_with_map(
     upper::MOI.ModelLike,
     lower::MOI.ModelLike,
     lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
@@ -154,7 +165,8 @@ function _build_single_model(
     lower_variables,
     lower_objective,
     lower_constraints,
-    lower_sense
+    lower_sense,
+    upper_to_model_link
 end
 
 # Every lower level variable must also be known to the upper level, which is the
@@ -269,30 +281,39 @@ function _write_auxiliary_file(
     row_names, column_names = _mps_row_and_column_order(mps_filename)
     rows = Dict(name => i - 1 for (i, name) in enumerate(row_names))
     cols = Dict(name => i - 1 for (i, name) in enumerate(column_names))
+    function column_of(x)
+        name = MOI.get(new_model, MOI.VariableName(), x)
+        return _mibs_index(cols, name, "variable")
+    end
+    # MibS numbers the lower level variables within a block of their own, and
+    # the lower objective coefficients are read in the same order as the `LC`
+    # lines. Emitting them in ascending column order makes that block numbering
+    # agree with the column order of the MPS file, which is what lets the values
+    # MibS reports be matched back to variables.
+    ordered_variables = sort(lower_variables; by = column_of)
     obj_coefficients =
-        Dict{MOI.VariableIndex,Float64}(x => 0.0 for x in lower_variables)
+        Dict{MOI.VariableIndex,Float64}(x => 0.0 for x in ordered_variables)
     for term in lower_objective.terms
         if haskey(obj_coefficients, term.variable)
             obj_coefficients[term.variable] += term.coefficient
         end
     end
     open(aux_filename, "w") do io
-        println(io, "N $(length(lower_variables))")
+        println(io, "N $(length(ordered_variables))")
         println(io, "M $(length(lower_constraints))")
-        for x in lower_variables
-            name = MOI.get(new_model, MOI.VariableName(), x)
-            println(io, "LC $(_mibs_index(cols, name, "variable"))")
+        for x in ordered_variables
+            println(io, "LC $(column_of(x))")
         end
         for y in lower_constraints
             name = MOI.get(new_model, MOI.ConstraintName(), y)
             println(io, "LR $(_mibs_index(rows, name, "constraint"))")
         end
-        for x in lower_variables
+        for x in ordered_variables
             println(io, "LO $(obj_coefficients[x])")
         end
         return println(io, "OS ", lower_sense == MOI.MAX_SENSE ? -1 : 1)
     end
-    return
+    return ordered_variables
 end
 
 function _call_mibs(mps_filename, aux_filename, mibs_call)
@@ -501,4 +522,191 @@ function solve_with_MibS(
         end
         return _parse_output(output, new_model, variables)
     end
+end
+
+#=
+    Solving through `MibSMode`.
+
+    MibS is an external executable rather than a MathOptInterface optimizer, so
+    the results cannot live in `model.solver` like they do for every other mode.
+    They are collected here into a `MibSSolution` stored on the model, and the
+    JuMP accessors are routed to it by dispatching on the mode.
+=#
+
+mutable struct MibSSolution
+    termination_status::MOI.TerminationStatusCode
+    primal_status::MOI.ResultStatusCode
+    raw_status::String
+    objective_value::Float64
+    # keyed by `BilevelVariableRef.idx`
+    primal::Dict{Int,Float64}
+end
+
+function _mibs_solution(model::BilevelModel)
+    if model.solution === nothing
+        error(
+            "No solution available: call `optimize!(model)` before querying " *
+            "results.",
+        )
+    end
+    return model.solution::MibSSolution
+end
+
+# MibS reports values as `x[i]` for the upper level block and `y[i]` for the
+# lower level block, numbered from zero within each block, and only after it
+# announces an optimal solution.
+function _parse_mibs_solution(output::AbstractString, upper, lower)
+    lines = split(output, '\n')
+    start = findfirst(l -> occursin("Optimal solution", l), lines)
+    values = Dict{MOI.VariableIndex,Float64}()
+    if start === nothing
+        last_line = findlast(l -> !isempty(strip(l)), lines)
+        raw = last_line === nothing ? "" : strip(lines[last_line])
+        return MOI.OTHER_ERROR, MOI.NO_SOLUTION, String(raw), values
+    end
+    for v in vcat(upper, lower)
+        values[v] = 0.0
+    end
+    for line in lines[(start+1):end]
+        m = match(r"([xy])\[([0-9]+)\] *= *(.+)", line)
+        m === nothing && continue
+        block = m[1] == "x" ? upper : lower
+        i = parse(Int, m[2]) + 1
+        if 1 <= i <= length(block)
+            values[block[i]] = parse(Float64, strip(m[3]))
+        end
+    end
+    return MOI.OPTIMAL, MOI.FEASIBLE_POINT, String(strip(lines[start])), values
+end
+
+function _optimize!(model::BilevelModel, mode::MibSMode; kwargs...)
+    if mode.mibs_call === nothing
+        error(
+            "No MibS executable was given to `MibSMode`. MibS is not a " *
+            "dependency of BilevelJuMP: install and load `MibS_jll`, then " *
+            "build the mode with `BilevelJuMP.MibSMode(MibS_jll.mibs)`.",
+        )
+    end
+    if model.solver !== nothing
+        error(
+            "`MibSMode` solves the problem with the external MibS executable " *
+            "and cannot use an optimizer attached with `set_optimizer`.",
+        )
+    end
+    model.solution = nothing
+    model.build_time = NaN
+    model.solve_time = NaN
+    t0 = time()
+    return mktempdir() do path
+        mps_filename = joinpath(path, "model.mps")
+        aux_filename = joinpath(path, "model.aux")
+        new_model,
+        lower_variables,
+        lower_objective,
+        lower_constraints,
+        lower_sense,
+        upper_to_model =
+            _build_single_model_with_map(model, mode.check_integrality)
+        # This MPS file must be strictly compliant with the format
+        MOI.write_to_file(new_model, mps_filename)
+        ordered_lower = _write_auxiliary_file(
+            new_model,
+            lower_variables,
+            lower_objective,
+            lower_constraints,
+            lower_sense,
+            mps_filename,
+            aux_filename,
+        )
+        t1 = time()
+        model.build_time = t1 - t0
+        output, err = _call_mibs(mps_filename, aux_filename, mode.mibs_call)
+        model.solve_time = time() - t1
+        if length(err) > 0
+            error("MibS returned:\n\n$(err)\n")
+        end
+        if length(output) == 0
+            error("MibS failed to return")
+        end
+        if mode.verbose
+            println(output)
+        end
+        _, columns = _mps_row_and_column_order(mps_filename)
+        lower_set = Set(ordered_lower)
+        by_name = Dict(
+            MOI.get(new_model, MOI.VariableName(), v) => v for
+            v in MOI.get(new_model, MOI.ListOfVariableIndices())
+        )
+        ordered_upper =
+            [by_name[name] for name in columns if !(by_name[name] in lower_set)]
+        status, primal_status, raw, values =
+            _parse_mibs_solution(output, ordered_upper, ordered_lower)
+        primal = Dict{Int,Float64}()
+        for (idx, v) in model.var_upper
+            vi = JuMP.index(v)
+            if haskey(upper_to_model, vi) && haskey(values, upper_to_model[vi])
+                primal[idx] = values[upper_to_model[vi]]
+            end
+        end
+        model.solution = MibSSolution(status, primal_status, raw, NaN, primal)
+        if status == MOI.OPTIMAL
+            # Evaluated rather than read from the MibS log, which reports the
+            # objective of the MPS file. That file carries a negated objective
+            # when the upper level is a maximization.
+            model.solution.objective_value =
+                JuMP.value(JuMP.objective_function(Upper(model)))
+        end
+        return nothing
+    end
+end
+
+function _termination_status(model::BilevelModel, ::MibSMode)
+    return _mibs_solution(model).termination_status
+end
+
+function _primal_status(model::BilevelModel, ::MibSMode)
+    return _mibs_solution(model).primal_status
+end
+
+function _raw_status(model::BilevelModel, ::MibSMode)
+    return _mibs_solution(model).raw_status
+end
+
+function _solver_name(::BilevelModel, ::MibSMode)
+    return "MibS"
+end
+
+function _objective_value(model::BilevelModel, ::MibSMode)
+    return _mibs_solution(model).objective_value
+end
+
+function _value(v::BilevelVariableRef, ::MibSMode; result::Int = 1)::Float64
+    if result != 1
+        error("MibS only provides a single solution.")
+    end
+    primal = _mibs_solution(owner_model(v)).primal
+    if !haskey(primal, v.idx)
+        error("No value available for $(v).")
+    end
+    return primal[v.idx]
+end
+
+# There is no solver to ask for a constraint primal, so evaluate the constraint
+# function at the solution instead.
+function _value(cref::BilevelConstraintRef, ::MibSMode; result::Int = 1)
+    if result != 1
+        error("MibS only provides a single solution.")
+    end
+    model = cref.model
+    level = _in_upper(cref) ? Upper(model) : Lower(model)
+    func = JuMP.constraint_object(_raw_ref(cref)).func
+    return JuMP.value(_reverse_replace_variable(func, level))
+end
+
+function _dual(::BilevelConstraintRef, ::MibSMode)
+    return error(
+        "Dual solutions are not available when solving with " *
+        "`BilevelJuMP.MibSMode`: MibS solves the bilevel problem directly and " *
+        "never forms the dual of the lower level.",
+    )
 end

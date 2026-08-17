@@ -675,6 +675,145 @@ function test_unsupported_conic_constraint()
     return
 end
 
+#=
+    Solving through `MibSMode`, where results are queried with the ordinary JuMP
+    functions rather than from a returned NamedTuple.
+=#
+
+function _mode_model(; sense = MOI.MIN_SENSE)
+    model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(MibS_jll.mibs))
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
+    if sense == MOI.MAX_SENSE
+        @objective(Upper(model), Max, 3x + 7y)
+    else
+        @objective(Upper(model), Min, -3x - 7y)
+    end
+    @constraints(Upper(model), begin
+        u1, -3x + 2y <= 12
+        u2, x + 2y <= 20
+        u3, x <= 10
+    end)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1, 2x - y <= 7)
+    @constraint(Lower(model), l2, -2x + 4y <= 16)
+    @constraint(Lower(model), l3, y <= 5)
+    return model, x, y, l1
+end
+
+function test_mode_solve_and_query()
+    model, x, y, l1 = _mode_model()
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test primal_status(model) == MOI.FEASIBLE_POINT
+    @test solver_name(model) == "MibS"
+    @test occursin("Optimal", raw_status(model))
+    @test value(x) ≈ 6
+    @test value(y) ≈ 5
+    @test objective_value(model) ≈ -53
+    @test objective_value(Upper(model)) ≈ -53
+    @test objective_value(Lower(model)) ≈ 5
+    # No solver to ask, so the constraint function is evaluated instead.
+    @test value(l1) ≈ 2 * 6 - 5
+    @test BilevelJuMP.build_time(model) >= 0
+    @test solve_time(model) >= 0
+    return
+end
+
+# The MPS file carries a negated objective when the upper level is a
+# maximization, so the value has to be evaluated rather than read from MibS.
+function test_mode_maximization_upper_objective()
+    model, x, y, _ = _mode_model(; sense = MOI.MAX_SENSE)
+    optimize!(model)
+    @test value(x) ≈ 6
+    @test value(y) ≈ 5
+    @test objective_value(model) ≈ 53
+    return
+end
+
+function test_mode_binary_variable()
+    model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode(MibS_jll.mibs))
+    @variable(Upper(model), x, Int)
+    @variable(Upper(model), z, Bin)
+    @variable(Lower(model), y, Int)
+    @objective(Upper(model), Min, 2x - 4y + 10z)
+    @constraints(Upper(model), begin
+        u1, -3x + 2y + 5z <= 12
+        u2, x + 2y <= 20
+        u3, x <= 10
+    end)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1, 2x - y + 3z <= 7)
+    @constraint(Lower(model), l2, -2x + 4y <= 16)
+    @constraint(Lower(model), l3, y <= 5)
+    optimize!(model)
+    @test objective_value(model) ≈ -8
+    @test value(x) ≈ 6
+    @test value(z) ≈ 0
+    @test value(y) ≈ 5
+    return
+end
+
+function test_mode_queries_that_need_an_optimizer()
+    model, x, _, l1 = _mode_model()
+    optimize!(model)
+    @test_throws ErrorException dual(l1)
+    @test_throws ErrorException dual_status(Upper(model))
+    @test_throws ErrorException dual_status(Lower(model))
+    @test_throws ErrorException objective_bound(model)
+    @test_throws ErrorException relative_gap(model)
+    @test_throws ErrorException set_silent(model)
+    @test_throws ErrorException set_time_limit_sec(model, 10.0)
+    return
+end
+
+function test_mode_requires_an_executable()
+    model = BilevelModel()
+    BilevelJuMP.set_mode(model, BilevelJuMP.MibSMode())
+    @variable(Upper(model), x, Int)
+    @variable(Lower(model), y, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, x <= 5)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @test_throws ErrorException optimize!(model)
+    return
+end
+
+function test_mode_results_before_optimize()
+    model, x, _, _ = _mode_model()
+    @test_throws ErrorException termination_status(model)
+    @test_throws ErrorException objective_value(model)
+    @test_throws ErrorException value(x)
+    return
+end
+
+function test_mode_rejects_an_attached_optimizer()
+    model, _, _, _ = _mode_model()
+    set_optimizer(
+        model,
+        () -> MOI.Utilities.MockOptimizer(
+            MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()),
+        ),
+    )
+    @test_throws ErrorException optimize!(model)
+    return
+end
+
+function test_no_mode_selected()
+    model = BilevelModel()
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, x <= 5)
+    @objective(Lower(model), Min, y)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @test_throws ErrorException optimize!(model)
+    return
+end
+
 end  # module TestMIBS
 
 TestMIBS.runtests()

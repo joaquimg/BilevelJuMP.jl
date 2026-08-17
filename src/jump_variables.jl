@@ -311,6 +311,14 @@ end
 
 function JuMP.value(v::BilevelVariableRef; result::Int = 1)::Float64
     m = owner_model(v)
+    return _value(v, m.mode; result = result)
+end
+function _value(
+    v::BilevelVariableRef,
+    ::AbstractBilevelSolverMode;
+    result::Int = 1,
+)::Float64
+    m = owner_model(v)
     solver = m.solver
     ref = solver_ref(v)
     return MOI.get(solver, MOI.VariablePrimal(result), ref)

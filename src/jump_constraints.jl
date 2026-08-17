@@ -326,6 +326,13 @@ function get_primal_lower_bound_hint(vref::BilevelVariableRef)
 end
 
 function JuMP.value(cref::BilevelConstraintRef; result::Int = 1)
+    return _value(cref, cref.model.mode; result = result)
+end
+function _value(
+    cref::BilevelConstraintRef,
+    ::AbstractBilevelSolverMode;
+    result::Int = 1,
+)
     if _in_lower(cref)
         # Constraint index on the lower model
         con_lower_idx = cref.model.ctr_lower[cref.index].index
@@ -490,6 +497,9 @@ function get_constraint_ref(vref::BilevelVariableRef)
 end
 
 function JuMP.dual(cref::BilevelConstraintRef)
+    return _dual(cref, cref.model.mode)
+end
+function _dual(cref::BilevelConstraintRef, ::AbstractBilevelSolverMode)
     # Right now this code assumes there is no possibility for vectorized constraints
     if _in_lower(cref)
         # Constraint index on the lower model

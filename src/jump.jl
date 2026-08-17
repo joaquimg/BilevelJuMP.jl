@@ -149,6 +149,10 @@ mutable struct BilevelModel <: AbstractBilevelModel
     solve_time::Float64
     build_time::Float64
 
+    # results of modes that do not solve through a MOI optimizer, and therefore
+    # have nowhere else to keep them (see `MibSMode`). `nothing` otherwise.
+    solution::Any
+
     # BilevelModel model attributes
     copy_names::Bool
     copy_names_to_solver::Bool
@@ -188,7 +192,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
             # solve method
             nothing,
-            NoMode{Float64},
+            NoMode{Float64}(),
 
             # maps
             nothing,
@@ -200,6 +204,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             # solution extras
             NaN,
             NaN,
+            nothing,
             # options
             false,
             false,
@@ -477,7 +482,14 @@ function JuMP.constraint_by_name(model::BilevelModel, name::String)
 end
 
 # Statuses
+#
+# Each of these delegates to an internal getter dispatched on the solution mode.
+# The fallback below reads the attached MathOptInterface optimizer; modes that
+# solve the problem some other way (see `MibSMode`) add a method of their own.
 function JuMP.primal_status(model::BilevelModel)
+    return _primal_status(model, model.mode)
+end
+function _primal_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.PrimalStatus())
 end
@@ -500,10 +512,17 @@ function JuMP.dual_status(model::LowerModel)
 end
 
 function JuMP.termination_status(model::BilevelModel)
+    return _termination_status(model, model.mode)
+end
+function _termination_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.TerminationStatus())
 end
+
 function JuMP.raw_status(model::BilevelModel)
+    return _raw_status(model, model.mode)
+end
+function _raw_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.RawStatusString())
 end
@@ -619,8 +638,27 @@ end
 function JuMP.optimize!(::T) where {T<:AbstractBilevelModel}
     return error("Can't solve a model of type: $T ")
 end
-function JuMP.optimize!(
-    model::BilevelModel;
+function JuMP.optimize!(model::BilevelModel; kwargs...)
+    if model.mode === nothing
+        error(
+            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+        )
+    end
+    return _optimize!(model, model.mode; kwargs...)
+end
+
+function _optimize!(::BilevelModel, ::NoMode; kwargs...)
+    return error(
+        "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+    )
+end
+
+# Default: reformulate into a single optimization problem and hand it to the
+# attached MathOptInterface optimizer. Modes that solve the problem some other
+# way (see `MibSMode`) add a method of their own.
+function _optimize!(
+    model::BilevelModel,
+    mode::AbstractBilevelSolverMode;
     lower_prob = "",
     upper_prob = "",
     bilevel_prob = "",
@@ -628,14 +666,6 @@ function JuMP.optimize!(
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
     _differentiation_backend::MOI.Nonlinear.AbstractAutomaticDifferentiation = MOI.Nonlinear.SparseReverseMode(),
 )
-    if model.mode === nothing
-        error(
-            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
-        )
-    else
-        mode = model.mode
-    end
-
     _check_solver(model)
 
     solver = model.solver #optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
@@ -921,6 +951,13 @@ dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
 # Initialize
 
 function _check_solver(bm::BilevelModel)
+    if bm.mode isa MibSMode
+        error(
+            "This query is not available when solving with " *
+            "`BilevelJuMP.MibSMode`, because MibS is an external solver that " *
+            "is not attached to the model as a MathOptInterface optimizer.",
+        )
+    end
     if bm.solver === nothing
         error(
             "No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`",

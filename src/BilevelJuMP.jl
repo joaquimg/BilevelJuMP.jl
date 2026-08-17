@@ -63,6 +63,7 @@ include("modes/complement.jl")
 include("modes/indicator.jl")
 include("modes/product.jl")
 include("modes/strong_duality.jl")
+include("modes/mibs.jl")
 include("modes/mixed.jl") # must be last because uses others
 include("moi_utilities.jl")
 
