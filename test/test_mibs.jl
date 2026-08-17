@@ -463,6 +463,218 @@ function test_Writing_MibS_input_v6()
     return
 end
 
+#=
+    MibS identifies the lower level rows and columns by their position in the MPS
+    file, so the auxiliary file is only correct if those positions agree with the
+    order the MPS writer used. Asserting on the file contents is what catches a
+    disagreement: the objective value alone does not, because a mislabeled model
+    can still happen to have the same optimum.
+=#
+
+# Independent re-derivation of the row/column order, by parsing the MPS file that
+# was handed to MibS. Deliberately does not reuse the package's parser.
+function _reference_order(mps_filename)
+    rows, columns = String[], String[]
+    section = :none
+    for line in eachline(mps_filename)
+        isempty(strip(line)) && continue
+        if !isspace(first(line))
+            keyword = uppercase(first(split(line)))
+            section =
+                keyword == "ROWS" ? :rows :
+                keyword == "COLUMNS" ? :columns : :other
+            continue
+        end
+        fields = split(line)
+        if section == :rows && uppercase(fields[1]) != "N"
+            push!(rows, fields[2])
+        elseif section == :columns && !any(f -> occursin('\'', f), fields)
+            fields[1] in columns || push!(columns, fields[1])
+        end
+    end
+    return rows, columns
+end
+
+function _write_mibs_files(model)
+    dir = mktempdir()
+    mps = joinpath(dir, "m.mps")
+    aux = joinpath(dir, "m.aux")
+    new_model, variables, objective, constraints, sense =
+        BilevelJuMP._build_single_model(model, true)
+    MOI.write_to_file(new_model, mps)
+    BilevelJuMP._write_auxiliary_file(
+        new_model,
+        variables,
+        objective,
+        constraints,
+        sense,
+        mps,
+        aux,
+    )
+    return new_model, variables, constraints, mps, aux
+end
+
+# Both `<=` and `>=` rows are needed: the two set types are what get transposed if
+# the row order is assumed rather than read back from the file.
+function _mixed_sense_model()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Upper(model), z, Int)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, 3x + y + z)
+    @constraints(Upper(model), begin
+        u1, x <= 5
+        u2, y <= 8
+        u3, y >= 0
+        u4, z >= 0
+    end)
+    @objective(Lower(model), Min, -x)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @constraint(Lower(model), l2, 4x + y >= 8)
+    @constraint(Lower(model), l3, 2x + y <= 13)
+    @constraint(Lower(model), l4, 2x - 7y <= 0)
+    return model
+end
+
+function test_auxiliary_file_indices_match_the_mps_file()
+    new_model, variables, constraints, mps, aux =
+        _write_mibs_files(_mixed_sense_model())
+    rows, columns = _reference_order(mps)
+    lines = readlines(aux)
+    lr = sort([parse(Int, split(l)[2]) for l in lines if startswith(l, "LR ")])
+    lc = sort([parse(Int, split(l)[2]) for l in lines if startswith(l, "LC ")])
+    expected_lr = sort(map(constraints) do ci
+        name = MOI.get(new_model, MOI.ConstraintName(), ci)
+        return findfirst(isequal(name), rows) - 1
+    end)
+    expected_lc = sort(map(variables) do vi
+        name = MOI.get(new_model, MOI.VariableName(), vi)
+        return findfirst(isequal(name), columns) - 1
+    end)
+    @test lr == expected_lr
+    @test lc == expected_lc
+    # Pinned so a future change of order fails here, not silently.
+    @test lr == [2, 3, 4, 7]
+    @test lc == [2]
+    # Every declared lower row must be a real row of the file.
+    @test all(0 .<= lr .< length(rows))
+    @test length(lr) == length(constraints)
+    return
+end
+
+function test_auxiliary_file_header_counts()
+    _, variables, constraints, _, aux = _write_mibs_files(_mixed_sense_model())
+    lines = readlines(aux)
+    @test lines[1] == "N $(length(variables))"
+    @test lines[2] == "M $(length(constraints))"
+    @test count(l -> startswith(l, "LC "), lines) == length(variables)
+    @test count(l -> startswith(l, "LR "), lines) == length(constraints)
+    @test count(l -> startswith(l, "LO "), lines) == length(variables)
+    @test last(lines) == "OS 1"
+    return
+end
+
+function test_maximization_lower_objective_sense()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Max, x)
+    @constraint(Lower(model), l1, x + y <= 8)
+    _, _, _, _, aux = _write_mibs_files(model)
+    @test last(readlines(aux)) == "OS -1"
+    return
+end
+
+#=
+    Models MibS cannot represent must be rejected with an actionable error rather
+    than silently solved as a different problem, crashed on, or looped on forever.
+=#
+
+function test_unsupported_continuous_variable()
+    model = BilevelModel()
+    @variable(Upper(model), y)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Min, -x)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    # The check is opt-out, and it is the only thing `check_integrality` gates.
+    @test BilevelJuMP._build_single_model(model, false) isa Tuple
+    return
+end
+
+function test_unsupported_lower_only_variable()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x, Int)
+    @variable(LowerOnly(model), w, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Min, -x)
+    @constraint(Lower(model), l1, x + y + w <= 8)
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    return
+end
+
+function test_unsupported_dual_of_variable()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Min, -x)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @variable(Upper(model), lambda, DualOf(l1))
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    return
+end
+
+function test_unsupported_missing_lower_objective()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    return
+end
+
+function test_unsupported_quadratic_data()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x, Int)
+    @objective(Upper(model), Min, x + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Min, x^2)
+    @constraint(Lower(model), l1, x + y <= 8)
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    model2 = BilevelModel()
+    @variable(Upper(model2), b, Int)
+    @variable(Lower(model2), a, Int)
+    @objective(Upper(model2), Min, a + b)
+    @constraint(Upper(model2), q1, a * b <= 4)
+    @objective(Lower(model2), Min, -a)
+    @constraint(Lower(model2), q2, a + b <= 8)
+    @test_throws ErrorException BilevelJuMP._build_single_model(model2, true)
+    return
+end
+
+function test_unsupported_conic_constraint()
+    model = BilevelModel()
+    @variable(Upper(model), y, Int)
+    @variable(Lower(model), x[1:3], Int)
+    @objective(Upper(model), Min, x[1] + y)
+    @constraint(Upper(model), u1, y >= 0)
+    @objective(Lower(model), Min, -x[1])
+    @constraint(Lower(model), l1, x in SecondOrderCone())
+    @test_throws ErrorException BilevelJuMP._build_single_model(model, true)
+    return
+end
+
 end  # module TestMIBS
 
 TestMIBS.runtests()

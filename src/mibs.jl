@@ -5,7 +5,11 @@
 
 # functionality for calling the MibS solver
 
-function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
+function _build_single_model(
+    model::BilevelModel,
+    check_integrality::Bool = false,
+)
+    _assert_mibs_supported(model)
     upper = JuMP.backend(model.upper)
     lower = JuMP.backend(model.lower)
     lower_to_upper =
@@ -18,8 +22,94 @@ function _build_single_model(model::BilevelModel, check_MIPMIP::Bool = false)
         lower,
         lower_to_upper,
         lower_only,
-        check_MIPMIP,
+        check_integrality,
     )
+end
+
+#=
+    MibS reads a plain MPS file plus an auxiliary file listing which rows and
+    columns belong to the lower level. Anything that cannot be expressed that way
+    must be rejected up front, because MibS either crashes or silently solves a
+    different problem than the one that was modeled.
+=#
+
+function _assert_mibs_supported(model::BilevelModel)
+    if _has_nlp_data(model.upper) || _has_nlp_data(model.lower)
+        error(
+            "MibS does not support nonlinear data. Remove the `@NLobjective` " *
+            "and `@NLconstraint` data from the model.",
+        )
+    end
+    if !isempty(model.upper_var_to_lower_ctr_link)
+        names = [JuMP.name(v) for v in keys(model.upper_var_to_lower_ctr_link)]
+        error(
+            "MibS does not support variables tied to lower level duals with " *
+            "`DualOf`, but the model has: $(join(names, ", ")). MibS solves " *
+            "the bilevel problem directly and never forms the dual of the " *
+            "lower level, so such variables would be silently ignored.",
+        )
+    end
+    upper = JuMP.backend(model.upper)
+    lower = JuMP.backend(model.lower)
+    for (level_model, level) in ((upper, "upper"), (lower, "lower"))
+        _assert_supported_constraints(level_model, level)
+        if MOI.get(level_model, MOI.ObjectiveSense()) == MOI.FEASIBILITY_SENSE
+            error(
+                "MibS requires an objective in the $(level) level. Set one " *
+                "with `@objective($(titlecase(level))(model), Min, ...)`.",
+            )
+        end
+        F = MOI.get(level_model, MOI.ObjectiveFunctionType())
+        if !(F <: Union{MOI.VariableIndex,MOI.ScalarAffineFunction{Float64}})
+            error(
+                "MibS only supports linear objectives, but the $(level) level " *
+                "objective has type $(F).",
+            )
+        end
+    end
+    return
+end
+
+function _assert_supported_constraints(model::MOI.ModelLike, level::String)
+    for (F, S) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
+        if F === MOI.VariableIndex
+            if !(
+                S <: Union{
+                    MOI.LessThan{Float64},
+                    MOI.GreaterThan{Float64},
+                    MOI.EqualTo{Float64},
+                    MOI.Interval{Float64},
+                    MOI.Integer,
+                    MOI.ZeroOne,
+                }
+            )
+                error(
+                    "MibS does not support variables constrained to $(S), " *
+                    "found in the $(level) level.",
+                )
+            end
+        elseif F === MOI.ScalarAffineFunction{Float64}
+            if !(
+                S <: Union{
+                    MOI.LessThan{Float64},
+                    MOI.GreaterThan{Float64},
+                    MOI.EqualTo{Float64},
+                    MOI.Interval{Float64},
+                }
+            )
+                error(
+                    "MibS does not support linear constraints in $(S), " *
+                    "found in the $(level) level.",
+                )
+            end
+        else
+            error(
+                "MibS only supports linear constraints, but the $(level) " *
+                "level has a constraint with function type $(F).",
+            )
+        end
+    end
+    return
 end
 
 function _build_single_model(
@@ -27,19 +117,21 @@ function _build_single_model(
     lower::MOI.ModelLike,
     lower_to_upper_link::Dict{MOI.VariableIndex,MOI.VariableIndex},
     lower_only::Dict{MOI.VariableIndex,MOI.VariableIndex},
-    check_MIPMIP::Bool = false,
+    check_integrality::Bool = false,
 )
     model = MOI.FileFormats.MPS.Model()
     upper_to_model_link = MOI.copy_to(model, upper)
     lower_variables = [upper_to_model_link[k] for k in values(lower_only)]
+    function to_model(x)
+        y = _lower_to_upper(lower, lower_to_upper_link, x)
+        return upper_to_model_link[y]
+    end
     lower_constraints = Vector{MOI.ConstraintIndex}()
     for (F, S) in MOI.get(lower, MOI.ListOfConstraintTypesPresent())
         for ci in MOI.get(lower, MOI.ListOfConstraintIndices{F,S}())
             lower_f = MOI.get(lower, MOI.ConstraintFunction(), ci)
             lower_s = MOI.get(lower, MOI.ConstraintSet(), ci)
-            lower_f = MOI.Utilities.map_indices(lower_f) do x
-                return upper_to_model_link[lower_to_upper_link[x]]
-            end
+            lower_f = MOI.Utilities.map_indices(to_model, lower_f)
             new_ci = MOI.add_constraint(model, lower_f, lower_s)
             if F == MOI.ScalarAffineFunction{Float64}
                 push!(lower_constraints, new_ci)
@@ -50,27 +142,10 @@ function _build_single_model(
         lower,
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),
     )
-    lower_objective = MOI.Utilities.map_indices(lower_objective) do x
-        return upper_to_model_link[lower_to_upper_link[x]]
-    end
+    lower_objective = MOI.Utilities.map_indices(to_model, lower_objective)
 
-    # Testing if the model is MIP-MIP or not.
-    if check_MIPMIP
-        int_var = MOI.get(
-            model,
-            MOI.NumberOfConstraints{MOI.VariableIndex,MOI.Integer}(),
-        )
-        int_var =
-            int_var + MOI.get(
-                model,
-                MOI.NumberOfConstraints{MOI.VariableIndex,MOI.ZeroOne}(),
-            )
-        all_var = MOI.get(model, MOI.NumberOfVariables())
-        if int_var != all_var
-            throw(
-                "Currently MibS works on only MIP-MIP problems and the input model is not MIP-MIP!!",
-            )
-        end
+    if check_integrality
+        _assert_all_integer(model)
     end
 
     lower_sense = MOI.get(lower, MOI.ObjectiveSense())
@@ -82,31 +157,102 @@ function _build_single_model(
     lower_sense
 end
 
-function _index_to_row_link(model::MOI.FileFormats.MPS.Model)
-    i = 0
-    dict = Dict{MOI.ConstraintIndex,Int}()
-    for S in (
-        MOI.GreaterThan{Float64},
-        MOI.LessThan{Float64},
-        MOI.EqualTo{Float64},
-        MOI.Interval{Float64},
-    )
-        for ci in MOI.get(
-            model,
-            MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{Float64},S}(),
+# Every lower level variable must also be known to the upper level, which is the
+# case for variables declared with `Lower(model)` or `Upper(model)` but not for
+# those declared with `LowerOnly(model)`.
+function _lower_to_upper(lower, lower_to_upper_link, x::MOI.VariableIndex)
+    if !haskey(lower_to_upper_link, x)
+        name = MOI.get(lower, MOI.VariableName(), x)
+        error(
+            "MibS does not support variables that belong only to the lower " *
+            "level, but $(isempty(name) ? x : name) is one of them. Declare " *
+            "it with `Lower(model)` instead of `LowerOnly(model)` so that it " *
+            "is shared with the upper level.",
         )
-            dict[ci] = i
-            i += 1
-        end
     end
-    return dict
+    return lower_to_upper_link[x]
 end
 
-function _index_to_column_link(model::MOI.FileFormats.MPS.Model)
-    variables = MOI.get(model, MOI.ListOfVariableIndices())
-    return Dict{MOI.VariableIndex,Int}(
-        x => i - 1 for (i, x) in MOI.enumerate(variables)
+function _assert_all_integer(model::MOI.FileFormats.MPS.Model)
+    integer = Set{MOI.VariableIndex}()
+    for S in (MOI.Integer, MOI.ZeroOne)
+        for ci in
+            MOI.get(model, MOI.ListOfConstraintIndices{MOI.VariableIndex,S}())
+            push!(integer, MOI.get(model, MOI.ConstraintFunction(), ci))
+        end
+    end
+    continuous = filter(
+        x -> !(x in integer),
+        MOI.get(model, MOI.ListOfVariableIndices()),
     )
+    if !isempty(continuous)
+        names = map(continuous) do x
+            name = MOI.get(model, MOI.VariableName(), x)
+            return isempty(name) ? string(x) : name
+        end
+        error(
+            "MibS requires every variable to be integer, but the following " *
+            "are continuous: $(join(names, ", ")). Note that MibS may run " *
+            "forever instead of reporting an error when given a continuous " *
+            "variable. Pass `check_integrality = false` to try anyway.",
+        )
+    end
+    return
+end
+
+#=
+    MibS identifies rows and columns by their position in the instance file, so the
+    order in which the MPS writer emitted them is the ground truth. Recovering that
+    order from the file itself keeps the auxiliary file correct even when
+    MathOptInterface changes the order in which it emits constraints -- which has
+    silently mislabeled the levels before.
+=#
+
+function _mps_row_and_column_order(mps_filename::String)
+    rows, columns = String[], String[]
+    seen = Set{String}()
+    section = :none
+    for line in eachline(mps_filename)
+        isempty(strip(line)) && continue
+        if !isspace(first(line))
+            # Section headers are the only lines starting in the first column.
+            keyword = uppercase(first(split(line)))
+            section = if keyword == "ROWS"
+                :rows
+            elseif keyword == "COLUMNS"
+                :columns
+            else
+                :other
+            end
+            continue
+        end
+        fields = split(line)
+        if section == :rows
+            # `<type> <name>`. The objective row is excluded from MibS's row
+            # indexing, and it is the only row of type `N`.
+            if length(fields) >= 2 && uppercase(fields[1]) != "N"
+                push!(rows, fields[2])
+            end
+        elseif section == :columns
+            # `<column> <row> <value> [<row> <value>]`, interleaved with the
+            # `MARKER`/`INTORG`/`INTEND` lines that delimit integer columns.
+            if !any(f -> occursin('\'', f), fields) && !(fields[1] in seen)
+                push!(seen, fields[1])
+                push!(columns, fields[1])
+            end
+        end
+    end
+    return rows, columns
+end
+
+function _mibs_index(order::Dict{String,Int}, name::String, what::String)
+    if !haskey(order, name)
+        error(
+            "Unable to locate the $(what) \"$(name)\" in the MPS file written " *
+            "for MibS. Please open an issue with BilevelJuMP.",
+        )
+    end
+    return order[name]
 end
 
 function _write_auxiliary_file(
@@ -115,10 +261,14 @@ function _write_auxiliary_file(
     lower_objective::MOI.ScalarAffineFunction,
     lower_constraints::Vector{MOI.ConstraintIndex},
     lower_sense::MOI.OptimizationSense,
+    mps_filename::String,
     aux_filename::String,
 )
-    rows = _index_to_row_link(new_model)
-    cols = _index_to_column_link(new_model)
+    # `mps_filename` must already have been written: the writer assigns and
+    # uniquifies the names that the auxiliary file refers to.
+    row_names, column_names = _mps_row_and_column_order(mps_filename)
+    rows = Dict(name => i - 1 for (i, name) in enumerate(row_names))
+    cols = Dict(name => i - 1 for (i, name) in enumerate(column_names))
     obj_coefficients =
         Dict{MOI.VariableIndex,Float64}(x => 0.0 for x in lower_variables)
     for term in lower_objective.terms
@@ -130,10 +280,12 @@ function _write_auxiliary_file(
         println(io, "N $(length(lower_variables))")
         println(io, "M $(length(lower_constraints))")
         for x in lower_variables
-            println(io, "LC $(cols[x])")
+            name = MOI.get(new_model, MOI.VariableName(), x)
+            println(io, "LC $(_mibs_index(cols, name, "variable"))")
         end
         for y in lower_constraints
-            println(io, "LR $(rows[y])")
+            name = MOI.get(new_model, MOI.ConstraintName(), y)
+            println(io, "LR $(_mibs_index(rows, name, "constraint"))")
         end
         for x in lower_variables
             println(io, "LO $(obj_coefficients[x])")
@@ -264,6 +416,9 @@ Set to `true` to display the MibS output.
 * `debug_file_prefix::String = ""`: Prefix prepended to the names of the MibS
 input files saved to pwd() when `keep_files = true` or when MibS fails.
 * `keep_files::Bool = false`: Saves MibS input files to pwd().
+* `check_integrality::Bool = true`: Errors if any variable is continuous. MibS
+may run forever instead of reporting an error on such a model, so this check is
+on by default. Set to `false` to attempt the solve anyway.
 ## Outputs
 This function returns a `NamedTuple` with fields:
 * `status::Bool`: `true` if the problem is feasible and has an optimal solution. `false` otherwise.
@@ -284,13 +439,14 @@ function solve_with_MibS(
     verbose_files::Bool = false,
     debug_file_prefix = "",
     keep_files::Bool = false,
+    check_integrality::Bool = true,
 )
     orig_path = pwd()
     mktempdir() do path
         mps_filename = joinpath(path, "model.mps")
         aux_filename = joinpath(path, "model.aux")
         new_model, variables, objective, constraints, sense =
-            _build_single_model(model, true)
+            _build_single_model(model, check_integrality)
         # This MPS file must be strictly compliant with the format
         MOI.write_to_file(new_model, mps_filename)
         _write_auxiliary_file(
@@ -299,6 +455,7 @@ function solve_with_MibS(
             objective,
             constraints,
             sense,
+            mps_filename,
             aux_filename,
         )
         if verbose_files
