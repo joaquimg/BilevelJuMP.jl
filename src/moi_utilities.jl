@@ -29,7 +29,6 @@ function append_to(
     filter_constraints::Union{Nothing,Function} = nothing;
     allow_single_bounds::Bool = true,
 )
-
     #=
         This function follows closely the function `default_copy_to` defined in
         MathOptInterface.Utilities
