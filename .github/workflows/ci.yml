@@ -35,11 +35,29 @@ jobs:
       - uses: julia-actions/cache@v3
       # Write the Xpress community/CI licence to disk so Xpress.jl can find it.
       # Mirrors jump-dev/MathOptInterface.jl .github/workflows/solver-tests.yml.
+      # Obtain an Xpress licence. Prefer the XPAUTH_XPR secret; otherwise fall
+      # back to the community licence that the PyPI `xpress` wheel bundles as
+      # xpress/license/community-xpauth.xpr (see https://pypi.org/project/xpress).
+      # The licence is tied to a FICO release, so this pins the wheel whose
+      # licence matches Xpress_jll 9.4.3.
       - name: Setup Xpress licence
-        if: ${{ env.XPAUTH_XPR != '' }}
         shell: bash
         run: |
-          echo "$XPAUTH_XPR" > "$RUNNER_TEMP/xpauth.xpr"
+          set -euo pipefail
+          # The XPAUTH_XPR secret expired on 28-feb-2026, so prefer the bundled
+          # community licence and fall back to the secret only if the wheel cannot
+          # be fetched. Swap the order once the secret is renewed.
+          if python -m pip install --quiet --no-deps --target "$RUNNER_TEMP/xp" "xpress==9.4.6"; then
+            cp "$RUNNER_TEMP/xp/xpress/license/community-xpauth.xpr" "$RUNNER_TEMP/xpauth.xpr"
+            echo "Using community licence from the xpress PyPI wheel"
+          elif [ -n "${XPAUTH_XPR:-}" ]; then
+            echo "$XPAUTH_XPR" > "$RUNNER_TEMP/xpauth.xpr"
+            echo "Using XPAUTH_XPR secret"
+          else
+            echo "No Xpress licence available; Xpress tests will skip"
+            exit 0
+          fi
+          grep -o 'expiry="[^"]*"' "$RUNNER_TEMP/xpauth.xpr" || true
           echo "XPAUTH_PATH=$RUNNER_TEMP/xpauth.xpr" >> "$GITHUB_ENV"
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
