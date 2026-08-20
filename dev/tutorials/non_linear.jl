@@ -8,7 +8,7 @@
 
 # The `@constraint` and `@objective` macros
 # can be used for both levels to represent linear and quadratic
-# constraints and objectives
+# constraints and objectives.
 
 
 # ## Quadratic constraints and objectives
@@ -28,7 +28,7 @@ model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))
 @NLconstraint(Upper(model), x^2 + y^2 <= 100)
 
 # `@NLobjective` is *not supported* in the lower level, but we can use
-# `@constraint` to add a quadratic objective to the lower level.
+# `@objective` to add a quadratic objective to the lower level.
 
 @objective(Lower(model), Min, y^2)
 
@@ -38,7 +38,7 @@ optimize!(model)
 
 # All the quadratic objectives and constraints of the upper level can also
 # be added with the `@constraint` and `@objective` macros. Hence, we can
-# write the quivalent model:
+# write the equivalent model:
 
 using BilevelJuMP, Ipopt
 model = BilevelModel(Ipopt.Optimizer, mode = BilevelJuMP.ProductMode(1e-5))

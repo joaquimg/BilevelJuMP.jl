@@ -6,7 +6,7 @@
 
 # ```math
 # \begin{align}
-#     &\max_{x \in \mathbb{R}} \quad x + 3y_1 \\
+#     &\min_{x \in \mathbb{R}} \quad x + 3y_1 \\
 #     &\textit{s.t.} \quad 2 \leq x \leq 6\\
 #     & \hspace{28pt} y(x) \in \arg\min_{y\in {\mathbb{R}^3}} -y_1\\
 #             & \hspace{58pt} \textit{s.t.} \quad x + y_1 \leq 8 \\
@@ -38,7 +38,7 @@ model = BilevelModel()
 
 # ## NLP solution and start values
 
-# We can set, for instance, the product reformulation and selected Ipopt
+# We can set, for instance, the product reformulation and select Ipopt
 # as a solver. As Ipopt does not have native support for second order cones,
 # we use the non-default MOI bridge `SOCtoNonConvexQuad` to convert
 # second order cones into quadratic constraints.
@@ -77,7 +77,7 @@ set_dual_start_value(con2, 0)
 # using QuadraticToBinary
 # set_optimizer(model,
 #     ()->QuadraticToBinary.Optimizer{Float64}(Xpress.Optimizer(),lb=-10,ub=10))
-# BilevelJuMP.set_mode(model, 
+# BilevelJuMP.set_mode(model,
 #     BilevelJuMP.MixedMode(default = BilevelJuMP.IndicatorMode()))
 # BilevelJuMP.set_mode(con4, BilevelJuMP.ProductMode(1e-5))
 # optimize!(model)
@@ -94,5 +94,5 @@ set_dual_start_value(con2, 0)
 
 # Binary expansions require bounded
 # variables, hence the `QuadraticToBinary` meta-solver accepts fallback
-# to upper and lower bounds (\texttt{ub} and \texttt{lb}),
+# to upper and lower bounds (`ub` and `lb`),
 # used for variables with no explicit bounds.

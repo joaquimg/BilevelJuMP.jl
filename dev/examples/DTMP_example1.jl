@@ -39,7 +39,7 @@ set_silent(model)
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, 4y - x)
 
 # Upper level constraints
@@ -56,7 +56,8 @@ set_silent(model)
 @constraint(Lower(model), - x <= 0)
 @constraint(Lower(model), x <= 4)
 
-# Now we can solve the problem and verify the solution again that reported by book
+# Now we can solve the problem and verify the solution against that reported by
+# the book
 
 optimize!(model)
 
