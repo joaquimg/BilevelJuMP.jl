@@ -67,13 +67,17 @@ if Sys.islinux()
     Pkg.add(; name = "SCIP")#, version="0.11.12")
     include("solvers/scip.jl")
 end
-if Sys.iswindows() && (
-    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
-    get(ENV, "XPRESSDIR", "") != ""
-)
-    @info "Running Xpress in Tests"
-    include("solvers/xpress.jl")
-end
+# Xpress tests are disabled on Windows: CI has the license secrets but never
+# installs the Xpress binaries, so `Pkg.build("Xpress")` fails with
+# "Unable to locate Xpress installation". Re-enable via `Xpress_jll` once the
+# workflow is updated. See https://github.com/joaquimg/BilevelJuMP.jl/issues/245
+# if Sys.iswindows() && (
+#     get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
+#     get(ENV, "XPRESSDIR", "") != ""
+# )
+#     @info "Running Xpress in Tests"
+#     include("solvers/xpress.jl")
+# end
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
