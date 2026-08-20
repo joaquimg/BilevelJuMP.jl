@@ -35,11 +35,13 @@ jobs:
       - uses: julia-actions/cache@v3
       # Write the Xpress community/CI licence to disk so Xpress.jl can find it.
       # Mirrors jump-dev/MathOptInterface.jl .github/workflows/solver-tests.yml.
-      # Obtain an Xpress licence. Prefer the XPAUTH_XPR secret; otherwise fall
-      # back to the community licence that the PyPI `xpress` wheel bundles as
-      # xpress/license/community-xpauth.xpr (see https://pypi.org/project/xpress).
-      # The licence is tied to a FICO release, so this pins the wheel whose
-      # licence matches Xpress_jll 9.4.3.
+      # Obtain an Xpress licence from the community licence that the PyPI `xpress`
+      # wheel bundles as xpress/license/community-xpauth.xpr, falling back to the
+      # XPAUTH_XPR secret (see https://pypi.org/project/xpress).
+      # The licence caps the solver release it authorises, and Xpress_jll 9.4.3
+      # actually ships release 9.9, so use the newest wheel that still bundles a
+      # licence (9.8.1). A 9.4 licence fails with "licensing error 21: Your
+      # license only authorizes up to release 9.4".
       - name: Setup Xpress licence
         shell: bash
         run: |
@@ -47,7 +49,7 @@ jobs:
           # The XPAUTH_XPR secret expired on 28-feb-2026, so prefer the bundled
           # community licence and fall back to the secret only if the wheel cannot
           # be fetched. Swap the order once the secret is renewed.
-          if python -m pip install --quiet --no-deps --target "$RUNNER_TEMP/xp" "xpress==9.4.6"; then
+          if python -m pip install --quiet --no-deps --target "$RUNNER_TEMP/xp" "xpress==9.8.1"; then
             cp "$RUNNER_TEMP/xp/xpress/license/community-xpauth.xpr" "$RUNNER_TEMP/xpauth.xpr"
             echo "Using community licence from the xpress PyPI wheel"
           elif [ -n "${XPAUTH_XPR:-}" ]; then
