@@ -38,10 +38,10 @@ jobs:
       # Obtain an Xpress licence from the community licence that the PyPI `xpress`
       # wheel bundles as xpress/license/community-xpauth.xpr, falling back to the
       # XPAUTH_XPR secret (see https://pypi.org/project/xpress).
-      # The licence caps the solver release it authorises, and Xpress_jll 9.4.3
-      # actually ships release 9.9, so use the newest wheel that still bundles a
-      # licence (9.8.1). A 9.4 licence fails with "licensing error 21: Your
-      # license only authorizes up to release 9.4".
+      # The licence caps the solver release it authorises ("licensing error 21:
+      # Your license only authorizes up to release X"), so the wheel and Xpress_jll
+      # have to line up. 9.8.1 is the newest wheel still bundling a licence, which
+      # is why test/Project.toml pins Xpress_jll to =9.8.0.
       - name: Setup Xpress licence
         shell: bash
         run: |
