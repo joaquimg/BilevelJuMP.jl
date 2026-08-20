@@ -15,8 +15,13 @@ if !haskey(ENV, "XPAUTH_PATH") && haskey(ENV, "XPAUTH_XPR")
     write(xpauth_xpr, ENV["XPAUTH_XPR"])
     ENV["XPAUTH_PATH"] = xpauth_xpr
 end
-
+# Initialize explicitly rather than relying on Xpress.jl's automatic init,
+# which does not pick up the licence when the library comes from Xpress_jll
+# (XPRSinit fails silently, and the first XPRSprob call then reports
+# "global environment not initialised"). This mirrors Xpress.jl's own tests.
+ENV["XPRESS_JL_NO_AUTO_INIT"] = "true"
 using Xpress
+Xpress.initialize(; verbose = false, xpauth_path = ENV["XPAUTH_PATH"])
 using QuadraticToBinary
 
 const XPRESS = MOI.instantiate(Xpress.Optimizer; with_bridge_type = Float64)
