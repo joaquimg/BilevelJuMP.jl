@@ -3,11 +3,18 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
+# Load the solver from Xpress_jll rather than a local installation, so no
+# `XPRESSDIR` / `Pkg.build("Xpress")` is needed. This matches the approach in
+# Xpress.jl's own test suite. Requires Xpress.jl >= v0.18.
 import Xpress_jll
 ENV["XPRESS_JL_LIBRARY"] = Xpress_jll.libxprs
-xpauth_xpr = joinpath(@__DIR__, "xpauth.xpr")
-write(xpauth_xpr, ENV["XPAUTH_XPR"])
-ENV["XPAUTH_PATH"] = xpauth_xpr
+# CI writes the licence and exports XPAUTH_PATH; otherwise fall back to the
+# raw licence in XPAUTH_XPR, or to whatever the local install already uses.
+if !haskey(ENV, "XPAUTH_PATH") && haskey(ENV, "XPAUTH_XPR")
+    xpauth_xpr = joinpath(@__DIR__, "xpauth.xpr")
+    write(xpauth_xpr, ENV["XPAUTH_XPR"])
+    ENV["XPAUTH_PATH"] = xpauth_xpr
+end
 
 using Xpress
 using QuadraticToBinary

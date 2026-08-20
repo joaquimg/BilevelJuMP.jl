@@ -9,6 +9,7 @@ using JuMP
 using Test
 
 import MathOptInterface as MOI
+import Pkg
 
 struct Config
     atol::Float64
@@ -62,9 +63,21 @@ solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
 # include("solvers/cbc.jl")
-include("solvers/scip.jl")
-# TODO(odow): FIXME
-# include("solvers/xpress.jl")
+# SCIP is Linux-only here: SCIP 0.12+ requires Ipopt_jll >= 300.1400.1400,
+# which pulls a COIN-OR stack incompatible with MibS_jll v1.1.3, and the older
+# SCIP 0.11.x that does satisfy the Ipopt pin segfaults on Windows in
+# SCIPprobFree. Installing it at runtime keeps it out of the resolved
+# environment on the other platforms.
+if Sys.islinux()
+    Pkg.add(; name = "SCIP")
+    include("solvers/scip.jl")
+end
+# Xpress is loaded from Xpress_jll, so it needs only a licence, not a local
+# installation. Skip when no licence is available (e.g. forks, local runs).
+if get(ENV, "XPAUTH_PATH", "") != "" || get(ENV, "XPAUTH_XPR", "") != ""
+    @info "Running Xpress in Tests"
+    include("solvers/xpress.jl")
+end
 
 # DONE
 # include("solvers/gurobi.jl")
