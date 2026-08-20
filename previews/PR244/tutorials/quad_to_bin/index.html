@@ -46,7 +46,7 @@ Solving MIP model with:
 
          0       0         0   0.00%   0               inf                  inf        0      0      0         0     0.0s
          0       0         0   0.00%   6.133333333     inf                  inf        0      0      4        87     0.0s
- R       0       0         0   0.00%   6.133333333     6.133333333        0.00%      337     80     38       323     0.1s
+ L       0       0         0   0.00%   6.133333333     6.133333333        0.00%      307     72     36       303     0.2s
 
 Solving report
   Status            Optimal
@@ -56,16 +56,16 @@ Solving report
   Solution status   feasible
                     6.13333333333 (objective)
                     0 (bound viol.)
-                    0 (int. viol.)
+                    5.80646641879e-13 (int. viol.)
                     0 (row viol.)
-  Timing            0.06 (total)
+  Timing            0.19 (total)
                     0.00 (presolve)
                     0.00 (postsolve)
   Nodes             1
-  LP iterations     323 (total)
+  LP iterations     1103 (total)
                     0 (strong br.)
-                    236 (separation)
-                    0 (heuristics)</pre><p>However, this might lead to some solver not supporting certain functionality like SCIP. In this case we need to:</p><pre><code class="language-julia">using SCIP</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><pre><code class="language-julia">SOLVER = SCIP.Optimizer()
+                    216 (separation)
+                    800 (heuristics)</pre><p>However, this might lead to some solver not supporting certain functionality like SCIP. In this case we need to:</p><pre><code class="language-julia">using SCIP</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>SCIP requires a non-standard installation procedure in windows. See <a href="https://github.com/scipopt/SCIP.jl#custom-installations">SCIP.jl</a> for more details.</p></div></div><pre><code class="language-julia">SOLVER = SCIP.Optimizer()
 
 CACHED_SOLVER = MOI.Utilities.CachingOptimizer(
     MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()), SOLVER)
