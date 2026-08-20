@@ -100,6 +100,9 @@ function _bilevel_obj_error()
 end
 
 function JuMP.objective_value(model::BilevelModel)
+    return _objective_value(model, model.mode)
+end
+function _objective_value(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.ObjectiveValue())
 end

@@ -1,4 +1,4 @@
-# Function in this file are heavily inspired in IntervalArithmetic.jl,
+# Functions in this file are heavily inspired by IntervalArithmetic.jl,
 # which is licensed under the MIT "Expat" License:
 #
 # Copyright (c) 2014-2021: David P. Sanders & Luis Benet

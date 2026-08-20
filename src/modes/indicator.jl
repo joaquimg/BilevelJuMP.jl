@@ -12,15 +12,15 @@ The type of indicator function to use in the `IndicatorMode` mode.
 
 @doc(
     "Activates the indicator constraint on the primal constraint if the " *
-    "auxiliaty binary is zero " *
+    "auxiliary binary is one " *
     "and activates the indicator constraint on the dual variable if the " *
-    "auxiliary binary is one.",
+    "auxiliary binary is zero.",
     ZERO_ONE
 )
 
 @doc(
     "Activates the indicator constraint on the primal constraint if the " *
-    "auxiliaty binary is zero " *
+    "auxiliary binary is zero " *
     "and activates the indicator constraint on the dual variable if the " *
     "auxiliary binary is zero.",
     ZERO_ZERO
@@ -28,7 +28,7 @@ The type of indicator function to use in the `IndicatorMode` mode.
 
 @doc(
     "Activates the indicator constraint on the primal constraint if the " *
-    "auxiliaty binary is one " *
+    "auxiliary binary is one " *
     "and activates the indicator constraint on the dual variable if the " *
     "auxiliary binary is one.",
     ONE_ONE
@@ -38,11 +38,11 @@ The type of indicator function to use in the `IndicatorMode` mode.
     IndicatorMode(method::IndicatorSetting = BilevelJuMP.ONE_ONE)
 
 Used to solve a bilevel problem with the
-MPEC reformulation using indicator constaints to convert complementarity
+MPEC reformulation using indicator constraints to convert complementarity
 constraints to a mixed integer formulation.
 
 * `method` indicates how the indicator constraints are activated for primal
-  cosntraints and dual variables. See `IndicatorSetting` for more details.
+  constraints and dual variables. See `IndicatorSetting` for more details.
 """
 mutable struct IndicatorMode{T} <: AbstractBilevelSolverMode{T}
     method::IndicatorSetting

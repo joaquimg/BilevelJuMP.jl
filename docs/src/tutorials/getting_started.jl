@@ -13,7 +13,7 @@
 
 # ## Installation
 #
-# BilevelJuMP is a JuMP extension that be installed
+# BilevelJuMP is a JuMP extension that can be installed
 # by using the built-in package manager.
 
 # ```julia
@@ -115,7 +115,7 @@ dual(l2)
 using BilevelJuMP
 
 # Note that JuMP comes inside BilevelJuMP, and does not need to be installed
-# separately. Once loaded, all JuMP functions are exported along with the 
+# separately. Once loaded, all JuMP functions are exported along with the
 # BilevelJuMP additional functions.
 
 # We include a solver, in this case HiGHS:
@@ -129,14 +129,15 @@ using HiGHS
 # a bilevel solution method, in this case, `BilevelJuMP.FortunyAmatMcCarlMode`.
 # Note that `BilevelJuMP.FortunyAmatMcCarlMode` takes two optional keyword
 # arguments: `primal_big_M` and `dual_big_M` which have to be larger than the
-# value of all primal and dual variavle sof the lower level respectively to
-# guarantee that the solution is no eliminated.
+# value of all primal and dual variables of the lower level respectively to
+# guarantee that the solution is not eliminated.
 
 model = BilevelModel(
     HiGHS.Optimizer,
     mode = BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
 
-# For more on `mode`s and solutions methods, see XXX.
+# For more on `mode`s and solution methods, see the
+# [Modes overview](@ref) tutorial.
 
 # We can proceed, as usual in JuMP models and incrementally build our bilevel
 # problem. We use the same macros as JuMP.
@@ -149,11 +150,11 @@ model = BilevelModel(
 
 @variable(Upper(model), y)
 
-# The same goes for objective that are modeled with the `@objective` macro:
+# The same goes for objectives that are modeled with the `@objective` macro:
 
 @objective(Upper(model), Min, 3x + y)
 
-# and constraints that are modeled with the `@objective` macro:
+# and constraints that are modeled with the `@constraint` macro:
 
 @constraint(Upper(model), u1, x <= 5)
 @constraint(Upper(model), u2, y <= 8)
@@ -172,7 +173,7 @@ model = BilevelModel(
 
 print(model)
 
-# solve the bilevel problem, which will combine a `mode` (in this case 
+# solve the bilevel problem, which will combine a `mode` (in this case
 # `FortunyAmatMcCarlMode`) and a solver (in this case `HiGHS`):
 
 optimize!(model)
@@ -185,7 +186,7 @@ termination_status(model)
 
 primal_status(model)
 
-# check the `dual_status` to check if there is a dual solution available for the 
+# check the `dual_status` to check if there is a dual solution available for the
 # lower level:
 
 dual_status(Lower(model))
@@ -195,13 +196,13 @@ dual_status(Lower(model))
 dual_status(Upper(model))
 
 # !!! info
-#     Most method will not support upper level duals.
+#     Most methods will not support upper level duals.
 
 # !!! info
 #     JuMP's `dual_status` is not available to `BilevelModel`'s although
 #     you can query `dual_status` of each level.
 
-# Query the objecive value of the bilevel model
+# Query the objective value of the bilevel model
 
 objective_value(model)
 
@@ -225,7 +226,7 @@ dual(l2)
 
 # ## Model basics
 
-# We created a BilevelModel passing the optimizer and mode and initialization:
+# We created a BilevelModel passing the optimizer and mode at initialization:
 
 model = BilevelModel(
     HiGHS.Optimizer,
@@ -241,12 +242,12 @@ BilevelJuMP.set_mode(model,
     BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 100, dual_big_M = 100))
 
 # !!! warning
-#     Both `BilevelModel` and `set_optimizer` take a optimizer *constructor*,
+#     Both `BilevelModel` and `set_optimizer` take an optimizer *constructor*,
 #     in this case `HiGHS.Optimizer`. Note that `HiGHS.Optimizer()` returns an
-#     instance of the `HiGHS.Optimizer`. Hence, and alternative way to pass this
+#     instance of the `HiGHS.Optimizer`. Hence, an alternative way to pass this
 #     solver would be: `set_optimizer(model, () -> HiGHS.Optimizer())`.
 #
-#     `() -> HiGHS.Optimizer()` is a an anonymous function that returns an
+#     `() -> HiGHS.Optimizer()` is an anonymous function that returns an
 #     instance of the `HiGHS.Optimizer`.
 
 # !!! info

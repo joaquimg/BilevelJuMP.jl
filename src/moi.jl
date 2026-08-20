@@ -357,7 +357,7 @@ function build_bilevel(
     end
 
     #=
-        Additional Optimiality conditions (to complete the KKT)
+        Additional Optimality conditions (to complete the KKT)
     =#
 
     # build map bound map for FortunyAmatMcCarlMode

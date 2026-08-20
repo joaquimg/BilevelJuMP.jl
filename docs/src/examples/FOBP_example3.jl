@@ -54,7 +54,7 @@ clauses = [[1, 2, 3], [-1, -4, 3], [7, -6, 4], [5, 6, 7]]
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, sum(x[i] for i in 1:I) - z)
 
 # Upper level constraints
@@ -95,12 +95,12 @@ for i in 1:I
     JuMP.set_dual_start_value.(b3, -1)
 end
 
-# Now we can solve the problem and verify the solution again that reported by
+# Now we can solve the problem and verify the solution against that reported by
 # Dempe.
 
 optimize!(model)
 
-# 
+#
 primal_status(model)
 
 #

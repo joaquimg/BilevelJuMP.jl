@@ -4,30 +4,30 @@
 # difference between them is the way the complementarity constraints are
 # reformulated. The reformulation method is set with the `mode` option of the
 # `BilevelModel` constructor.
-# 
+#
 # The `mode`s available are:
-# 
+#
 # - `BilevelJuMP.SOS1Mode()`: uses SOS1 constraints to model complementarity
 #   constraints and solve the problem with MIP solvers (Cbc, Xpress, Gurobi,
 #   CPLEX, SCIP).
-# 
+#
 # - `BilevelJuMP.IndicatorMode()`: uses Indicator constraints to model
 #     complementarity constraints and solve the problem with MIP solvers (Cbc,
 #     Xpress, Gurobi, CPLEX, SCIP).
-# 
+#
 # - `BilevelJuMP.BigMMode()`: uses the Fortuny-Amat and McCarl
 #     reformulation that requires a MIP solver with very basic functionality,
 #     i.e., just binary variables are needed. The main drawback of this method is
 #     that one must provide bounds for all primal and dual variables. However, if
 #     good bounds are provided, this method can be more efficient than the
 #     previous. Bound hints to compute the big-Ms can be passed with the methods:
-#     `set_primal_(upper\lower)_bound_hint(variable, bound)`, for primals; and
-#     `set_dual_(upper\lower)_bound_hint(constraint, bound)` for duals. We can
+#     `set_primal_(upper/lower)_bound_hint(variable, bound)`, for primals; and
+#     `set_dual_(upper/lower)_bound_hint(constraint, bound)` for duals. We can
 #     also call `FortunyAmatMcCarlMode(primal_big_M = vp, dual_big_M = vd)`,
 #     where `vp` and `vd` are, respectively, the big M fallback values for
 #     primal and dual variables, these are used when some variables have no given
 #     bounds, otherwise the given bounds are used instead.
-# 
+#
 # - `BilevelJuMP.ProductMode()`: reformulates the complementarity constraints as
 #     products so that the problem can be solved by NLP (Ipopt, KNITRO) solvers or
 #     even MIP solvers with the aid of binary expansions
@@ -35,7 +35,7 @@
 #     to have upper and lower bounds. Also, note that the `Gurobi` solver supports
 #     products, but requires
 #     [setting the `"NonConvex"` options](https://github.com/jump-dev/Gurobi.jl#using-gurobi-v90-and-you-got-an-error-like-q-not-psd).
-# 
+#
 # - `BilevelJuMP.MixedMode(default = mode)`: where `mode` is one of the other
 #     modes described above. With this method it is possible to set complementarity
 #     reformulations per constraint with `BilevelJuMP.set_mode(constraint, mode)`,
@@ -43,16 +43,25 @@
 #     of the modes described above. If no mode is set for a constraint, the
 #     `default` mode is used instead. To set a mode to reformulate variables
 #     bounds use: `BilevelJuMP.set_mode(variable, mode)`.
-# 
+#
 # - `BilevelJuMP.StrongDualityMode`: this mode is not a complementarity
 #     reformulation method, instead, all complementarity constraints are replaced
 #     by constraints enforcing the strong duality.
 #     This mode is especially amenable for NLP solvers (Ipopt, KNITRO).
 #     MIP solvers can also be used but they will have to deal with the products
-#     of variables crated or the will have to be used in conjunction with
+#     of variables created or they will have to be used in conjunction with
 #     `QuadraticToBinary.jl`.
-# 
-# 
+#
+# - `BilevelJuMP.MibSMode(mibs_call)`: this mode is not a reformulation either.
+#     It hands the problem to [MibS](https://github.com/coin-or/MibS), an
+#     external mixed integer bilevel solver, so no `set_optimizer` call is
+#     needed. It requires both levels to be linear and every variable to be
+#     integer. The executable comes from the `MibS_jll` package, which is not a
+#     dependency of BilevelJuMP, so it is passed in explicitly:
+#     `BilevelJuMP.MibSMode(MibS_jll.mibs)`. Dual solutions are not available.
+#     See the MibS examples for a complete model.
+#
+#
 # The following example shows how to solve a classic bilevel problem.
 
 # We start loading all libraries needed for this example.

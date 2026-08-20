@@ -4,7 +4,7 @@
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
 """
-    StrongDualityMode(eps = 0.0, inequality = true)
+    StrongDualityMode(eps = 0.0; inequality = true)
 
 A mode that adds a strong duality constraint of the lower level problem
 instead of reformulating the complementarity constraints.
