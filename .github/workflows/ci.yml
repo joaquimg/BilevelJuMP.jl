@@ -35,22 +35,15 @@ jobs:
       - uses: julia-actions/cache@v3
       # Write the Xpress community/CI licence to disk so Xpress.jl can find it.
       # Mirrors jump-dev/MathOptInterface.jl .github/workflows/solver-tests.yml.
-      # Obtain an Xpress licence from the community licence that the PyPI `xpress`
-      # wheel bundles as xpress/license/community-xpauth.xpr, falling back to the
-      # XPAUTH_XPR secret (see https://pypi.org/project/xpress).
-      # The licence caps the solver release it authorises ("licensing error 21:
-      # Your license only authorizes up to release X"), so the wheel and Xpress_jll
-      # have to line up. 9.8.1 is the newest wheel still bundling a licence, which
-      # is why test/Project.toml pins Xpress_jll to =9.8.0.
+      # Obtain an Xpress licence. test/solvers/download_xpress_license.jl pulls the
+      # community licence out of the PyPI `xpress` wheel; the XPAUTH_XPR secret is
+      # the fallback (it expired on 28-feb-2026, so the download is tried first -
+      # swap the order once it is renewed). The licence is never committed.
       - name: Setup Xpress licence
         shell: bash
         run: |
-          set -euo pipefail
-          # The XPAUTH_XPR secret expired on 28-feb-2026, so prefer the bundled
-          # community licence and fall back to the secret only if the wheel cannot
-          # be fetched. Swap the order once the secret is renewed.
-          if python -m pip install --quiet --no-deps --target "$RUNNER_TEMP/xp" "xpress==9.8.1"; then
-            cp "$RUNNER_TEMP/xp/xpress/license/community-xpauth.xpr" "$RUNNER_TEMP/xpauth.xpr"
+          set -uo pipefail
+          if julia test/solvers/download_xpress_license.jl "$RUNNER_TEMP/xpauth.xpr"; then
             echo "Using community licence from the xpress PyPI wheel"
           elif [ -n "${XPAUTH_XPR:-}" ]; then
             echo "$XPAUTH_XPR" > "$RUNNER_TEMP/xpauth.xpr"
@@ -59,7 +52,6 @@ jobs:
             echo "No Xpress licence available; Xpress tests will skip"
             exit 0
           fi
-          grep -o 'expiry="[^"]*"' "$RUNNER_TEMP/xpauth.xpr" || true
           echo "XPAUTH_PATH=$RUNNER_TEMP/xpauth.xpr" >> "$GITHUB_ENV"
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1

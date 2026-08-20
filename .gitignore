@@ -16,3 +16,6 @@ test.jl
 *.aux
 /docs/src/tutorials/conic_lower.md
 /docs/src/tutorials/lower_duals.md
+
+# Xpress licences are downloaded, never committed
+*.xpr
