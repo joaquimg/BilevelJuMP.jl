@@ -13,22 +13,19 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     env:
-      SECRET_XPRS_WIN_8110: ${{ secrets.XPRS_WIN_8110 }}
-      SECRET_XPRL_WIN_8110: ${{ secrets.XPRL_WIN_8110 }}
-      SECRET_XPRA_WIN_8130: ${{ secrets.XPAUTH_XPR }}
+      XPAUTH_XPR: ${{ secrets.XPAUTH_XPR }}
+      XPRESS_JL_SKIP_LIB_CHECK: "true"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - version: '1.10'
-            os: windows-latest
-            arch: x64
-          - version: '1.10'
-            os: ubuntu-latest
-            arch: x64
-          - version: '1'
-            os: ubuntu-latest
-            arch: x64     
+          - {version: '1.10', os: windows-latest, arch: x64}
+          - {version: '1.10', os: ubuntu-latest, arch: x64}
+          - {version: '1', os: ubuntu-latest, arch: x64}
+          # macOS is omitted: MibS_jll installs on macOS but ships no `mibs`
+          # executable for aarch64, so the MibS tests fail with
+          # `UndefVarError: mibs not defined in MibS_jll`. Adding macOS needs the
+          # availability guard that #243 introduces in test/test_mibs.jl.
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -36,6 +33,26 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
+      # Write the Xpress community/CI licence to disk so Xpress.jl can find it.
+      # Mirrors jump-dev/MathOptInterface.jl .github/workflows/solver-tests.yml.
+      # Obtain an Xpress licence. test/solvers/download_xpress_license.jl pulls the
+      # community licence out of the PyPI `xpress` wheel; the XPAUTH_XPR secret is
+      # the fallback (it expired on 28-feb-2026, so the download is tried first -
+      # swap the order once it is renewed). The licence is never committed.
+      - name: Setup Xpress licence
+        shell: bash
+        run: |
+          set -uo pipefail
+          if julia test/solvers/download_xpress_license.jl "$RUNNER_TEMP/xpauth.xpr"; then
+            echo "Using community licence from the xpress PyPI wheel"
+          elif [ -n "${XPAUTH_XPR:-}" ]; then
+            echo "$XPAUTH_XPR" > "$RUNNER_TEMP/xpauth.xpr"
+            echo "Using XPAUTH_XPR secret"
+          else
+            echo "No Xpress licence available; Xpress tests will skip"
+            exit 0
+          fi
+          echo "XPAUTH_PATH=$RUNNER_TEMP/xpauth.xpr" >> "$GITHUB_ENV"
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
