@@ -27,7 +27,7 @@ jobs:
           # `UndefVarError: mibs not defined in MibS_jll`. Adding macOS needs the
           # availability guard that #243 introduces in test/test_mibs.jl.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
