@@ -17,10 +17,10 @@ complementarity constraints to a mixed integer formulation.
   is the associated dual variable. If `true`, the reformulation is
   `expr == slack`, `slack <= big_M * (1 - binary)` and `var <= big_M * binary`.
 
-* `primal_big_M` is a big-M used to primal variables that have no bounds so
+* `primal_big_M` is a big-M used for primal variables that have no bounds so
   we can compute the big-M for the primal constraint.
 
-* `dual_big_M` is a big-M used to dual variables that have no bounds so
+* `dual_big_M` is a big-M used for dual variables that have no bounds so
   we can compute the big-M for the dual constraint.
 
 Also known as `FortunyAmatMcCarlMode` (which can be used interchangeably).

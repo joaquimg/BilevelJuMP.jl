@@ -44,6 +44,9 @@ function JuMP.show_backend_summary(io::IO, model::BilevelModel)
     end
 end
 function JuMP.solver_name(model::BilevelModel)
+    return _solver_name(model, model.mode)
+end
+function _solver_name(model::BilevelModel, ::AbstractBilevelSolverMode)
     name = try
         MOI.get(model.solver, MOI.SolverName())::String
     catch ex

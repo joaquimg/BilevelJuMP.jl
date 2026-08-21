@@ -1,9 +1,8 @@
 # # Princeton Handbook of Test Problems: Test 9.3.4
 #
-# This example is from the book Princeton Handbook of Test Problems in Local and Global Optimization
-# Dempe, Chapter 9.3.4 -parg 223 [url](https://www.springer.com/gp/book/9780792358015)
-
-# Here, only the second level is described
+# This example is from the book Princeton Handbook of Test Problems in Local
+# and Global Optimization, Floudas et al., Chapter 9.3.4, Page 223,
+# [url](https://www.springer.com/gp/book/9780792358015).
 
 # Model of the problem
 # First level
@@ -38,7 +37,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, 2x[1] + 2x[2] - 3y[1] - 3y[2] - 60)
 
 # Upper level constraints
@@ -58,7 +57,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 @constraint(Lower(model), [i = 1:2], y[i] >= -10)
 @constraint(Lower(model), [i = 1:2], y[i] <= 20)
 
-# Now we can solve the problem and verify the solution again that reported by the book
+# Now we can solve the problem and verify the solution against that reported by the book
 
 optimize!(model)
 
@@ -90,4 +89,4 @@ sol = vcat(value.(x), value.(y)) #src
 # # Like any other optimization problem, there is a chance in bilevel
 # optimization to find multiple solutions with the same optimal value;
 # based on the inherent stochasticity of the algorithm and random seed,
-# we are expecting two optimal solutions for this problem. 
+# we are expecting two optimal solutions for this problem.

@@ -17,19 +17,19 @@
 # \begin{align}
 #     &\max_{\lambda, q_S} \quad \lambda \cdot g_S \\
 #     &\textit{s.t.} \quad 0 \leq q_S \leq 100\\
-#     &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{1}, g_{2}, g_D} 50 g_{R1} + 100  g_{R2} + 1000 g_{D}\\
+#     &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{R1}, g_{R2}, g_D} 50 g_{R1} + 100 g_{R2} + 1000 g_{D}\\
 #             & \hspace{70pt} \textit{s.t.} \quad g_S \leq q_S \\
 #             & \hspace{88pt} \quad  0 \leq g_S \leq 100 \\
-#             & \hspace{88pt}\quad  0 \leq g_{1} \leq 40 \\
-#             & \hspace{88pt}\quad  0 \leq g_{2} \leq 40 \\
+#             & \hspace{88pt}\quad  0 \leq g_{R1} \leq 40 \\
+#             & \hspace{88pt}\quad  0 \leq g_{R2} \leq 40 \\
 #             & \hspace{88pt}\quad  0 \leq g_{D} \leq 100 \\
-#     & \hspace{88pt}\quad  g_S + g_{1} + g_{2} + g_D = 100 \quad  : \quad \lambda \label{eq-dual-lambda}
+#     & \hspace{88pt}\quad  g_S + g_{R1} + g_{R2} + g_D = 100 \quad  : \quad \lambda \label{eq-dual-lambda}
 # \end{align}
 # ```
 
 # Where $\lambda$ is the dual of the load balance constraint
 # (last constraint in the lower part),
-# $g_S$, $g_{1}$, $g_2$ represent the generation of
+# $g_S$, $g_{R1}$, $g_{R2}$ represent the generation of
 # the strategic bidder and from two other (non-strategic) plants.
 # $g_D$ represents the deficit in generation.
 # Finally, $q_S$ is the quantity bid optimized by the strategic generator.
@@ -62,7 +62,7 @@ model = BilevelModel()
 
 # This model, can be solved by selecting a reformulation and a solver.
 # Here we select Strong-Duality reformulation, the Ipopt solver and call
-# optimizes to perform the reformulation and solve it.
+# `optimize!` to perform the reformulation and solve it.
 
 BilevelJuMP.set_mode(model, BilevelJuMP.StrongDualityMode())
 set_optimizer(model, Ipopt.Optimizer)
@@ -71,7 +71,7 @@ optimize!(model)
 # ## MIP solution
 
 # It is also possible to solve such problem by using a MIP formulation.
-# The main issue is the product of variable in the upper level objective.
+# The main issue is the product of variables in the upper level objective.
 # However, this can be easily handled by using the package
 # `QuadraticToBinary.jl` for automatic binary expansions.
 # Because binary expansions require bounds on variables,
@@ -107,4 +107,4 @@ for i in 1:3
     var = @variable(Upper(model), variable_type = DualOf(reserves[i]))
     push!(my_duals, var)
 end
-my_duals # a vector of anonimous variables
+my_duals # a vector of anonymous variables

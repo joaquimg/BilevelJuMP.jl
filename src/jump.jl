@@ -23,7 +23,7 @@ julia> model = BilevelModel()
 
 Create a BilevelModel with the given `solver` and solve `mode`.
 
-* `solver`: is a functions that takes no arguments and returns a JuMP solver object.
+* `solver`: is a function that takes no arguments and returns a JuMP solver object.
 * `mode`: is a solve mode object that defines how the model is solved.
 * `add_bridges`: if `true` (default) then bridges are added to the model.
   If `false` then bridges are not added and the model is not modified.
@@ -45,7 +45,7 @@ and equivalent to
 ```jldoctest
 julia> model = BilevelModel()
 
-julia> BilevelJuMP.set_solver(model, HiGHS.Optimizer)
+julia> set_optimizer(model, HiGHS.Optimizer)
 
 julia> BilevelJuMP.set_mode(model, BilevelJuMP.FortunyAmatMcCarlMode(primal_big_M = 1e6, dual_big_M = 1e6))
 ```
@@ -66,7 +66,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
     # maps the BilevelVariableRef index
     # to JuMP variables of the correct level
-    # variable that appear in both levels are inboth dicts
+    # variable that appear in both levels are in both dicts
     var_upper::Dict{Int,JuMP.AbstractVariableRef}
     var_lower::Dict{Int,JuMP.AbstractVariableRef}
 
@@ -75,7 +75,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     var_info::Dict{Int,BilevelVariableInfo}
 
     # maps JuMP.VariableRef to BilevelVariableRef
-    # built upon necessity for getting contraints and functions
+    # built upon necessity for getting constraints and functions
     var_upper_rev::Union{
         Nothing,
         Dict{JuMP.AbstractVariableRef,JuMP.AbstractVariableRef},
@@ -121,7 +121,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     ctr_info::Dict{Int,BilevelConstraintInfo}
 
     # maps JuMP.ConstraintRef to BilevelConstraintRef
-    # built upon necessity for getting contraints and functions
+    # built upon necessity for getting constraints and functions
     ctr_upper_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
     ctr_lower_rev::Union{Nothing,Dict{JuMP.ConstraintRef,JuMP.ConstraintRef}} # bilevel ref no defined
 
@@ -139,7 +139,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # from lower dual MOI indices
     # to mpec indices
     lower_dual_to_sblm::Any
-    # from mped indices to solver indices
+    # from mpec indices to solver indices
     sblm_to_solver::Any
     # lower primal to dual map
     # to obtain dual variables from primal constraints
@@ -148,6 +148,10 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # results from opt process
     solve_time::Float64
     build_time::Float64
+
+    # results of modes that do not solve through a MOI optimizer, and therefore
+    # have nowhere else to keep them (see `MibSMode`). `nothing` otherwise.
+    solution::Any
 
     # BilevelModel model attributes
     copy_names::Bool
@@ -188,7 +192,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
 
             # solve method
             nothing,
-            NoMode{Float64},
+            NoMode{Float64}(),
 
             # maps
             nothing,
@@ -200,6 +204,7 @@ mutable struct BilevelModel <: AbstractBilevelModel
             # solution extras
             NaN,
             NaN,
+            nothing,
             # options
             false,
             false,
@@ -223,7 +228,7 @@ function BilevelModel(
 end
 
 """
-    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)	
+    set_mode(bm::BilevelModel, mode::AbstractBilevelSolverMode)
 
 Set the mode of a bilevel model.
 """
@@ -477,7 +482,14 @@ function JuMP.constraint_by_name(model::BilevelModel, name::String)
 end
 
 # Statuses
+#
+# Each of these delegates to an internal getter dispatched on the solution mode.
+# The fallback below reads the attached MathOptInterface optimizer; modes that
+# solve the problem some other way (see `MibSMode`) add a method of their own.
 function JuMP.primal_status(model::BilevelModel)
+    return _primal_status(model, model.mode)
+end
+function _primal_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.PrimalStatus())
 end
@@ -500,10 +512,17 @@ function JuMP.dual_status(model::LowerModel)
 end
 
 function JuMP.termination_status(model::BilevelModel)
+    return _termination_status(model, model.mode)
+end
+function _termination_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.TerminationStatus())
 end
+
 function JuMP.raw_status(model::BilevelModel)
+    return _raw_status(model, model.mode)
+end
+function _raw_status(model::BilevelModel, ::AbstractBilevelSolverMode)
     _check_solver(model)
     return MOI.get(model.solver, MOI.RawStatusString())
 end
@@ -619,8 +638,27 @@ end
 function JuMP.optimize!(::T) where {T<:AbstractBilevelModel}
     return error("Can't solve a model of type: $T ")
 end
-function JuMP.optimize!(
-    model::BilevelModel;
+function JuMP.optimize!(model::BilevelModel; kwargs...)
+    if model.mode === nothing
+        error(
+            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+        )
+    end
+    return _optimize!(model, model.mode; kwargs...)
+end
+
+function _optimize!(::BilevelModel, ::NoMode; kwargs...)
+    return error(
+        "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
+    )
+end
+
+# Default: reformulate into a single optimization problem and hand it to the
+# attached MathOptInterface optimizer. Modes that solve the problem some other
+# way (see `MibSMode`) add a method of their own.
+function _optimize!(
+    model::BilevelModel,
+    mode::AbstractBilevelSolverMode;
     lower_prob = "",
     upper_prob = "",
     bilevel_prob = "",
@@ -628,14 +666,6 @@ function JuMP.optimize!(
     file_format = MOI.FileFormats.FORMAT_AUTOMATIC,
     _differentiation_backend::MOI.Nonlinear.AbstractAutomaticDifferentiation = MOI.Nonlinear.SparseReverseMode(),
 )
-    if model.mode === nothing
-        error(
-            "No solution mode selected, use `set_mode(model, mode)` or initialize with `BilevelModel(optimizer_constructor, mode = some_mode)`",
-        )
-    else
-        mode = model.mode
-    end
-
     _check_solver(model)
 
     solver = model.solver #optimizer#MOI.Bridges.full_bridge_optimizer(optimizer, Float64)
@@ -666,7 +696,7 @@ function JuMP.optimize!(
     moi_link = convert_indices(model.link)
     moi_link2 = index2(model.upper_var_to_lower_ctr_link)
 
-    reset!(mode) # cleaup cached data
+    reset!(mode) # cleanup cached data
     # build bound for FortunyAmatMcCarlMode
     build_bounds!(model, mode)
 
@@ -723,7 +753,7 @@ function JuMP.optimize!(
         nlp_model = Model()
         nlp_model.moi_backend = solver
         nlp_model.nlp_model = model.upper.nlp_model
-        # TODO assert varible index ordering
+        # TODO assert variable index ordering
         vars_upper_orig = MOI.get(model.upper, MOI.ListOfVariableIndices())
         vars_in_solver = MOI.get(nlp_model, MOI.ListOfVariableIndices())
         for i in eachindex(vars_upper_orig) #less vars
@@ -921,6 +951,13 @@ dual_upper_bound(::CI{F,S}) where {F,S} = +Inf
 # Initialize
 
 function _check_solver(bm::BilevelModel)
+    if bm.mode isa MibSMode
+        error(
+            "This query is not available when solving with " *
+            "`BilevelJuMP.MibSMode`, because MibS is an external solver that " *
+            "is not attached to the model as a MathOptInterface optimizer.",
+        )
+    end
     if bm.solver === nothing
         error(
             "No solver attached, use `set_optimizer(model, optimizer_constructor)` or initialize with `BilevelModel(optimizer_constructor)`",
@@ -974,7 +1011,7 @@ function check_mixed_mode(mode)
 end
 
 """
-    set_mode(ci::BilevelVariableRef, mode::AbstractBilevelSolverMode)
+    set_mode(ci::BilevelConstraintRef, mode::AbstractBilevelSolverMode)
 
 Set the mode of a constraint. This is used in `MixedMode` reformulations.
 """

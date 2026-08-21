@@ -23,7 +23,7 @@ and in other reviews:
 
 ## Bilevel Optimization in BilevelJuMP
 
-In BileveJuMP focus on the following bilevel problem form:
+In BilevelJuMP we focus on the following bilevel problem form:
 
 ```math
 \begin{aligned}
@@ -48,7 +48,7 @@ For more information see our paper:
 
 ```
 @article{diasgarcia2022bileveljump,
-    title={{BilevelJuMP. jl}: {M}odeling and solving bilevel optimization in {J}ulia},
+    title={{BilevelJuMP.jl}: {M}odeling and solving bilevel optimization in {J}ulia},
     author={{Dias Garcia}, Joaquim and Bodin, Guilherme and Street, Alexandre},
     journal={arXiv preprint arXiv:2205.02307},
     year={2022}

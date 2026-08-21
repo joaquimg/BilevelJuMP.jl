@@ -9,7 +9,7 @@
 # ```math
 # \min 3x + y,\\
 # \notag s.t.\\
-# x \leq 5,\\ 
+# x \leq 5,\\
 # y \leq 8,\\
 # y \geq 0,\\
 # ```
@@ -77,7 +77,7 @@ BilevelJuMP.set_primal_upper_bound_hint(x, 6)
 BilevelJuMP.set_primal_lower_bound_hint(y, -1)
 BilevelJuMP.set_primal_upper_bound_hint(y, 9)
 
-# Now we can solve the problem and verify the solution again that reported by
+# Now we can solve the problem and verify the solution against that reported by
 # Dempe.
 
 optimize!(model)
