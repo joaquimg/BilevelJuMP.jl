@@ -567,6 +567,13 @@ function variables_unit()
     @test Set(JuMP.all_variables(Lower(model))) == Set([w, z])
     @test Set(JuMP.all_variables(model)) == Set([w, z])
 
+    # `num_variables` is consistent with `all_variables` on each level
+    @test JuMP.num_variables(model) == length(JuMP.all_variables(model))
+    @test JuMP.num_variables(Upper(model)) ==
+          length(JuMP.all_variables(Upper(model)))
+    @test JuMP.num_variables(Lower(model)) ==
+          length(JuMP.all_variables(Lower(model)))
+
     ex = @expression(model, w + z)
     @constraint(Upper(model), ctr, ex >= 0)
 
@@ -669,4 +676,59 @@ function constraint_hints()
     @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(lin, [1])
     @test_throws ErrorException BilevelJuMP.set_dual_upper_bound_hint(soc, 1)
     @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(soc, [1])
+end
+
+function all_variables_levels()
+    # an empty model has no variables in any level
+    model = BilevelModel()
+    @test isempty(JuMP.all_variables(model))
+    @test isempty(JuMP.all_variables(Upper(model)))
+    @test isempty(JuMP.all_variables(Lower(model)))
+
+    # one variable of each possible level
+    model = BilevelModel()
+    @variable(Upper(model), x)      # UPPER_BOTH
+    @variable(Lower(model), y)      # LOWER_BOTH
+    @variable(UpperOnly(model), xo) # UPPER_ONLY
+    @variable(LowerOnly(model), yo) # LOWER_ONLY
+    @constraint(Lower(model), c, x + y <= 1)
+    @variable(Upper(model), lam, DualOf(c)) # DUAL_OF_LOWER
+
+    @test BilevelJuMP.mylevel(x) == BilevelJuMP.UPPER_BOTH
+    @test BilevelJuMP.mylevel(y) == BilevelJuMP.LOWER_BOTH
+    @test BilevelJuMP.mylevel(xo) == BilevelJuMP.UPPER_ONLY
+    @test BilevelJuMP.mylevel(yo) == BilevelJuMP.LOWER_ONLY
+    @test BilevelJuMP.mylevel(lam) == BilevelJuMP.DUAL_OF_LOWER
+
+    # the bilevel model holds every variable, with no duplicates for the
+    # linking variables that live in both levels
+    vars = JuMP.all_variables(model)
+    @test Set(vars) == Set([x, y, xo, yo, lam])
+    @test length(vars) == 5
+    @test allunique(vars)
+
+    # each level only sees the variables that appear in it: the linking
+    # variables `x` and `y`, plus the ones exclusive to that level
+    @test Set(JuMP.all_variables(Upper(model))) == Set([x, y, xo, lam])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([x, y, yo])
+
+    # `num_variables` agrees with `all_variables` on every level
+    @test JuMP.num_variables(model) == length(JuMP.all_variables(model))
+    @test JuMP.num_variables(Upper(model)) ==
+          length(JuMP.all_variables(Upper(model)))
+    @test JuMP.num_variables(Lower(model)) ==
+          length(JuMP.all_variables(Lower(model)))
+
+    # deleting a linking variable removes it from both levels
+    JuMP.delete(model, x)
+    @test Set(JuMP.all_variables(model)) == Set([y, xo, yo, lam])
+    @test Set(JuMP.all_variables(Upper(model))) == Set([y, xo, lam])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([y, yo])
+
+    # deleting a single level variable does not affect the other level
+    JuMP.delete(model, yo)
+    @test Set(JuMP.all_variables(model)) == Set([y, xo, lam])
+    @test Set(JuMP.all_variables(Upper(model))) == Set([y, xo, lam])
+    @test Set(JuMP.all_variables(Lower(model))) == Set([y])
+    return nothing
 end
