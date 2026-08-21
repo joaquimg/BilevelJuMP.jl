@@ -306,7 +306,7 @@ function build_bilevel(
     end
 
     # append the second level primal
-    append_to(m, lower, lower_idxmap)
+    _append_to(m, lower, lower_idxmap)
     if copy_names
         pass_names(m, lower, lower_idxmap)
     end
@@ -351,7 +351,7 @@ function build_bilevel(
     end
 
     # append the second level dual
-    append_to(m, lower_dual, lower_dual_idxmap)
+    _append_to(m, lower_dual, lower_dual_idxmap)
     if copy_names
         pass_names(m, lower_dual, lower_dual_idxmap)
     end

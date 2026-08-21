@@ -32,17 +32,11 @@ end
 # copied, the objective function in particular, since `dest` holds the objective
 # of the upper level.
 #
-# This used to be a copy of `default_copy_to` that called into
-# `MOI.Utilities._try_constrain_variables_on_creation` and
-# `MOI.Utilities._pass_constraints`, which are private (#218). Those two are
-# spelled out below; the public `MOI.Utilities` functions that `default_copy_to`
-# uses are still called directly.
-#
 # The steps are kept in the same order as `default_copy_to`, down to which
 # variables are constrained on creation: the order in which variables reach the
 # solver changes its iterates, and the tests do check numbers that a nonlinear
 # solver only gets right to a tolerance.
-function append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap)
+function _append_to(dest::MOI.ModelLike, src::MOI.ModelLike, idxmap)
     # The `NLPBlock` assumes that the order of variables does not change (#849)
     if MOI.NLPBlock() in MOI.get(src, MOI.ListOfModelAttributesSet())
         error("NLP models are not supported.")
