@@ -4,7 +4,7 @@
 # second-order cone programs
 # ([url](https://journalofinequalitiesandapplications.springeropen.com/articles/10.1186/1029-242X-2014-168) or [url](https://core.ac.uk/download/pdf/81261904.pdf))
 # SOCBLP stands for bilevel programming problem with lower level second-order cone program
-# Bold point(s): Using second-order cone in the lower level problem 
+# Bold point(s): Using second-order cone in the lower level problem
 
 # Model of the problem
 # First level
@@ -49,7 +49,7 @@ model = BilevelModel(
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, x + 3(y[1] - y[2]))
 
 # Upper level constraints
@@ -87,7 +87,8 @@ for i in 1:2
     @constraint(Upper(model), y[i] in MOI.GreaterThan(-5.0))
 end
 
-# Now we can solve the problem and verify the solution again that reported by
+# Now we can solve the problem and verify the solution against that reported by
+# Chi et al.
 
 optimize!(model)
 

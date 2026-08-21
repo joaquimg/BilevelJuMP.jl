@@ -63,17 +63,28 @@ solvers_complements = OptModeType[]
 
 include("solvers/ipopt.jl")
 # include("solvers/cbc.jl")
+# SCIP is Linux-only here: SCIP 0.12+ requires Ipopt_jll >= 300.1400.1400,
+# which pulls a COIN-OR stack incompatible with MibS_jll v1.1.3, and the older
+# SCIP 0.11.x that does satisfy the Ipopt pin segfaults on Windows in
+# SCIPprobFree. Installing it at runtime keeps it out of the resolved
+# environment on the other platforms.
 if Sys.islinux()
-    Pkg.add(; name = "SCIP")#, version="0.11.12")
+    Pkg.add(; name = "SCIP")
     include("solvers/scip.jl")
 end
-if Sys.iswindows() && (
-    get(ENV, "SECRET_XPRS_WIN_8110", "") != "" ||
-    get(ENV, "XPRESSDIR", "") != ""
-)
-    @info "Running Xpress in Tests"
-    include("solvers/xpress.jl")
+# Xpress is loaded from Xpress_jll, so it needs only a licence, not a local
+# installation. Skip when no licence is available (e.g. forks, local runs) or
+# when the licence cannot be used - as of 2026-08 the CI licence has expired,
+# so treat that as "no Xpress" rather than failing the whole suite. See #245.
+if get(ENV, "XPAUTH_PATH", "") != "" || get(ENV, "XPAUTH_XPR", "") != ""
+    try
+        include("solvers/xpress.jl")
+        @info "Running Xpress in Tests"
+    catch err
+        @warn "Skipping Xpress tests: could not initialize Xpress" err
+    end
 end
+
 # DONE
 # include("solvers/gurobi.jl")
 # include("solvers/knitro.jl")
@@ -113,6 +124,7 @@ include("jump_unit.jl")
         jump_constraints()
         jump_variables()
         variables_unit()
+        all_variables_levels()
         jump_no_cb()
         constraint_unit()
         constraint_dualof()

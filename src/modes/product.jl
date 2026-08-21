@@ -7,8 +7,12 @@
     ProductMode(epsilon = 0.0; with_slack = false, aggregation_group = nothing)
 
 Used to solve a bilevel problem with the
-MPEC reformulation using products  to convert complementarity constraints
+MPEC reformulation using products to convert complementarity constraints
 into non-convex quadratic constraints.
+
+* `epsilon` is the tolerance used to relax the products. Given a pair `expr`
+  and `var`, the reformulation is `expr * var <= epsilon` instead of
+  `expr * var == 0`. Defaults to `0.0`.
 
 * `with_slack` indicates whether to use slack variables to reformulate the
   complementarity constraints. Given a pair `expr` and `var`, the reformulation

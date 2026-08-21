@@ -36,7 +36,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, 0 * y + 0)
 
 # Followed by the objective and constraints of the lower problem:
@@ -50,7 +50,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 @constraint(Lower(model), -4x + 5y <= 10)
 @constraint(Lower(model), -4x - 5y <= 10)
 
-# Now we can solve the problem and verify the solution again that reported by
+# Now we can solve the problem and verify the solution against that reported by
 # Dempe.
 
 optimize!(model)

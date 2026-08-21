@@ -37,7 +37,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 
 # Then we can add the objective and constraints of the upper problem:
 
-# Upper level objecive function
+# Upper level objective function
 @objective(Upper(model), Min, (x - 5)^2 + (2y + 1)^2)
 
 # Upper level constraints
@@ -55,7 +55,7 @@ model = BilevelModel(Ipopt.Optimizer; mode = BilevelJuMP.ProductMode(1e-9))
 @constraint(Lower(model), x + y <= 7)
 
 
-# Now we can solve the problem and verify the solution again that reported by
+# Now we can solve the problem and verify the solution against that reported by
 # the book.
 
 optimize!(model)

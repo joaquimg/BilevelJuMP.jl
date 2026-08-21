@@ -1,8 +1,8 @@
 # # Using QuadraticToBinary
 
 # [QuadraticToBinary.jl](https://github.com/joaquimg/QuadraticToBinary.jl) is a
-# package that converts quadratic terms in constraints and objective. To do so
-# the pack acts like a solver on top of the real solver and most data is forwarded
+# package that converts quadratic terms in constraints and objectives. To do so
+# the package acts like a solver on top of the real solver and most data is forwarded
 # directly to the solver itself. For many solvers it is enough to use:
 
 using BilevelJuMP, QuadraticToBinary, HiGHS
@@ -55,4 +55,4 @@ Q_SOLVER = QuadraticToBinary.Optimizer{Float64}(CACHED_SOLVER)
 BilevelModel(()->Q_SOLVER, mode = BilevelJuMP.ProductMode(1e-5))
 
 # Note that we used `()->Q_SOLVER` instead of just `Q_SOLVER` because `BilevelModel`
-# requires as constructor and not an instance of an object.
+# requires a constructor and not an instance of an object.

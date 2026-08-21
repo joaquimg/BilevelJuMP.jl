@@ -159,7 +159,7 @@ function JuMP.is_valid(model::BilevelModel, c::JuMP.NonlinearConstraintRef)
     return JuMP.is_valid(Upper(model), c)
 end
 
-# delition is only from the full bilevel model
+# deletion is only from the full bilevel model
 function JuMP.delete(model::BilevelModel, c::JuMP.NonlinearConstraintRef)
     return JuMP.delete(model.upper, c)
 end
@@ -196,7 +196,7 @@ function JuMP.nonlinear_dual_start_value(model::LowerModel)
 end
 function JuMP.nonlinear_dual_start_value(model::BilevelModel)
     return error(
-        "JuMP.nonlinear_dual_start_value should be called in a inner model.",
+        "JuMP.nonlinear_dual_start_value should be called in an inner model.",
     )
 end
 

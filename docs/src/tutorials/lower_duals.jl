@@ -23,13 +23,13 @@
 # \begin{align}
 #     &\max_{\lambda, q_S} \quad \lambda \cdot g_S \\
 #     &\textit{s.t.} \quad 0 \leq q_S \leq 100\\
-#     &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{1}, g_{2}, g_D} 50 g_{1} + 100  g_{2} + 1000 g_{D}\\
+#     &\hspace{28pt} (g_S, \lambda) \in \arg\min_{g_S, g_{R1}, g_{R2}, g_D} 50 g_{R1} + 100 g_{R2} + 1000 g_{D}\\
 #             & \hspace{70pt} \textit{s.t.} \quad g_S \leq q_S \\
 #             & \hspace{88pt} \quad  0 \leq g_S \leq 100 \\
-#             & \hspace{88pt}\quad  0 \leq g_{1} \leq 40 \\
-#             & \hspace{88pt}\quad  0 \leq g_{2} \leq 40 \\
+#             & \hspace{88pt}\quad  0 \leq g_{R1} \leq 40 \\
+#             & \hspace{88pt}\quad  0 \leq g_{R2} \leq 40 \\
 #             & \hspace{88pt}\quad  0 \leq g_{D} \leq 100 \\
-#     & \hspace{88pt}\quad  g_S + g_{1} + g_{2} + g_D = 100 \quad  : \quad \lambda \label{eq-dual-lambda}
+#     & \hspace{88pt}\quad  g_S + g_{R1} + g_{R2} + g_D = 100 \quad  : \quad \lambda \label{eq-dual-lambda}
 # \end{align}
 # ```
 
@@ -43,7 +43,7 @@
 #  * $g_1$ and $g_2$ are the generation of two other non-strategic,
 #    price-taking generators;
 #  * $g_D$ is the deficit in generation; and
-#  * $\lambda$ is the dual of the load balance constraint (9)
+#  * $\lambda$ is the dual of the load balance constraint
 
 # To implement this model in BilevelJuMP, first load the necessary packages:
 
@@ -86,7 +86,7 @@ optimize!(model)
 
 # ### MIP solution
 
-# BilevelJuMP.jl can also solve such problems by using a MIP formulation.
+# It is also possible to solve such problem by using a MIP formulation.
 # The main issue is the product of variables in the upper level objective.
 # However, this can be easily handled by using the package
 # `QuadraticToBinary.jl` for automatic binary expansions.
