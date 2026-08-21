@@ -6,9 +6,11 @@
 # `DualOf()` takes a named constraint from the lower problem as an argument.
 # It is used in the `expr` argument of the `@variable` JuMP macro:
 
-@constraint(Lower(model), some_constraint, x <= y)
-
-@variable(Upper(model), lambda, DualOf(some_constraint))
+# ```julia
+# @constraint(Lower(model), some_constraint, x <= y)
+#
+# @variable(Upper(model), lambda, DualOf(some_constraint))
+# ```
 
 # ## Example: strategic bidding in an energy market 
 
