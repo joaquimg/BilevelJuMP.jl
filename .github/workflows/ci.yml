@@ -28,7 +28,7 @@ jobs:
           # availability guard that #243 introduces in test/test_mibs.jl.
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
