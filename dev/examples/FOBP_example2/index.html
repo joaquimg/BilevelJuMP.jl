@@ -77,24 +77,24 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   19  6.1333413e+00 1.32e-07 1.12e+05  -1.0 5.27e-02    -  1.00e+00 1.00e+00h  1
 iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   20  6.1333412e+00 1.28e-07 2.35e+06  -1.0 2.43e-03    -  1.00e+00 1.38e-01f  2
-  21  6.1333372e+00 2.05e-08 4.84e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
-  22  6.1333345e+00 0.00e+00 3.66e+05  -1.0 7.66e-03    -  1.00e+00 1.00e+00h  1
-  23  6.1333351e+00 0.00e+00 2.36e+06  -1.0 3.69e-03    -  1.00e+00 5.00e-01f  2
-  24  6.1333347e+00 2.22e-16 1.24e+03  -1.0 9.02e-05    -  1.00e+00 1.00e+00h  1
-  25  6.1333346e+00 1.11e-16 1.48e+04  -2.5 1.68e-04    -  1.00e+00 1.00e+00h  1
-  26  6.1333345e+00 1.11e-16 3.58e+01  -2.5 2.20e-05   1.8 1.00e+00 1.00e+00f  1
-Cannot call restoration phase at point that is almost feasible (violation 1.110223e-16).
+  21  6.1333372e+00 2.05e-08 4.83e+05  -1.0 1.44e-02    -  1.00e+00 1.00e+00h  1
+  22  6.1333345e+00 0.00e+00 3.67e+05  -1.0 7.67e-03    -  1.00e+00 1.00e+00h  1
+  23  6.1333351e+00 0.00e+00 2.35e+06  -1.0 3.69e-03    -  1.00e+00 5.00e-01f  2
+  24  6.1333347e+00 1.11e-16 1.08e+03  -1.0 7.89e-05    -  1.00e+00 1.00e+00h  1
+  25  6.1333346e+00 0.00e+00 1.40e+04  -2.5 1.56e-04    -  1.00e+00 1.00e+00h  1
+  26  6.1333345e+00 0.00e+00 3.38e+01  -2.5 4.04e-05   1.8 1.00e+00 1.00e+00f  1
+Cannot call restoration phase at point that is almost feasible (violation 0.000000e+00).
 Abort in line search due to no other fall back.
 
 Number of Iterations....: 26
 
                                    (scaled)                 (unscaled)
-Objective...............:   6.1333345125452912e+00    6.1333345125452912e+00
-Dual infeasibility......:   3.5841188212015616e+01    3.5841188212015616e+01
-Constraint violation....:   1.1102230246251565e-16    1.1102230246251565e-16
-Variable bound violation:   4.3702289611215291e-09    4.3702289611215291e-09
-Complementarity.........:   2.9671402126700249e-03    2.9671402126700249e-03
-Overall NLP error.......:   3.7381382343713479e-02    3.5841188212015616e+01
+Objective...............:   6.1333345137148774e+00    6.1333345137148774e+00
+Dual infeasibility......:   3.3828405449863453e+01    3.3828405449863453e+01
+Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
+Variable bound violation:   4.3702289551980358e-09    4.3702289551980358e-09
+Complementarity.........:   2.9634575556114076e-03    2.9634575556114076e-03
+Overall NLP error.......:   3.5289948667622348e-02    3.3828405449863453e+01
 
 
 Number of objective function evaluations             = 51
@@ -104,8 +104,8 @@ Number of inequality constraint evaluations          = 51
 Number of equality constraint Jacobian evaluations   = 28
 Number of inequality constraint Jacobian evaluations = 28
 Number of Lagrangian Hessian evaluations             = 27
-Total seconds in IPOPT                               = 0.015
+Total seconds in IPOPT                               = 0.011
 
-EXIT: Error in step computation!</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">6.133334512545291</pre><pre><code class="language-julia">objective_value(Lower(model))</code></pre><pre class="documenter-example-output">-1.866667025303046</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">1.866667025303046</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">0.5333334366361542</pre><pre><code class="language-julia">value(u1)</code></pre><pre class="documenter-example-output">1.866667025303046</pre><pre><code class="language-julia">value(l1)</code></pre><pre class="documenter-example-output">2.4000004619392</pre><pre><code class="language-julia">dual(l1)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
- 4.017857069584776e-9</pre><pre><code class="language-julia">dual(l3)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
- 4.370228961121529e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../tutorials/quad_to_bin/">« Using QuadraticToBinary</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 21 August 2026 13:40">Friday 21 August 2026</span>. Using Julia version 1.10.12.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+EXIT: Error in step computation!</pre><pre><code class="language-julia">objective_value(model)</code></pre><pre class="documenter-example-output">6.133334513714877</pre><pre><code class="language-julia">objective_value(Lower(model))</code></pre><pre class="documenter-example-output">-1.8666670256588596</pre><pre><code class="language-julia">value(x)</code></pre><pre class="documenter-example-output">1.8666670256588596</pre><pre><code class="language-julia">value(y)</code></pre><pre class="documenter-example-output">0.5333334367382989</pre><pre><code class="language-julia">value(u1)</code></pre><pre class="documenter-example-output">1.8666670256588596</pre><pre><code class="language-julia">value(l1)</code></pre><pre class="documenter-example-output">2.4000004623971583</pre><pre><code class="language-julia">dual(l1)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 4.0178570661934815e-9</pre><pre><code class="language-julia">dual(l3)</code></pre><pre class="documenter-example-output">1-element Vector{Float64}:
+ 4.370228955198036e-9</pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p><a href="https://github.com/joaquimg/BilevelJuMP.jl/blob/master/docs/src/examples/FOBP_example2.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../tutorials/quad_to_bin/">« Using QuadraticToBinary</a><a class="docs-footer-nextpage" href="../FOBP_example3/">Foundations of Bilevel Programming: Chapter 3.7, Page 59 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 21 August 2026 14:45">Friday 21 August 2026</span>. Using Julia version 1.10.12.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
