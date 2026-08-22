@@ -741,44 +741,94 @@ struct _TestVariableAttribute <: MOI.AbstractVariableAttribute
     name::String
 end
 
-# `UniversalFallback` stores arbitrary attributes, standing in for a solver
-# (such as Gurobi) that supports them natively. It has no `optimize!`, so we
-# add one that snapshots the attribute values visible at the start of the
-# solve. This is what lets us assert that attributes set *before* `optimize!`
-# actually reach the solver in time to affect the solve.
-const _TestSolver =
-    MOI.Utilities.UniversalFallback{MOI.Utilities.Model{Float64}}
-
-const _TEST_SEEN_CTR = Ref{Vector{Any}}(Any[])
-const _TEST_SEEN_VAR = Ref{Vector{Any}}(Any[])
-
-function MOI.optimize!(m::_TestSolver)
-    ctr, var = Any[], Any[]
-    for (F, S) in MOI.get(m, MOI.ListOfConstraintTypesPresent())
-        for ci in MOI.get(m, MOI.ListOfConstraintIndices{F,S}())
-            v = MOI.get(m, _TestConstraintAttribute("Lazy"), ci)
-            v === nothing || push!(ctr, v)
-        end
+# A minimal optimizer that supports arbitrary attributes, standing in for a
+# solver (such as Gurobi) that supports them natively. It snapshots the
+# attribute values visible at the start of the solve, which is what lets us
+# assert that attributes set *before* `optimize!` reach the solver in time to
+# affect it.
+#
+# This is a dedicated type rather than a method added to
+# `MOI.Utilities.UniversalFallback`: BilevelJuMP itself builds a
+# `CachingOptimizer` over a `UniversalFallback{Model{Float64}}`, so adding
+# `MOI.optimize!` to that type would pirate it for every other test in the
+# session.
+mutable struct _TestSolver <: MOI.AbstractOptimizer
+    inner::MOI.Utilities.UniversalFallback{MOI.Utilities.Model{Float64}}
+    seen_ctr::Vector{Any}
+    seen_var::Vector{Any}
+    function _TestSolver()
+        inner = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
+        return new(inner, Any[], Any[])
     end
-    for vi in MOI.get(m, MOI.ListOfVariableIndices())
-        v = MOI.get(m, _TestVariableAttribute("Lazy"), vi)
-        v === nothing || push!(var, v)
-    end
-    _TEST_SEEN_CTR[] = ctr
-    _TEST_SEEN_VAR[] = var
-    return
+end
+
+# Forward the model API to the wrapped `UniversalFallback`.
+MOI.is_empty(m::_TestSolver) = MOI.is_empty(m.inner)
+MOI.empty!(m::_TestSolver) = MOI.empty!(m.inner)
+function MOI.supports_incremental_interface(m::_TestSolver)
+    return MOI.supports_incremental_interface(m.inner)
+end
+MOI.add_variable(m::_TestSolver) = MOI.add_variable(m.inner)
+function MOI.add_constraint(
+    m::_TestSolver,
+    f::MOI.AbstractFunction,
+    s::MOI.AbstractSet,
+)
+    return MOI.add_constraint(m.inner, f, s)
+end
+function MOI.supports_constraint(
+    m::_TestSolver,
+    ::Type{F},
+    ::Type{S},
+) where {F<:MOI.AbstractFunction,S<:MOI.AbstractSet}
+    return MOI.supports_constraint(m.inner, F, S)
+end
+MOI.copy_to(m::_TestSolver, src::MOI.ModelLike) = MOI.copy_to(m.inner, src)
+
+const _TestSolverAttribute = Union{
+    MOI.AbstractConstraintAttribute,
+    MOI.AbstractModelAttribute,
+    MOI.AbstractOptimizerAttribute,
+    MOI.AbstractVariableAttribute,
+}
+
+function MOI.get(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.get(m.inner, attr, args...)
+end
+function MOI.set(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.set(m.inner, attr, args...)
+end
+function MOI.supports(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.supports(m.inner, attr, args...)
 end
 
 MOI.get(::_TestSolver, ::MOI.TerminationStatus) = MOI.OPTIMAL
 MOI.get(::_TestSolver, ::MOI.ResultCount) = 0
+
+# Record the attributes the solver can see as the solve begins.
+function MOI.optimize!(m::_TestSolver)
+    empty!(m.seen_ctr)
+    empty!(m.seen_var)
+    for (F, S) in MOI.get(m.inner, MOI.ListOfConstraintTypesPresent())
+        for ci in MOI.get(m.inner, MOI.ListOfConstraintIndices{F,S}())
+            v = MOI.get(m.inner, _TestConstraintAttribute("Lazy"), ci)
+            v === nothing || push!(m.seen_ctr, v)
+        end
+    end
+    for vi in MOI.get(m.inner, MOI.ListOfVariableIndices())
+        v = MOI.get(m.inner, _TestVariableAttribute("Lazy"), vi)
+        v === nothing || push!(m.seen_var, v)
+    end
+    return
+end
 
 function solver_attributes_unit()
     # Solver-specific variable/constraint attributes (such as Gurobi's
     # `ConstraintAttribute("Lazy")`) are cached and forwarded to the solver
     # right before the solve, but only for objects that have a direct
     # counterpart there, i.e. upper level ones.
-    opt() = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
-    model = BilevelModel(opt; mode = BilevelJuMP.ProductMode(1e-5))
+    solver = _TestSolver()
+    model = BilevelModel(() -> solver; mode = BilevelJuMP.ProductMode(1e-5))
     @variable(Upper(model), x)
     @variable(Lower(model), y)
     @variable(LowerOnly(model), z)
@@ -811,8 +861,8 @@ function solver_attributes_unit()
     optimize!(model)
 
     # The values were visible to the solver at the start of the solve.
-    @test _TEST_SEEN_CTR[] == [3]
-    @test _TEST_SEEN_VAR[] == [7]
+    @test solver.seen_ctr == [3]
+    @test solver.seen_var == [7]
 
     # After the build the values round-trip through the solver itself.
     @test MOI.get(ux, ctr_attr) == 3
@@ -827,7 +877,7 @@ function solver_attributes_unit()
     # every subsequent solve.
     MOI.set(ux, ctr_attr, 2)
     optimize!(model)
-    @test _TEST_SEEN_CTR[] == [2]
-    @test sort(_TEST_SEEN_VAR[]) == [5, 7]
+    @test solver.seen_ctr == [2]
+    @test sort(solver.seen_var) == [5, 7]
     return
 end
