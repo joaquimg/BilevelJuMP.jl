@@ -395,11 +395,44 @@ function _mibs_solution(model::BilevelModel)
     return model.solution::MibSSolution
 end
 
-# MibS reports values as `x[i]` for the upper level block and `y[i]` for the
-# lower level block, numbered from zero within each block, and only after it
-# announces an optimal solution. It reports infeasibility through the underlying
-# ALPS search, hence the two different markers.
-function _parse_mibs_solution(output::AbstractString, upper, lower)
+# MibS reports the solution after announcing an optimal one, and reports
+# infeasibility through the underlying ALPS search, hence the two markers.
+#
+# Two output formats are supported, because MibS changed it between the
+# versions in the General registry:
+#
+#   * up to MibS_jll 100.100.301, values are indexed within each level block,
+#     numbered from zero, and only the non-default ones are listed:
+#
+#         Optimal solution:
+#         Cost = 8
+#         x[0] = 8
+#
+#   * from MibS_jll 100.200.200, values are given by variable name, grouped
+#     under a header per level:
+#
+#         Optimal solution:
+#         Cost = 8
+#         First stage (upper level) variable values:
+#         y = 8
+#         Second stage (lower level) variable values:
+#
+# The name form is matched against the MPS column names, which is what
+# `by_name` is built from at the call site. Unlisted variables are zero in
+# both formats.
+const _MIBS_UPPER_HEADER = "First stage (upper level) variable values:"
+const _MIBS_LOWER_HEADER = "Second stage (lower level) variable values:"
+
+# The trailing statistics that MibS prints after the solution also look like
+# `key = value`, so parsing by name has to stop instead of reading to the end.
+function _is_mibs_solution_line(line)
+    return !occursin("Number of ", line) &&
+           !occursin("Time for ", line) &&
+           !startswith(strip(line), "=====") &&
+           !isempty(strip(line))
+end
+
+function _parse_mibs_solution(output::AbstractString, upper, lower, by_name)
     lines = split(output, '\n')
     values = Dict{MOI.VariableIndex,Float64}()
     start = findfirst(l -> occursin("Optimal solution", l), lines)
@@ -416,14 +449,36 @@ function _parse_mibs_solution(output::AbstractString, upper, lower)
     for v in vcat(upper, lower)
         values[v] = 0.0
     end
+    block = nothing
     for line in lines[(start+1):end]
-        m = match(r"([xy])\[([0-9]+)\] *= *(.+)", line)
-        m === nothing && continue
-        block = m[1] == "x" ? upper : lower
-        i = parse(Int, m[2]) + 1
-        if 1 <= i <= length(block)
-            values[block[i]] = parse(Float64, strip(m[3]))
+        stripped = strip(line)
+        if occursin(_MIBS_UPPER_HEADER, stripped)
+            block = :upper
+            continue
+        elseif occursin(_MIBS_LOWER_HEADER, stripped)
+            block = :lower
+            continue
         end
+        # Indexed form, which carries its own level in the variable letter.
+        m = match(r"([xy])\[([0-9]+)\] *= *(.+)", line)
+        if m !== nothing
+            level = m[1] == "x" ? upper : lower
+            i = parse(Int, m[2]) + 1
+            if 1 <= i <= length(level)
+                values[level[i]] = parse(Float64, strip(m[3]))
+            end
+            continue
+        end
+        # Name form, only inside one of the two level sections.
+        block === nothing && continue
+        _is_mibs_solution_line(line) || continue
+        m = match(r"^ *([^ =]+) *= *(.+?) *$", line)
+        m === nothing && continue
+        v = get(by_name, String(m[1]), nothing)
+        v === nothing && continue
+        value = tryparse(Float64, strip(m[2]))
+        value === nothing && continue
+        values[v] = value
     end
     return MOI.OPTIMAL, MOI.FEASIBLE_POINT, String(strip(lines[start])), values
 end
@@ -501,7 +556,7 @@ function _optimize!(model::BilevelModel, mode::MibSMode; kwargs...)
         ordered_upper =
             [by_name[name] for name in columns if !(by_name[name] in lower_set)]
         status, primal_status, raw, values =
-            _parse_mibs_solution(output, ordered_upper, ordered_lower)
+            _parse_mibs_solution(output, ordered_upper, ordered_lower, by_name)
         primal = Dict{Int,Float64}()
         for (idx, v) in model.var_upper
             vi = JuMP.index(v)

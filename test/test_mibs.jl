@@ -8,6 +8,8 @@ module TestMIBS
 using BilevelJuMP
 using Test
 
+import MathOptInterface as MOI
+
 # Tests named `test_solver_*` run the MibS binary; the rest only build the files
 # that would be handed to it, and so can run anywhere.
 const MIBS_AVAILABLE = try
@@ -819,6 +821,103 @@ function test_no_mode_selected()
     @objective(Lower(model), Min, y)
     @constraint(Lower(model), l1, x + y <= 8)
     @test_throws ErrorException optimize!(model)
+    return
+end
+
+# MibS changed its solution output format between the versions in the General
+# registry, so the parser understands both. These run without the binary.
+function test_parse_solution_indexed_format()
+    u1, u2 = MOI.VariableIndex(1), MOI.VariableIndex(2)
+    l1 = MOI.VariableIndex(3)
+    by_name = Dict("xa" => u1, "xb" => u2, "ya" => l1)
+    output = """
+    ============================================
+    Optimal solution:
+    Cost = 8
+    x[0] = 8
+    y[0] = 6
+    Number of problems (VF) solved = 5
+    ============================================
+    """
+    status, primal_status, _, values =
+        BilevelJuMP._parse_mibs_solution(output, [u1, u2], [l1], by_name)
+    @test status == MOI.OPTIMAL
+    @test primal_status == MOI.FEASIBLE_POINT
+    @test values[u1] == 8.0
+    @test values[u2] == 0.0  # not listed, hence at its default
+    @test values[l1] == 6.0
+    return
+end
+
+function test_parse_solution_named_format()
+    u1, u2 = MOI.VariableIndex(1), MOI.VariableIndex(2)
+    l1 = MOI.VariableIndex(3)
+    by_name = Dict("xa" => u1, "xb" => u2, "ya" => l1)
+    output = """
+    ============================================
+    Optimal solution:
+    Cost = 8
+    First stage (upper level) variable values:
+    xa = 8
+    xb = 2.5
+    Second stage (lower level) variable values:
+    ya = 6
+    Number of problems (VF) solved = 5
+    Time for solving problem (VF) = 0.0039
+    Number of Hypercube Intersection Cuts Generated: 4
+    ============================================
+    """
+    status, primal_status, _, values =
+        BilevelJuMP._parse_mibs_solution(output, [u1, u2], [l1], by_name)
+    @test status == MOI.OPTIMAL
+    @test primal_status == MOI.FEASIBLE_POINT
+    @test values[u1] == 8.0
+    @test values[u2] == 2.5
+    @test values[l1] == 6.0
+    return
+end
+
+# The statistics printed after the solution also read as `key = value`.
+function test_parse_solution_ignores_trailing_statistics()
+    u1 = MOI.VariableIndex(1)
+    l1 = MOI.VariableIndex(2)
+    by_name = Dict("xa" => u1, "ya" => l1)
+    output = """
+    Optimal solution:
+    Cost = 8
+    First stage (upper level) variable values:
+    xa = 1
+    Second stage (lower level) variable values:
+    Number of problems (VF) solved = 999
+    Time for solving problem (UB) = 0
+    """
+    _, _, _, values =
+        BilevelJuMP._parse_mibs_solution(output, [u1], [l1], by_name)
+    @test values[u1] == 1.0
+    @test values[l1] == 0.0
+    @test length(values) == 2
+    return
+end
+
+function test_parse_solution_infeasible_and_unknown()
+    u1 = MOI.VariableIndex(1)
+    by_name = Dict("xa" => u1)
+    status, primal_status, _, _ = BilevelJuMP._parse_mibs_solution(
+        "Problem is infeasible\n",
+        [u1],
+        MOI.VariableIndex[],
+        by_name,
+    )
+    @test status == MOI.INFEASIBLE
+    @test primal_status == MOI.NO_SOLUTION
+    status, primal_status, _, _ = BilevelJuMP._parse_mibs_solution(
+        "something unexpected\n",
+        [u1],
+        MOI.VariableIndex[],
+        by_name,
+    )
+    @test status == MOI.OTHER_ERROR
+    @test primal_status == MOI.NO_SOLUTION
     return
 end
 
