@@ -732,3 +732,152 @@ function all_variables_levels()
     @test Set(JuMP.all_variables(Lower(model))) == Set([y])
     return nothing
 end
+
+struct _TestConstraintAttribute <: MOI.AbstractConstraintAttribute
+    name::String
+end
+
+struct _TestVariableAttribute <: MOI.AbstractVariableAttribute
+    name::String
+end
+
+# A minimal optimizer that supports arbitrary attributes, standing in for a
+# solver (such as Gurobi) that supports them natively. It snapshots the
+# attribute values visible at the start of the solve, which is what lets us
+# assert that attributes set *before* `optimize!` reach the solver in time to
+# affect it.
+#
+# This is a dedicated type rather than a method added to
+# `MOI.Utilities.UniversalFallback`: BilevelJuMP itself builds a
+# `CachingOptimizer` over a `UniversalFallback{Model{Float64}}`, so adding
+# `MOI.optimize!` to that type would pirate it for every other test in the
+# session.
+mutable struct _TestSolver <: MOI.AbstractOptimizer
+    inner::MOI.Utilities.UniversalFallback{MOI.Utilities.Model{Float64}}
+    seen_ctr::Vector{Any}
+    seen_var::Vector{Any}
+    function _TestSolver()
+        inner = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
+        return new(inner, Any[], Any[])
+    end
+end
+
+# Forward the model API to the wrapped `UniversalFallback`.
+MOI.is_empty(m::_TestSolver) = MOI.is_empty(m.inner)
+MOI.empty!(m::_TestSolver) = MOI.empty!(m.inner)
+function MOI.supports_incremental_interface(m::_TestSolver)
+    return MOI.supports_incremental_interface(m.inner)
+end
+MOI.add_variable(m::_TestSolver) = MOI.add_variable(m.inner)
+function MOI.add_constraint(
+    m::_TestSolver,
+    f::MOI.AbstractFunction,
+    s::MOI.AbstractSet,
+)
+    return MOI.add_constraint(m.inner, f, s)
+end
+function MOI.supports_constraint(
+    m::_TestSolver,
+    ::Type{F},
+    ::Type{S},
+) where {F<:MOI.AbstractFunction,S<:MOI.AbstractSet}
+    return MOI.supports_constraint(m.inner, F, S)
+end
+MOI.copy_to(m::_TestSolver, src::MOI.ModelLike) = MOI.copy_to(m.inner, src)
+
+const _TestSolverAttribute = Union{
+    MOI.AbstractConstraintAttribute,
+    MOI.AbstractModelAttribute,
+    MOI.AbstractOptimizerAttribute,
+    MOI.AbstractVariableAttribute,
+}
+
+function MOI.get(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.get(m.inner, attr, args...)
+end
+function MOI.set(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.set(m.inner, attr, args...)
+end
+function MOI.supports(m::_TestSolver, attr::_TestSolverAttribute, args...)
+    return MOI.supports(m.inner, attr, args...)
+end
+
+MOI.get(::_TestSolver, ::MOI.TerminationStatus) = MOI.OPTIMAL
+MOI.get(::_TestSolver, ::MOI.ResultCount) = 0
+
+# Record the attributes the solver can see as the solve begins.
+function MOI.optimize!(m::_TestSolver)
+    empty!(m.seen_ctr)
+    empty!(m.seen_var)
+    for (F, S) in MOI.get(m.inner, MOI.ListOfConstraintTypesPresent())
+        for ci in MOI.get(m.inner, MOI.ListOfConstraintIndices{F,S}())
+            v = MOI.get(m.inner, _TestConstraintAttribute("Lazy"), ci)
+            v === nothing || push!(m.seen_ctr, v)
+        end
+    end
+    for vi in MOI.get(m.inner, MOI.ListOfVariableIndices())
+        v = MOI.get(m.inner, _TestVariableAttribute("Lazy"), vi)
+        v === nothing || push!(m.seen_var, v)
+    end
+    return
+end
+
+function solver_attributes_unit()
+    # Solver-specific variable/constraint attributes (such as Gurobi's
+    # `ConstraintAttribute("Lazy")`) are cached and forwarded to the solver
+    # right before the solve, but only for objects that have a direct
+    # counterpart there, i.e. upper level ones.
+    solver = _TestSolver()
+    model = BilevelModel(() -> solver; mode = BilevelJuMP.ProductMode(1e-5))
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+    @variable(LowerOnly(model), z)
+    @objective(Upper(model), Min, -x - 2y)
+    @constraint(Upper(model), ux, x <= 10)
+    @objective(Lower(model), Min, y + z)
+    @constraint(Lower(model), ly, x + y + z <= 8)
+
+    ctr_attr = _TestConstraintAttribute("Lazy")
+    var_attr = _TestVariableAttribute("Lazy")
+
+    # Lower level objects are reformulated away and must error, whether or not
+    # the solver model has been built.
+    @test_throws ErrorException MOI.set(ly, ctr_attr, 1)
+    @test_throws ErrorException MOI.get(ly, ctr_attr)
+    @test_throws ErrorException MOI.set(z, var_attr, 1)
+    @test_throws ErrorException MOI.get(z, var_attr)
+
+    # Querying an attribute that was never set cannot reach the solver yet.
+    @test_throws ErrorException MOI.get(ux, ctr_attr)
+    @test_throws ErrorException MOI.get(x, var_attr)
+
+    # Set before the solve, which is the only useful moment for attributes
+    # such as "Lazy". Reading back comes from the cache.
+    MOI.set(ux, ctr_attr, 3)
+    MOI.set(x, var_attr, 7)
+    @test MOI.get(ux, ctr_attr) == 3
+    @test MOI.get(x, var_attr) == 7
+
+    optimize!(model)
+
+    # The values were visible to the solver at the start of the solve.
+    @test solver.seen_ctr == [3]
+    @test solver.seen_var == [7]
+
+    # After the build the values round-trip through the solver itself.
+    @test MOI.get(ux, ctr_attr) == 3
+    @test MOI.get(x, var_attr) == 7
+
+    # A variable declared in the lower level but shared with the upper level
+    # does exist in the solver, so it is forwarded too.
+    MOI.set(y, var_attr, 5)
+    @test MOI.get(y, var_attr) == 5
+
+    # Overwriting keeps only the last value, and the cache is replayed on
+    # every subsequent solve.
+    MOI.set(ux, ctr_attr, 2)
+    optimize!(model)
+    @test solver.seen_ctr == [2]
+    @test sort(solver.seen_var) == [5, 7]
+    return
+end

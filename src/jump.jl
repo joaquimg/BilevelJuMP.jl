@@ -145,6 +145,12 @@ mutable struct BilevelModel <: AbstractBilevelModel
     # to obtain dual variables from primal constraints
     lower_primal_dual_map::Any
 
+    # solver-specific variable/constraint attributes, cached so that they can
+    # be forwarded to the solver right before the solve (the solver model only
+    # exists after `MOI.copy_to`). Only upper level objects are supported.
+    var_attributes::Vector{Tuple{Int,MOI.AbstractVariableAttribute,Any}}
+    ctr_attributes::Vector{Tuple{Int,MOI.AbstractConstraintAttribute,Any}}
+
     # results from opt process
     solve_time::Float64
     build_time::Float64
@@ -200,6 +206,10 @@ mutable struct BilevelModel <: AbstractBilevelModel
             nothing,
             nothing,
             nothing,
+
+            # cached solver attributes
+            Tuple{Int,MOI.AbstractVariableAttribute,Any}[],
+            Tuple{Int,MOI.AbstractConstraintAttribute,Any}[],
 
             # solution extras
             NaN,
@@ -780,6 +790,10 @@ function _optimize!(
     model.lower_dual_to_sblm = lower_dual_to_sblm
     model.lower_primal_dual_map = lower_primal_dual_map
     model.sblm_to_solver = sblm_to_solver
+
+    # forward cached solver-specific attributes now that the solver model
+    # exists, so that they can affect the solve below
+    _pass_cached_attributes(model)
 
     t1 = time()
     model.build_time = t1 - t0
