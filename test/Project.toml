@@ -12,10 +12,6 @@ Xpress_jll = "308bddfa-7f95-4fa6-a557-f2c7addc1869"
 
 [compat]
 Ipopt = "1"
-# MibS versions are listed explicitly rather than as a range: MibS changes
-# its solution output format between releases (see `_parse_mibs_solution`),
-# so a new one has to be tested before being allowed here. 1.1.3 is left
-# out because its binary fails to load from Ipopt 1.11 onwards.
 MibS_jll = "=100.100.301, =100.200.200"
 QuadraticToBinary = "=0.4.0"
 Xpress = "0.18"
