@@ -678,6 +678,87 @@ function constraint_hints()
     @test_throws ErrorException BilevelJuMP.set_dual_lower_bound_hint(soc, [1])
 end
 
+function constraint_big_M_unit()
+    model = BilevelModel()
+    @variable(Upper(model), x)
+    @variable(Lower(model), y)
+    @constraint(Lower(model), le, x + y <= 8)
+    @constraint(Lower(model), ge, x + y >= -8)
+    @constraint(Lower(model), soc, [y, x] in SecondOrderCone())
+
+    # nothing set yet
+    @test isnan(BilevelJuMP.get_primal_upper_bound_hint(le))
+    @test isnan(BilevelJuMP.get_primal_lower_bound_hint(le))
+
+    # `BigMMode` reads the lower bound for `<=` constraints and the upper
+    # bound for `>=` ones.
+    BilevelJuMP.set_primal_lower_bound_hint(le, -20.0)
+    @test BilevelJuMP.get_primal_lower_bound_hint(le) == -20.0
+
+    BilevelJuMP.set_primal_upper_bound_hint(ge, 30.0)
+    @test BilevelJuMP.get_primal_upper_bound_hint(ge) == 30.0
+
+    # both ends can be given
+    BilevelJuMP.set_primal_upper_bound_hint(le, 5.0)
+    @test BilevelJuMP.get_primal_upper_bound_hint(le) == 5.0
+    @test BilevelJuMP.get_primal_lower_bound_hint(le) == -20.0
+
+    # the hint is per constraint, so the other one is untouched
+    @test isnan(BilevelJuMP.get_primal_lower_bound_hint(ge))
+
+    # vector valued constraints are not supported
+    @test_throws ErrorException BilevelJuMP.set_primal_upper_bound_hint(soc, 1)
+    @test_throws ErrorException BilevelJuMP.set_primal_lower_bound_hint(soc, 1)
+    return
+end
+
+# The big-M given for a constraint has to actually reach the reformulation,
+# and it has to replace the value propagated from the variable bounds rather
+# than merely being stored. Checked on the written problem so that no solver
+# is needed.
+function constraint_big_M_reformulation(optimizer, mode)
+    function _write(big_M, file)
+        MOI.empty!(optimizer)
+        model = BilevelModel(() -> optimizer; mode = mode)
+        # `y` is loosely bounded from below, so the bound propagated for
+        # `c` is 1008 while 18 is enough for the constraint to be slack.
+        @variable(Upper(model), 0 <= x <= 5)
+        @variable(Lower(model), -1000 <= y <= 10)
+        @objective(Upper(model), Min, 3x + y)
+        @objective(Lower(model), Min, -y)
+        @constraint(Lower(model), c, x + y <= 8)
+        if big_M !== nothing
+            # `c` is a `<=` constraint, so the lower bound is the one used
+            BilevelJuMP.set_primal_lower_bound_hint(c, -big_M)
+        end
+        optimize!(model; bilevel_prob = file)
+        return JuMP.objective_value(model)
+    end
+    dir = mktempdir()
+    default_file = joinpath(dir, "default.lp")
+    hinted_file = joinpath(dir, "hinted.lp")
+    default_obj = _write(nothing, default_file)
+    hinted_obj = _write(18, hinted_file)
+    default_lp = read(default_file, String)
+    hinted_lp = read(hinted_file, String)
+    # x in [0, 5] and y in [-1000, 10] give a propagated big-M of 1008,
+    # which the tighter given value replaces.
+    @test occursin("1008", default_lp)
+    @test !occursin("1008", hinted_lp)
+    @test occursin("18 ", hinted_lp)
+    # tightening the formulation must not change the optimum
+    @test default_obj ≈ hinted_obj atol = 1e-6
+    # a hint looser than the propagated bound is ignored, since the two
+    # are combined by keeping the tighter one
+    loose_file = joinpath(dir, "loose.lp")
+    loose_obj = _write(10_000, loose_file)
+    loose_lp = read(loose_file, String)
+    @test occursin("1008", loose_lp)
+    @test !occursin("10000", loose_lp)
+    @test default_obj ≈ loose_obj atol = 1e-6
+    return
+end
+
 function all_variables_levels()
     # an empty model has no variables in any level
     model = BilevelModel()

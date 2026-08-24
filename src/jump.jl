@@ -899,9 +899,11 @@ function _build_bounds!(model::BilevelModel, mode::ComplementBoundCache)
     fa_vi_up = mode.upper
     fa_vi_lo = mode.lower
     fa_vi_ld = mode.ldual
+    fa_ci_lp = mode.lprimal
     empty!(fa_vi_up)
     empty!(fa_vi_lo)
     empty!(fa_vi_ld)
+    empty!(fa_ci_lp)
     for (idx, _info) in model.var_info
         if haskey(model.var_lower, idx)
             var = JuMP.index(model.var_lower[idx])
@@ -942,6 +944,9 @@ function _build_bounds!(model::BilevelModel, mode::ComplementBoundCache)
             @assert sum(info.lower .<= info.upper) == length(info.upper)
             # TODO vector
             fa_vi_ld[ctr] = info
+            if any(!isnan, info.primal_upper) || any(!isnan, info.primal_lower)
+                fa_ci_lp[ctr] = info
+            end
         end
     end
     return nothing

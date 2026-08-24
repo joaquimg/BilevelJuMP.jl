@@ -98,6 +98,13 @@ function add_complement(
         vi -> get_bounds(vi, mode.cache.map, mode.primal_big_M),
         f_dest,
     )
+    # A bound given for the constraint is combined with the propagated one
+    # by taking the tighter of the two, so a hint can only shrink the
+    # big-M, never enlarge it past what the variable bounds already prove.
+    f_bounds = _tighten(
+        f_bounds,
+        _constraint_bounds(mode.cache.lprimal, comp.constraint),
+    )
 
     if pass_start
         val = MOIU.eval_variables(
@@ -140,7 +147,10 @@ function add_complement(
         error(
             "It was not possible to automatically compute bounds" *
             " for a complementarity pair, please add the arguments" *
-            " primal_big_M and dual_big_M to FortunyAmatMcCarlMode",
+            " primal_big_M and dual_big_M to FortunyAmatMcCarlMode," *
+            " or set a bound for the specific constraint with" *
+            " `set_primal_upper_bound_hint` and" *
+            " `set_primal_lower_bound_hint`",
         )
     end
 
@@ -189,6 +199,30 @@ end
 
 function flip_set(set::MOI.GreaterThan{T}) where {T}
     return MOI.LessThan{T}(0.0)
+end
+
+# The bounds a user gave for a lower level constraint function, if any. Only
+# the side that the big-M actually needs has to be given: the other end is
+# left as NaN, hence infinite, and `set_bound` picks the relevant one for
+# the set.
+function _constraint_bounds(lprimal, ci)
+    info = get(lprimal, ci, nothing)
+    info === nothing && return nothing
+    upper = info.primal_upper
+    lower = info.primal_lower
+    # TODO vector-valued constraints
+    if upper isa AbstractVector || lower isa AbstractVector
+        return nothing
+    end
+    return Interval(inf_if_nan(-, lower), inf_if_nan(+, upper))
+end
+
+# The tighter of two intervals for the same function. `given` is `nothing`
+# when the constraint carries no hint.
+_tighten(propagated::Interval, ::Nothing) = propagated
+
+function _tighten(propagated::Interval, given::Interval)
+    return Interval(max(propagated.lo, given.lo), min(propagated.hi, given.hi))
 end
 
 function get_bounds(var, map, fallback_bound = Inf)

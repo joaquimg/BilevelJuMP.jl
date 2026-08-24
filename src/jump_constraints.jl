@@ -256,6 +256,111 @@ function get_dual_lower_bound_hint(cref::BilevelConstraintRef)
 end
 
 """
+    set_primal_upper_bound_hint(cref, value)
+
+Set an upper bound on the function of the lower level constraint `cref`, that
+is, on the primal side of the complementarity pair it gives rise to, as
+opposed to [`set_dual_upper_bound_hint`](@ref), which bounds its dual
+variable.
+
+`BigMMode` (equivalently `FortunyAmatMcCarlMode`) uses this bound as the big-M
+for the constraint. It otherwise derives one by propagating the bounds of the
+variables in the constraint function, falling back to the mode's
+`primal_big_M`, and that is often much weaker than a bound the modeller
+already knows.
+
+The bound given here is combined with the propagated one by keeping the tighter
+of the two, so a hint can only shrink the big-M, never widen it beyond what the
+variable bounds already prove.
+
+`BigMMode` reads the end of the bound that the constraint needs, which is the
+upper bound for a `>=` constraint and the lower bound for a `<=` one, so it is
+usually enough to set just one of the two. For a constraint written as
+`f(x) >= b`, an upper bound of `M` on `f(x) - b` says the constraint is slack
+by at most `M`.
+
+## Example
+
+```julia
+@constraint(Lower(model), c, x + y >= 2)
+BilevelJuMP.set_primal_upper_bound_hint(c, 20.0)
+```
+"""
+function set_primal_upper_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Number}
+    _assert_dim(cref, cref.model.ctr_info[cref.index].primal_upper, value)
+    return cref.model.ctr_info[cref.index].primal_upper = value
+end
+
+function set_primal_upper_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Vector{S}} where {S}
+    array = cref.model.ctr_info[cref.index].primal_upper
+    _assert_dim(cref, array, value)
+    return copyto!(array, value)
+end
+
+"""
+    get_primal_upper_bound_hint(cref)
+
+Get the upper bound on the function of the constraint `cref` that was set with
+`set_primal_upper_bound_hint`.
+"""
+function get_primal_upper_bound_hint(cref::BilevelConstraintRef)
+    return cref.model.ctr_info[cref.index].primal_upper
+end
+
+"""
+    set_primal_lower_bound_hint(cref, value)
+
+Set a lower bound on the function of the lower level constraint `cref`, that
+is, on the primal side of the complementarity pair it gives rise to.
+
+This is the bound `BigMMode` reads for a `<=` constraint, and is the
+counterpart of [`set_primal_upper_bound_hint`](@ref); see there for details,
+including how it combines with the propagated bound.
+
+For a constraint written as `f(x) <= b`, a lower bound of `-M` on `f(x) - b`
+says the constraint is slack by at most `M`.
+
+## Example
+
+```julia
+@constraint(Lower(model), c, x + y <= 10)
+BilevelJuMP.set_primal_lower_bound_hint(c, -20.0)
+```
+"""
+function set_primal_lower_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Number}
+    _assert_dim(cref, cref.model.ctr_info[cref.index].primal_lower, value)
+    return cref.model.ctr_info[cref.index].primal_lower = value
+end
+
+function set_primal_lower_bound_hint(
+    cref::BilevelConstraintRef,
+    value::T,
+) where {T<:Vector{S}} where {S}
+    array = cref.model.ctr_info[cref.index].primal_lower
+    _assert_dim(cref, array, value)
+    return copyto!(array, value)
+end
+
+"""
+    get_primal_lower_bound_hint(cref)
+
+Get the lower bound on the function of the constraint `cref` that was set with
+`set_primal_lower_bound_hint`.
+"""
+function get_primal_lower_bound_hint(cref::BilevelConstraintRef)
+    return cref.model.ctr_info[cref.index].primal_lower
+end
+
+"""
     set_primal_upper_bound_hint(vref, value)
 
 Set an upper bound to the primal variable `vref` to `value`.
