@@ -716,10 +716,21 @@ end
 # and it has to replace the value propagated from the variable bounds rather
 # than merely being stored. Checked on the written problem so that no solver
 # is needed.
+#
+# The mode is rebuilt locally rather than taken as given, because the modes
+# in `solvers_fa` carry no big-M fallbacks: the loose bounds on `y` below,
+# which are what makes the propagated big-M weak in the first place, leave
+# the dual of one of its own bound constraints unbounded. That is unrelated
+# to what is being tested here. Only `with_slack` is carried over, so both
+# `solvers_fa` entries still exercise a different reformulation.
 function constraint_big_M_reformulation(optimizer, mode)
+    local_mode = BilevelJuMP.FortunyAmatMcCarlMode(;
+        with_slack = mode.with_slack,
+        dual_big_M = 100,
+    )
     function _write(big_M, file)
         MOI.empty!(optimizer)
-        model = BilevelModel(() -> optimizer; mode = mode)
+        model = BilevelModel(() -> optimizer; mode = local_mode)
         # `y` is loosely bounded from below, so the bound propagated for
         # `c` is 1008 while 18 is enough for the constraint to be slack.
         @variable(Upper(model), 0 <= x <= 5)
