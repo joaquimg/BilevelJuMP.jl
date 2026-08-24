@@ -130,6 +130,7 @@ include("jump_unit.jl")
         constraint_unit()
         constraint_dualof()
         constraint_hints()
+        constraint_big_M_unit()
         solver_attributes_unit()
         for solver in solvers_unit
             invalid_lower_objective(solver.opt, solver.mode)
@@ -204,6 +205,7 @@ include("jump_unit.jl")
             jump_01vec(solver.opt, solver.mode, CONFIG_3_hint)
             jump_02(solver.opt, solver.mode, CONFIG_3_hint)
             jump_03(solver.opt, solver.mode, CONFIG_3_hint)
+            constraint_big_M_reformulation(solver.opt, solver.mode)
         end
         for solver in solvers_fa2
             jump_01(solver.opt, solver.mode, CONFIG_3)

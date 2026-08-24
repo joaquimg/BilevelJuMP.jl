@@ -41,11 +41,23 @@ mutable struct BilevelConstraintInfo{T<:Union{Float64,Vector{Float64}}}
     start::T
     upper::T
     lower::T
+    # Bounds on the constraint function itself, as opposed to `upper` and
+    # `lower`, which bound its dual variable. Used by `BigMMode` to bound
+    # the primal side of the complementarity pair.
+    primal_upper::T
+    primal_lower::T
     function BilevelConstraintInfo{Float64}(level)
-        return new(level, NaN, NaN, NaN)
+        return new(level, NaN, NaN, NaN, NaN, NaN)
     end
     function BilevelConstraintInfo{Vector{Float64}}(level, N::Integer)
-        return new(level, fill(NaN, N), fill(NaN, N), fill(NaN, N))
+        return new(
+            level,
+            fill(NaN, N),
+            fill(NaN, N),
+            fill(NaN, N),
+            fill(NaN, N),
+            fill(NaN, N),
+        )
     end
 end
 
@@ -191,12 +203,16 @@ struct ComplementBoundCache
     ldual::Dict{CI,BilevelConstraintInfo}
     # full map
     map::Dict{VI,BilevelVariableInfo}
+    # bounds given for the lower level constraint functions themselves,
+    # keyed by the lower level constraint they came from
+    lprimal::Dict{CI,BilevelConstraintInfo}
     function ComplementBoundCache()
         return new(
             Dict{VI,BilevelVariableInfo}(),
             Dict{VI,BilevelVariableInfo}(),
             Dict{CI,BilevelConstraintInfo}(),
             Dict{VI,BilevelVariableInfo}(),
+            Dict{CI,BilevelConstraintInfo}(),
         )
     end
 end

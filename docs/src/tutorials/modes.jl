@@ -21,8 +21,10 @@
 #     that one must provide bounds for all primal and dual variables. However, if
 #     good bounds are provided, this method can be more efficient than the
 #     previous. Bound hints to compute the big-Ms can be passed with the methods:
-#     `set_primal_(upper/lower)_bound_hint(variable, bound)`, for primals; and
-#     `set_dual_(upper/lower)_bound_hint(constraint, bound)` for duals. We can
+#     `set_primal_(upper/lower)_bound_hint(variable, bound)`, for primals;
+#     `set_dual_(upper/lower)_bound_hint(constraint, bound)` for duals; and
+#     `set_primal_(upper/lower)_bound_hint(constraint, bound)` to bound a lower
+#     level constraint function directly, see the section below. We can
 #     also call `FortunyAmatMcCarlMode(primal_big_M = vp, dual_big_M = vd)`,
 #     where `vp` and `vd` are, respectively, the big M fallback values for
 #     primal and dual variables, these are used when some variables have no given
@@ -97,6 +99,28 @@ set_optimizer(model, HiGHS.Optimizer)
 
 BilevelJuMP.set_mode(model,
     BilevelJuMP.BigMMode(primal_big_M = 100, dual_big_M = 100))
+
+optimize!(model)
+
+objective_value(model)
+@assert abs(objective_value(model) - (3 * (7/2 * 8/15) + 8/15)) < 1e-1 # src
+
+# ## Big-Ms for individual lower level constraints
+
+# `primal_big_M` and `dual_big_M` above are fallbacks applied to every
+# variable that has no bounds. `BigMMode` turns those variable bounds into a
+# big-M per lower level constraint by propagating them through the constraint
+# function, which can be much weaker than a bound the modeller already knows.
+
+# A bound can be given for the constraint function itself with the same
+# `set_primal_upper_bound_hint` and `set_primal_lower_bound_hint` used for
+# variables, passing a constraint instead:
+
+BilevelJuMP.set_primal_lower_bound_hint(c1, -20.0)
+
+BilevelJuMP.get_primal_lower_bound_hint(c1)
+
+# Solving again with the tighter big-M gives the same solution:
 
 optimize!(model)
 
