@@ -328,6 +328,20 @@ end
 
 Create a special reference to the upper level of a bilevel model.
 Variables created with this reference will not be shared with the lower level.
+
+Unlike a variable created with [`Upper`](@ref), which the lower level sees
+as a parameter and which therefore appears in the lower level optimality
+conditions, a variable created here is invisible to the lower level. Using it
+in a lower level objective or constraint is an error.
+
+Use it for leader decisions the follower must not react to. See the
+[Variable levels](@ref) tutorial.
+
+## Example
+
+```julia
+@variable(UpperOnly(model), p >= 0)
+```
 """
 UpperOnly(m::BilevelModel) = UpperOnlyModel(m)
 struct LowerOnlyModel <: SingleBilevelModel
@@ -339,6 +353,20 @@ end
 
 Create a special reference to the lower level of a bilevel model.
 Variables created with this reference will not be shared with the upper level.
+
+Unlike a variable created with [`Lower`](@ref), which the upper level may
+still use in its objective and constraints, a variable created here is
+invisible to the upper level. Using it there is an error.
+
+Use it for quantities internal to the follower, such as auxiliary or slack
+variables that only exist to express the lower level problem. See the
+[Variable levels](@ref) tutorial.
+
+## Example
+
+```julia
+@variable(LowerOnly(model), s >= 1)
+```
 """
 LowerOnly(m::BilevelModel) = LowerOnlyModel(m)
 

@@ -87,6 +87,7 @@ makedocs(;
             "tutorials",
             [
                 "getting_started.md",
+                "variable_levels.md",
                 "modes.md",
                 "lower_duals.md",
                 "conic_lower.md",
