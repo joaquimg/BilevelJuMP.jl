@@ -664,6 +664,87 @@ function constraint_dualof()
     @test_throws ErrorException DualOf(ctrs)
 end
 
+# Bounds written inline in `@variable` are part of the problem of the level
+# that declares the variable, but they are not created through
+# `JuMP.add_constraint`, so they used to have no constraint reference at all
+# and could not take a dual start or a bound hint. See issue #185.
+function variable_bound_refs()
+    model = BilevelModel()
+    @variable(Upper(model), 0 <= x <= 5)
+    @variable(Lower(model), y >= 0)
+    @variable(Lower(model), z)
+
+    # a reference is created on demand and is stable across calls
+    ly = JuMP.LowerBoundRef(y)
+    @test ly isa BilevelJuMP.BilevelConstraintRef
+    @test JuMP.LowerBoundRef(y) == ly
+
+    # the bound belongs to the level that declares the variable
+    @test haskey(model.ctr_lower, ly.index)
+    @test model.ctr_info[ly.index].level == BilevelJuMP.LOWER_ONLY
+
+    ux = JuMP.UpperBoundRef(x)
+    lx = JuMP.LowerBoundRef(x)
+    @test haskey(model.ctr_upper, ux.index)
+    @test haskey(model.ctr_upper, lx.index)
+    @test model.ctr_info[ux.index].level == BilevelJuMP.UPPER_ONLY
+    @test ux != lx
+
+    # fixed variables too
+    JuMP.fix(z, 2.0)
+    fz = JuMP.FixRef(z)
+    @test haskey(model.ctr_lower, fz.index)
+
+    # the reference accepts the information any other constraint accepts
+    JuMP.set_dual_start_value(ly, 1.5)
+    @test JuMP.dual_start_value(ly) == 1.5
+    BilevelJuMP.set_dual_upper_bound_hint(ly, 10.0)
+    @test BilevelJuMP.get_dual_upper_bound_hint(ly) == 10.0
+
+    # `DualOf` variables bound hints of a lower level constraint, not bounds
+    model2 = BilevelModel()
+    @variable(Upper(model2), u)
+    @variable(Lower(model2), v)
+    @constraint(Lower(model2), cv, v >= 1)
+    @variable(Upper(model2), lambda, DualOf(cv))
+    @test_throws ErrorException JuMP.LowerBoundRef(lambda)
+    @test_throws ErrorException JuMP.UpperBoundRef(lambda)
+
+    # bounds set after the variable is declared are the same thing
+    model3 = BilevelModel()
+    @variable(Lower(model3), w)
+    JuMP.set_lower_bound(w, 1.0)
+    rw = JuMP.LowerBoundRef(w)
+    @test haskey(model3.ctr_lower, rw.index)
+
+    # changing the bound keeps the same reference
+    JuMP.set_lower_bound(w, 2.0)
+    @test JuMP.LowerBoundRef(w) == rw
+
+    # a variable with no bound has no reference to give
+    @variable(Lower(model3), nb)
+    @test_throws Exception JuMP.LowerBoundRef(nb)
+
+    # deleting the bound drops the reference, as `JuMP.delete` does for an
+    # ordinary constraint, so nothing stale is left for the build to look up
+    JuMP.delete_lower_bound(w)
+    @test !haskey(model3.ctr_lower, rw.index)
+    @test !haskey(model3.ctr_info, rw.index)
+
+    # and a bound added again afterwards registers anew
+    JuMP.set_lower_bound(w, 3.0)
+    rw2 = JuMP.LowerBoundRef(w)
+    @test haskey(model3.ctr_lower, rw2.index)
+
+    @variable(Lower(model3), f)
+    JuMP.fix(f, 1.0)
+    rf = JuMP.FixRef(f)
+    @test haskey(model3.ctr_lower, rf.index)
+    JuMP.unfix(f)
+    @test !haskey(model3.ctr_lower, rf.index)
+    return
+end
+
 function constraint_hints()
     model = BilevelModel()
 

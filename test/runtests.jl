@@ -130,6 +130,7 @@ include("jump_unit.jl")
         constraint_unit()
         constraint_dualof()
         constraint_hints()
+        variable_bound_refs()
         constraint_big_M_unit()
         solver_attributes_unit()
         for solver in solvers_unit

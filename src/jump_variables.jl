@@ -219,7 +219,11 @@ function JuMP.delete_lower_bound(vref::BilevelVariableRef)
         set_dual_lower_bound_hint(get_constraint_ref(vref), NaN)
         return
     end
-    JuMP.delete_lower_bound(jump_var_ref(vref))
+    var = jump_var_ref(vref)
+    if JuMP.has_lower_bound(var)
+        _forget_bound_ref(vref, JuMP.LowerBoundRef(var))
+    end
+    JuMP.delete_lower_bound(var)
     return
 end
 function JuMP.has_upper_bound(vref::BilevelVariableRef)
@@ -248,7 +252,114 @@ function JuMP.delete_upper_bound(vref::BilevelVariableRef)
         set_dual_upper_bound_hint(get_constraint_ref(vref), NaN)
         return
     end
-    return JuMP.delete_upper_bound(jump_var_ref(vref))
+    var = jump_var_ref(vref)
+    if JuMP.has_upper_bound(var)
+        _forget_bound_ref(vref, JuMP.UpperBoundRef(var))
+    end
+    return JuMP.delete_upper_bound(var)
+end
+
+# Bounds written inline in `@variable`, such as `@variable(Lower(m), y >= 0)`,
+# are added to the JuMP model of the level that declares the variable, so they
+# are part of that level's problem and, for the lower level, are dualized like
+# any other constraint. They are not created through `JuMP.add_constraint`
+# though, so unlike `@constraint(Lower(m), y >= 0)` they never enter
+# `ctr_lower`/`ctr_upper` and have no `BilevelConstraintRef`.
+#
+# That is what `LowerBoundRef` and friends fix: the first call registers the
+# bound in the constraint list of its level and returns a reference to it, so
+# that dual starts and bound hints reach it like any other constraint. Later
+# calls return the same reference.
+function _bound_ref(vref::BilevelVariableRef, jump_ref)
+    model = owner_model(vref)
+    # `split_variable` gives an inline bound to the JuMP model of the level
+    # that declares the variable, which is the same one `jump_var_ref`
+    # returns, so the bound belongs to that level here too.
+    level = mylevel(vref)
+    in_lower = level == LOWER_ONLY || level == LOWER_BOTH
+    list = in_lower ? model.ctr_lower : model.ctr_upper
+    for (idx, ref) in list
+        if ref == jump_ref
+            return BilevelConstraintRef(model, idx)
+        end
+    end
+    model.nextconidx += 1
+    idx = model.nextconidx
+    list[idx] = jump_ref
+    model.ctr_info[idx] =
+        BilevelConstraintInfo{Float64}(in_lower ? LOWER_ONLY : UPPER_ONLY)
+    model.ctr_upper_rev = nothing
+    model.ctr_lower_rev = nothing
+    return BilevelConstraintRef(model, idx)
+end
+
+# Deleting a bound has to drop the reference that `_bound_ref` registered for
+# it, the way `JuMP.delete` does for an ordinary constraint. A leftover entry
+# would point at a constraint that no longer exists, and the build would fail
+# looking up its dual.
+function _forget_bound_ref(vref::BilevelVariableRef, jump_ref)
+    model = owner_model(vref)
+    level = mylevel(vref)
+    in_lower = level == LOWER_ONLY || level == LOWER_BOTH
+    list = in_lower ? model.ctr_lower : model.ctr_upper
+    for (idx, ref) in list
+        if ref == jump_ref
+            delete!(list, idx)
+            delete!(model.ctr_info, idx)
+            model.ctr_upper_rev = nothing
+            model.ctr_lower_rev = nothing
+            break
+        end
+    end
+    return
+end
+
+function _no_dual_of_lower(vref::BilevelVariableRef, name)
+    if mylevel(vref) == DUAL_OF_LOWER
+        error(
+            "`$(name)` is not available for a variable created with `DualOf`. " *
+            "Its bounds are hints on the dual of a lower level constraint, " *
+            "see `set_dual_lower_bound_hint` and `set_dual_upper_bound_hint`.",
+        )
+    end
+    return
+end
+
+"""
+    LowerBoundRef(vref::BilevelVariableRef)
+
+Return a constraint reference to the lower bound of `vref`.
+
+The bound belongs to the level that declares the variable, so a bound on a
+lower level variable is dualized with the rest of the lower level problem. The
+reference can be used like any other constraint reference, for instance to set
+a dual start value with `set_dual_start_value`.
+"""
+function JuMP.LowerBoundRef(vref::BilevelVariableRef)
+    _no_dual_of_lower(vref, "LowerBoundRef")
+    return _bound_ref(vref, JuMP.LowerBoundRef(jump_var_ref(vref)))
+end
+
+"""
+    UpperBoundRef(vref::BilevelVariableRef)
+
+Return a constraint reference to the upper bound of `vref`. See
+[`LowerBoundRef`](@ref).
+"""
+function JuMP.UpperBoundRef(vref::BilevelVariableRef)
+    _no_dual_of_lower(vref, "UpperBoundRef")
+    return _bound_ref(vref, JuMP.UpperBoundRef(jump_var_ref(vref)))
+end
+
+"""
+    FixRef(vref::BilevelVariableRef)
+
+Return a constraint reference to the equality constraint fixing `vref`. See
+[`LowerBoundRef`](@ref).
+"""
+function JuMP.FixRef(vref::BilevelVariableRef)
+    _no_dual_of_lower(vref, "FixRef")
+    return _bound_ref(vref, JuMP.FixRef(jump_var_ref(vref)))
 end
 
 JuMP.is_fixed(vref::BilevelVariableRef) = JuMP.is_fixed(jump_var_ref(vref))
@@ -263,7 +374,11 @@ function JuMP.unfix(vref::BilevelVariableRef)
     if mylevel(vref) == DUAL_OF_LOWER
         error("Dual variable cannot be fixed.")
     end
-    return JuMP.unfix(jump_var_ref(vref))
+    var = jump_var_ref(vref)
+    if JuMP.is_fixed(var)
+        _forget_bound_ref(vref, JuMP.FixRef(var))
+    end
+    return JuMP.unfix(var)
 end
 
 function JuMP.start_value(vref::BilevelVariableRef)
